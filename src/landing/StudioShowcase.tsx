@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import SectionHead from "./SectionHead";
+import "./landing.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -85,9 +86,12 @@ export default function StudioShowcase() {
             <div className="reveal mt-9">
               <Link
                 to="/studio"
-                className="group inline-flex items-center gap-2.5 rounded-full border border-brass/30 bg-brass/[0.06] px-6 py-3 text-[13.5px] font-medium text-brasspale transition-colors duration-300 hover:bg-brass/[0.12]"
+                className="group ghost-tint inline-flex items-center gap-2.5 rounded-full border border-brass/30 bg-brass/[0.06] px-6 py-3 text-[13.5px] font-medium text-brasspale transition-colors duration-300 hover:bg-brass/[0.12]"
               >
-                Try it with your own sources
+                <span className="roll">
+                  <span>Try it with your own sources</span>
+                  <span aria-hidden>Try it with your own sources</span>
+                </span>
                 <span className="transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1">
                   →
                 </span>

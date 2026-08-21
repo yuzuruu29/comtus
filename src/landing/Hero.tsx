@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import LampCanvas from "./LampCanvas";
 import { scrollToSection } from "../lib/scroll";
+import "./landing.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -133,9 +134,12 @@ export default function Hero({ ready }: { ready: boolean }) {
           </Link>
           <button
             onClick={() => scrollToSection("#method")}
-            className="hero-cta hero-anim flex min-h-[48px] items-center justify-center rounded-full border border-white/10 bg-white/[0.03] px-7 py-3.5 text-[14px] font-medium text-parchment/90 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06] active:scale-[0.98] opacity-0"
+            className="hero-cta hero-anim ghost-tint group flex min-h-[48px] items-center justify-center rounded-full border border-white/10 bg-white/[0.03] px-7 py-3.5 text-[14px] font-medium text-parchment/90 backdrop-blur-sm transition-all duration-300 active:scale-[0.98] opacity-0"
           >
-            See how it thinks
+            <span className="roll">
+              <span>See how it thinks</span>
+              <span aria-hidden>See how it thinks</span>
+            </span>
           </button>
         </div>
       </div>

@@ -60,6 +60,11 @@ export default function TiltCard({
             "radial-gradient(420px circle at var(--gx, 50%) var(--gy, 50%), rgba(227,176,75,0.10), transparent 65%)",
         }}
       />
+      {/* gradient thread draws across the top edge on hover */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-3 top-0 z-[2] h-[2px] origin-left scale-x-0 rounded-full grad-lamp transition-transform duration-[550ms] ease-[cubic-bezier(0.76,0,0.24,1)] group-hover:scale-x-100"
+      />
       <div
         ref={innerRef}
         className={`relative h-full rounded-[1.55rem] bg-study ${innerClassName ?? "p-7 sm:p-9"} shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] will-change-transform`}

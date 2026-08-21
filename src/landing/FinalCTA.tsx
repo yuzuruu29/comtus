@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import "./landing.css";
 
 const FOOTNOTES = [
   ["BYOK Privacy", "Free models run on your own OpenRouter key, smarter Claude models on our hosted key via PayPal pass, or fully local with Ollama. Keys stay strictly on-device."],
@@ -25,7 +26,10 @@ export default function FinalCTA() {
             to="/studio"
             className="group flex items-center gap-2.5 rounded-full grad-lamp py-4 pl-8 pr-3 text-[15px] font-semibold text-night shadow-[0_12px_50px_rgba(227,176,75,0.25)] transition-shadow duration-500 hover:shadow-[0_16px_70px_rgba(227,176,75,0.4)] active:scale-[0.98]"
           >
-            Open the studio
+            <span className="roll">
+              <span>Open the studio</span>
+              <span aria-hidden>Think tonight</span>
+            </span>
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-night/15 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px">
               <svg width="13" height="13" viewBox="0 0 11 11" fill="none">
                 <path

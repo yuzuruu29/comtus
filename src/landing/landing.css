@@ -1,0 +1,39 @@
+/* ── Landing-only styles ─────────────────────────────────────
+   Craft vocabulary borrowed from the Exorsus site (see BRAND.md):
+   label roll-overs, gradient threads, brass ghost tints. */
+
+/* Button label roll-over — the label swaps by rolling vertically.
+   Parent button needs the `group` class. */
+.roll {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+.roll > span {
+  display: inline-block;
+  transition: transform 0.45s var(--ease-house-inout);
+  will-change: transform;
+}
+.roll > span:last-child {
+  position: absolute;
+  inset: 0;
+  transform: translateY(110%);
+}
+.group:hover .roll > span:first-child,
+.group:focus-visible .roll > span:first-child {
+  transform: translateY(-110%);
+}
+.group:hover .roll > span:last-child,
+.group:focus-visible .roll > span:last-child {
+  transform: translateY(0);
+}
+
+/* Ghost-button brass tint on hover (Exorsus .btn--ghost) */
+.ghost-tint {
+  transition: border-color 0.3s, color 0.3s, background-color 0.3s;
+}
+.ghost-tint:hover {
+  border-color: rgba(227, 176, 75, 0.45);
+  color: var(--color-brasspale);
+}

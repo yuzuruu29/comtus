@@ -741,7 +741,7 @@ export default function SettingsModal({
                   return (
                     <div
                       key={p.id}
-                      className={`relative overflow-hidden rounded-xl border p-4 transition-all duration-300 ${
+                      className={`group relative overflow-hidden rounded-xl border p-4 transition-all duration-300 ${
                         active
                           ? "border-brass/50 bg-brass/[0.06] shadow-[0_0_20px_rgba(227,176,75,0.08)]"
                           : "border-white/[0.08] bg-night/50 hover:border-white/20 hover:bg-night/70"
@@ -749,7 +749,9 @@ export default function SettingsModal({
                     >
                       <div
                         aria-hidden
-                        className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
+                        className={`pointer-events-none absolute inset-x-3 top-0 z-[1] h-[2px] origin-left rounded-full grad-lamp transition-transform duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${
+                          active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                        }`}
                       />
                       <button
                         type="button"
@@ -1017,7 +1019,11 @@ export default function SettingsModal({
 
               {/* Fetched models dropdown panel */}
               {modelIds.length > 0 && (
-                <div className="mt-3 overflow-hidden rounded-xl border border-white/10 bg-night/80 p-3">
+                <div className="relative mt-3 overflow-hidden rounded-xl border border-white/10 bg-night/80 p-3">
+                  <div
+                    aria-hidden
+                    className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-brass/40 to-transparent"
+                  />
                   <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-faded flex items-center gap-1.5 flex-wrap">
                       <span>{modelsNote}</span>
