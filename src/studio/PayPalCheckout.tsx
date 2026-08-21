@@ -106,9 +106,10 @@ export default function PayPalCheckout({
             setLoading(true);
             try {
               await actions.order.capture();
-              const passToken = `comtus-pass-${plan.id}-${data.orderID.slice(-8)}`;
               setSuccess(data.orderID);
-              onSuccess(passToken, data.orderID);
+              // The pass is issued server-side after payment verification
+              // and emailed to the buyer — never generated in the browser.
+              onSuccess("", data.orderID);
             } catch (err) {
               setError(err instanceof Error ? err.message : "Payment capture failed.");
             } finally {
@@ -135,9 +136,12 @@ export default function PayPalCheckout({
       )}
 
       {success && (
-        <div className="flex items-center gap-2 rounded-lg border border-sage/30 bg-sage/[0.08] p-2.5 text-[12px] text-sage">
-          <CheckCircle2 size={14} className="shrink-0" />
-          <span>Payment successful (Order #{success.slice(-8)}). Access Pass activated!</span>
+        <div className="flex items-start gap-2 rounded-lg border border-sage/30 bg-sage/[0.08] p-2.5 text-left text-[12px] leading-relaxed text-sage">
+          <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
+          <span>
+            Payment confirmed (Order #{success.slice(-8)}). Your personal Access Pass will be
+            emailed to you shortly — paste it below to activate.
+          </span>
         </div>
       )}
 

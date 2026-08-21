@@ -110,30 +110,34 @@ export interface CallSettings {
   effort: Effort;
 }
 
-export const HOSTED_ANTHROPIC_KEY =
-  (import.meta.env.VITE_HOSTED_ANTHROPIC_KEY as string) ||
-  "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";
+/* Hosted Smarter Models: pass tokens authenticate against our edge proxy
+   (api/anthropic.ts) — the real Anthropic key lives only on the server.
+   Tauri desktop builds override the origin via VITE_API_ORIGIN. */
+const API_ORIGIN =
+  (import.meta.env.VITE_API_ORIGIN as string) ||
+  (typeof window !== "undefined" ? window.location.origin : "");
 
-export function resolveAnthropicKey(apiKey: string): string {
-  const trimmed = apiKey.trim();
-  if (trimmed.startsWith("sk-ant-")) return trimmed;
-  if (trimmed.startsWith("comtus-pass-") || trimmed.length > 5) {
-    return HOSTED_ANTHROPIC_KEY;
-  }
-  return HOSTED_ANTHROPIC_KEY || trimmed;
+export function isHostedPass(apiKey: string): boolean {
+  return apiKey.trim().startsWith("comtus-pass-");
 }
 
 /* ── Clients ──────────────────────────────────────────────── */
 
 function getAnthropic(cs: CallSettings): Anthropic {
+  const key = cs.apiKey.trim();
+  const hosted = isHostedPass(key);
   return new Anthropic({
-    apiKey: resolveAnthropicKey(cs.apiKey),
-    ...(cs.baseUrl.trim() ? { baseURL: cs.baseUrl.trim() } : {}),
+    // Pass tokens go to the proxy; a user's own sk-ant- key goes direct.
+    apiKey: key,
+    ...(hosted
+      ? { baseURL: `${API_ORIGIN}/api/anthropic` }
+      : cs.baseUrl.trim()
+        ? { baseURL: cs.baseUrl.trim() }
+        : {}),
     dangerouslyAllowBrowser: true,
     maxRetries: 2,
   });
 }
-
 function getCompat(cs: CallSettings): OpenAI {
   return new OpenAI({
     // Local endpoints (Ollama/LM Studio) need no key; the SDK demands a
@@ -157,13 +161,30 @@ export function isAbort(err: unknown): boolean {
 export function friendlyError(err: unknown): string {
   if (isAbort(err)) return "Stopped.";
   const auth = err instanceof Anthropic.AuthenticationError || err instanceof OpenAI.AuthenticationError;
-  if (auth)
+  if (auth) {
+    if (storedKeyIsHostedPass())
+      return "This pass was rejected — it may be expired or mistyped. Paste the token from your PayPal email.";
     return "The API key was rejected. Check it in Settings — the lamp can't light without it.";
+  }
   const rate = err instanceof Anthropic.RateLimitError || err instanceof OpenAI.RateLimitError;
   if (rate) return "Rate limited by the API. Wait a moment and try again.";
-  if (err instanceof Anthropic.APIError || err instanceof OpenAI.APIError)
+  if (err instanceof Anthropic.APIError || err instanceof OpenAI.APIError) {
+    if (err.status === 402) return "This pass has reached its request limit.";
     return `The API returned ${err.status}. ${err.message.slice(0, 180)}`;
+  }
   return err instanceof Error ? err.message : "Something went wrong.";
+}
+
+/* Best-effort peek at the stored key so pass errors can be specific. */
+function storedKeyIsHostedPass(): boolean {
+  try {
+    const raw = localStorage.getItem("comtus-settings");
+    if (!raw) return false;
+    const parsed = JSON.parse(raw) as { state?: { anthropicKey?: string } };
+    return isHostedPass(parsed.state?.anthropicKey ?? "");
+  } catch {
+    return false;
+  }
 }
 
 /* ── Shared prompt furniture ──────────────────────────────── */
@@ -203,6 +224,7 @@ export interface StreamChatArgs extends CallSettings {
   notebookName: string;
   history: { role: "user" | "assistant"; content: string }[];
   question: string;
+  sourceIds?: string[];
   signal?: AbortSignal;
   onThinking?: (delta: string, full: string) => void;
   onText?: (delta: string, full: string) => void;
@@ -215,7 +237,7 @@ export interface ChatReply {
 }
 
 export async function streamChat(args: StreamChatArgs): Promise<ChatReply> {
-  const { docs, mode } = await groundContext(args.notebookId, args.question);
+  const { docs, mode } = await groundContext(args.notebookId, args.question, args.sourceIds);
   const reply =
     args.provider === "anthropic"
       ? await streamAnthropic(args, docs, mode)

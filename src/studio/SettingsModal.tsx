@@ -1,32 +1,30 @@
 import { useEffect, useState } from "react";
 import {
-  Eye,
-  EyeOff,
+  ArrowClockwise,
+  ArrowSquareOut,
+  Bookmark,
+  Brain,
+  CaretDown,
+  CaretUp,
   Check,
-  Flame,
-  ListRestart,
-  Sparkles,
-  Zap,
-  BrainCircuit,
-  History,
-  HelpCircle,
-  ChevronDown,
-  ChevronUp,
-  ExternalLink,
-  ShieldCheck,
-  AlertTriangle,
+  Cpu,
   CreditCard,
-  Lock,
   Crown,
-  RefreshCw,
+  Eye,
+  EyeSlash,
+  Flame,
   Gauge,
   Key,
+  Lightning,
+  Lock,
   Plus,
-  Trash2,
-  Bookmark,
-  Layers,
-  Cpu,
-} from "lucide-react";
+  Question,
+  ShieldCheck,
+  Sparkle,
+  Stack,
+  Trash,
+  Warning,
+} from "@phosphor-icons/react";
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, LampPulse } from "./ui";
 import { useSettings } from "../lib/settings";
 import {
@@ -53,7 +51,7 @@ const FREE_PROVIDER_CARDS: {
   chips: string[];
   keyUrl: string;
   keyLabel: string;
-  icon: typeof Sparkles;
+  icon: typeof Sparkle;
 }[] = [
   {
     id: "openrouter",
@@ -65,7 +63,7 @@ const FREE_PROVIDER_CARDS: {
     chips: ["deepseek-r1:free", "llama-3.3-70b:free", "gemini-flash:free"],
     keyUrl: "https://openrouter.ai/keys",
     keyLabel: "openrouter.ai/keys",
-    icon: Sparkles,
+    icon: Sparkle,
   },
   {
     id: "groq",
@@ -77,7 +75,7 @@ const FREE_PROVIDER_CARDS: {
     chips: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
     keyUrl: "https://console.groq.com/keys",
     keyLabel: "console.groq.com/keys",
-    icon: Zap,
+    icon: Lightning,
   },
   {
     id: "zen",
@@ -89,7 +87,7 @@ const FREE_PROVIDER_CARDS: {
     chips: ["qwen3-coder", "glm", "kimi"],
     keyUrl: "https://opencode.ai/zen",
     keyLabel: "opencode.ai/zen",
-    icon: Layers,
+    icon: Stack,
   },
   {
     id: "cerebras",
@@ -381,14 +379,14 @@ export default function SettingsModal({
             className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-brass/[0.08]"
           >
             <div className="flex items-center gap-2.5">
-              <HelpCircle size={16} className="text-brass shrink-0" />
+              <Question size={16} className="text-brass shrink-0" />
               <span className="text-[13px] font-medium text-parchment">
                 Access Guide: Free Models (BYOK) vs. Smarter Models (PayPal Tier)
               </span>
             </div>
             <div className="flex items-center gap-1 font-mono text-[11px] text-brasspale">
               <span>{byokGuideOpen ? "Hide guide" : "View steps"}</span>
-              {byokGuideOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {byokGuideOpen ? <CaretUp size={14} /> : <CaretDown size={14} />}
             </div>
           </button>
 
@@ -428,7 +426,7 @@ export default function SettingsModal({
                   <div className="rounded-lg border border-brass/25 bg-brass/[0.06] p-3.5 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="font-medium text-parchment flex items-center gap-1.5">
-                        <Sparkles size={14} className="text-brass" />
+                        <Sparkle size={14} className="text-brass" />
                         <span>Recommended: OpenRouter BYOK (with Free AI Models)</span>
                       </div>
                       <a
@@ -437,7 +435,7 @@ export default function SettingsModal({
                         rel="noreferrer"
                         className="text-moon text-[11.5px] hover:underline flex items-center gap-1 font-mono"
                       >
-                        openrouter.ai/keys <ExternalLink size={11} />
+                        openrouter.ai/keys <ArrowSquareOut size={11} />
                       </a>
                     </div>
                     <ol className="list-decimal pl-5 space-y-1.5 text-faded text-[12px]">
@@ -470,7 +468,7 @@ export default function SettingsModal({
                       <div className="font-medium text-parchment flex items-center justify-between">
                         <span>1. OpenRouter (Multi-Model & Free)</span>
                         <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
-                          openrouter.ai <ExternalLink size={10} />
+                          openrouter.ai <ArrowSquareOut size={10} />
                         </a>
                       </div>
                       <p className="mt-1 text-[11.5px] text-faded">
@@ -481,7 +479,7 @@ export default function SettingsModal({
                       <div className="font-medium text-parchment flex items-center justify-between">
                         <span>2. Groq (Ultra-Fast Free Tier)</span>
                         <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
-                          groq.com <ExternalLink size={10} />
+                          groq.com <ArrowSquareOut size={10} />
                         </a>
                       </div>
                       <p className="mt-1 text-[11.5px] text-faded">
@@ -492,7 +490,7 @@ export default function SettingsModal({
                       <div className="font-medium text-parchment flex items-center justify-between">
                         <span>3. DeepSeek (Direct)</span>
                         <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noreferrer" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
-                          deepseek.com <ExternalLink size={10} />
+                          deepseek.com <ArrowSquareOut size={10} />
                         </a>
                       </div>
                       <p className="mt-1 text-[11.5px] text-faded">
@@ -512,13 +510,13 @@ export default function SettingsModal({
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 font-mono text-[10.5px]">
                     <span className="uppercase tracking-[0.14em] text-faded/60">More free tiers:</span>
                     <a href="https://opencode.ai/zen" target="_blank" rel="noreferrer" className="flex items-center gap-0.5 text-moon hover:underline">
-                      OpenCode Zen <ExternalLink size={9} />
+                      OpenCode Zen <ArrowSquareOut size={9} />
                     </a>
                     <a href="https://cloud.cerebras.ai" target="_blank" rel="noreferrer" className="flex items-center gap-0.5 text-moon hover:underline">
-                      Cerebras <ExternalLink size={9} />
+                      Cerebras <ArrowSquareOut size={9} />
                     </a>
                     <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="flex items-center gap-0.5 text-moon hover:underline">
-                      Google AI Studio <ExternalLink size={9} />
+                      Google AI Studio <ArrowSquareOut size={9} />
                     </a>
                   </div>
                 </div>
@@ -617,9 +615,10 @@ export default function SettingsModal({
                 </div>
                 <PayPalCheckout
                   plan={selectedPlan}
-                  onSuccess={(passToken) => {
-                    set({ anthropicKey: passToken });
-                    useSettings.getState().update({ anthropicKey: passToken });
+                  onSuccess={() => {
+                    // Passes are signed server-side after payment
+                    // verification and emailed to the buyer — nothing to
+                    // activate in the browser at capture time.
                   }}
                 />
               </div>
@@ -645,7 +644,7 @@ export default function SettingsModal({
                     aria-label={showAnthropicKey ? "Hide key" : "Show key"}
                     tabIndex={-1}
                   >
-                    {showAnthropicKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                    {showAnthropicKey ? <EyeSlash size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
@@ -671,9 +670,9 @@ export default function SettingsModal({
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
                           {isOpus ? (
-                            <BrainCircuit size={16} className={isSelected ? "text-brass" : "text-faded"} />
+                            <Brain size={16} className={isSelected ? "text-brass" : "text-faded"} />
                           ) : (
-                            <Zap size={16} className={isSelected ? "text-brass" : "text-faded"} />
+                            <Lightning size={16} className={isSelected ? "text-brass" : "text-faded"} />
                           )}
                           <div className="font-display text-[15px] font-[450] text-parchment">
                             {m.label}
@@ -726,7 +725,7 @@ export default function SettingsModal({
                 <div className="flex items-center gap-2">
                   {fetchingModels && (
                     <span className="flex items-center gap-1 font-mono text-[10px] text-brass animate-pulse">
-                      <RefreshCw size={11} className="animate-spin" /> Syncing models…
+                      <ArrowClockwise size={11} className="animate-spin" /> Syncing models…
                     </span>
                   )}
                   <span className="font-mono text-[10px] uppercase tracking-wider text-sage bg-sage/10 border border-sage/25 px-2 py-0.5 rounded-full">
@@ -787,7 +786,7 @@ export default function SettingsModal({
                         rel="noreferrer"
                         className="mt-3 inline-flex items-center gap-1 font-mono text-[10px] text-moon transition-colors hover:text-brasspale"
                       >
-                        Get key · {p.keyLabel} <ExternalLink size={9} />
+                        Get key · {p.keyLabel} <ArrowSquareOut size={9} />
                       </a>
                     </div>
                   );
@@ -877,7 +876,7 @@ export default function SettingsModal({
                             className="p-1 text-faded hover:text-rust transition-colors"
                             aria-label={`Delete ${k.name}`}
                           >
-                            <Trash2 size={12} />
+                            <Trash size={12} />
                           </button>
                         </div>
                       </div>
@@ -954,7 +953,7 @@ export default function SettingsModal({
                     aria-label={showCompatKey ? "Hide key" : "Show key"}
                     tabIndex={-1}
                   >
-                    {showCompatKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                    {showCompatKey ? <EyeSlash size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </Field>
@@ -987,7 +986,7 @@ export default function SettingsModal({
                     onClick={fetchModels}
                     disabled={fetchingModels || !draft.compatBaseUrl.trim()}
                   >
-                    <ListRestart size={14} className="mr-1.5 inline" />
+                    <ArrowClockwise size={14} className="mr-1.5 inline" />
                     {fetchingModels ? "Fetching…" : "Fetch list"}
                   </button>
                 </div>
@@ -997,7 +996,7 @@ export default function SettingsModal({
               {recentModels.length > 0 && (
                 <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                   <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.14em] text-faded/70">
-                    <History size={11} /> Recent:
+                    <ArrowClockwise size={11} /> Recent:
                   </span>
                   {recentModels.map((m) => (
                     <button
@@ -1121,7 +1120,7 @@ export default function SettingsModal({
                       : "text-faded hover:text-parchment"
                   }`}
                 >
-                  {e.id === "xhigh" && <Sparkles size={13} className="mr-1.5 inline" />}
+                  {e.id === "xhigh" && <Sparkle size={13} className="mr-1.5 inline" />}
                   {e.label}
                 </button>
               );
@@ -1143,7 +1142,7 @@ export default function SettingsModal({
         {/* AI Accuracy & Verification Disclaimer */}
         <div className="rounded-xl border border-brass/20 bg-amber-500/[0.04] p-3.5 text-parchment/90">
           <div className="flex items-start gap-2.5">
-            <AlertTriangle size={16} className="text-brass shrink-0 mt-0.5" />
+            <Warning size={16} className="text-brass shrink-0 mt-0.5" />
             <div className="text-[12px] leading-relaxed text-faded">
               <strong className="text-parchment font-medium">Important AI Disclaimer:</strong> AI models (including free and open-source models) can make mistakes, hallucinate details, or misinterpret nuanced concepts. Always double-check citations, formulas, and answers against your primary study materials and authoritative sources.
             </div>
