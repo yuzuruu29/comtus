@@ -97,7 +97,7 @@ export default function NotebookList({
                     Light the lamp — Bring Your Own Key (BYOK)
                   </div>
                   <p className="mt-0.5 text-[12.5px] leading-relaxed text-faded">
-                    Connect an Anthropic key, OpenRouter / Groq / DeepSeek, or run 100% free offline with Ollama / LM Studio. Your key never leaves this browser.
+                    Connect OpenRouter with free AI models (:free), unlock Smarter Claude Models via PayPal, or run 100% offline with Ollama / LM Studio.
                   </p>
                 </div>
               </div>

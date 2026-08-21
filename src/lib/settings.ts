@@ -27,14 +27,20 @@ interface SettingsState {
 export const useSettings = create<SettingsState>()(
   persist(
     (set, get) => ({
-      provider: "anthropic",
+      provider: "openai-compatible",
       anthropicKey: "",
       anthropicBaseUrl: "",
       anthropicModel: "claude-opus-5",
       compatKey: "",
       compatBaseUrl: "https://openrouter.ai/api/v1",
-      compatModel: "",
-      recentModels: ["deepseek/deepseek-r1", "meta-llama/llama-3.3-70b-instruct", "qwen/qwen-2.5-72b-instruct"],
+      compatModel: "openrouter/auto",
+      recentModels: [
+        "openrouter/auto",
+        "deepseek/deepseek-r1:free",
+        "meta-llama/llama-3.3-70b-instruct:free",
+        "qwen/qwen-2.5-72b-instruct:free",
+        "google/gemini-2.0-flash-exp:free",
+      ],
       effort: "high",
       setProvider: (provider) => set({ provider }),
       update: (patch) => set(patch),

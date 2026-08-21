@@ -89,7 +89,7 @@ export default function ChatPane({
       const question = (raw ?? input).trim();
       if (!question || !notebook || streaming) return;
       if (!hasKey()) {
-        setError("Add your Anthropic API key in Settings first — the lamp needs it.");
+        setError("Add your API key in Settings (or select a local/free model) first — the lamp needs it.");
         return;
       }
       setError("");
@@ -277,8 +277,8 @@ export default function ChatPane({
               </motion.button>
             )}
           </div>
-          <div className="mt-2 text-center font-mono text-[9.5px] uppercase tracking-[0.16em] text-faded/50">
-            Answers cite their sources · reasoning is visible · your key stays local
+          <div className="mt-2 text-center font-mono text-[9.5px] uppercase tracking-[0.14em] text-faded/55">
+            AI can make mistakes — double-check answers against sources · Key stays local
           </div>
         </div>
       </div>

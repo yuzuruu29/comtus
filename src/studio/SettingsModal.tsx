@@ -14,6 +14,12 @@ import {
   ChevronUp,
   ExternalLink,
   ShieldCheck,
+  AlertTriangle,
+  CreditCard,
+  Lock,
+  Crown,
+  RefreshCw,
+  Gauge,
 } from "lucide-react";
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, LampPulse } from "./ui";
 import { useSettings } from "../lib/settings";
@@ -26,6 +32,8 @@ import {
   type CallSettings,
 } from "../lib/llm";
 import type { ProviderId } from "../lib/types";
+import { STUDY_PLANS, type StudyPlan } from "../lib/paypal";
+import PayPalCheckout from "./PayPalCheckout";
 
 export default function SettingsModal({
   open,
@@ -49,10 +57,42 @@ export default function SettingsModal({
   const [fetchingModels, setFetchingModels] = useState(false);
   const [modelIds, setModelIds] = useState<string[]>([]);
   const [modelsNote, setModelsNote] = useState("");
+  const [lastFetchedAt, setLastFetchedAt] = useState<number | null>(null);
   const [filterQuery, setFilterQuery] = useState("");
   const [byokGuideOpen, setByokGuideOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<StudyPlan>(STUDY_PLANS[1]);
 
   const recentModels = useSettings((st) => st.recentModels) ?? [];
+
+  // Recurring live sync for OpenAI-compatible endpoints (OpenRouter, Groq, local)
+  useEffect(() => {
+    if (!open || draft.provider !== "openai-compatible" || !draft.compatBaseUrl.trim()) return;
+    const isLocal = draft.compatBaseUrl.includes("localhost") || draft.compatBaseUrl.includes("127.0.0.1");
+    if (!isLocal && !draft.compatKey.trim() && !draft.compatBaseUrl.includes("openrouter")) return;
+
+    let cancel = false;
+    const runFetch = async () => {
+      setFetchingModels(true);
+      try {
+        const ids = await listCompatModels(draft.compatKey.trim(), draft.compatBaseUrl.trim());
+        if (!cancel && ids.length > 0) {
+          setModelIds(ids);
+          setLastFetchedAt(Date.now());
+          setModelsNote(`${ids.length} models auto-updated live from endpoint.`);
+        }
+      } catch {
+        // Silent fallback in background
+      } finally {
+        if (!cancel) setFetchingModels(false);
+      }
+    };
+
+    const timer = setTimeout(runFetch, 350);
+    return () => {
+      cancel = true;
+      clearTimeout(timer);
+    };
+  }, [open, draft.provider, draft.compatBaseUrl, draft.compatKey]);
 
   const set = (patch: Partial<typeof draft>) => {
     setDraft((d) => ({ ...d, ...patch }));
@@ -136,12 +176,12 @@ export default function SettingsModal({
       <div className="space-y-6">
         {/* Provider switch */}
         <div>
-          <div className="label-mono !text-[10px] mb-2">Provider</div>
+          <div className="label-mono !text-[10px] mb-2">Provider & Access Tier</div>
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {(
               [
-                ["anthropic", "Anthropic Claude", "Opus 5 · adaptive thinking · native citations"],
-                ["openai-compatible", "OpenAI-compatible", "OpenRouter · Ollama · LM Studio · Groq · DeepSeek"],
+                ["anthropic", "Anthropic Claude (Smarter Models)", "Opus 5 & Sonnet 5 · Hosted Key · PayPal access"],
+                ["openai-compatible", "OpenRouter & Free Models (BYOK)", "100% Free (:free) · OpenRouter · Ollama · Free BYOK"],
               ] as const
             ).map(([id, label, note]) => (
               <button
@@ -165,7 +205,7 @@ export default function SettingsModal({
           </div>
         </div>
 
-        {/* BYOK Guide Banner / Toggle */}
+        {/* BYOK & Access Guide Banner / Toggle */}
         <div className="overflow-hidden rounded-xl border border-brass/25 bg-brass/[0.04]">
           <button
             type="button"
@@ -175,7 +215,7 @@ export default function SettingsModal({
             <div className="flex items-center gap-2.5">
               <HelpCircle size={16} className="text-brass shrink-0" />
               <span className="text-[13px] font-medium text-parchment">
-                How to BYOK (Bring Your Own Key) & Get Free / Cheap Keys
+                Access Guide: Free Models (BYOK) vs. Smarter Models (PayPal Tier)
               </span>
             </div>
             <div className="flex items-center gap-1 font-mono text-[11px] text-brasspale">
@@ -189,73 +229,106 @@ export default function SettingsModal({
               <div className="flex items-start gap-2.5 rounded-lg border border-sage/20 bg-sage/[0.05] p-3 text-sage text-[12px]">
                 <ShieldCheck size={16} className="shrink-0 mt-0.5" />
                 <span>
-                  <strong>100% Client-Side Privacy:</strong> Your key never touches a proxy server. It is saved directly to your browser's local storage and used only to communicate directly with your chosen API provider.
+                  <strong>Privacy First:</strong> Your notebooks and documents remain stored locally in your browser (IndexedDB). Keys and access tokens are saved only in your device's localStorage.
                 </span>
               </div>
 
               {draft.provider === "anthropic" ? (
-                <div className="space-y-2">
-                  <div className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-brasspale font-medium">
-                    Getting an Anthropic Claude Key:
+                <div className="space-y-3">
+                  <div className="flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-brasspale font-medium">
+                    <Lock size={13} className="text-brass" />
+                    <span>Smarter Models Access (Anthropic BYOK Disabled):</span>
                   </div>
-                  <ol className="list-decimal pl-5 space-y-1.5 text-faded">
-                    <li>
-                      Visit{" "}
-                      <a
-                        href="https://console.anthropic.com"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-moon hover:underline inline-flex items-center gap-1"
-                      >
-                        console.anthropic.com <ExternalLink size={11} />
-                      </a>{" "}
-                      and sign in or create an account.
-                    </li>
-                    <li>Navigate to <strong>API Keys</strong> in the dashboard sidebar.</li>
-                    <li>Click <strong>Create Key</strong>, name it (e.g. <em>"Comtus Study"</em>), and copy the key string starting with <code className="text-brasspale">sk-ant-...</code>.</li>
-                    <li>Paste it into the field below and tap <strong>Save & test</strong>.</li>
-                  </ol>
-                  <p className="text-[11.5px] text-faded/80 italic">
-                    💡 Anthropic bills per token (approx. $0.003–$0.015 per exam), costing fractions of a cent per study session compared to $20/month fixed subscriptions.
+                  <p className="text-[12px] leading-relaxed text-faded">
+                    To deliver maximum reasoning power with zero complex developer setup, <strong>Anthropic BYOK is disabled</strong>. Smarter models (Claude Opus 5 & Sonnet 5) run directly on our managed key. You simply pay based on usage through PayPal.
                   </p>
+                  <div className="rounded-lg border border-brass/25 bg-brass/[0.06] p-3 space-y-2 text-[12px]">
+                    <div className="font-medium text-parchment flex items-center gap-1.5">
+                      <CreditCard size={14} className="text-brass" />
+                      <span>How to Unlock Access via PayPal:</span>
+                    </div>
+                    <ol className="list-decimal pl-5 space-y-1.5 text-faded">
+                      <li>Choose your preferred usage pass below based on your study load.</li>
+                      <li>Send payment through PayPal to receive your personal Access Pass / Token.</li>
+                      <li>Paste the code into the <strong>Access Pass</strong> field below.</li>
+                      <li>Click <strong>Save & test</strong> to light the lamp with Claude Opus 5 & Sonnet 5.</li>
+                    </ol>
+                  </div>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3.5">
+                  <div className="rounded-lg border border-brass/25 bg-brass/[0.06] p-3.5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium text-parchment flex items-center gap-1.5">
+                        <Sparkles size={14} className="text-brass" />
+                        <span>Recommended: OpenRouter BYOK (with Free AI Models)</span>
+                      </div>
+                      <a
+                        href="https://openrouter.ai/keys"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-moon text-[11.5px] hover:underline flex items-center gap-1 font-mono"
+                      >
+                        openrouter.ai/keys <ExternalLink size={11} />
+                      </a>
+                    </div>
+                    <ol className="list-decimal pl-5 space-y-1.5 text-faded text-[12px]">
+                      <li>
+                        Create an account at <a href="https://openrouter.ai" target="_blank" rel="noreferrer" className="text-moon hover:underline">openrouter.ai</a>.
+                      </li>
+                      <li>
+                        Go to <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-moon hover:underline">Keys</a>, click <strong>Create Key</strong>, and copy your <code className="text-brasspale">sk-or-v1-...</code> token.
+                      </li>
+                      <li>
+                        Paste the key below with Base URL <code className="text-brasspale">https://openrouter.ai/api/v1</code>.
+                      </li>
+                      <li>
+                        Click <strong>"Fetch list"</strong> to auto-update and load all active models directly from OpenRouter in real-time.
+                      </li>
+                      <li>
+                        Filter by <code className="text-brasspale">:free</code> to use 100% free models like <code className="text-brasspale">deepseek/deepseek-r1:free</code>, <code className="text-brasspale">meta-llama/llama-3.3-70b-instruct:free</code>, or <code className="text-brasspale">openrouter/auto</code>.
+                      </li>
+                      <li>
+                        Click <strong>Save & test</strong> to verify your connection before entering the studio.
+                      </li>
+                    </ol>
+                  </div>
+
                   <div className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-brasspale font-medium">
-                    Options for OpenAI-Compatible Endpoints:
+                    All Compatible Providers & Local Endpoints:
                   </div>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
                       <div className="font-medium text-parchment flex items-center justify-between">
-                        <span>1. OpenRouter</span>
+                        <span>1. OpenRouter (Multi-Model & Free)</span>
                         <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
                           openrouter.ai <ExternalLink size={10} />
                         </a>
                       </div>
                       <p className="mt-1 text-[11.5px] text-faded">
-                        One single API key provides access to DeepSeek R1, Claude 3.5, GPT-4o, and Llama 3.3.
+                        One key connects DeepSeek R1, Llama 3.3, Claude 3.5, Gemini 2.0, and free models.
                       </p>
                     </div>
                     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
                       <div className="font-medium text-parchment flex items-center justify-between">
-                        <span>2. Groq (Fast & Free Tier)</span>
+                        <span>2. Groq (Ultra-Fast Free Tier)</span>
                         <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
                           groq.com <ExternalLink size={10} />
                         </a>
                       </div>
                       <p className="mt-1 text-[11.5px] text-faded">
-                        Instant, ultra-low latency inference for open models like Llama 3.3 70B.
+                        Instant, ultra-low latency inference for Llama 3.3 70B and Mixtral.
                       </p>
                     </div>
                     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
                       <div className="font-medium text-parchment flex items-center justify-between">
-                        <span>3. DeepSeek</span>
+                        <span>3. DeepSeek (Direct)</span>
                         <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noreferrer" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
                           deepseek.com <ExternalLink size={10} />
                         </a>
                       </div>
                       <p className="mt-1 text-[11.5px] text-faded">
-                        Ultra-capable, low-cost reasoning models (<code className="text-brasspale">deepseek-reasoner</code>).
+                        Ultra-capable direct reasoning models (<code className="text-brasspale">deepseek-reasoner</code>).
                       </p>
                     </div>
                     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
@@ -264,7 +337,7 @@ export default function SettingsModal({
                         <span className="text-sage text-[10.5px] font-mono">100% FREE</span>
                       </div>
                       <p className="mt-1 text-[11.5px] text-faded">
-                        Run models offline on your machine with Ollama or LM Studio. <strong>No API key or payment needed!</strong>
+                        Run offline models directly on your hardware. <strong>No key or internet needed!</strong>
                       </p>
                     </div>
                   </div>
@@ -276,9 +349,91 @@ export default function SettingsModal({
 
         {draft.provider === "anthropic" ? (
           <>
+            {/* Smarter Models / PayPal Managed Tier Banner */}
+            <div className="overflow-hidden rounded-xl border border-brass/30 bg-brass/[0.05] p-4 space-y-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-brass/15 pb-3">
+                <div className="flex items-center gap-2">
+                  <Crown size={17} className="text-brass shrink-0" />
+                  <span className="font-display text-[15px] font-[450] text-parchment">
+                    Smarter Models (Claude Opus 5 & Sonnet 5)
+                  </span>
+                </div>
+                <span className="self-start sm:self-auto rounded-full border border-brass/30 bg-brass/15 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-brasspale">
+                  BYOK Disabled · Hosted Key
+                </span>
+              </div>
+
+              <p className="text-[12.5px] leading-relaxed text-faded">
+                Anthropic BYOK is disabled. Access to Claude Opus 5 & Sonnet 5 is powered directly by our managed key. Pay based on your usage via PayPal to unlock your personal access pass.
+              </p>
+
+              {/* Realistic Pricing Grid */}
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brasspale mb-2 font-medium">
+                  Select Study Pass & Pay via PayPal:
+                </div>
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                  {STUDY_PLANS.map((plan) => {
+                    const isPlanSelected = selectedPlan.id === plan.id;
+                    return (
+                      <button
+                        key={plan.id}
+                        type="button"
+                        onClick={() => setSelectedPlan(plan)}
+                        className={`text-left rounded-xl border p-3 flex flex-col justify-between transition-all active:scale-[0.98] ${
+                          isPlanSelected
+                            ? "border-brass/70 bg-brass/[0.12] shadow-[0_0_20px_rgba(227,176,75,0.15)] ring-1 ring-brass/40"
+                            : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-parchment text-[13px] flex items-center gap-1">
+                              {plan.name}
+                              {plan.popular && (
+                                <span className="rounded bg-brass/25 px-1 py-0.2 font-mono text-[8.5px] text-brasspale uppercase">
+                                  Popular
+                                </span>
+                              )}
+                            </span>
+                            <span className="font-mono text-brass font-bold text-[13px]">${plan.price}</span>
+                          </div>
+                          <div className="mt-1 font-mono text-[10px] text-faded/70">{plan.tokens}</div>
+                          <p className="mt-1.5 text-[11.5px] leading-snug text-faded">{plan.desc}</p>
+                        </div>
+                        {isPlanSelected && (
+                          <div className="mt-2 text-right font-mono text-[10px] text-brasspale font-medium">
+                            ✓ Selected
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* PayPal Smart Checkout Section */}
+              <div className="rounded-xl border border-white/10 bg-night/80 p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[12.5px] text-parchment font-medium">
+                    <CreditCard size={15} className="text-brass shrink-0" />
+                    <span>Pay with PayPal: {selectedPlan.name} (${selectedPlan.price} USD)</span>
+                  </div>
+                  <span className="font-mono text-[10px] text-brasspale">{selectedPlan.tokens}</span>
+                </div>
+                <PayPalCheckout
+                  plan={selectedPlan}
+                  onSuccess={(passToken) => {
+                    set({ anthropicKey: passToken });
+                    useSettings.getState().update({ anthropicKey: passToken });
+                  }}
+                />
+              </div>
+            </div>
+
             <Field
-              label="Anthropic API key"
-              hint="Stored only in this browser (localStorage) and sent directly to Anthropic. Get one at console.anthropic.com."
+              label="PayPal Access Pass / Token Code"
+              hint="Enter the Access Pass or Key received with your PayPal payment to activate Claude models on our hosted key."
             >
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -286,7 +441,7 @@ export default function SettingsModal({
                     type={showAnthropicKey ? "text" : "password"}
                     value={draft.anthropicKey}
                     onChange={(e) => set({ anthropicKey: e.target.value })}
-                    placeholder="sk-ant-…"
+                    placeholder="e.g. comtus-pass-… (or sk-ant-…)"
                     className={inputCls + " pr-10 font-mono text-[13px]"}
                     spellCheck={false}
                   />
@@ -365,6 +520,91 @@ export default function SettingsModal({
           </>
         ) : (
           <>
+            {/* Quick Free Provider Comparison Card for First-Timers */}
+            <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3.5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Gauge size={15} className="text-brass shrink-0" />
+                  <span className="text-[13px] font-medium text-parchment">
+                    Free AI Providers: OpenRouter vs. Groq
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {fetchingModels && (
+                    <span className="flex items-center gap-1 font-mono text-[10px] text-brass animate-pulse">
+                      <RefreshCw size={11} className="animate-spin" /> Syncing models…
+                    </span>
+                  )}
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-sage bg-sage/10 border border-sage/25 px-2 py-0.5 rounded-full">
+                    100% Free Tiers
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[12px]">
+                {/* OpenRouter Card */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    set({
+                      compatBaseUrl: "https://openrouter.ai/api/v1",
+                      compatModel: "deepseek/deepseek-r1:free",
+                    });
+                  }}
+                  className={`text-left rounded-lg border p-3 transition-all ${
+                    draft.compatBaseUrl.includes("openrouter")
+                      ? "border-brass/60 bg-brass/[0.08] shadow-[0_0_15px_rgba(227,176,75,0.1)]"
+                      : "border-white/10 bg-night/50 hover:border-white/20"
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-medium text-parchment">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles size={13} className="text-brass" /> 1. OpenRouter (Free)
+                    </span>
+                    <span className="font-mono text-[10px] text-brasspale">Deep Reasoning</span>
+                  </div>
+                  <p className="mt-1.5 text-[11.5px] leading-relaxed text-faded">
+                    <strong>Best for:</strong> Complex mock exams, step-by-step logic, math, long documents.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1 font-mono text-[9px] text-parchment/80">
+                    <span className="rounded bg-white/5 px-1.5 py-0.5">deepseek-r1:free</span>
+                    <span className="rounded bg-white/5 px-1.5 py-0.5">llama-3.3-70b:free</span>
+                    <span className="rounded bg-white/5 px-1.5 py-0.5">gemini-2.0-flash:free</span>
+                  </div>
+                </button>
+
+                {/* Groq Card */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    set({
+                      compatBaseUrl: "https://api.groq.com/openai/v1",
+                      compatModel: "llama-3.3-70b-versatile",
+                    });
+                  }}
+                  className={`text-left rounded-lg border p-3 transition-all ${
+                    draft.compatBaseUrl.includes("groq")
+                      ? "border-brass/60 bg-brass/[0.08] shadow-[0_0_15px_rgba(227,176,75,0.1)]"
+                      : "border-white/10 bg-night/50 hover:border-white/20"
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-medium text-parchment">
+                    <span className="flex items-center gap-1.5">
+                      <Zap size={13} className="text-brass" /> 2. Groq (Fast Free)
+                    </span>
+                    <span className="font-mono text-[10px] text-sage">500+ tok/sec</span>
+                  </div>
+                  <p className="mt-1.5 text-[11.5px] leading-relaxed text-faded">
+                    <strong>Best for:</strong> Rapid-fire flashcards, instant summaries, ultra-low latency drills.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1 font-mono text-[9px] text-parchment/80">
+                    <span className="rounded bg-white/5 px-1.5 py-0.5">llama-3.3-70b-versatile</span>
+                    <span className="rounded bg-white/5 px-1.5 py-0.5">llama-3.1-8b-instant</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             <div>
               <div className="label-mono !text-[10px] mb-2">Endpoint Presets</div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -470,20 +710,52 @@ export default function SettingsModal({
               {/* Fetched models dropdown panel */}
               {modelIds.length > 0 && (
                 <div className="mt-3 overflow-hidden rounded-xl border border-white/10 bg-night/80 p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-faded">
-                      {modelsNote}
+                  <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-faded flex items-center gap-1.5 flex-wrap">
+                      <span>{modelsNote}</span>
+                      {lastFetchedAt && (
+                        <span className="text-[9.5px] text-faded/60">
+                          · {new Date(lastFetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                        </span>
+                      )}
                     </span>
                     <input
                       type="text"
-                      placeholder="Filter models…"
+                      placeholder="Filter models (e.g. :free)…"
                       value={filterQuery}
                       onChange={(e) => setFilterQuery(e.target.value)}
-                      className="w-36 rounded-lg border border-white/10 bg-study/80 px-2.5 py-1 font-mono text-[11px] text-parchment placeholder:text-faded/50 outline-none"
+                      className="w-full sm:w-44 rounded-lg border border-white/10 bg-study/80 px-2.5 py-1 font-mono text-[11px] text-parchment placeholder:text-faded/50 outline-none focus:border-brass/40"
                     />
                   </div>
-                  <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
-                    {filteredModelIds.slice(0, 40).map((id) => (
+
+                  {/* Quick Filter Chips */}
+                  <div className="mb-2 flex flex-wrap items-center gap-1.5 border-b border-white/[0.06] pb-2">
+                    <span className="font-mono text-[9.5px] uppercase tracking-wider text-faded/60">Quick:</span>
+                    {[
+                      { label: "All", q: "" },
+                      { label: "✨ :free (OpenRouter Free)", q: ":free" },
+                      { label: "⚡ Groq (Llama)", q: "llama" },
+                      { label: "DeepSeek", q: "deepseek" },
+                      { label: "Qwen", q: "qwen" },
+                      { label: "Gemini", q: "gemini" },
+                    ].map((chip) => (
+                      <button
+                        key={chip.label}
+                        type="button"
+                        onClick={() => setFilterQuery(chip.q)}
+                        className={`rounded px-2 py-0.5 font-mono text-[10px] transition-colors ${
+                          filterQuery === chip.q
+                            ? "bg-brass/20 text-brasspale font-medium"
+                            : "bg-white/[0.04] text-faded hover:bg-white/[0.08] hover:text-parchment"
+                        }`}
+                      >
+                        {chip.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="max-h-44 overflow-y-auto space-y-1 pr-1">
+                    {filteredModelIds.slice(0, 50).map((id) => (
                       <button
                         key={id}
                         type="button"
@@ -495,12 +767,17 @@ export default function SettingsModal({
                         }`}
                       >
                         <span className="truncate">{id}</span>
+                        {id.endsWith(":free") && (
+                          <span className="ml-1.5 shrink-0 rounded bg-sage/20 px-1.5 py-0.2 font-mono text-[9px] font-medium text-sage">
+                            FREE
+                          </span>
+                        )}
                         {draft.compatModel === id && <Check size={13} className="text-brass ml-2 shrink-0" />}
                       </button>
                     ))}
-                    {filteredModelIds.length > 40 && (
+                    {filteredModelIds.length > 50 && (
                       <div className="pt-1 text-center font-mono text-[10px] text-faded/60">
-                        + {filteredModelIds.length - 40} more models. Type to filter.
+                        + {filteredModelIds.length - 50} more models. Type to filter.
                       </div>
                     )}
                   </div>
@@ -550,6 +827,16 @@ export default function SettingsModal({
           </div>
         )}
         {err && <ErrorNote>{err}</ErrorNote>}
+
+        {/* AI Accuracy & Verification Disclaimer */}
+        <div className="rounded-xl border border-brass/20 bg-amber-500/[0.04] p-3.5 text-parchment/90">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle size={16} className="text-brass shrink-0 mt-0.5" />
+            <div className="text-[12px] leading-relaxed text-faded">
+              <strong className="text-parchment font-medium">Important AI Disclaimer:</strong> AI models (including free and open-source models) can make mistakes, hallucinate details, or misinterpret nuanced concepts. Always double-check citations, formulas, and answers against your primary study materials and authoritative sources.
+            </div>
+          </div>
+        </div>
 
         <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3.5">
           <div className="flex items-center gap-2 text-[13px] text-parchment/85">
