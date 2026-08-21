@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Comtus",
+  "version": "0.1.0",
+  "identifier": "studio.comtus.app",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:5199",
+    "beforeBuildCommand": "npx vite build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Comtus — Rough thought, polished.",
+        "width": 1280,
+        "height": 840,
+        "minWidth": 960,
+        "minHeight": 640,
+        "backgroundColor": "#0B0F1A",
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": {
+        "defaultSrc": "'self'",
+        "scriptSrc": "'self'",
+        "styleSrc": "'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "fontSrc": "'self' https://fonts.gstatic.com data:",
+        "imgSrc": "'self' data: blob:",
+        "connectSrc": "'self' https://api.anthropic.com https://r.jina.ai",
+        "frameSrc": "'none'",
+        "objectSrc": "'none'"
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": ["icons/icon.ico", "icons/icon.png"]
+  }
+}

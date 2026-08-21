@@ -1,0 +1,271 @@
+/* ── Studio app styles ────────────────────────────────────── */
+
+/* Markdown rendering inside chat & documents */
+.md {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: rgba(242, 237, 227, 0.92);
+  overflow-wrap: break-word;
+}
+.md > * + * {
+  margin-top: 0.85em;
+}
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  font-family: var(--font-display);
+  font-weight: 450;
+  color: var(--color-parchment);
+  line-height: 1.25;
+  margin-top: 1.4em;
+}
+.md h1 { font-size: 1.35rem; }
+.md h2 { font-size: 1.2rem; }
+.md h3 { font-size: 1.05rem; }
+.md strong { color: var(--color-parchment); font-weight: 600; }
+.md em { color: var(--color-brasspale); }
+.md a { color: var(--color-moon); text-underline-offset: 3px; }
+.md ul, .md ol {
+  padding-left: 1.35em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+}
+.md ul { list-style: disc; }
+.md ol { list-style: decimal; }
+.md ul ul, .md ol ol, .md ul ol, .md ol ul { margin-top: 0.3em; }
+.md blockquote {
+  border-left: 2px solid rgba(227, 176, 75, 0.4);
+  padding-left: 1em;
+  color: var(--color-faded);
+  font-style: italic;
+}
+.md code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.15em 0.4em;
+  border-radius: 6px;
+}
+.md pre {
+  background: rgba(11, 15, 26, 0.8);
+  border: 1px solid rgba(242, 237, 227, 0.08);
+  border-radius: 12px;
+  padding: 1em 1.2em;
+  overflow-x: auto;
+}
+.md pre code { background: none; padding: 0; }
+.md table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.md th, .md td {
+  border: 1px solid rgba(242, 237, 227, 0.1);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+.md th {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-faded);
+  background: rgba(255, 255, 255, 0.03);
+}
+.md hr { border-color: rgba(242, 237, 227, 0.1); }
+
+/* Thinking panel shimmer */
+@keyframes think-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.thinking-live {
+  background: linear-gradient(
+    90deg,
+    rgba(127, 168, 201, 0.55) 30%,
+    rgba(242, 237, 227, 0.95) 50%,
+    rgba(127, 168, 201, 0.55) 70%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: think-shimmer 2.2s linear infinite;
+}
+
+/* Chat scroll area — mask under the input */
+.chat-scroll {
+  scrollbar-gutter: stable;
+}
+
+/* Streaming caret */
+@keyframes caret-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+.stream-caret::after {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 15px;
+  margin-left: 3px;
+  vertical-align: -2px;
+  border-radius: 2px;
+  background: var(--color-brass);
+  box-shadow: 0 0 10px rgba(227, 176, 75, 0.55);
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+/* ── Motion vocabulary ──────────────────────────────────────
+   Entrances are transform+opacity only. Per-item stagger comes
+   from --d (set inline); reduced-motion kills all of it via the
+   global override in index.css. */
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-left-in {
+  from { opacity: 0; transform: translateX(-18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-right-in {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes chip-pop {
+  0% { opacity: 0; transform: scale(0.7); }
+  70% { transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes shake-x {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+@keyframes sheen {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(220%); }
+}
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.anim-rise, .anim-fade, .anim-pop, .anim-slide-l, .anim-slide-r {
+  animation-duration: 0.45s;
+  animation-timing-function: var(--ease-house);
+  animation-fill-mode: both;
+  animation-delay: var(--d, 0ms);
+}
+.anim-rise { animation-name: rise-in; }
+.anim-fade { animation-name: fade-in; }
+.anim-pop { animation-name: pop-in; }
+.anim-slide-l { animation-name: slide-left-in; }
+.anim-slide-r { animation-name: slide-right-in; }
+
+.anim-shake { animation: shake-x 0.45s var(--ease-house) both; }
+
+.chip-in {
+  animation: chip-pop 0.34s var(--ease-house) both;
+  animation-delay: var(--d, 0ms);
+}
+
+.breathe { animation: breathe 3.2s ease-in-out infinite; }
+
+/* Modal choreography — backdrop fades while the panel rises to meet it */
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modal-panel-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-backdrop { animation: modal-backdrop-in 0.28s ease-out both; }
+.modal-panel {
+  animation: modal-panel-in 0.38s var(--ease-house) both;
+}
+
+/* Collapsible region — grid-rows trick keeps it height-agnostic.
+   Wrap: .collapse-grid (grid, transition); inner: overflow-hidden. */
+.collapse-grid {
+  display: grid;
+  transition: grid-template-rows 0.34s var(--ease-house);
+}
+
+/* Progress bar sheen — overlay span inside an overflow-hidden track */
+.bar-sheen {
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(242, 237, 227, 0.35), transparent);
+  animation: sheen 1.3s var(--ease-house-inout) infinite;
+}
+
+/* Result bars grow from their left edge once mounted */
+.grow-x {
+  transform-origin: left;
+  animation: grow-x 0.7s var(--ease-house) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* ── Spotlight — cursor-tracked lamp glow (fx.tsx) ──────────
+   --sx/--sy are set imperatively on mousemove (no re-render);
+   --sr is the glow radius, set per-instance. */
+.spotlight-glow {
+  background: radial-gradient(
+    calc(var(--sr, 260px)) circle at var(--sx, 50%) var(--sy, 50%),
+    rgba(227, 176, 75, 0.1),
+    rgba(127, 168, 201, 0.05) 45%,
+    transparent 70%
+  );
+}
+
+/* ── Dot grid — quiet texture for pane interiors ──────────── */
+.dot-grid {
+  background-image: radial-gradient(rgba(242, 237, 227, 0.045) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* ── Flashcard 3D flip ────────────────────────────────────── */
+.flip-scene { perspective: 1400px; }
+.flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  transition: transform 0.55s var(--ease-house-inout);
+}
+.flip-inner.is-flipped { transform: rotateY(180deg); }
+.flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.flip-face.is-back { transform: rotateY(180deg) translate3d(0, 0, 0); }

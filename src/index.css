@@ -1,0 +1,198 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Comtus · Lamplight Study ─────────────────────────────
+     See BRAND.md — deep ink-blue ground, parchment text,
+     one brass accent, moon-slate secondary. */
+  --color-night: #0b0f1a;
+  --color-study: #121828;
+  --color-shelf: #1a2136;
+  --color-parchment: #f2ede3;
+  --color-faded: #8e96ab;
+  --color-brass: #e3b04b;
+  --color-brassdeep: #c99236;
+  --color-brasspale: #f0ce8c;
+  --color-moon: #7fa8c9;
+  --color-moondeep: #2a3654;
+  --color-sage: #8fbf98;
+  --color-rust: #c96a5e;
+
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
+
+  --ease-house: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-house-inout: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+/* ── Ground ─────────────────────────────────────────────── */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
+html {
+  background: var(--color-night);
+  scroll-behavior: auto; /* Lenis owns scrolling */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background: var(--color-night);
+  color: var(--color-parchment);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  min-height: 100svh;
+  touch-action: manipulation;
+}
+
+/* Prevent iOS auto-zoom on input focus while keeping custom desktop sizing */
+@media (hover: none) and (pointer: coarse) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Momentum scrolling on iOS WebKit */
+.chat-scroll,
+.overflow-y-auto,
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+::selection {
+  background: rgba(227, 176, 75, 0.28);
+  color: var(--color-parchment);
+}
+
+/* ── Signature helpers ─────────────────────────────────── */
+.grad-lamp {
+  background: linear-gradient(92deg, #c99236, #f0ce8c);
+}
+
+.text-lamp {
+  background: linear-gradient(92deg, #c99236 10%, #f0ce8c 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hairline {
+  border-color: rgba(242, 237, 227, 0.09);
+}
+
+/* Mono eyebrow label — the margin note */
+.label-mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-faded);
+}
+
+/* Film grain — fixed overlay, jittered */
+.grain {
+  position: fixed;
+  inset: -100%;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain-jitter 0.9s steps(8) infinite;
+}
+
+@keyframes grain-jitter {
+  0% { transform: translate(0, 0); }
+  12.5% { transform: translate(-2%, 3%); }
+  25% { transform: translate(3%, -2%); }
+  37.5% { transform: translate(-3%, -3%); }
+  50% { transform: translate(2%, 2%); }
+  62.5% { transform: translate(-1%, 2%); }
+  75% { transform: translate(3%, 1%); }
+  87.5% { transform: translate(-2%, -1%); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Custom cursor */
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 300;
+  pointer-events: none;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+}
+.cursor-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--color-brasspale);
+}
+.cursor-ring {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(227, 176, 75, 0.45);
+  transition: width 0.3s var(--ease-house), height 0.3s var(--ease-house),
+    border-color 0.3s;
+}
+.cursor-ring.is-active {
+  width: 58px;
+  height: 58px;
+  border-color: rgba(240, 206, 140, 0.8);
+}
+
+@media (hover: none), (pointer: coarse) {
+  .cursor-dot,
+  .cursor-ring {
+    display: none;
+  }
+}
+
+/* Hide native cursor only where custom cursor is active on fine pointers */
+@media (hover: hover) and (pointer: fine) {
+  body.has-custom-cursor,
+  body.has-custom-cursor a,
+  body.has-custom-cursor button {
+    cursor: none;
+  }
+}
+
+/* Reduced motion — everything appears, nothing moves */
+@media (prefers-reduced-motion: reduce) {
+  .grain {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001s !important;
+    transition-duration: 0.001s !important;
+  }
+}
+
+/* Scrollbars — thin, in-palette */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(142, 150, 171, 0.35) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(142, 150, 171, 0.3);
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
