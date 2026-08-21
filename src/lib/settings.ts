@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
-import type { AnthropicModelId, Effort, ProviderId } from "./types";
+import type { AnthropicModelId, Effort, ProviderId, StoredKey } from "./types";
 import type { CallSettings } from "./llm";
 
 interface SettingsState {
@@ -15,11 +15,17 @@ interface SettingsState {
   compatBaseUrl: string; // full base URL, includes /v1
   compatModel: string; // free-text model id
   recentModels: string[];
+  /* Multiple BYOK Keys Vault */
+  storedKeys: StoredKey[];
   /* Shared */
   effort: Effort;
   setProvider: (p: ProviderId) => void;
   update: (patch: Partial<SettingsState>) => void;
   addRecentModel: (modelId: string) => void;
+  addStoredKey: (key: Omit<StoredKey, "id" | "createdAt">) => StoredKey;
+  removeStoredKey: (id: string) => void;
+  updateStoredKey: (id: string, patch: Partial<StoredKey>) => void;
+  applyStoredKey: (id: string) => void;
   hasKey: () => boolean;
 }
 
@@ -41,6 +47,7 @@ export const useSettings = create<SettingsState>()(
         "qwen/qwen-2.5-72b-instruct:free",
         "google/gemini-2.0-flash-exp:free",
       ],
+      storedKeys: [],
       effort: "high",
       setProvider: (provider) => set({ provider }),
       update: (patch) => set(patch),
@@ -50,6 +57,36 @@ export const useSettings = create<SettingsState>()(
         const curr = get().recentModels.filter((m) => m !== id);
         set({ recentModels: [id, ...curr].slice(0, 5) });
       },
+      addStoredKey: (keyData) => {
+        const newKey: StoredKey = {
+          id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+          ...keyData,
+          createdAt: Date.now(),
+        };
+        const current = get().storedKeys || [];
+        set({ storedKeys: [newKey, ...current] });
+        return newKey;
+      },
+      removeStoredKey: (id) => {
+        const current = get().storedKeys || [];
+        set({ storedKeys: current.filter((k) => k.id !== id) });
+      },
+      updateStoredKey: (id, patch) => {
+        const current = get().storedKeys || [];
+        set({
+          storedKeys: current.map((k) => (k.id === id ? { ...k, ...patch } : k)),
+        });
+      },
+      applyStoredKey: (id) => {
+        const key = (get().storedKeys || []).find((k) => k.id === id);
+        if (!key) return;
+        set({
+          provider: "openai-compatible",
+          compatKey: key.apiKey,
+          compatBaseUrl: key.baseUrl,
+          compatModel: key.defaultModel || get().compatModel || "deepseek/deepseek-r1:free",
+        });
+      },
       hasKey: () => {
         const s = get();
         if (s.provider === "anthropic") return s.anthropicKey.trim().length > 10;
@@ -58,14 +95,15 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: "comtus-settings",
-      version: 3,
+      version: 4,
       migrate: (persisted, version) => {
         const old = persisted as Partial<SettingsState> & {
           apiKey?: string;
           model?: string;
         };
-        const base = {
+        const base: Partial<SettingsState> = {
           recentModels: ["deepseek/deepseek-r1", "meta-llama/llama-3.3-70b-instruct", "qwen/qwen-2.5-72b-instruct"],
+          storedKeys: old.storedKeys || [],
           ...old,
         };
         if (version < 2) {

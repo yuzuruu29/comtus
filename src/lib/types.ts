@@ -246,3 +246,13 @@ export type ProviderId = "anthropic" | "openai-compatible";
 
 export type AnthropicModelId = "claude-opus-5" | "claude-sonnet-5";
 export type Effort = "medium" | "high" | "xhigh";
+
+export interface StoredKey {
+  id: string;
+  name: string;
+  provider: "openrouter" | "groq" | "deepseek" | "together" | "ollama" | "custom";
+  apiKey: string;
+  baseUrl: string;
+  defaultModel?: string;
+  createdAt: number;
+}

@@ -20,6 +20,10 @@ import {
   Crown,
   RefreshCw,
   Gauge,
+  Key,
+  Plus,
+  Trash2,
+  Bookmark,
 } from "lucide-react";
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, LampPulse } from "./ui";
 import { useSettings } from "../lib/settings";
@@ -31,7 +35,7 @@ import {
   listCompatModels,
   type CallSettings,
 } from "../lib/llm";
-import type { ProviderId } from "../lib/types";
+import type { ProviderId, StoredKey } from "../lib/types";
 import { STUDY_PLANS, type StudyPlan } from "../lib/paypal";
 import PayPalCheckout from "./PayPalCheckout";
 
@@ -61,6 +65,18 @@ export default function SettingsModal({
   const [filterQuery, setFilterQuery] = useState("");
   const [byokGuideOpen, setByokGuideOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<StudyPlan>(STUDY_PLANS[1]);
+
+  // Multiple Stored Keys state
+  const storedKeys = useSettings((st) => st.storedKeys) ?? [];
+  const addStoredKey = useSettings((st) => st.addStoredKey);
+  const removeStoredKey = useSettings((st) => st.removeStoredKey);
+  const [showAddKeyModal, setShowAddKeyModal] = useState(false);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [newKeyProvider, setNewKeyProvider] = useState<StoredKey["provider"]>("openrouter");
+  const [newKeyVal, setNewKeyVal] = useState("");
+  const [newKeyBaseUrl, setNewKeyBaseUrl] = useState("https://openrouter.ai/api/v1");
+  const [newKeyModel, setNewKeyModel] = useState("deepseek/deepseek-r1:free");
+  const [quickSaveName, setQuickSaveName] = useState("");
 
   const recentModels = useSettings((st) => st.recentModels) ?? [];
 
@@ -148,6 +164,77 @@ export default function SettingsModal({
     setOkProvider(cs.provider);
   };
 
+  const maskKey = (k: string) => {
+    if (!k || !k.trim()) return "(local / no key)";
+    if (k.length <= 12) return "••••••••";
+    return `${k.slice(0, 8)}…${k.slice(-4)}`;
+  };
+
+  const handleSaveCurrentKey = () => {
+    const keyVal = draft.compatKey.trim();
+    if (!keyVal) return;
+    const name =
+      quickSaveName.trim() ||
+      (draft.compatBaseUrl.includes("groq")
+        ? "Groq Key"
+        : draft.compatBaseUrl.includes("deepseek")
+          ? "DeepSeek Key"
+          : draft.compatBaseUrl.includes("openrouter")
+            ? "OpenRouter Key"
+            : "Custom BYOK Key");
+
+    const provider: StoredKey["provider"] = draft.compatBaseUrl.includes("groq")
+      ? "groq"
+      : draft.compatBaseUrl.includes("deepseek")
+        ? "deepseek"
+        : draft.compatBaseUrl.includes("openrouter")
+          ? "openrouter"
+          : "custom";
+
+    addStoredKey({
+      name,
+      provider,
+      apiKey: keyVal,
+      baseUrl: draft.compatBaseUrl.trim() || "https://openrouter.ai/api/v1",
+      defaultModel: draft.compatModel.trim() || "deepseek/deepseek-r1:free",
+    });
+    setQuickSaveName("");
+  };
+
+  const handleAddNewKey = () => {
+    if (!newKeyName.trim()) return;
+    addStoredKey({
+      name: newKeyName.trim(),
+      provider: newKeyProvider,
+      apiKey: newKeyVal.trim(),
+      baseUrl: newKeyBaseUrl.trim() || "https://openrouter.ai/api/v1",
+      defaultModel: newKeyModel.trim() || "deepseek/deepseek-r1:free",
+    });
+    setNewKeyName("");
+    setNewKeyVal("");
+    setShowAddKeyModal(false);
+  };
+
+  const handleProviderPresetChange = (p: StoredKey["provider"]) => {
+    setNewKeyProvider(p);
+    if (p === "openrouter") {
+      setNewKeyBaseUrl("https://openrouter.ai/api/v1");
+      setNewKeyModel("deepseek/deepseek-r1:free");
+    } else if (p === "groq") {
+      setNewKeyBaseUrl("https://api.groq.com/openai/v1");
+      setNewKeyModel("llama-3.3-70b-versatile");
+    } else if (p === "deepseek") {
+      setNewKeyBaseUrl("https://api.deepseek.com/v1");
+      setNewKeyModel("deepseek-reasoner");
+    } else if (p === "together") {
+      setNewKeyBaseUrl("https://api.together.xyz/v1");
+      setNewKeyModel("meta-llama/Llama-3.3-70B-Instruct-Turbo");
+    } else if (p === "ollama") {
+      setNewKeyBaseUrl("http://localhost:11434/v1");
+      setNewKeyModel("llama3.3");
+    }
+  };
+
   const fetchModels = async () => {
     setErr("");
     setModelsNote("");
@@ -172,7 +259,8 @@ export default function SettingsModal({
   );
 
   return (
-    <Modal open={open} onClose={onClose} title="Settings" wide>
+    <>
+      <Modal open={open} onClose={onClose} title="Settings" wide>
       <div className="space-y-6">
         {/* Provider switch */}
         <div>
@@ -605,6 +693,125 @@ export default function SettingsModal({
               </div>
             </div>
 
+            {/* Saved BYOK Keys Vault Manager */}
+            <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3.5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Key size={15} className="text-brass shrink-0" />
+                  <span className="text-[13px] font-medium text-parchment">
+                    Stored BYOK Keys Vault ({storedKeys.length})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddKeyModal(true)}
+                  className="flex items-center gap-1 rounded-lg border border-brass/30 bg-brass/10 px-2.5 py-1 font-mono text-[11px] text-brasspale hover:bg-brass/20 transition-colors"
+                >
+                  <Plus size={12} /> Add Key
+                </button>
+              </div>
+
+              {storedKeys.length === 0 ? (
+                <p className="text-[11.5px] leading-relaxed text-faded">
+                  No stored keys yet. Save multiple OpenRouter, Groq, or DeepSeek API keys below to switch between them in 1 click.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {storedKeys.map((k) => {
+                    const isActive =
+                      draft.compatKey.trim() === k.apiKey.trim() &&
+                      draft.compatBaseUrl.trim() === k.baseUrl.trim();
+                    return (
+                      <div
+                        key={k.id}
+                        className={`rounded-xl border p-2.5 flex flex-col justify-between transition-all ${
+                          isActive
+                            ? "border-brass/60 bg-brass/[0.09] shadow-[0_0_15px_rgba(227,176,75,0.1)]"
+                            : "border-white/10 bg-night/60 hover:border-white/20"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-1.5">
+                            <span className="font-medium text-[12.5px] text-parchment truncate">
+                              {k.name}
+                            </span>
+                            <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 rounded bg-white/5 text-faded border border-white/10 shrink-0">
+                              {k.provider}
+                            </span>
+                          </div>
+                          <div className="mt-1 font-mono text-[11px] text-brasspale/90 truncate">
+                            {maskKey(k.apiKey)}
+                          </div>
+                          {k.defaultModel && (
+                            <div className="mt-0.5 font-mono text-[10px] text-faded truncate">
+                              {k.defaultModel}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-2.5 pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2">
+                          {isActive ? (
+                            <span className="flex items-center gap-1 font-mono text-[10px] text-sage font-medium">
+                              <Check size={11} /> Active Key
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                set({
+                                  compatKey: k.apiKey,
+                                  compatBaseUrl: k.baseUrl,
+                                  compatModel: k.defaultModel || draft.compatModel,
+                                });
+                              }}
+                              className="font-mono text-[10.5px] text-moon hover:underline"
+                            >
+                              Use this key →
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removeStoredKey(k.id)}
+                            className="p-1 text-faded hover:text-rust transition-colors"
+                            aria-label={`Delete ${k.name}`}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Quick Save Prompt if current key is not in stored keys */}
+              {draft.compatKey.trim().length > 0 &&
+                !storedKeys.some((k) => k.apiKey.trim() === draft.compatKey.trim()) && (
+                  <div className="mt-2 rounded-lg border border-brass/25 bg-brass/[0.05] p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-[12px] text-parchment">
+                      <Bookmark size={13} className="text-brass shrink-0" />
+                      <span>Save current key to vault?</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        placeholder="Key name (e.g. Work OpenRouter)"
+                        value={quickSaveName}
+                        onChange={(e) => setQuickSaveName(e.target.value)}
+                        className="rounded border border-white/10 bg-study px-2 py-0.5 text-[11px] font-mono text-parchment placeholder:text-faded/50 outline-none focus:border-brass/40"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveCurrentKey}
+                        className="rounded bg-brass/20 hover:bg-brass/30 px-2 py-0.5 font-mono text-[10.5px] text-brasspale font-medium transition-colors"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                )}
+            </div>
+
             <div>
               <div className="label-mono !text-[10px] mb-2">Endpoint Presets</div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -859,6 +1066,96 @@ export default function SettingsModal({
         </div>
       </div>
     </Modal>
+
+    {/* Add New Stored Key Modal */}
+    <Modal
+      open={showAddKeyModal}
+      onClose={() => setShowAddKeyModal(false)}
+      title="Add Stored Key to BYOK Vault"
+    >
+      <div className="space-y-4">
+        <Field label="Key Name / Description">
+          <input
+            value={newKeyName}
+            onChange={(e) => setNewKeyName(e.target.value)}
+            placeholder="e.g. My Backup OpenRouter Key, Groq High-Speed"
+            className={inputCls}
+          />
+        </Field>
+
+        <Field label="Provider Preset">
+          <div className="grid grid-cols-3 gap-2">
+            {(
+              [
+                ["openrouter", "OpenRouter"],
+                ["groq", "Groq"],
+                ["deepseek", "DeepSeek"],
+                ["together", "Together AI"],
+                ["ollama", "Ollama (Local)"],
+                ["custom", "Custom Endpoint"],
+              ] as const
+            ).map(([p, label]) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => handleProviderPresetChange(p)}
+                className={`rounded-lg border px-2.5 py-1.5 font-mono text-[11px] transition-colors text-left ${
+                  newKeyProvider === p
+                    ? "border-brass/60 bg-brass/20 text-brasspale font-medium"
+                    : "border-white/10 bg-white/[0.02] text-faded hover:border-white/20"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </Field>
+
+        <Field label="API Key" hint="Leave empty for local Ollama / LM Studio.">
+          <input
+            type="password"
+            value={newKeyVal}
+            onChange={(e) => setNewKeyVal(e.target.value)}
+            placeholder="sk-or-v1-… or gsk_…"
+            className={inputCls + " font-mono text-[13px]"}
+          />
+        </Field>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Base URL">
+            <input
+              value={newKeyBaseUrl}
+              onChange={(e) => setNewKeyBaseUrl(e.target.value)}
+              placeholder="https://openrouter.ai/api/v1"
+              className={inputCls + " font-mono text-[12px]"}
+            />
+          </Field>
+
+          <Field label="Default Model ID">
+            <input
+              value={newKeyModel}
+              onChange={(e) => setNewKeyModel(e.target.value)}
+              placeholder="deepseek/deepseek-r1:free"
+              className={inputCls + " font-mono text-[12px]"}
+            />
+          </Field>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-2">
+          <button className={btnGhost} onClick={() => setShowAddKeyModal(false)}>
+            Cancel
+          </button>
+          <button
+            className={btnLamp}
+            onClick={handleAddNewKey}
+            disabled={!newKeyName.trim()}
+          >
+            Save Key to Vault
+          </button>
+        </div>
+      </div>
+    </Modal>
+    </>
   );
 }
 
