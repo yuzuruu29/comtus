@@ -11,6 +11,8 @@ import {
   HelpCircle,
   History,
   FileText,
+  Presentation,
+  Crown,
 } from "lucide-react";
 import { db } from "../lib/db";
 import type { Generation, GenerationKind } from "../lib/types";
@@ -19,16 +21,36 @@ import { timeAgo, Modal } from "./ui";
 import { QuizConfigForm, QuizTaker } from "./generators/QuizFlow";
 import { ExamConfigForm, ExamRunner } from "./generators/ExamFlow";
 import { EssayConfigForm, EssayFeedback } from "./generators/EssayFlow";
-import { AidsConfigForm, DocViewer, FlashcardsConfigForm, FlashcardsView } from "./generators/AidsFlow";
+import {
+  AidsConfigForm,
+  DocViewer,
+  FlashcardsConfigForm,
+  FlashcardsView,
+  PresentationConfigForm,
+  SlideshowView,
+} from "./generators/AidsFlow";
 import type { QuizPayload, ExamPayload, EssayReviewPayload, DocPayload } from "../lib/types";
 
-type Flow = "quiz" | "exam" | "essay" | "flashcards" | "aids" | null;
+type Flow = "quiz" | "exam" | "essay" | "flashcards" | "presentation" | "aids" | null;
 
-const TILES: { flow: Exclude<Flow, null> | "aids-kind"; icon: typeof ListChecks; name: string; line: string }[] = [
+const TILES: {
+  flow: Exclude<Flow, null> | "aids-kind";
+  icon: typeof ListChecks;
+  name: string;
+  line: string;
+  badge?: string;
+}[] = [
   { flow: "quiz", icon: ListChecks, name: "Quiz", line: "Quick set, instant rationales" },
   { flow: "exam", icon: GraduationCap, name: "Mock exam", line: "Full simulation or drill" },
   { flow: "essay", icon: Feather, name: "Essay coach", line: "Prompts + rubric grading" },
-  { flow: "flashcards", icon: Layers, name: "Flashcards", line: "Spaced, from your sources" },
+  { flow: "flashcards", icon: Layers, name: "Flashcards", line: "Custom cards from sources" },
+  {
+    flow: "presentation",
+    icon: Presentation,
+    name: "PPT & Slides",
+    line: "Decks & speaker notes",
+    badge: "Anthropic",
+  },
 ];
 
 const AID_TILES: { kind: GenerationKind; icon: typeof BookOpen; name: string }[] = [
@@ -43,6 +65,7 @@ const FLOW_TITLES: Record<string, string> = {
   exam: "Mock exam",
   essay: "Essay coach",
   flashcards: "Flashcards",
+  presentation: "PPT & Slideshow Maker (Anthropic Exclusive)",
   aids: "Study aid",
 };
 
@@ -107,9 +130,16 @@ export default function StudioPane({
               transition={{ ...SOFT, delay: 0.05 + i * 0.06 }}
               whileHover={{ y: -3 }}
               whileTap={{ scale: 0.97 }}
-              className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 text-left transition-colors duration-200 hover:border-brass/30 hover:bg-brass/[0.03]"
+              className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 text-left transition-colors duration-200 hover:border-brass/30 hover:bg-brass/[0.03] relative overflow-hidden"
             >
-              <t.icon size={16} className="text-brasspale/80 transition-transform duration-300 group-hover:-translate-y-0.5" />
+              <div className="flex items-center justify-between">
+                <t.icon size={16} className="text-brasspale/80 transition-transform duration-300 group-hover:-translate-y-0.5" />
+                {t.badge && (
+                  <span className="flex items-center gap-0.5 rounded-full border border-brass/30 bg-brass/15 px-1.5 py-0.2 font-mono text-[8.5px] uppercase tracking-wider text-brasspale">
+                    <Crown size={9} className="text-brass" /> {t.badge}
+                  </span>
+                )}
+              </div>
               <div className="mt-2.5 text-[13.5px] font-medium text-parchment/95">{t.name}</div>
               <div className="mt-0.5 text-[11px] leading-snug text-faded">{t.line}</div>
             </motion.button>
@@ -205,6 +235,13 @@ export default function StudioPane({
             onCancel={() => setFlow(null)}
           />
         )}
+        {flow === "presentation" && (
+          <PresentationConfigForm
+            notebookId={notebookId}
+            onDone={done}
+            onCancel={() => setFlow(null)}
+          />
+        )}
         {flow === "aids" && (
           <AidsConfigForm
             notebookId={notebookId}
@@ -257,6 +294,9 @@ function ArtifactView({
       return <EssayFeedback payload={gen.payload as EssayReviewPayload} />;
     case "flashcards":
       return <FlashcardsView gen={gen} notebookId={notebookId} />;
+    case "presentation":
+    case "slideshow":
+      return <SlideshowView gen={gen} />;
     default:
       return <DocViewer payload={gen.payload as DocPayload} />;
   }

@@ -2,13 +2,26 @@ import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion } from "motion/react";
-import { Copy, Check, RotateCcw, Layers } from "lucide-react";
+import {
+  Copy,
+  Check,
+  RotateCcw,
+  Layers,
+  Plus,
+  Crown,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Minimize2,
+  Presentation,
+} from "lucide-react";
 import type {
   DocPayload,
   FlashcardsPayload,
   Flashcard,
   Generation,
   GenerationKind,
+  PresentationPayload,
 } from "../../lib/types";
 import { db } from "../../lib/db";
 import { generateJSON, generateMarkdown, friendlyError } from "../../lib/llm";
@@ -16,7 +29,7 @@ import { useCallSettings } from "../../lib/settings";
 import { saveGeneration } from "../../lib/db";
 import { SPRING } from "../fx";
 import { GENERATOR_SYSTEM, buildSourceBlock, sanitizeCards } from "./common";
-import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote } from "../ui";
+import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote, Modal } from "../ui";
 
 /* ── Document aids: study guide, brief, FAQ, timeline ─────── */
 
@@ -157,7 +170,7 @@ export function DocViewer({ payload }: { payload: DocPayload }) {
   );
 }
 
-/* ── Flashcards ───────────────────────────────────────────── */
+/* ── Flashcards (Custom Card Count + Manual Addition) ─────── */
 
 export function FlashcardsConfigForm({
   notebookId,
@@ -175,18 +188,21 @@ export function FlashcardsConfigForm({
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
 
+  const PRESETS = [5, 10, 15, 20, 25, 30, 50];
+
   const generate = async () => {
     setError("");
+    const targetCount = Math.max(1, Math.min(100, count || 20));
     setBusy(true);
     setStatus("Reading your sources…");
     try {
       const src = await buildSourceBlock(notebookId, scope || "key terms, definitions, and facts");
       if (!src.titles.length) throw new Error("Add at least one source first.");
-      setStatus(`Distilling ${count} cards…`);
+      setStatus(`Distilling ${targetCount} cards…`);
       const payload = await generateJSON<FlashcardsPayload>({
         ...cs,
         system: GENERATOR_SYSTEM,
-        user: `Make ${count} flashcards from these sources.
+        user: `Make exactly ${targetCount} flashcards from these sources.
 
 Sources:
 ${src.block}
@@ -220,25 +236,54 @@ JSON shape: {"cards":[{"front":"...","back":"...","topic":"..."}]}`,
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Cards">
-          <select value={count} onChange={(e) => setCount(+e.target.value)} className={inputCls}>
-            {[10, 20, 30, 40].map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Scope" hint="Empty = whole notebook">
-          <input value={scope} onChange={(e) => setScope(e.target.value)} placeholder="e.g. pharmacology" className={inputCls} />
-        </Field>
+      <div>
+        <div className="label-mono !text-[10px] mb-2">Number of Cards</div>
+        <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+          {PRESETS.map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setCount(p)}
+              className={`rounded-lg border px-3 py-1 font-mono text-[11px] transition-colors ${
+                count === p
+                  ? "border-brass/60 bg-brass/20 text-brasspale font-medium"
+                  : "border-white/10 bg-white/[0.02] text-faded hover:border-white/20"
+              }`}
+            >
+              {p} cards
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={count}
+            onChange={(e) => setCount(Math.max(1, Math.min(100, +e.target.value)))}
+            placeholder="Custom count (e.g. 15)"
+            className={inputCls + " font-mono text-[13px] w-44"}
+          />
+          <span className="text-[12px] text-faded">Custom count (1–100)</span>
+        </div>
       </div>
+
+      <Field label="Scope" hint="Empty = whole notebook">
+        <input
+          value={scope}
+          onChange={(e) => setScope(e.target.value)}
+          placeholder="e.g. pharmacology, jurisprudence, chapter 3"
+          className={inputCls}
+        />
+      </Field>
+
       {status && <LampPulse label={status} />}
       {error && <ErrorNote>{error}</ErrorNote>}
       <div className="flex justify-end gap-3">
         <button className={btnGhost} onClick={onCancel}>Cancel</button>
         <button className={btnLamp} onClick={generate} disabled={busy}>
           <Layers size={13} className="mr-1.5 inline" />
-          {busy ? "Distilling…" : "Make cards"}
+          {busy ? "Distilling…" : `Make ${count} cards`}
         </button>
       </div>
     </div>
@@ -253,18 +298,45 @@ export function FlashcardsView({
   notebookId: string;
 }) {
   const payload = gen.payload as FlashcardsPayload;
-  const [order] = useState<Flashcard[]>(payload.cards);
+  const [cards, setCards] = useState<Flashcard[]>(payload.cards);
   const [pos, setPos] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [ratings, setRatings] = useState(0);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [customFront, setCustomFront] = useState("");
+  const [customBack, setCustomBack] = useState("");
+  const [customTopic, setCustomTopic] = useState("");
 
   const genKey = gen.id;
-  const done = pos >= order.length;
-  const card = order[pos];
+  const done = pos >= cards.length;
+  const card = cards[pos];
 
   useEffect(() => {
     void db.cardProgress.where("generationId").equals(genKey).count().then(setRatings);
   }, [genKey]);
+
+  const addCustomCard = async () => {
+    if (!customFront.trim() || !customBack.trim()) return;
+    const newCard: Flashcard = {
+      id: `custom-${Date.now()}`,
+      front: customFront.trim(),
+      back: customBack.trim(),
+      topic: customTopic.trim() || "Custom Card",
+    };
+    const updated = [...cards, newCard];
+    setCards(updated);
+    // Persist to DB
+    const updatedGen: Generation = {
+      ...gen,
+      title: `Flashcards · ${updated.length}`,
+      payload: { cards: updated },
+    };
+    await db.generations.put(updatedGen);
+    setCustomFront("");
+    setCustomBack("");
+    setCustomTopic("");
+    setAddModalOpen(false);
+  };
 
   if (done) {
     return (
@@ -282,6 +354,9 @@ export function FlashcardsView({
             }}
           >
             <RotateCcw size={13} className="mr-1.5 inline" /> Run again
+          </button>
+          <button className={btnLamp} onClick={() => setAddModalOpen(true)}>
+            <Plus size={13} className="mr-1.5 inline" /> Add card
           </button>
         </div>
       </div>
@@ -319,10 +394,19 @@ export function FlashcardsView({
     <div className="space-y-5">
       <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.16em] text-faded">
         <span>
-          Card {pos + 1} / {order.length}
+          Card {pos + 1} / {cards.length}
         </span>
-        <span>{card.topic}</span>
+        <div className="flex items-center gap-2">
+          <span>{card.topic}</span>
+          <button
+            onClick={() => setAddModalOpen(true)}
+            className="flex items-center gap-1 rounded border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-faded hover:text-parchment"
+          >
+            <Plus size={10} /> Add card
+          </button>
+        </div>
       </div>
+
       <div key={card.id} className="h-[260px] w-full sm:h-[280px]" style={{ perspective: 1400 }}>
         <motion.button
           onClick={() => setFlipped((f) => !f)}
@@ -359,6 +443,7 @@ export function FlashcardsView({
           </div>
         </motion.button>
       </div>
+
       {flipped ? (
         <div className="grid grid-cols-4 gap-2">
           {(
@@ -385,11 +470,410 @@ export function FlashcardsView({
           </button>
         </div>
       )}
+
       {ratings > 0 && (
         <div className="text-center font-mono text-[9.5px] uppercase tracking-[0.18em] text-faded/60">
           {ratings} ratings on this deck
         </div>
       )}
+
+      {/* Add Custom Card Modal */}
+      <Modal open={addModalOpen} onClose={() => setAddModalOpen(false)} title="Add Custom Flashcard">
+        <div className="space-y-4">
+          <Field label="Front (Question / Prompt / Term)">
+            <input
+              value={customFront}
+              onChange={(e) => setCustomFront(e.target.value)}
+              placeholder="e.g. Cranial Nerve VII function"
+              className={inputCls}
+            />
+          </Field>
+          <Field label="Back (Answer / Definition / Key Fact)">
+            <textarea
+              rows={3}
+              value={customBack}
+              onChange={(e) => setCustomBack(e.target.value)}
+              placeholder="e.g. Facial nerve: controls muscles of facial expression and taste on anterior 2/3 of tongue."
+              className={inputCls + " resize-none"}
+            />
+          </Field>
+          <Field label="Topic / Tag (Optional)">
+            <input
+              value={customTopic}
+              onChange={(e) => setCustomTopic(e.target.value)}
+              placeholder="e.g. Neuroanatomy"
+              className={inputCls}
+            />
+          </Field>
+          <div className="flex justify-end gap-3 pt-2">
+            <button className={btnGhost} onClick={() => setAddModalOpen(false)}>Cancel</button>
+            <button className={btnLamp} onClick={addCustomCard} disabled={!customFront.trim() || !customBack.trim()}>
+              Save Card
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+/* ── PPT & Slideshow Maker (Anthropic Exclusive) ──────────── */
+
+export function PresentationConfigForm({
+  notebookId,
+  onDone,
+  onCancel,
+  onOpenSettings,
+}: {
+  notebookId: string;
+  onDone: (gen: Generation) => void;
+  onCancel: () => void;
+  onOpenSettings?: () => void;
+}) {
+  const cs = useCallSettings();
+  const [slideCount, setSlideCount] = useState(8);
+  const [style, setStyle] = useState("Lecture Deck");
+  const [focus, setFocus] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState("");
+  const [error, setError] = useState("");
+
+  const isAnthropic = cs.provider === "anthropic";
+
+  const STYLES = [
+    { name: "Lecture Deck", desc: "Comprehensive slide-by-slide concepts & teaching notes" },
+    { name: "Executive Briefing", desc: "High-level visual summary with strategic takeaways" },
+    { name: "Exam Review Deck", desc: "Core formulas, mnemonics, and high-yield board concepts" },
+    { name: "Case Study Walkthrough", desc: "Scenario, clinical/legal analysis, and solution" },
+  ];
+
+  const generate = async () => {
+    if (!isAnthropic) {
+      setError("PPT & Slideshow Maker is exclusively available on Anthropic Claude (Opus 5 & Sonnet 5).");
+      return;
+    }
+    setError("");
+    setBusy(true);
+    setStatus("Reading source materials…");
+    try {
+      const src = await buildSourceBlock(notebookId, focus || "comprehensive presentation deck");
+      if (!src.titles.length) throw new Error("Add at least one source first.");
+      setStatus(`Structuring ${slideCount}-slide deck with speaker notes…`);
+      const payload = await generateJSON<PresentationPayload>({
+        ...cs,
+        system: GENERATOR_SYSTEM,
+        user: `Generate a high-impact, professional ${slideCount}-slide presentation deck on: ${focus || "the notebook contents"}.
+
+Sources:
+${src.block}
+
+Style: ${style}
+Rules:
+- Structure exactly ${slideCount} slides with clear progression: Title slide -> Core Concepts -> In-depth Analysis -> Applications -> Key Takeaways.
+- For each slide provide: title, optional subtitle, 3-5 concise punchy bullet points, speaker notes for presenting, and a layout recommendation (e.g. "Key Definition", "2-Column Comparison", "Stat Callout", "Process Flow").
+
+JSON shape:
+{
+  "topic": "...",
+  "deckTitle": "...",
+  "deckSubtitle": "...",
+  "slides": [
+    {
+      "id": "1",
+      "slideNumber": 1,
+      "title": "...",
+      "subtitle": "...",
+      "bullets": ["...", "..."],
+      "notes": "Speaker notes explaining the slide in detail...",
+      "visualLayoutHint": "Key Definition"
+    }
+  ]
+}`,
+        onStatus: setStatus,
+      });
+
+      if (!payload.slides?.length) throw new Error("No slides returned — try adjusting topic focus.");
+
+      const gen: Generation = {
+        id: `${Date.now().toString(36)}-p`,
+        notebookId,
+        kind: "presentation",
+        title: `${payload.deckTitle || "Presentation Deck"} · ${payload.slides.length} slides`,
+        payload,
+        createdAt: Date.now(),
+      };
+      await saveGeneration(gen);
+      onDone(gen);
+    } catch (e) {
+      setError(friendlyError(e));
+    } finally {
+      setBusy(false);
+      setStatus("");
+    }
+  };
+
+  if (!isAnthropic) {
+    return (
+      <div className="space-y-4">
+        <div className="overflow-hidden rounded-2xl border border-brass/40 bg-gradient-to-b from-brass/[0.1] to-night/90 p-5 sm:p-6 space-y-3">
+          <div className="flex items-center gap-2">
+            <Crown size={18} className="text-brass" />
+            <span className="font-display text-[1.2rem] font-[430] text-parchment">
+              Anthropic Exclusive Feature
+            </span>
+          </div>
+          <p className="text-[13px] leading-relaxed text-faded">
+            The <strong>PPT & Slideshow Maker</strong> requires the deep architectural synthesis and structured reasoning of <strong>Claude Opus 5 & Sonnet 5</strong> to produce production-grade slide decks and speaker scripts.
+          </p>
+          <div className="rounded-xl border border-white/10 bg-night/70 p-3 text-[12px] text-brasspale flex items-center justify-between">
+            <span>Powered by our hosted Anthropic key · PayPal pass from $2.99</span>
+            {onOpenSettings && (
+              <button
+                onClick={onOpenSettings}
+                className="rounded-lg grad-lamp px-3 py-1 font-mono text-[11px] font-semibold text-night"
+              >
+                Open Settings
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <button className={btnGhost} onClick={onCancel}>Close</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-2 font-mono text-[11px] text-brasspale">
+        <Crown size={13} className="text-brass" />
+        <span>Powered by Claude Opus 5 & Sonnet 5</span>
+      </div>
+
+      <div>
+        <div className="label-mono !text-[10px] mb-2">Presentation Style</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {STYLES.map((s) => (
+            <button
+              key={s.name}
+              type="button"
+              onClick={() => setStyle(s.name)}
+              className={`rounded-xl border p-3 text-left transition-colors ${
+                style === s.name
+                  ? "border-brass/50 bg-brass/[0.08]"
+                  : "border-white/10 bg-white/[0.02] hover:border-white/20"
+              }`}
+            >
+              <div className="font-medium text-[13px] text-parchment">{s.name}</div>
+              <div className="mt-0.5 text-[11px] text-faded">{s.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Field label="Number of Slides">
+          <div className="flex items-center gap-2">
+            {[5, 8, 10, 12, 15].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setSlideCount(n)}
+                className={`rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-colors ${
+                  slideCount === n
+                    ? "border-brass/60 bg-brass/20 text-brasspale font-medium"
+                    : "border-white/10 bg-white/[0.02] text-faded"
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        </Field>
+
+        <Field label="Focus Topic (Optional)" hint="Empty = whole notebook">
+          <input
+            value={focus}
+            onChange={(e) => setFocus(e.target.value)}
+            placeholder="e.g. Cardiovascular Pathology"
+            className={inputCls}
+          />
+        </Field>
+      </div>
+
+      {status && <LampPulse label={status} />}
+      {error && <ErrorNote>{error}</ErrorNote>}
+
+      <div className="flex justify-end gap-3">
+        <button className={btnGhost} onClick={onCancel}>Cancel</button>
+        <button className={btnLamp} onClick={generate} disabled={busy}>
+          <Presentation size={13} className="mr-1.5 inline" />
+          {busy ? "Generating deck…" : `Build ${slideCount}-Slide Deck`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function SlideshowView({ gen }: { gen: Generation }) {
+  const payload = gen.payload as PresentationPayload;
+  const slides = payload.slides ?? [];
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [showNotes, setShowNotes] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const slide = slides[activeIdx] || slides[0];
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight" || e.key === " ") {
+        setActiveIdx((i) => Math.min(slides.length - 1, i + 1));
+      } else if (e.key === "ArrowLeft") {
+        setActiveIdx((i) => Math.max(0, i - 1));
+      } else if (e.key === "Escape" && fullscreen) {
+        setFullscreen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [slides.length, fullscreen]);
+
+  if (!slides.length) {
+    return <div className="text-center text-faded py-8">No slides found in this presentation.</div>;
+  }
+
+  const exportMarkdown = () => {
+    let md = `# ${payload.deckTitle || "Presentation"}\n${payload.deckSubtitle ? `## ${payload.deckSubtitle}\n\n` : "\n"}---\n\n`;
+    slides.forEach((s) => {
+      md += `## ${s.title}\n`;
+      if (s.subtitle) md += `*${s.subtitle}*\n\n`;
+      s.bullets.forEach((b) => {
+        md += `- ${b}\n`;
+      });
+      if (s.notes) md += `\n<!-- Presenter Notes:\n${s.notes}\n-->\n\n`;
+      md += `---\n\n`;
+    });
+    navigator.clipboard.writeText(md);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1600);
+  };
+
+  return (
+    <div className={`space-y-4 ${fullscreen ? "fixed inset-0 z-50 bg-night p-6 sm:p-12 overflow-y-auto flex flex-col justify-between" : ""}`}>
+      {/* Top Deck Info & Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/[0.08] pb-3">
+        <div>
+          <h3 className="font-display text-[1.25rem] font-[430] text-parchment">
+            {payload.deckTitle || "Presentation Deck"}
+          </h3>
+          {payload.deckSubtitle && (
+            <p className="text-[12px] text-faded">{payload.deckSubtitle}</p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowNotes((v) => !v)}
+            className={`rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-colors ${
+              showNotes ? "border-brass/50 bg-brass/15 text-brasspale" : "border-white/10 text-faded hover:text-parchment"
+            }`}
+          >
+            Speaker Notes {showNotes ? "On" : "Off"}
+          </button>
+          <button
+            onClick={exportMarkdown}
+            className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-[11px] text-faded hover:text-parchment"
+          >
+            {copied ? <Check size={12} className="text-sage" /> : <Copy size={12} />}
+            {copied ? "Copied" : "Copy Deck"}
+          </button>
+          <button
+            onClick={() => setFullscreen((v) => !v)}
+            className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-[11px] text-faded hover:text-parchment"
+          >
+            {fullscreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+            {fullscreen ? "Exit" : "Fullscreen"}
+          </button>
+        </div>
+      </div>
+
+      {/* Active Slide Card */}
+      <div className="relative min-h-[340px] sm:min-h-[380px] rounded-2xl border border-brass/30 bg-gradient-to-b from-study/95 to-night p-6 sm:p-8 flex flex-col justify-between shadow-[0_15px_40px_rgba(0,0,0,0.4)]">
+        <div>
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-brasspale bg-brass/10 border border-brass/25 px-2.5 py-0.5 rounded-full">
+              Slide {activeIdx + 1} of {slides.length}
+            </span>
+            {slide.visualLayoutHint && (
+              <span className="font-mono text-[10px] text-faded/70 border border-white/10 px-2 py-0.5 rounded">
+                Layout: {slide.visualLayoutHint}
+              </span>
+            )}
+          </div>
+
+          <h2 className="mt-4 font-display text-[1.5rem] sm:text-[1.8rem] font-[430] text-parchment leading-snug">
+            {slide.title}
+          </h2>
+
+          {slide.subtitle && (
+            <p className="mt-1 text-[13px] text-faded italic">{slide.subtitle}</p>
+          )}
+
+          <ul className="mt-6 space-y-2.5">
+            {slide.bullets?.map((b, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-[14px] leading-relaxed text-parchment/90">
+                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-brass shrink-0" />
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Speaker Notes Drawer */}
+        {showNotes && slide.notes && (
+          <div className="mt-6 pt-4 border-t border-white/[0.08] bg-night/50 rounded-xl p-3.5 space-y-1">
+            <span className="font-mono text-[9.5px] uppercase tracking-wider text-brasspale font-medium">
+              🎙️ Presenter Script / Speaker Notes:
+            </span>
+            <p className="text-[12.5px] leading-relaxed text-faded">{slide.notes}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Slide Navigation Controls */}
+      <div className="flex items-center justify-between pt-2">
+        <button
+          onClick={() => setActiveIdx((i) => Math.max(0, i - 1))}
+          disabled={activeIdx === 0}
+          className={btnGhost + " disabled:opacity-30"}
+        >
+          <ChevronLeft size={14} className="mr-1 inline" /> Previous
+        </button>
+
+        {/* Slide indicator dots */}
+        <div className="flex items-center gap-1.5">
+          {slides.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveIdx(idx)}
+              className={`h-2 rounded-full transition-all ${
+                activeIdx === idx ? "w-6 bg-brass" : "w-2 bg-white/20 hover:bg-white/40"
+              }`}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
+        </div>
+
+        <button
+          onClick={() => setActiveIdx((i) => Math.min(slides.length - 1, i + 1))}
+          disabled={activeIdx === slides.length - 1}
+          className={btnLamp + " disabled:opacity-30"}
+        >
+          Next <ChevronRight size={14} className="ml-1 inline" />
+        </button>
+      </div>
     </div>
   );
 }

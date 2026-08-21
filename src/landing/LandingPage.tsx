@@ -8,6 +8,7 @@ import Nav from "./Nav";
 import Hero from "./Hero";
 import Marquee from "./Marquee";
 import Method from "./Method";
+import OpenRouterByokSection from "./OpenRouterByokSection";
 import StudioShowcase from "./StudioShowcase";
 import BringStack from "./BringStack";
 import Boards from "./Boards";
@@ -53,6 +54,7 @@ export default function LandingPage() {
         <Hero ready={ready} />
         <Marquee />
         <Method />
+        <OpenRouterByokSection />
         <StudioShowcase />
         <BringStack />
         <Boards />

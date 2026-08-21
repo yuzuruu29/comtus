@@ -67,7 +67,9 @@ export type GenerationKind =
   | "brief"
   | "faq"
   | "timeline"
-  | "flashcards";
+  | "flashcards"
+  | "presentation"
+  | "slideshow";
 
 export interface Generation {
   id: string;
@@ -214,6 +216,25 @@ export interface CardProgress {
 
 export interface DocPayload {
   markdown: string;
+}
+
+/* ── Presentation & Slideshow payloads (Anthropic Exclusive) ─── */
+
+export interface Slide {
+  id: string;
+  slideNumber: number;
+  title: string;
+  subtitle?: string;
+  bullets: string[];
+  notes?: string; // Speaker notes
+  visualLayoutHint?: string; // e.g. "Key Definition", "2-Column Comparison", "Stat Highlight", "Process Flow"
+}
+
+export interface PresentationPayload {
+  topic: string;
+  deckTitle: string;
+  deckSubtitle?: string;
+  slides: Slide[];
 }
 
 /* ── Settings ─────────────────────────────────────────────── */
