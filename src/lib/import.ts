@@ -19,8 +19,35 @@ export async function extractFile(file: File): Promise<ExtractedDoc[]> {
   const name = file.name.replace(/\.[^.]+$/, "");
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
 
+  // Images & non-text visual sources
+  if (
+    file.type.startsWith("image/") ||
+    ["png", "jpg", "jpeg", "webp", "bmp", "tiff", "gif", "avif"].includes(ext)
+  ) {
+    const dataUrl = await fileToDataUrl(file);
+    const text = `[Non-Text Visual Source: ${file.name}]
+Type: ${file.type || ext} · Size: ${(file.size / 1024).toFixed(1)} KB
+
+<<<NON-TEXT SOURCE: HYBRID OCR REQUIRED>>>
+This is a non-text visual / image-based source.
+Agent Directives:
+1. FORCE HYBRID OCR: Exhaustively transcribe, inspect, and extract all text, handwriting, formulas, tables, diagrams, and labels present in this image source.
+2. ADMIT CAPABILITY TRANSPARENTLY: If your active model endpoint does not possess multimodal vision / OCR capability, state this clearly to the user instead of hallucinating.
+<<<END NON-TEXT SOURCE>>>
+${dataUrl ? `\n[Embedded Visual Asset: ${file.name}]` : ""}`;
+
+    return [
+      {
+        title: name,
+        kind: "img",
+        text,
+        meta: { pages: 1, origin: "image-upload" },
+      },
+    ];
+  }
+
   if (ext === "pdf" || file.type === "application/pdf") {
-    const text = await pdfToText(await file.arrayBuffer());
+    const text = await pdfToText(await file.arrayBuffer(), name);
     return [{ title: name, kind: "pdf", text, meta: { pages: countPages(text) } }];
   }
   if (ext === "docx") {
@@ -46,9 +73,20 @@ export async function extractFile(file: File): Promise<ExtractedDoc[]> {
   ];
 }
 
-async function pdfToText(buffer: ArrayBuffer): Promise<string> {
+async function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
+
+async function pdfToText(buffer: ArrayBuffer, title = "PDF Document"): Promise<string> {
   const pdf = await pdfjs.getDocument({ data: buffer }).promise;
   const pages: string[] = [];
+  let totalExtractedChars = 0;
+
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
@@ -68,9 +106,26 @@ async function pdfToText(buffer: ArrayBuffer): Promise<string> {
       }
     }
     if (line) out.push(line);
-    pages.push(`[page ${i}]\n${out.join("\n")}`);
+    const pageContent = out.join("\n");
+    totalExtractedChars += pageContent.replace(/\s+/g, "").length;
+    pages.push(`[page ${i}]\n${pageContent}`);
   }
-  return pages.join("\n\n");
+
+  let text = pages.join("\n\n");
+
+  // Scanned / Non-text PDF Detection
+  if (totalExtractedChars < 80 && pdf.numPages > 0) {
+    text = `[Non-Text / Scanned PDF Source: ${title} (${pdf.numPages} page(s))]
+[Notice: Embedded text layer is sparse (${totalExtractedChars} readable characters). This document is primarily scanned image pages.]
+
+<<<NON-TEXT SOURCE: HYBRID OCR REQUIRED>>>
+Agent Directives:
+1. FORCE HYBRID OCR: Read and transcribe all visual diagrams, scanned typography, and handwritten annotations.
+2. ADMIT CAPABILITY TRANSPARENTLY: If your active model endpoint lacks direct multimodal OCR capabilities to read scanned raster layers, admit this limitation plainly to the user with a direct response.
+<<<END NON-TEXT SOURCE>>>\n\n` + text;
+  }
+
+  return text;
 }
 
 const countPages = (text: string) => (text.match(/\[page \d+\]/g) ?? []).length;

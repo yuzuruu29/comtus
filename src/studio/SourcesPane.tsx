@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Plus, FileText, Globe, ClipboardType, Trash2, PanelLeftClose, X, FileJson, FileType2, Flame } from "lucide-react";
+import { Plus, FileText, Globe, ClipboardType, Trash2, PanelLeftClose, X, FileJson, FileType2, Flame, Image as ImageIcon } from "lucide-react";
 import { db, deleteSource } from "../lib/db";
 import type { Source } from "../lib/types";
 import { importFiles, extractUrl, chunkText } from "../lib/import";
@@ -18,6 +18,7 @@ const KIND_ICON = {
   json: FileJson,
   url: Globe,
   paste: ClipboardType,
+  img: ImageIcon,
 } as const;
 
 export default function SourcesPane({
@@ -104,7 +105,7 @@ export default function SourcesPane({
           ref={fileRef}
           type="file"
           multiple
-          accept=".pdf,.docx,.txt,.md,.markdown,.json"
+          accept=".pdf,.docx,.txt,.md,.markdown,.json,.png,.jpg,.jpeg,.webp,.bmp,.tiff,image/*"
           className="hidden"
           onChange={(e) => {
             void handleFiles(e.target.files);
@@ -117,7 +118,7 @@ export default function SourcesPane({
           className="group flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-4 py-3 text-[13px] font-medium text-faded transition-colors duration-200 hover:border-brass/40 hover:text-brasspale disabled:opacity-50"
         >
           <Plus size={15} className="transition-transform duration-300 group-hover:rotate-90" />
-          {importing ? "Importing…" : "Add PDFs, DOCX, TXT, MD, JSON"}
+          {importing ? "Importing…" : "Add PDFs, DOCX, Images, Notes"}
         </button>
         <div className="mt-2.5 flex gap-2">
           <button

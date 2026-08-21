@@ -7,7 +7,8 @@ export type SourceKind =
   | "md"
   | "json"
   | "url"
-  | "paste";
+  | "paste"
+  | "img";
 
 export interface Notebook {
   id: string;
