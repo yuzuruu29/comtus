@@ -1,0 +1,66 @@
+name: Desktop release build
+
+# Builds the Comtus Desk App (Tauri 2) for macOS (Apple Silicon + Intel,
+# .dmg/.app) and Windows (.exe NSIS installer), and attaches them to a
+# GitHub release. Runs on version tags (v*) or manually from the Actions
+# tab — manual runs only build & upload artifacts without publishing.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin
+            rust-target: aarch64-apple-darwin
+          - platform: macos-latest
+            args: --target x86_64-apple-darwin
+            rust-target: x86_64-apple-darwin
+          - platform: windows-latest
+            args: ""
+            rust-target: ""
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install frontend deps
+        run: pnpm install --frozen-lockfile
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: "Comtus Desk App v__VERSION__"
+          releaseBody: "Installable desktop builds — macOS (.dmg) and Windows (.exe). See the assets below."
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

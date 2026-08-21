@@ -12,6 +12,7 @@ import OpenRouterByokSection from "./OpenRouterByokSection";
 import StudioShowcase from "./StudioShowcase";
 import BringStack from "./BringStack";
 import Boards from "./Boards";
+import DesktopApp from "./DesktopApp";
 import Statement from "./Statement";
 import FinalCTA from "./FinalCTA";
 import Footer from "./Footer";
@@ -58,6 +59,7 @@ export default function LandingPage() {
         <StudioShowcase />
         <BringStack />
         <Boards />
+        <DesktopApp />
         <Statement />
         <FinalCTA />
       </main>

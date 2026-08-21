@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Flame, Plus, Trash2, KeyRound } from "lucide-react";
 import { db, createNotebook, deleteNotebook } from "../lib/db";
 import type { Notebook } from "../lib/types";
+import { detectPlatform, greeting, isDesktopApp, isStandalone, todayLine } from "../lib/desktop";
 import { BorderBeam, SOFT, Spotlight } from "./fx";
 import { timeAgo, Modal, Field, inputCls, btnLamp, btnGhost } from "./ui";
 import SettingsModal from "./SettingsModal";
@@ -19,6 +20,12 @@ export default function NotebookList({
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(needsKey);
+
+  // Installed-app context: native-feel home when running as the Desk App.
+  const desktop = isDesktopApp();
+  const macWindowControls = desktop && isStandalone() && detectPlatform() === "mac";
+  const g = greeting();
+  const last = notebooks[0];
 
   const refresh = () => {
     db.notebooks.orderBy("updatedAt").reverse().toArray().then(setNotebooks);
@@ -39,12 +46,26 @@ export default function NotebookList({
       <div className="pointer-events-none fixed inset-x-0 top-0 h-[42vh] bg-[radial-gradient(70%_100%_at_50%_0%,rgba(227,176,75,0.09),rgba(42,54,84,0.12)_55%,transparent_80%)]" />
       <div className="relative mx-auto w-full max-w-5xl px-6 pb-24">
         <header className="flex items-center justify-between pb-7 pt-[calc(1.75rem+var(--sat))]">
-          <Link to="/" className="flex items-center gap-2.5" aria-label="Back to landing">
-            <Flame className="h-5 w-5 text-brass" />
-            <span className="font-display text-[15px] font-[480] tracking-[0.2em] text-parchment">
-              COMTUS
-            </span>
-          </Link>
+          {desktop ? (
+            <div
+              className={`flex select-none items-center gap-2.5 ${macWindowControls ? "ml-16" : ""}`}
+            >
+              <Flame className="h-5 w-5 text-brass" />
+              <span className="font-display text-[15px] font-[480] tracking-[0.2em] text-parchment">
+                COMTUS
+              </span>
+              <span className="ml-1 border-l border-white/10 pl-2.5 font-mono text-[9px] uppercase tracking-[0.18em] text-faded/60">
+                Desk App
+              </span>
+            </div>
+          ) : (
+            <Link to="/" className="flex items-center gap-2.5" aria-label="Back to landing">
+              <Flame className="h-5 w-5 text-brass" />
+              <span className="font-display text-[15px] font-[480] tracking-[0.2em] text-parchment">
+                COMTUS
+              </span>
+            </Link>
+          )}
           <button
             onClick={() => setSettingsOpen(true)}
             className="flex min-h-[44px] items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[13px] text-faded transition-colors hover:border-white/20 hover:text-parchment active:scale-95 sm:min-h-[38px]"
@@ -54,33 +75,84 @@ export default function NotebookList({
           </button>
         </header>
 
-        <div className="mt-10 mb-10">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={SOFT}
-            className="label-mono"
-          >
-            The Shelf
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ ...SOFT, delay: 0.07 }}
-            className="mt-4 font-display text-[clamp(2.2rem,5vw,3.4rem)] font-[400] leading-tight text-parchment"
-          >
-            Your notebooks, <em className="font-[420] text-lamp">lamplit.</em>
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ ...SOFT, delay: 0.15 }}
-            className="mt-3 max-w-lg text-[14.5px] text-faded"
-          >
-            One notebook per subject or exam. Fill it with sources, then ask, drill,
-            and grade against them.
-          </motion.p>
-        </div>
+        {desktop ? (
+          <div className="mt-6 mb-10">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={SOFT}
+              className="label-mono"
+            >
+              The Shelf · {todayLine()}
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ ...SOFT, delay: 0.07 }}
+              className="mt-4 font-display text-[clamp(2.2rem,5vw,3.4rem)] font-[400] leading-tight text-parchment"
+            >
+              {g.hello}. <em className="font-[420] text-lamp">The lamp is lit.</em>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...SOFT, delay: 0.15 }}
+              className="mt-3 max-w-lg text-[14.5px] text-faded"
+            >
+              Every notebook, drill, and draft is waiting exactly as you left it —
+              all on this machine, none of it in a browser.
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...SOFT, delay: 0.22 }}
+              className="mt-6 flex flex-wrap items-center gap-2.5"
+            >
+              {last && (
+                <button
+                  onClick={() => onOpen(last.id)}
+                  className="inline-flex min-h-[40px] items-center gap-2 rounded-full grad-lamp px-5 py-2 text-[12.5px] font-semibold text-night shadow-[0_4px_20px_rgba(227,176,75,0.25)] transition-all hover:brightness-105 active:scale-95"
+                >
+                  Continue “{last.name.length > 24 ? `${last.name.slice(0, 24)}…` : last.name}”
+                </button>
+              )}
+              <button
+                onClick={() => setCreating(true)}
+                className="inline-flex min-h-[40px] items-center gap-2 rounded-full border border-white/12 bg-white/[0.03] px-5 py-2 text-[12.5px] font-medium text-parchment/90 transition-all hover:border-white/25 hover:bg-white/[0.06] active:scale-95"
+              >
+                <Plus size={14} /> New notebook
+              </button>
+            </motion.div>
+          </div>
+        ) : (
+          <div className="mt-10 mb-10">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={SOFT}
+              className="label-mono"
+            >
+              The Shelf
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 16, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ ...SOFT, delay: 0.07 }}
+              className="mt-4 font-display text-[clamp(2.2rem,5vw,3.4rem)] font-[400] leading-tight text-parchment"
+            >
+              Your notebooks, <em className="font-[420] text-lamp">lamplit.</em>
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ ...SOFT, delay: 0.15 }}
+              className="mt-3 max-w-lg text-[14.5px] text-faded"
+            >
+              One notebook per subject or exam. Fill it with sources, then ask, drill,
+              and grade against them.
+            </motion.p>
+          </div>
+        )}
 
         {needsKey && (
           <motion.div
