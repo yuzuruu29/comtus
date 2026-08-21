@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Download, CheckCircle2, Monitor, Apple, AppWindow, ShieldCheck, WifiOff } from "lucide-react";
+import { Apple, Download, CheckCircle2, ShieldCheck, WifiOff } from "lucide-react";
 import SectionHead from "./SectionHead";
 import { detectPlatform, isStandalone } from "../lib/desktop";
 
@@ -11,13 +11,35 @@ interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
 }
 
-const RELEASES_URL = "https://github.com/yuzuruu29/comtus/releases/latest";
+const REPO = "yuzuruu29/comtus";
+const RELEASES_URL = `https://github.com/${REPO}/releases/latest`;
+
+/** Direct download URLs when a native release exists, per platform. */
+interface ReleaseLinks {
+  mac?: string;
+  win?: string;
+}
+
+function WindowsLogo({ size = 20, className = "" }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden
+    >
+      <path d="M3 5.5 10.5 4.4v7.1H3V5.5Zm8.7-1.3L21 3v8.5h-9.3V4.2ZM3 12.5h7.5v7.1L3 18.5v-6Zm9.7 0H21V21l-9.3-1.3v-7.2Z" />
+    </svg>
+  );
+}
 
 /** Per-browser install pointers when the one-click prompt isn't available. */
 function manualHint(platform: string): string {
   if (platform === "mac") {
     return /Safari/i.test(navigator.userAgent) && !/Chrome|Edg/i.test(navigator.userAgent)
-      ? "Safari → Share ⌘·Share → Add to Dock"
+      ? "Safari → Share → Add to Dock"
       : "Chrome / Edge → ⋮ menu → Install Comtus…";
   }
   if (platform === "windows") {
@@ -28,13 +50,33 @@ function manualHint(platform: string): string {
   return "Chrome / Edge → ⋮ menu → Install Comtus…";
 }
 
-/** 06 — THE DESK APP · installable macOS/Windows build + glossy window preview. */
+/** 06 — THE DESK APP · centered download panel, macOS + Windows. */
 export default function DesktopApp() {
   const rootRef = useRef<HTMLElement>(null);
   const platform = detectPlatform();
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [showHow, setShowHow] = useState(false);
+  const [release, setRelease] = useState<ReleaseLinks>({});
+
+  // Native build availability — GitHub's latest release, if any.
+  useEffect(() => {
+    fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
+      headers: { Accept: "application/vnd.github+json" },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const assets: { name: string; browser_download_url: string }[] = j?.assets ?? [];
+        if (!assets.length) return;
+        const pick = (...res: RegExp[]) =>
+          res.map((re) => assets.find((a) => re.test(a.name))?.browser_download_url).find(Boolean);
+        setRelease({
+          mac: pick(/aarch64.*\.dmg$/, /\.dmg$/),
+          win: pick(/x64-setup\.exe$/, /\.exe$/),
+        });
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const onBip = (e: Event) => {
@@ -65,13 +107,13 @@ export default function DesktopApp() {
       targets.forEach((el, i) => {
         gsap.fromTo(
           el,
-          { opacity: 0, y: 38 },
+          { opacity: 0, y: 34 },
           {
             opacity: 1,
             y: 0,
             duration: 0.9,
             ease: "power3.out",
-            delay: (i % 3) * 0.08,
+            delay: i * 0.09,
             scrollTrigger: { trigger: el, start: "top 88%", once: true },
           },
         );
@@ -80,27 +122,46 @@ export default function DesktopApp() {
     return () => ctx.revert();
   }, []);
 
-  const install = async () => {
-    if (deferred) {
-      await deferred.prompt();
-      setDeferred(null);
-    } else {
-      setShowHow(true);
+  // Best available action per platform: native download → PWA prompt →
+  // manual hint (detected OS) → releases page (other OS).
+  const platformAction = (os: "mac" | "windows") => {
+    const native = os === "mac" ? release.mac : release.win;
+    if (native) {
+      window.open(native, "_blank");
+      return;
     }
+    if (platform === os) {
+      if (deferred) {
+        void deferred.prompt();
+        setDeferred(null);
+      } else {
+        setShowHow(true);
+      }
+      return;
+    }
+    window.open(RELEASES_URL, "_blank");
   };
-
-  const platformLabel =
-    platform === "mac" ? "macOS" : platform === "windows" ? "Windows" : "your desktop";
 
   return (
     <section
       ref={rootRef}
       id="desktop"
-      className="relative border-y border-white/[0.06] bg-study/25 py-[clamp(5.5rem,12vh,9rem)]"
+      className="relative overflow-hidden border-y border-white/[0.06] bg-night py-[clamp(6rem,14vh,10rem)]"
     >
-      <div className="mx-auto w-full max-w-6xl px-6">
+      {/* Lamplight well behind the panel */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(227,176,75,0.09),rgba(42,54,84,0.16)_50%,transparent_75%)] blur-[10px]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"
+      />
+
+      <div className="relative mx-auto w-full max-w-4xl px-6">
         <div className="reveal-desk">
           <SectionHead
+            center
             index="06"
             label="The Desk App"
             title={
@@ -108,144 +169,102 @@ export default function DesktopApp() {
                 The whole desk, <em className="font-[420] text-lamp">as an app.</em>
               </>
             }
-            sub="Comtus installs as a real desktop app on macOS and Windows — its own window, no address bar, offline-ready. Notebooks, sources, and keys stay on this machine, exactly as before."
+            sub="Comtus runs as a real desktop app on macOS and Windows — its own window, no address bar, offline-ready. Notebooks, sources, and keys stay on this machine."
           />
         </div>
 
-        <div className="mt-14 grid grid-cols-1 items-center gap-10 lg:grid-cols-12">
-          {/* Install panel */}
-          <div className="reveal-desk lg:col-span-6">
-            <div className="relative overflow-hidden rounded-[1.9rem] border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-transparent p-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-8">
-              <div
-                aria-hidden
-                className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
-              />
-
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-faded">
-                  <Monitor size={11} className="text-brass" /> Detected: {platformLabel}
-                </span>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-sage bg-sage/10 border border-sage/25 px-2 py-0.5 rounded-full">
-                  Free · One click
-                </span>
-              </div>
+        <div className="reveal-desk mx-auto mt-14 max-w-2xl">
+          <div className="relative rounded-[1.9rem] border border-white/[0.09] bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-2 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.7)]">
+            <div
+              aria-hidden
+              className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent"
+            />
+            <div className="relative overflow-hidden rounded-[1.55rem] bg-study/60">
+              <div className="desk-gloss" aria-hidden />
 
               {installed ? (
-                <div className="mt-6 flex items-center gap-3 rounded-xl border border-sage/30 bg-sage/[0.07] px-4 py-3.5 text-[13.5px] text-sage">
-                  <CheckCircle2 size={16} className="shrink-0" />
+                <div className="flex items-center justify-center gap-3 px-6 py-9 text-[14px] text-sage">
+                  <CheckCircle2 size={17} className="shrink-0" />
                   Installed — Comtus now lives in your Applications folder / Start menu.
                 </div>
               ) : (
-                <button
-                  onClick={() => void install()}
-                  className="group mt-6 flex w-full items-center justify-center gap-2.5 rounded-full grad-lamp px-7 py-4 text-[14.5px] font-semibold text-night shadow-[0_12px_44px_rgba(227,176,75,0.25)] transition-all duration-300 hover:shadow-[0_16px_60px_rgba(227,176,75,0.38)] active:scale-[0.98]"
-                >
-                  <Download size={16} strokeWidth={2.4} className="transition-transform duration-300 group-hover:translate-y-0.5" />
-                  Install Comtus for {platformLabel}
-                </button>
-              )}
+                <div className="grid grid-cols-1 gap-2 p-2 sm:grid-cols-2">
+                  {/* macOS */}
+                  <button
+                    onClick={() => platformAction("mac")}
+                    className={`group relative flex items-center gap-4 rounded-2xl border px-5 py-4 text-left transition-all duration-300 active:scale-[0.98] ${
+                      platform === "mac"
+                        ? "border-brass/45 bg-brass/[0.07] shadow-[0_0_30px_rgba(227,176,75,0.1)]"
+                        : "border-white/[0.08] bg-night/60 hover:border-white/20 hover:bg-night/80"
+                    }`}
+                  >
+                    <Apple size={22} className="shrink-0 text-parchment/85" strokeWidth={1.6} />
+                    <span className="min-w-0">
+                      <span className="block text-[14.5px] font-medium text-parchment">
+                        Download for macOS
+                      </span>
+                      <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-wider text-faded">
+                        {release.mac ? "Apple silicon · .dmg" : "One click · installs now"}
+                      </span>
+                    </span>
+                    {platform === "mac" ? (
+                      <span className="ml-auto flex h-2 w-2 shrink-0 rounded-full bg-brass shadow-[0_0_8px_rgba(227,176,75,0.8)]" />
+                    ) : (
+                      <Download
+                        size={14}
+                        className="ml-auto shrink-0 text-faded transition-all duration-300 group-hover:translate-y-0.5 group-hover:text-parchment"
+                      />
+                    )}
+                  </button>
 
-              {showHow && !installed && (
-                <div className="mt-3 rounded-xl border border-white/10 bg-night/70 px-4 py-3 text-[12.5px] leading-relaxed text-faded">
-                  {manualHint(platform)}
+                  {/* Windows */}
+                  <button
+                    onClick={() => platformAction("windows")}
+                    className={`group relative flex items-center gap-4 rounded-2xl border px-5 py-4 text-left transition-all duration-300 active:scale-[0.98] ${
+                      platform === "windows"
+                        ? "border-brass/45 bg-brass/[0.07] shadow-[0_0_30px_rgba(227,176,75,0.1)]"
+                        : "border-white/[0.08] bg-night/60 hover:border-white/20 hover:bg-night/80"
+                    }`}
+                  >
+                    <WindowsLogo size={21} className="shrink-0 text-parchment/85" />
+                    <span className="min-w-0">
+                      <span className="block text-[14.5px] font-medium text-parchment">
+                        Download for Windows
+                      </span>
+                      <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-wider text-faded">
+                        {release.win ? "Windows 10+ · x64 · .exe" : "One click · installs now"}
+                      </span>
+                    </span>
+                    {platform === "windows" ? (
+                      <span className="ml-auto flex h-2 w-2 shrink-0 rounded-full bg-brass shadow-[0_0_8px_rgba(227,176,75,0.8)]" />
+                    ) : (
+                      <Download
+                        size={14}
+                        className="ml-auto shrink-0 text-faded transition-all duration-300 group-hover:translate-y-0.5 group-hover:text-parchment"
+                      />
+                    )}
+                  </button>
                 </div>
               )}
-
-              <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                <a
-                  href={RELEASES_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group flex items-center justify-between rounded-xl border border-white/[0.08] bg-night/50 px-4 py-3 transition-all duration-300 hover:border-brass/35 hover:bg-brass/[0.04]"
-                >
-                  <span className="flex items-center gap-2.5 text-[13px] text-parchment/90">
-                    <Apple size={15} className="text-parchment/70" />
-                    macOS · .dmg
-                  </span>
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-faded transition-colors group-hover:text-brasspale">
-                    Download
-                  </span>
-                </a>
-                <a
-                  href={RELEASES_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group flex items-center justify-between rounded-xl border border-white/[0.08] bg-night/50 px-4 py-3 transition-all duration-300 hover:border-brass/35 hover:bg-brass/[0.04]"
-                >
-                  <span className="flex items-center gap-2.5 text-[13px] text-parchment/90">
-                    <AppWindow size={15} className="text-parchment/70" />
-                    Windows · .exe
-                  </span>
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-faded transition-colors group-hover:text-brasspale">
-                    Download
-                  </span>
-                </a>
-              </div>
-
-              <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.06] pt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-faded/70">
-                <span className="flex items-center gap-1.5">
-                  <WifiOff size={11} className="text-brass/70" /> Offline-ready
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck size={11} className="text-brass/70" /> Keys stay local
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 size={11} className="text-brass/70" /> Auto-updating
-                </span>
-              </div>
             </div>
           </div>
 
-          {/* Glossy window preview */}
-          <div className="reveal-desk lg:col-span-6">
-            <div className="group relative overflow-hidden rounded-[1.9rem] border border-white/[0.09] bg-white/[0.035] p-2 shadow-[0_24px_70px_-30px_rgba(0,0,0,0.65)]">
-              <div className="relative overflow-hidden rounded-[1.5rem] bg-night">
-                <div className="desk-gloss" aria-hidden />
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute left-1/2 top-0 h-56 w-[120%] -translate-x-1/2 rounded-full bg-[radial-gradient(50%_100%_at_50%_0%,rgba(227,176,75,0.14),rgba(42,54,84,0.18)_55%,transparent_80%)]"
-                />
-                {/* Title bar */}
-                <div className="relative flex items-center gap-2 border-b border-white/[0.06] px-5 py-3">
-                  <span className="h-2.5 w-2.5 rounded-full bg-rust/80" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-brass/80" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-sage/80" />
-                  <span className="ml-3 font-mono text-[10px] tracking-[0.18em] text-faded">
-                    COMTUS — THE MIDNIGHT DESK
-                  </span>
-                </div>
-                {/* App home mock */}
-                <div className="relative space-y-4 p-6">
-                  <div>
-                    <div className="label-mono !text-[9px]">Good evening · Friday</div>
-                    <div className="mt-2 font-display text-[1.55rem] font-[420] leading-snug text-parchment">
-                      Your notebooks, <em className="text-lamp">lamplit.</em>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2.5">
-                    {[
-                      ["Biochemistry", "12 sources"],
-                      ["PNLE Review", "31 sources"],
-                      ["Patho Lectures", "8 sources"],
-                    ].map(([name, meta]) => (
-                      <div
-                        key={name}
-                        className="rounded-xl border border-white/[0.07] bg-study/70 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-                      >
-                        <div className="flex h-6 w-6 items-center justify-center rounded-md border border-brass/30 bg-brass/10">
-                          <span className="h-1.5 w-1.5 rounded-full bg-brass" />
-                        </div>
-                        <div className="mt-2.5 truncate text-[11px] font-medium text-parchment/90">{name}</div>
-                        <div className="mt-0.5 font-mono text-[8.5px] uppercase tracking-wider text-faded">{meta}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2 rounded-lg border border-dashed border-white/15 px-3.5 py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.16em] text-faded">
-                    + New notebook
-                  </div>
-                </div>
-              </div>
+          {showHow && !installed && (
+            <div className="mt-4 rounded-xl border border-white/10 bg-night/70 px-4 py-3 text-center text-[12.5px] leading-relaxed text-faded">
+              {manualHint(platform)}
             </div>
+          )}
+
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-mono text-[10px] uppercase tracking-[0.16em] text-faded/70">
+            <span className="flex items-center gap-1.5">
+              <WifiOff size={11} className="text-brass/70" /> Offline-ready
+            </span>
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck size={11} className="text-brass/70" /> Keys stay local
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 size={11} className="text-brass/70" /> Free
+            </span>
           </div>
         </div>
       </div>
