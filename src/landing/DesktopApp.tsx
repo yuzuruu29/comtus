@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Apple, Download, CheckCircle2, ShieldCheck, WifiOff } from "lucide-react";
+import { Apple, Download, ShieldCheck, WifiOff } from "lucide-react";
 import SectionHead from "./SectionHead";
-import { detectPlatform, isStandalone } from "../lib/desktop";
+import { detectPlatform } from "../lib/desktop";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -11,13 +11,26 @@ interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
 }
 
-const REPO = "yuzuruu29/comtus";
-const RELEASES_URL = `https://github.com/${REPO}/releases/latest`;
+/* Hosted installers — one click, ready for setup. */
+const DESKTOP_BUILDS = {
+  mac: "/desktop/Comtus_0.1.0_aarch64.dmg",
+  macIntel: "/desktop/Comtus_0.1.0_x64.dmg",
+  win: "/desktop/Comtus_0.1.0_x64-setup.exe",
+};
 
-/** Direct download URLs when a native release exists, per platform. */
-interface ReleaseLinks {
-  mac?: string;
-  win?: string;
+/** Per-browser install pointers when the one-click PWA prompt isn't available. */
+function manualHint(platform: string): string {
+  if (platform === "mac") {
+    return /Safari/i.test(navigator.userAgent) && !/Chrome|Edg/i.test(navigator.userAgent)
+      ? "Safari → Share → Add to Dock"
+      : "Chrome / Edge → ⋮ menu → Install Comtus…";
+  }
+  if (platform === "windows") {
+    return /Firefox/i.test(navigator.userAgent)
+      ? "Firefox can't install web apps — use the desktop installer above."
+      : "Chrome / Edge → ⋮ menu → Install Comtus…";
+  }
+  return "Chrome / Edge → ⋮ menu → Install Comtus…";
 }
 
 function WindowsLogo({ size = 20, className = "" }: { size?: number; className?: string }) {
@@ -35,65 +48,20 @@ function WindowsLogo({ size = 20, className = "" }: { size?: number; className?:
   );
 }
 
-/** Per-browser install pointers when the one-click prompt isn't available. */
-function manualHint(platform: string): string {
-  if (platform === "mac") {
-    return /Safari/i.test(navigator.userAgent) && !/Chrome|Edg/i.test(navigator.userAgent)
-      ? "Safari → Share → Add to Dock"
-      : "Chrome / Edge → ⋮ menu → Install Comtus…";
-  }
-  if (platform === "windows") {
-    return /Firefox/i.test(navigator.userAgent)
-      ? "Firefox can't install web apps — grab the native .exe build instead."
-      : "Chrome / Edge → ⋮ menu → Install Comtus…";
-  }
-  return "Chrome / Edge → ⋮ menu → Install Comtus…";
-}
-
 /** 06 — THE DESK APP · centered download panel, macOS + Windows. */
 export default function DesktopApp() {
   const rootRef = useRef<HTMLElement>(null);
   const platform = detectPlatform();
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-  const [installed, setInstalled] = useState(false);
-  const [showHow, setShowHow] = useState(false);
-  const [release, setRelease] = useState<ReleaseLinks>({});
-
-  // Native build availability — GitHub's latest release, if any.
-  useEffect(() => {
-    fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
-      headers: { Accept: "application/vnd.github+json" },
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
-        const assets: { name: string; browser_download_url: string }[] = j?.assets ?? [];
-        if (!assets.length) return;
-        const pick = (...res: RegExp[]) =>
-          res.map((re) => assets.find((a) => re.test(a.name))?.browser_download_url).find(Boolean);
-        setRelease({
-          mac: pick(/aarch64.*\.dmg$/, /\.dmg$/),
-          win: pick(/x64-setup\.exe$/, /\.exe$/),
-        });
-      })
-      .catch(() => {});
-  }, []);
+  const [pwaHint, setPwaHint] = useState<string | null>(null);
 
   useEffect(() => {
     const onBip = (e: Event) => {
       e.preventDefault();
       setDeferred(e as BeforeInstallPromptEvent);
     };
-    const onInstalled = () => {
-      setInstalled(true);
-      setDeferred(null);
-    };
     window.addEventListener("beforeinstallprompt", onBip);
-    window.addEventListener("appinstalled", onInstalled);
-    if (isStandalone()) setInstalled(true);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBip);
-      window.removeEventListener("appinstalled", onInstalled);
-    };
+    return () => window.removeEventListener("beforeinstallprompt", onBip);
   }, []);
 
   useEffect(() => {
@@ -122,24 +90,13 @@ export default function DesktopApp() {
     return () => ctx.revert();
   }, []);
 
-  // Best available action per platform: native download → PWA prompt →
-  // manual hint (detected OS) → releases page (other OS).
-  const platformAction = (os: "mac" | "windows") => {
-    const native = os === "mac" ? release.mac : release.win;
-    if (native) {
-      window.open(native, "_blank");
-      return;
+  const installPwa = async () => {
+    if (deferred) {
+      await deferred.prompt();
+      setDeferred(null);
+    } else {
+      setPwaHint(manualHint(platform));
     }
-    if (platform === os) {
-      if (deferred) {
-        void deferred.prompt();
-        setDeferred(null);
-      } else {
-        setShowHow(true);
-      }
-      return;
-    }
-    window.open(RELEASES_URL, "_blank");
   };
 
   return (
@@ -182,76 +139,81 @@ export default function DesktopApp() {
             <div className="relative overflow-hidden rounded-[1.55rem] bg-study/60">
               <div className="desk-gloss" aria-hidden />
 
-              {installed ? (
-                <div className="flex items-center justify-center gap-3 px-6 py-9 text-[14px] text-sage">
-                  <CheckCircle2 size={17} className="shrink-0" />
-                  Installed — Comtus now lives in your Applications folder / Start menu.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-2 p-2 sm:grid-cols-2">
-                  {/* macOS */}
-                  <button
-                    onClick={() => platformAction("mac")}
-                    className={`group relative flex items-center gap-4 rounded-2xl border px-5 py-4 text-left transition-all duration-300 active:scale-[0.98] ${
-                      platform === "mac"
-                        ? "border-brass/45 bg-brass/[0.07] shadow-[0_0_30px_rgba(227,176,75,0.1)]"
-                        : "border-white/[0.08] bg-night/60 hover:border-white/20 hover:bg-night/80"
-                    }`}
-                  >
-                    <Apple size={22} className="shrink-0 text-parchment/85" strokeWidth={1.6} />
-                    <span className="min-w-0">
-                      <span className="block text-[14.5px] font-medium text-parchment">
-                        Download for macOS
-                      </span>
-                      <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-wider text-faded">
-                        {release.mac ? "Apple silicon · .dmg" : "One click · installs now"}
-                      </span>
+              <div className="grid grid-cols-1 gap-2 p-2 sm:grid-cols-2">
+                {/* macOS */}
+                <a
+                  href={DESKTOP_BUILDS.mac}
+                  download
+                  className={`group relative flex items-center gap-4 rounded-2xl border px-5 py-4 text-left transition-all duration-300 active:scale-[0.98] ${
+                    platform === "mac"
+                      ? "border-brass/45 bg-brass/[0.07] shadow-[0_0_30px_rgba(227,176,75,0.1)]"
+                      : "border-white/[0.08] bg-night/60 hover:border-white/20 hover:bg-night/80"
+                  }`}
+                >
+                  <Apple size={22} className="shrink-0 text-parchment/85" strokeWidth={1.6} />
+                  <span className="min-w-0">
+                    <span className="block text-[14.5px] font-medium text-parchment">
+                      Download for macOS
                     </span>
-                    {platform === "mac" ? (
-                      <span className="ml-auto flex h-2 w-2 shrink-0 rounded-full bg-brass shadow-[0_0_8px_rgba(227,176,75,0.8)]" />
-                    ) : (
-                      <Download
-                        size={14}
-                        className="ml-auto shrink-0 text-faded transition-all duration-300 group-hover:translate-y-0.5 group-hover:text-parchment"
-                      />
-                    )}
-                  </button>
+                    <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-wider text-faded">
+                      Apple silicon · .dmg
+                    </span>
+                  </span>
+                  {platform === "mac" ? (
+                    <span className="ml-auto flex h-2 w-2 shrink-0 rounded-full bg-brass shadow-[0_0_8px_rgba(227,176,75,0.8)]" />
+                  ) : (
+                    <Download
+                      size={14}
+                      className="ml-auto shrink-0 text-faded transition-all duration-300 group-hover:translate-y-0.5 group-hover:text-parchment"
+                    />
+                  )}
+                </a>
 
-                  {/* Windows */}
-                  <button
-                    onClick={() => platformAction("windows")}
-                    className={`group relative flex items-center gap-4 rounded-2xl border px-5 py-4 text-left transition-all duration-300 active:scale-[0.98] ${
-                      platform === "windows"
-                        ? "border-brass/45 bg-brass/[0.07] shadow-[0_0_30px_rgba(227,176,75,0.1)]"
-                        : "border-white/[0.08] bg-night/60 hover:border-white/20 hover:bg-night/80"
-                    }`}
-                  >
-                    <WindowsLogo size={21} className="shrink-0 text-parchment/85" />
-                    <span className="min-w-0">
-                      <span className="block text-[14.5px] font-medium text-parchment">
-                        Download for Windows
-                      </span>
-                      <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-wider text-faded">
-                        {release.win ? "Windows 10+ · x64 · .exe" : "One click · installs now"}
-                      </span>
+                {/* Windows */}
+                <a
+                  href={DESKTOP_BUILDS.win}
+                  download
+                  className={`group relative flex items-center gap-4 rounded-2xl border px-5 py-4 text-left transition-all duration-300 active:scale-[0.98] ${
+                    platform === "windows"
+                      ? "border-brass/45 bg-brass/[0.07] shadow-[0_0_30px_rgba(227,176,75,0.1)]"
+                      : "border-white/[0.08] bg-night/60 hover:border-white/20 hover:bg-night/80"
+                  }`}
+                >
+                  <WindowsLogo size={21} className="shrink-0 text-parchment/85" />
+                  <span className="min-w-0">
+                    <span className="block text-[14.5px] font-medium text-parchment">
+                      Download for Windows
                     </span>
-                    {platform === "windows" ? (
-                      <span className="ml-auto flex h-2 w-2 shrink-0 rounded-full bg-brass shadow-[0_0_8px_rgba(227,176,75,0.8)]" />
-                    ) : (
-                      <Download
-                        size={14}
-                        className="ml-auto shrink-0 text-faded transition-all duration-300 group-hover:translate-y-0.5 group-hover:text-parchment"
-                      />
-                    )}
-                  </button>
-                </div>
-              )}
+                    <span className="mt-0.5 block truncate font-mono text-[10px] uppercase tracking-wider text-faded">
+                      Windows 10+ · x64 · .exe
+                    </span>
+                  </span>
+                  {platform === "windows" ? (
+                    <span className="ml-auto flex h-2 w-2 shrink-0 rounded-full bg-brass shadow-[0_0_8px_rgba(227,176,75,0.8)]" />
+                  ) : (
+                    <Download
+                      size={14}
+                      className="ml-auto shrink-0 text-faded transition-all duration-300 group-hover:translate-y-0.5 group-hover:text-parchment"
+                    />
+                  )}
+                </a>
+              </div>
             </div>
           </div>
 
-          {showHow && !installed && (
-            <div className="mt-4 rounded-xl border border-white/10 bg-night/70 px-4 py-3 text-center text-[12.5px] leading-relaxed text-faded">
-              {manualHint(platform)}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-mono text-[10px] uppercase tracking-[0.14em] text-faded/70">
+            <a href={DESKTOP_BUILDS.macIntel} download className="transition-colors hover:text-parchment">
+              Intel Mac build · .dmg
+            </a>
+            <span aria-hidden className="text-white/15">·</span>
+            <button onClick={() => void installPwa()} className="transition-colors hover:text-parchment">
+              Or install as a browser app
+            </button>
+          </div>
+
+          {pwaHint && (
+            <div className="mt-3 rounded-xl border border-white/10 bg-night/70 px-4 py-3 text-center text-[12.5px] leading-relaxed text-faded">
+              {pwaHint}
             </div>
           )}
 
@@ -263,7 +225,7 @@ export default function DesktopApp() {
               <ShieldCheck size={11} className="text-brass/70" /> Keys stay local
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 size={11} className="text-brass/70" /> Free
+              <Download size={11} className="text-brass/70" /> Free
             </span>
           </div>
         </div>

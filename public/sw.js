@@ -53,6 +53,9 @@ self.addEventListener("fetch", (event) => {
     if (API_HOSTS.some((h) => url.hostname.endsWith(h))) return;
   } else if (API_HOSTS.some((h) => url.hostname.endsWith(h))) {
     return;
+  } else if (url.pathname.startsWith("/desktop/")) {
+    // Large installer files — stream straight through, never cache.
+    return;
   }
 
   if (req.mode === "navigate") {
