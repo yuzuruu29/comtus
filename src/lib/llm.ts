@@ -52,22 +52,28 @@ export const COMPAT_PRESETS: { id: string; label: string; baseUrl: string; note:
     note: "hundreds of open & closed models, one key",
   },
   {
-    id: "ollama",
-    label: "Ollama",
-    baseUrl: "http://localhost:11434/v1",
-    note: "local & free — no key needed",
-  },
-  {
-    id: "lmstudio",
-    label: "LM Studio",
-    baseUrl: "http://localhost:1234/v1",
-    note: "local & free — no key needed",
-  },
-  {
     id: "groq",
     label: "Groq",
     baseUrl: "https://api.groq.com/openai/v1",
-    note: "very fast open models",
+    note: "very fast open models · free tier",
+  },
+  {
+    id: "zen",
+    label: "OpenCode Zen",
+    baseUrl: "https://opencode.ai/zen/v1",
+    note: "curated frontier open models · free",
+  },
+  {
+    id: "cerebras",
+    label: "Cerebras",
+    baseUrl: "https://api.cerebras.ai/v1",
+    note: "wafer-scale speed · free tier",
+  },
+  {
+    id: "google",
+    label: "Google AI Studio",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+    note: "Gemini models · free tier",
   },
   {
     id: "deepseek",
@@ -80,6 +86,18 @@ export const COMPAT_PRESETS: { id: string; label: string; baseUrl: string; note:
     label: "Together",
     baseUrl: "https://api.together.xyz/v1",
     note: "hosted open models",
+  },
+  {
+    id: "ollama",
+    label: "Ollama",
+    baseUrl: "http://localhost:11434/v1",
+    note: "local & free — no key needed",
+  },
+  {
+    id: "lmstudio",
+    label: "LM Studio",
+    baseUrl: "http://localhost:1234/v1",
+    note: "local & free — no key needed",
   },
 ];
 

@@ -99,6 +99,30 @@
   animation: think-shimmer 2.2s linear infinite;
 }
 
+/* Thinking panel — glossy light sweep while reasoning streams.
+   Rendered inside the panel's overflow-hidden wrapper. */
+@keyframes think-gloss {
+  0% { transform: translateX(-140%) skewX(-14deg); opacity: 0; }
+  18% { opacity: 0.85; }
+  65% { opacity: 0.35; }
+  100% { transform: translateX(320%) skewX(-14deg); opacity: 0; }
+}
+.think-gloss {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 42%;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(127, 168, 201, 0.09) 30%,
+    rgba(242, 237, 227, 0.13) 50%,
+    rgba(127, 168, 201, 0.09) 70%,
+    transparent
+  );
+  animation: think-gloss 3s var(--ease-house-inout) infinite;
+}
+
 /* Chat scroll area — mask under the input */
 .chat-scroll {
   scrollbar-gutter: stable;

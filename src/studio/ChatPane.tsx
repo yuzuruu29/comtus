@@ -7,7 +7,7 @@ import { db, saveMessage, uid } from "../lib/db";
 import type { ChatMessage, Notebook, Citation } from "../lib/types";
 import { streamChat, friendlyError, isAbort } from "../lib/llm";
 import { useSettings, useCallSettings } from "../lib/settings";
-import { Collapse, SOFT, SPRING } from "./fx";
+import { Collapse, SOFT, SPRING, BorderBeam } from "./fx";
 import { timeAgo } from "./ui";
 
 const STARTERS = [
@@ -319,6 +319,7 @@ function MessageBubble({
 
   const citations = dedupeCitations(msg.citations ?? []);
   const hasThinking = !!msg.thinking?.trim();
+  const isThinking = streaming && !msg.content;
 
   return (
     <motion.div
@@ -328,29 +329,47 @@ function MessageBubble({
       className="space-y-2.5"
     >
       {hasThinking && (
-        <div className="overflow-hidden rounded-xl border border-moon/15 bg-moon/[0.045]">
+        <div className="relative overflow-hidden rounded-2xl border border-moon/20 bg-gradient-to-b from-moon/[0.09] via-moon/[0.045] to-moon/[0.02] shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_14px_36px_-18px_rgba(42,54,84,0.6)] backdrop-blur-[2px]">
+          {/* glossy top hairline */}
+          <div
+            aria-hidden
+            className="absolute inset-x-5 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-moon/50 to-transparent"
+          />
+          {isThinking && (
+            <>
+              <div aria-hidden className="think-gloss" />
+              <BorderBeam
+                size={64}
+                duration={5}
+                colorFrom="rgba(127,168,201,0.85)"
+                colorTo="rgba(227,176,75,0.45)"
+              />
+            </>
+          )}
           <button
             onClick={() => (onToggleThinking ? onToggleThinking() : setOpen((v) => !v))}
-            className="flex w-full items-center gap-2 px-4 py-2.5 text-left"
+            className="relative z-[2] flex w-full items-center gap-2.5 px-4 py-2.5 text-left"
           >
-            <ChevronDown
-              size={13}
-              className={`transition-transform duration-300 ${open ? "" : "-rotate-90"}`}
-            />
-            <Brain size={13} className="text-moon" />
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-moon/30 bg-moon/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]">
+              <Brain size={12} className="text-moon" />
+            </span>
             <span className="font-mono text-[10.5px] uppercase tracking-[0.2em] text-moon/90">
-              {streaming && !msg.content ? (
+              {isThinking ? (
                 <span className="thinking-live">Thinking…</span>
               ) : (
                 "Its reasoning"
               )}
             </span>
-            <span className="ml-auto font-mono text-[9.5px] text-faded/60">
+            <span className="ml-auto rounded-full border border-white/[0.07] bg-white/[0.03] px-2 py-0.5 font-mono text-[9px] text-faded/70">
               {msg.thinking!.length.toLocaleString()} chars
             </span>
+            <ChevronDown
+              size={13}
+              className={`shrink-0 text-faded transition-transform duration-300 ${open ? "" : "-rotate-90"}`}
+            />
           </button>
           <Collapse open={open}>
-            <div className="max-h-72 overflow-y-auto border-t border-moon/10 px-4 py-3 text-[12.5px] leading-[1.75] text-moon/75">
+            <div className="relative z-[2] max-h-72 overflow-y-auto border-t border-moon/15 px-4 py-3 text-[12.5px] leading-[1.75] text-moon/75">
               <p className="whitespace-pre-wrap">{msg.thinking}</p>
             </div>
           </Collapse>

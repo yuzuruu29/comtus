@@ -24,6 +24,8 @@ import {
   Plus,
   Trash2,
   Bookmark,
+  Layers,
+  Cpu,
 } from "lucide-react";
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, LampPulse } from "./ui";
 import { useSettings } from "../lib/settings";
@@ -38,6 +40,70 @@ import {
 import type { ProviderId, StoredKey } from "../lib/types";
 import { STUDY_PLANS, type StudyPlan } from "../lib/paypal";
 import PayPalCheckout from "./PayPalCheckout";
+
+/* Free-tier providers highlighted in the picker — one click fills the
+   endpoint + a sensible default model; the key link sits beside them. */
+const FREE_PROVIDER_CARDS: {
+  id: string;
+  name: string;
+  baseUrl: string;
+  model: string;
+  tag: string;
+  desc: string;
+  chips: string[];
+  keyUrl: string;
+  keyLabel: string;
+  icon: typeof Sparkles;
+}[] = [
+  {
+    id: "openrouter",
+    name: "OpenRouter",
+    baseUrl: "https://openrouter.ai/api/v1",
+    model: "deepseek/deepseek-r1:free",
+    tag: "Deep reasoning",
+    desc: "DeepSeek R1, Llama 3.3 & Gemini — hundreds of models behind one free key.",
+    chips: ["deepseek-r1:free", "llama-3.3-70b:free", "gemini-flash:free"],
+    keyUrl: "https://openrouter.ai/keys",
+    keyLabel: "openrouter.ai/keys",
+    icon: Sparkles,
+  },
+  {
+    id: "groq",
+    name: "Groq",
+    baseUrl: "https://api.groq.com/openai/v1",
+    model: "llama-3.3-70b-versatile",
+    tag: "500+ tok/s",
+    desc: "LPU inference with near-zero latency — instant drills and flashcards.",
+    chips: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
+    keyUrl: "https://console.groq.com/keys",
+    keyLabel: "console.groq.com/keys",
+    icon: Zap,
+  },
+  {
+    id: "zen",
+    name: "OpenCode Zen",
+    baseUrl: "https://opencode.ai/zen/v1",
+    model: "qwen3-coder",
+    tag: "Curated free",
+    desc: "A verified shortlist of frontier open models on a single free key.",
+    chips: ["qwen3-coder", "glm", "kimi"],
+    keyUrl: "https://opencode.ai/zen",
+    keyLabel: "opencode.ai/zen",
+    icon: Layers,
+  },
+  {
+    id: "cerebras",
+    name: "Cerebras",
+    baseUrl: "https://api.cerebras.ai/v1",
+    model: "llama-3.3-70b",
+    tag: "Warp speed",
+    desc: "Wafer-scale engines — another very fast free tier for open models.",
+    chips: ["llama-3.3-70b", "qwen-3-32b"],
+    keyUrl: "https://cloud.cerebras.ai",
+    keyLabel: "cloud.cerebras.ai",
+    icon: Cpu,
+  },
+];
 
 export default function SettingsModal({
   open,
@@ -181,7 +247,11 @@ export default function SettingsModal({
           ? "DeepSeek Key"
           : draft.compatBaseUrl.includes("openrouter")
             ? "OpenRouter Key"
-            : "Custom BYOK Key");
+            : draft.compatBaseUrl.includes("opencode")
+              ? "OpenCode Zen Key"
+              : draft.compatBaseUrl.includes("cerebras")
+                ? "Cerebras Key"
+                : "Custom BYOK Key");
 
     const provider: StoredKey["provider"] = draft.compatBaseUrl.includes("groq")
       ? "groq"
@@ -189,7 +259,11 @@ export default function SettingsModal({
         ? "deepseek"
         : draft.compatBaseUrl.includes("openrouter")
           ? "openrouter"
-          : "custom";
+          : draft.compatBaseUrl.includes("opencode")
+            ? "zen"
+            : draft.compatBaseUrl.includes("cerebras")
+              ? "cerebras"
+              : "custom";
 
     addStoredKey({
       name,
@@ -232,6 +306,12 @@ export default function SettingsModal({
     } else if (p === "ollama") {
       setNewKeyBaseUrl("http://localhost:11434/v1");
       setNewKeyModel("llama3.3");
+    } else if (p === "zen") {
+      setNewKeyBaseUrl("https://opencode.ai/zen/v1");
+      setNewKeyModel("qwen3-coder");
+    } else if (p === "cerebras") {
+      setNewKeyBaseUrl("https://api.cerebras.ai/v1");
+      setNewKeyModel("llama-3.3-70b");
     }
   };
 
@@ -425,9 +505,21 @@ export default function SettingsModal({
                         <span className="text-sage text-[10.5px] font-mono">100% FREE</span>
                       </div>
                       <p className="mt-1 text-[11.5px] text-faded">
-                        Run offline models directly on your hardware. <strong>No key or internet needed!</strong>
+                        Run offline models directly on your hardware. <strong>No key or internet needed.</strong>
                       </p>
                     </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 font-mono text-[10.5px]">
+                    <span className="uppercase tracking-[0.14em] text-faded/60">More free tiers:</span>
+                    <a href="https://opencode.ai/zen" target="_blank" rel="noreferrer" className="flex items-center gap-0.5 text-moon hover:underline">
+                      OpenCode Zen <ExternalLink size={9} />
+                    </a>
+                    <a href="https://cloud.cerebras.ai" target="_blank" rel="noreferrer" className="flex items-center gap-0.5 text-moon hover:underline">
+                      Cerebras <ExternalLink size={9} />
+                    </a>
+                    <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="flex items-center gap-0.5 text-moon hover:underline">
+                      Google AI Studio <ExternalLink size={9} />
+                    </a>
                   </div>
                 </div>
               )}
@@ -608,13 +700,13 @@ export default function SettingsModal({
           </>
         ) : (
           <>
-            {/* Quick Free Provider Comparison Card for First-Timers */}
-            <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3.5 space-y-3">
-              <div className="flex items-center justify-between">
+            {/* Free provider picker — one click fills endpoint + default model */}
+            <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.035] to-transparent p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Gauge size={15} className="text-brass shrink-0" />
                   <span className="text-[13px] font-medium text-parchment">
-                    Free AI Providers: OpenRouter vs. Groq
+                    Free AI Providers — pick one, grab a key, connect
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -629,67 +721,63 @@ export default function SettingsModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[12px]">
-                {/* OpenRouter Card */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    set({
-                      compatBaseUrl: "https://openrouter.ai/api/v1",
-                      compatModel: "deepseek/deepseek-r1:free",
-                    });
-                  }}
-                  className={`text-left rounded-lg border p-3 transition-all ${
-                    draft.compatBaseUrl.includes("openrouter")
-                      ? "border-brass/60 bg-brass/[0.08] shadow-[0_0_15px_rgba(227,176,75,0.1)]"
-                      : "border-white/10 bg-night/50 hover:border-white/20"
-                  }`}
-                >
-                  <div className="flex items-center justify-between font-medium text-parchment">
-                    <span className="flex items-center gap-1.5">
-                      <Sparkles size={13} className="text-brass" /> 1. OpenRouter (Free)
-                    </span>
-                    <span className="font-mono text-[10px] text-brasspale">Deep Reasoning</span>
-                  </div>
-                  <p className="mt-1.5 text-[11.5px] leading-relaxed text-faded">
-                    <strong>Best for:</strong> Complex mock exams, step-by-step logic, math, long documents.
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1 font-mono text-[9px] text-parchment/80">
-                    <span className="rounded bg-white/5 px-1.5 py-0.5">deepseek-r1:free</span>
-                    <span className="rounded bg-white/5 px-1.5 py-0.5">llama-3.3-70b:free</span>
-                    <span className="rounded bg-white/5 px-1.5 py-0.5">gemini-2.0-flash:free</span>
-                  </div>
-                </button>
-
-                {/* Groq Card */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    set({
-                      compatBaseUrl: "https://api.groq.com/openai/v1",
-                      compatModel: "llama-3.3-70b-versatile",
-                    });
-                  }}
-                  className={`text-left rounded-lg border p-3 transition-all ${
-                    draft.compatBaseUrl.includes("groq")
-                      ? "border-brass/60 bg-brass/[0.08] shadow-[0_0_15px_rgba(227,176,75,0.1)]"
-                      : "border-white/10 bg-night/50 hover:border-white/20"
-                  }`}
-                >
-                  <div className="flex items-center justify-between font-medium text-parchment">
-                    <span className="flex items-center gap-1.5">
-                      <Zap size={13} className="text-brass" /> 2. Groq (Fast Free)
-                    </span>
-                    <span className="font-mono text-[10px] text-sage">500+ tok/sec</span>
-                  </div>
-                  <p className="mt-1.5 text-[11.5px] leading-relaxed text-faded">
-                    <strong>Best for:</strong> Rapid-fire flashcards, instant summaries, ultra-low latency drills.
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1 font-mono text-[9px] text-parchment/80">
-                    <span className="rounded bg-white/5 px-1.5 py-0.5">llama-3.3-70b-versatile</span>
-                    <span className="rounded bg-white/5 px-1.5 py-0.5">llama-3.1-8b-instant</span>
-                  </div>
-                </button>
+              <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {FREE_PROVIDER_CARDS.map((p) => {
+                  const active = draft.compatBaseUrl === p.baseUrl;
+                  const Icon = p.icon;
+                  return (
+                    <div
+                      key={p.id}
+                      className={`relative overflow-hidden rounded-xl border p-4 transition-all duration-300 ${
+                        active
+                          ? "border-brass/50 bg-brass/[0.06] shadow-[0_0_20px_rgba(227,176,75,0.08)]"
+                          : "border-white/[0.08] bg-night/50 hover:border-white/20 hover:bg-night/70"
+                      }`}
+                    >
+                      <div
+                        aria-hidden
+                        className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => set({ compatBaseUrl: p.baseUrl, compatModel: p.model })}
+                        className="w-full text-left"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <span
+                              className={`flex h-8 w-8 items-center justify-center rounded-lg border shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] ${
+                                active ? "border-brass/40 bg-brass/15" : "border-white/10 bg-white/[0.05]"
+                              }`}
+                            >
+                              <Icon size={14} className={active ? "text-brasspale" : "text-parchment/80"} />
+                            </span>
+                            <span className="text-[13.5px] font-medium text-parchment">{p.name}</span>
+                          </div>
+                          <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-faded">
+                            {p.tag}
+                          </span>
+                        </div>
+                        <p className="mt-2.5 text-[11.5px] leading-relaxed text-faded">{p.desc}</p>
+                        <div className="mt-2.5 flex flex-wrap gap-1 font-mono text-[9px] text-parchment/75">
+                          {p.chips.map((c) => (
+                            <span key={c} className="rounded bg-white/[0.06] px-1.5 py-0.5">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      </button>
+                      <a
+                        href={p.keyUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 inline-flex items-center gap-1 font-mono text-[10px] text-moon transition-colors hover:text-brasspale"
+                      >
+                        Get key · {p.keyLabel} <ExternalLink size={9} />
+                      </a>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -962,26 +1050,29 @@ export default function SettingsModal({
                   </div>
 
                   <div className="max-h-44 overflow-y-auto space-y-1 pr-1">
-                    {filteredModelIds.slice(0, 50).map((id) => (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => set({ compatModel: id })}
-                        className={`flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-left font-mono text-[12px] transition-colors ${
-                          draft.compatModel === id
-                            ? "bg-brass/20 text-brasspale"
-                            : "text-parchment/80 hover:bg-white/5"
-                        }`}
-                      >
-                        <span className="truncate">{id}</span>
-                        {id.endsWith(":free") && (
-                          <span className="ml-1.5 shrink-0 rounded bg-sage/20 px-1.5 py-0.2 font-mono text-[9px] font-medium text-sage">
-                            FREE
-                          </span>
-                        )}
-                        {draft.compatModel === id && <Check size={13} className="text-brass ml-2 shrink-0" />}
-                      </button>
-                    ))}
+                    {filteredModelIds.slice(0, 50).map((id) => {
+                      const selected = draft.compatModel === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => set({ compatModel: id })}
+                          className={`flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-left font-mono text-[12px] transition-all ${
+                            selected
+                              ? "border-brass/40 bg-brass/[0.14] text-brasspale shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                              : "border-transparent text-parchment/80 hover:border-white/10 hover:bg-white/5"
+                          }`}
+                        >
+                          <span className="truncate">{id}</span>
+                          {id.endsWith(":free") && (
+                            <span className="ml-1.5 shrink-0 rounded-full bg-sage/20 px-1.5 py-0.5 font-mono text-[9px] font-medium text-sage">
+                              FREE
+                            </span>
+                          )}
+                          {selected && <Check size={13} className="text-brass ml-2 shrink-0" />}
+                        </button>
+                      );
+                    })}
                     {filteredModelIds.length > 50 && (
                       <div className="pt-1 text-center font-mono text-[10px] text-faded/60">
                         + {filteredModelIds.length - 50} more models. Type to filter.
@@ -1089,6 +1180,8 @@ export default function SettingsModal({
               [
                 ["openrouter", "OpenRouter"],
                 ["groq", "Groq"],
+                ["zen", "OpenCode Zen"],
+                ["cerebras", "Cerebras"],
                 ["deepseek", "DeepSeek"],
                 ["together", "Together AI"],
                 ["ollama", "Ollama (Local)"],

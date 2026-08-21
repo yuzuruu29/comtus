@@ -251,7 +251,7 @@ export type Effort = "medium" | "high" | "xhigh";
 export interface StoredKey {
   id: string;
   name: string;
-  provider: "openrouter" | "groq" | "deepseek" | "together" | "ollama" | "custom";
+  provider: "openrouter" | "groq" | "deepseek" | "together" | "ollama" | "zen" | "cerebras" | "custom";
   apiKey: string;
   baseUrl: string;
   defaultModel?: string;
