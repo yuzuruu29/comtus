@@ -348,23 +348,40 @@ export default function OpenRouterByokSection() {
 
             <div className="lg:col-span-5 flex flex-col justify-between rounded-2xl border border-brass/30 bg-night/80 p-6 space-y-4">
               <div>
-                <div className="font-mono text-[10.5px] uppercase tracking-wider text-brasspale font-medium">
-                  Available via PayPal study passes:
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="font-mono text-[10.5px] uppercase tracking-wider text-brasspale font-medium">
+                    Available via PayPal study passes:
+                  </div>
+                  <span className="rounded-full border border-sage/25 bg-sage/15 px-2 py-0.5 font-mono text-[9px] font-medium text-sage">
+                    −40% launch offer
+                  </span>
                 </div>
                 <div className="mt-3 space-y-2 text-[12.5px]">
                   <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
                     <span className="text-parchment font-medium">Sprint Pass</span>
-                    <span className="font-mono text-brass font-bold">$2.99 USD (~500k tok)</span>
+                    <span className="flex items-baseline gap-1.5 font-mono">
+                      <span className="text-[11px] text-faded/60 line-through">$4.99</span>
+                      <span className="font-bold text-brass">$2.99</span>
+                      <span className="text-[10px] font-normal text-faded">(~500k tok)</span>
+                    </span>
                   </div>
                   <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
                     <span className="text-parchment font-medium flex items-center gap-1">
                       Scholar Pass <span className="rounded bg-brass/20 px-1 py-0.2 font-mono text-[9px] text-brasspale uppercase">Popular</span>
                     </span>
-                    <span className="font-mono text-brass font-bold">$6.99 USD (~1.5M tok)</span>
+                    <span className="flex items-baseline gap-1.5 font-mono">
+                      <span className="text-[11px] text-faded/60 line-through">$11.99</span>
+                      <span className="font-bold text-brass">$6.99</span>
+                      <span className="text-[10px] font-normal text-faded">(~1.5M tok)</span>
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-parchment font-medium">Mastery Pass</span>
-                    <span className="font-mono text-brass font-bold">$14.99 USD (~3.5M tok)</span>
+                    <span className="flex items-baseline gap-1.5 font-mono">
+                      <span className="text-[11px] text-faded/60 line-through">$24.99</span>
+                      <span className="font-bold text-brass">$14.99</span>
+                      <span className="text-[10px] font-normal text-faded">(~3.5M tok)</span>
+                    </span>
                   </div>
                 </div>
               </div>

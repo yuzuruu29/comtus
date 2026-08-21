@@ -10,6 +10,8 @@ export interface StudyPlan {
   id: "sprint" | "scholar" | "mastery";
   name: string;
   price: string; // e.g. "2.99"
+  /** Display-only crossed-out reference price; PayPal charges `amount`. */
+  compareAt: string;
   amount: number;
   tokens: string;
   badge?: string;
@@ -22,6 +24,7 @@ export const STUDY_PLANS: StudyPlan[] = [
     id: "sprint",
     name: "Sprint Pass",
     price: "2.99",
+    compareAt: "4.99",
     amount: 2.99,
     tokens: "~500,000 Tokens",
     desc: "~25–35 full mock exams or deep study sessions.",
@@ -30,6 +33,7 @@ export const STUDY_PLANS: StudyPlan[] = [
     id: "scholar",
     name: "Scholar Pass",
     price: "6.99",
+    compareAt: "11.99",
     amount: 6.99,
     tokens: "~1,500,000 Tokens",
     badge: "Popular",
@@ -40,6 +44,7 @@ export const STUDY_PLANS: StudyPlan[] = [
     id: "mastery",
     name: "Mastery Pass",
     price: "14.99",
+    compareAt: "24.99",
     amount: 14.99,
     tokens: "~3,500,000 Tokens",
     desc: "Full Opus 5 deep synthesis & intensive semester review.",

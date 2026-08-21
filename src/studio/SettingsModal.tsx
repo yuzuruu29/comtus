@@ -576,7 +576,15 @@ export default function SettingsModal({
                                 </span>
                               )}
                             </span>
-                            <span className="font-mono text-brass font-bold text-[13px]">${plan.price}</span>
+                            <span className="flex items-baseline gap-1.5">
+                              <span className="font-mono text-[10.5px] text-faded/60 line-through">
+                                ${plan.compareAt}
+                              </span>
+                              <span className="font-mono text-brass font-bold text-[13px]">${plan.price}</span>
+                              <span className="rounded-full border border-sage/25 bg-sage/15 px-1.5 font-mono text-[8.5px] font-medium text-sage">
+                                −{Math.round((1 - plan.amount / parseFloat(plan.compareAt)) * 100)}%
+                              </span>
+                            </span>
                           </div>
                           <div className="mt-1 font-mono text-[10px] text-faded/70">{plan.tokens}</div>
                           <p className="mt-1.5 text-[11.5px] leading-snug text-faded">{plan.desc}</p>
@@ -597,7 +605,13 @@ export default function SettingsModal({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-[12.5px] text-parchment font-medium">
                     <CreditCard size={15} className="text-brass shrink-0" />
-                    <span>Pay with PayPal: {selectedPlan.name} (${selectedPlan.price} USD)</span>
+                    <span>
+                      Pay with PayPal: {selectedPlan.name} (${selectedPlan.price} USD ·{" "}
+                      <span className="text-sage">
+                        save ${(parseFloat(selectedPlan.compareAt) - selectedPlan.amount).toFixed(2)}
+                      </span>
+                      )
+                    </span>
                   </div>
                   <span className="font-mono text-[10px] text-brasspale">{selectedPlan.tokens}</span>
                 </div>
