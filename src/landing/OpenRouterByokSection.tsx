@@ -17,43 +17,49 @@ import TiltCard from "./TiltCard";
 
 gsap.registerPlugin(ScrollTrigger);
 
+const KEY_PROVIDERS = [
+  { name: "OpenRouter", url: "https://openrouter.ai/keys" },
+  { name: "Groq", url: "https://console.groq.com/keys" },
+  { name: "OpenCode Zen", url: "https://opencode.ai/zen" },
+];
+
 const FREE_MODELS = [
   {
     id: "deepseek/deepseek-r1:free",
-    name: "DeepSeek R1 (Free)",
+    name: "DeepSeek R1",
     badge: "Deep Reasoning",
     badgeColor: "text-brasspale border-brass/30 bg-brass/10",
-    speed: "Standard (~40 tok/s)",
+    speed: "Standard · ~40 tok/s",
     context: "64k tokens",
     bestFor: "Complex multi-step math, clinical reasoning, board exam logic",
     why: "Generates full visible chain-of-thought reasoning before answering.",
   },
   {
     id: "meta-llama/llama-3.3-70b-instruct:free",
-    name: "Llama 3.3 70B (Free)",
+    name: "Llama 3.3 70B",
     badge: "Most Balanced",
     badgeColor: "text-sage border-sage/30 bg-sage/10",
-    speed: "Fast (~65 tok/s)",
+    speed: "Fast · ~65 tok/s",
     context: "128k tokens",
     bestFor: "100-item mock exams, comprehensive study guides, essay scoring",
     why: "State-of-the-art open weights with strong factual grounding.",
   },
   {
     id: "google/gemini-2.0-flash-exp:free",
-    name: "Gemini 2.0 Flash (Free)",
+    name: "Gemini 2.0 Flash",
     badge: "Massive Context",
     badgeColor: "text-moon border-moon/30 bg-moon/10",
-    speed: "Very Fast (~90 tok/s)",
-    context: "1,000,000 tokens",
+    speed: "Very Fast · ~90 tok/s",
+    context: "1M tokens",
     bestFor: "Massive multi-chapter PDFs, full textbooks, semester slides",
     why: "Reads entire textbook libraries without truncating source text.",
   },
   {
     id: "llama-3.3-70b-versatile (Groq)",
-    name: "Groq LPU (Free Tier)",
-    badge: "500+ tok/s LPUs",
+    name: "Groq LPU",
+    badge: "Ultra-Instant",
     badgeColor: "text-brass border-brass/40 bg-brass/15",
-    speed: "Ultra-instant (~500+ tok/s)",
+    speed: "500+ tok/s · LPU",
     context: "128k tokens",
     bestFor: "Rapid-fire flashcards, instantaneous chat, zero-latency drills",
     why: "Dedicated Groq tensor hardware with near-zero latency.",
@@ -196,6 +202,33 @@ export default function OpenRouterByokSection() {
           </div>
         </div>
 
+        {/* Free key providers — any OpenAI-compatible endpoint works */}
+        <div className="reveal-byok mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-6 py-4">
+          <span className="label-mono !tracking-[0.24em] shrink-0 opacity-70">
+            Get a Free Key
+          </span>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            {KEY_PROVIDERS.map((p) => (
+              <a
+                key={p.name}
+                href={p.url}
+                target="_blank"
+                rel="noreferrer"
+                className="group flex items-center gap-1.5 font-mono text-[11.5px] text-parchment/75 transition-colors duration-300 hover:text-brasspale"
+              >
+                {p.name}
+                <ExternalLink
+                  size={10}
+                  className="opacity-50 transition-opacity group-hover:opacity-100"
+                />
+              </a>
+            ))}
+          </div>
+          <span className="ml-auto hidden font-mono text-[10.5px] text-faded lg:block">
+            Any OpenAI-compatible endpoint works · or run fully local with Ollama
+          </span>
+        </div>
+
         {/* Free Models Comparison Grid */}
         <div className="reveal-byok mt-16">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
@@ -212,26 +245,34 @@ export default function OpenRouterByokSection() {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {FREE_MODELS.map((m) => (
-              <TiltCard key={m.id} className="flex flex-col justify-between p-5">
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <span className={`rounded-full border px-2.5 py-0.5 font-mono text-[9.5px] uppercase tracking-wider ${m.badgeColor}`}>
-                      {m.badge}
-                    </span>
-                    <span className="font-mono text-[10px] text-faded">{m.speed}</span>
-                  </div>
+              <TiltCard key={m.id} innerClassName="p-5 sm:p-6">
+                <div className="flex h-full flex-col">
+                  <span
+                    className={`self-start rounded-full border px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-wider ${m.badgeColor}`}
+                  >
+                    {m.badge}
+                  </span>
 
-                  <h4 className="mt-3 font-display text-[1.15rem] font-[440] text-parchment">
+                  <h4 className="mt-3.5 font-display text-[1.15rem] font-[440] leading-snug text-parchment">
                     {m.name}
                   </h4>
 
-                  <p className="mt-2 text-[12px] leading-relaxed text-faded">
-                    <strong>Best for:</strong> {m.bestFor}
-                  </p>
-                </div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-2 font-mono text-[10px] leading-relaxed text-faded">
+                    <span>{m.speed}</span>
+                    <span aria-hidden className="text-white/20">·</span>
+                    <span>{m.context}</span>
+                  </div>
 
-                <div className="mt-4 pt-3 border-t border-white/[0.06] text-[11.5px] text-parchment/75 leading-snug">
-                  {m.why}
+                  <p className="mt-3 text-[12px] leading-relaxed text-faded">
+                    <strong className="font-medium text-parchment/85">Best for:</strong>{" "}
+                    {m.bestFor}
+                  </p>
+
+                  <div className="mt-auto pt-4">
+                    <div className="border-t border-white/[0.06] pt-3 text-[11.5px] leading-snug text-parchment/75">
+                      {m.why}
+                    </div>
+                  </div>
                 </div>
               </TiltCard>
             ))}

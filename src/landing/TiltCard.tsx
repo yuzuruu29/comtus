@@ -5,9 +5,12 @@ import gsap from "gsap";
 export default function TiltCard({
   children,
   className = "",
+  innerClassName,
 }: {
   children: ReactNode;
   className?: string;
+  /** Overrides the default roomy inner padding (dense grids pass e.g. "p-5"). */
+  innerClassName?: string;
 }) {
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -59,7 +62,7 @@ export default function TiltCard({
       />
       <div
         ref={innerRef}
-        className="relative h-full rounded-[1.55rem] bg-study p-7 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] will-change-transform sm:p-9"
+        className={`relative h-full rounded-[1.55rem] bg-study ${innerClassName ?? "p-7 sm:p-9"} shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] will-change-transform`}
       >
         {children}
       </div>
