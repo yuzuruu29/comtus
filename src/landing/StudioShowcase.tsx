@@ -29,7 +29,7 @@ const FEATURES = [
   },
 ];
 
-/** 02 — THE STUDIO · editorial split: sticky manifesto left, feature
+/** 03 — THE STUDIO · editorial split: sticky manifesto left, feature
  *  cascade + a CSS-built glimpse of the workspace right. */
 export default function StudioShowcase() {
   const rootRef = useRef<HTMLElement>(null);
@@ -70,7 +70,7 @@ export default function StudioShowcase() {
           <div className="lg:sticky lg:top-32">
             <div className="reveal">
               <SectionHead
-                index="02"
+                index="03"
                 label="The Studio"
                 title={
                   <>

@@ -14,7 +14,7 @@ const PRESETS = [
   ["+", "Model any exam, anywhere"],
 ];
 
-/** 04 — BOARDS · Philippine licensure presets + the blueprint editor. */
+/** 05 — BOARDS · Philippine licensure presets + the blueprint editor. */
 export default function Boards() {
   const rootRef = useRef<HTMLElement>(null);
 
@@ -53,7 +53,7 @@ export default function Boards() {
         <div className="lg:col-span-6">
           <div className="reveal">
             <SectionHead
-              index="04"
+              index="05"
               label="Boards"
               title={
                 <>

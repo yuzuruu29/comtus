@@ -53,7 +53,7 @@ const FREE_MODELS = [
     name: "Groq LPU (Free Tier)",
     badge: "500+ tok/s LPUs",
     badgeColor: "text-brass border-brass/40 bg-brass/15",
-    speed: "⚡ Ultra-Instant (~500+ tok/s)",
+    speed: "Ultra-instant (~500+ tok/s)",
     context: "128k tokens",
     bestFor: "Rapid-fire flashcards, instantaneous chat, zero-latency drills",
     why: "Dedicated Groq tensor hardware with near-zero latency.",
@@ -108,7 +108,7 @@ export default function OpenRouterByokSection() {
                 How to use <em className="font-[420] text-lamp">Free AI Models</em> in 60 seconds.
               </>
             }
-            sub="Never used Bring-Your-Own-Key (BYOK) before? Follow this quick 3-step guide to get 100% free access to DeepSeek R1, Llama 3.3 70B, and Gemini without paying a cent."
+            sub="Never used Bring-Your-Own-Key (BYOK) before? This 3-step guide gets you free access to DeepSeek R1, Llama 3.3 70B, and Gemini — no credit card required."
           />
         </div>
 
@@ -185,7 +185,7 @@ export default function OpenRouterByokSection() {
                 Pick a Free Model & Save
               </h3>
               <p className="mt-2 text-[13px] leading-relaxed text-faded">
-                Click the <span className="text-brasspale font-medium">✨ :free</span> filter chip, pick <strong>DeepSeek R1</strong> or <strong>Llama 3.3</strong>, and click <em>Save & test</em>. The lamp is lit!
+                Click the <span className="text-brasspale font-medium">✨ :free</span> filter chip, pick <strong>DeepSeek R1</strong> or <strong>Llama 3.3</strong>, and click <em>Save & test</em>. The lamp is lit.
               </p>
             </div>
 
@@ -239,38 +239,40 @@ export default function OpenRouterByokSection() {
         </div>
 
         {/* Troubleshooting & Unresponsive Models Guide (Prevent User Scare) */}
-        <div className="reveal-byok mt-12 overflow-hidden rounded-2xl border border-brass/30 bg-brass/[0.04] p-6 sm:p-8">
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-            <div className="space-y-3 max-w-xl">
-              <div className="flex items-center gap-2">
-                <AlertTriangle size={18} className="text-brass shrink-0" />
-                <h4 className="font-display text-[1.35rem] font-[430] text-parchment">
-                  What if a free model is slow or unresponsive?
-                </h4>
+        <div className="reveal-byok mt-12 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 sm:p-8">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-brass/30 bg-brass/10">
+              <AlertTriangle size={15} className="text-brass" />
+            </span>
+            <div className="max-w-2xl">
+              <h3 className="font-display text-[1.45rem] font-[430] leading-snug text-parchment">
+                What if a free model is slow or unresponsive?
+              </h3>
+              <p className="mt-2.5 text-[13.5px] leading-relaxed text-faded">
+                Free community models (like DeepSeek R1) occasionally queue requests during worldwide traffic peaks.{" "}
+                <strong className="font-[560] text-parchment/90">Don't panic — your study data is 100% safe.</strong>{" "}
+                If an endpoint stalls, two quick fixes:
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-white/10 bg-night/60 p-4">
+              <div className="flex items-center gap-2 text-[13px] font-medium text-parchment">
+                <RefreshCw size={13} className="shrink-0 text-brass" /> Switch free model
               </div>
-              <p className="text-[13.5px] leading-relaxed text-faded">
-                Because free community models (like DeepSeek R1) experience high worldwide traffic peaks, endpoints occasionally queue requests. <strong>Don't panic — your study data is 100% safe.</strong>
+              <p className="mt-1.5 text-[12.5px] leading-relaxed text-faded">
+                Open Settings and pick Llama 3.3 70B or Gemini Flash — switching takes two seconds.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full md:w-auto shrink-0 text-[12px]">
-              <div className="rounded-xl border border-white/10 bg-night/60 p-3.5 space-y-1">
-                <div className="flex items-center gap-1.5 font-medium text-parchment">
-                  <RefreshCw size={13} className="text-brass" /> 1. Switch Free Model
-                </div>
-                <p className="text-[11.5px] text-faded leading-snug">
-                  Click Settings & pick Llama 3.3 70B or Gemini Flash — switches in 2 seconds.
-                </p>
+            <div className="rounded-xl border border-white/10 bg-night/60 p-4">
+              <div className="flex items-center gap-2 text-[13px] font-medium text-parchment">
+                <Zap size={13} className="shrink-0 text-sage" /> Use Groq fast free
               </div>
-
-              <div className="rounded-xl border border-white/10 bg-night/60 p-3.5 space-y-1">
-                <div className="flex items-center gap-1.5 font-medium text-parchment">
-                  <Zap size={13} className="text-sage" /> 2. Use Groq Fast Free
-                </div>
-                <p className="text-[11.5px] text-faded leading-snug">
-                  Dedicated 500+ tok/s LPUs on Groq with virtually zero queue latency.
-                </p>
-              </div>
+              <p className="mt-1.5 text-[12.5px] leading-relaxed text-faded">
+                Groq's dedicated LPUs serve 500+ tok/s with virtually zero queue latency.
+              </p>
             </div>
           </div>
         </div>
@@ -306,7 +308,7 @@ export default function OpenRouterByokSection() {
             <div className="lg:col-span-5 flex flex-col justify-between rounded-2xl border border-brass/30 bg-night/80 p-6 space-y-4">
               <div>
                 <div className="font-mono text-[10.5px] uppercase tracking-wider text-brasspale font-medium">
-                  Available via Realistic PayPal Passes:
+                  Available via PayPal study passes:
                 </div>
                 <div className="mt-3 space-y-2 text-[12.5px]">
                   <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">

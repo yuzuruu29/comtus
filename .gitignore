@@ -9,3 +9,5 @@ src-tauri/gen
 
 .vercel
 *.zip
+
+.playwright-mcp/

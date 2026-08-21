@@ -23,7 +23,7 @@ const STEPS = [
   },
 ];
 
-/** 03 — YOUR STACK · the NotebookLM bridge, with a thread drawn on scroll. */
+/** 04 — YOUR STACK · the NotebookLM bridge, with a thread drawn on scroll. */
 export default function BringStack() {
   const rootRef = useRef<HTMLElement>(null);
 
@@ -76,7 +76,7 @@ export default function BringStack() {
       <div className="mx-auto w-full max-w-6xl px-6">
         <div className="reveal">
           <SectionHead
-            index="03"
+            index="04"
             label="Your Stack"
             title={
               <>

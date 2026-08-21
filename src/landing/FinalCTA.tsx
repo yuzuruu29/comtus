@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
 const FOOTNOTES = [
-  ["BYOK Privacy", "Bring your Anthropic key, OpenRouter, or run 100% free with local Ollama. Keys stay strictly on-device."],
+  ["BYOK Privacy", "Free models run on your own OpenRouter key, smarter Claude models on our hosted key via PayPal pass, or fully local with Ollama. Keys stay strictly on-device."],
   ["Local-first", "Sources, notebooks, and history live in your browser's IndexedDB. Nothing uploads to our servers."],
   ["Everywhere", "Runs in the browser or as an installable PWA / native desktop app across iOS, Android, macOS, and Windows."],
 ];
