@@ -140,8 +140,18 @@ export default async function handler(req: Request): Promise<Response> {
     return json(503, { error: "Hosted models are not configured. Contact support." }, origin);
   }
 
+  // Rewrites (vercel.json) carry SDK subpaths as ?p=v1/messages; direct
+  // hits fall back to the URL path, defaulting to /v1/messages.
   const incoming = new URL(req.url);
-  const upstream = await fetch(`${ANTHROPIC_ORIGIN}${incoming.pathname}${incoming.search}`, {
+  const viaRewrite = incoming.searchParams.get("p");
+  let subPath: string;
+  if (viaRewrite) {
+    subPath = `/${viaRewrite.replace(/^\/+/, "")}`;
+  } else {
+    subPath = incoming.pathname.replace(/^\/api\/anthropic\/?/, "") || "v1/messages";
+    if (!subPath.startsWith("/")) subPath = `/${subPath}`;
+  }
+  const upstream = await fetch(`${ANTHROPIC_ORIGIN}${subPath}`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
