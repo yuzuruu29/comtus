@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "@fontsource-variable/fraunces";
+@import "@fontsource-variable/inter";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
 
 @theme {
   /* ── Comtus · Lamplight Study ─────────────────────────────
@@ -31,6 +35,40 @@
   --sar: env(safe-area-inset-right, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px);
+  --desk-header: 3.5rem;
+  --desk-row: 3rem;
+  --desk-pad: 1.25rem;
+  --desk-rail: 3rem;
+  --radius-control: 6px;
+  --radius-field: 10px;
+  --radius-dialog: 12px;
+  --z-titlebar: 40;
+  --z-palette: 80;
+  --z-modal: 90;
+}
+
+html[data-shell="desktop"] {
+  --desk-header: 2.5rem;
+  --desk-row: 2rem;
+  --desk-pad: 0.85rem;
+  font-size: 14px;
+}
+
+html[data-shell] .cursor-dot,
+html[data-shell] .cursor-ring {
+  display: none !important;
+}
+
+*[data-tauri-drag-region] {
+  app-region: drag;
+}
+.no-drag,
+.no-drag * {
+  app-region: no-drag;
+}
+
+html[data-shell="desktop"][data-platform="mac"] .desk-header {
+  padding-left: 78px;
 }
 
 html {

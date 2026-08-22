@@ -1,19 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  PanelRightClose,
-  ListChecks,
-  GraduationCap,
-  Feather,
-  Layers,
   BookOpen,
   Briefcase,
-  HelpCircle,
-  History,
+  ClockCounterClockwise,
   FileText,
+  GraduationCap,
+  ListChecks,
+  PenNib,
   Presentation,
-  Crown,
-} from "lucide-react";
+  Question,
+  SidebarSimple,
+  Stack,
+} from "@phosphor-icons/react";
 import { db } from "../lib/db";
 import type { Generation, GenerationKind } from "../lib/types";
 import { SOFT } from "./fx";
@@ -42,13 +41,13 @@ const TILES: {
 }[] = [
   { flow: "quiz", icon: ListChecks, name: "Quiz", line: "Quick set, instant rationales" },
   { flow: "exam", icon: GraduationCap, name: "Mock exam", line: "Full simulation or drill" },
-  { flow: "essay", icon: Feather, name: "Essay coach", line: "Prompts + rubric grading" },
-  { flow: "flashcards", icon: Layers, name: "Flashcards", line: "Custom cards from sources" },
+  { flow: "essay", icon: PenNib, name: "Essay coach", line: "Prompts + rubric grading" },
+  { flow: "flashcards", icon: Stack, name: "Flashcards", line: "Custom cards from sources" },
   {
     flow: "presentation",
     icon: Presentation,
     name: "PPT & Slides",
-    line: "Decks & speaker notes",
+    line: "Decks and speaker notes",
     badge: "Anthropic",
   },
 ];
@@ -56,8 +55,8 @@ const TILES: {
 const AID_TILES: { kind: GenerationKind; icon: typeof BookOpen; name: string }[] = [
   { kind: "study-guide", icon: BookOpen, name: "Study guide" },
   { kind: "brief", icon: Briefcase, name: "Briefing doc" },
-  { kind: "faq", icon: HelpCircle, name: "FAQ" },
-  { kind: "timeline", icon: History, name: "Timeline" },
+  { kind: "faq", icon: Question, name: "FAQ" },
+  { kind: "timeline", icon: ClockCounterClockwise, name: "Timeline" },
 ];
 
 const FLOW_TITLES: Record<string, string> = {
@@ -106,65 +105,54 @@ export default function StudioPane({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center justify-between px-5 pb-2 pt-4">
-        <div className="label-mono">Studio</div>
+      <div className="flex items-center justify-between px-[var(--desk-pad)] pb-2 pt-3">
+        <div className="text-[12px] text-faded">Studio</div>
         {onCollapse && (
           <button
             onClick={onCollapse}
             className="rounded p-1 text-faded transition-colors hover:text-parchment"
             aria-label="Collapse studio"
           >
-            <PanelRightClose size={14} />
+            <SidebarSimple size={16} weight="light" />
           </button>
         )}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">
-        <div className="grid grid-cols-2 gap-2.5">
-          {TILES.map((t, i) => (
-            <motion.button
+      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-6">
+        <div className="flex flex-col">
+          {TILES.map((t) => (
+            <button
               key={t.name}
               onClick={() => setFlow(t.flow as Flow)}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ ...SOFT, delay: 0.05 + i * 0.06 }}
-              whileHover={{ y: -3 }}
-              whileTap={{ scale: 0.97 }}
-              className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 text-left transition-colors duration-200 hover:border-brass/30 hover:bg-brass/[0.03] relative overflow-hidden"
+              className="flex items-start gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2 text-left hover:bg-white/[0.04]"
             >
-              <div className="flex items-center justify-between">
-                <t.icon size={16} className="text-brasspale/80 transition-transform duration-300 group-hover:-translate-y-0.5" />
-                {t.badge && (
-                  <span className="flex items-center gap-0.5 rounded-full border border-brass/30 bg-brass/15 px-1.5 py-0.2 font-mono text-[8.5px] uppercase tracking-wider text-brasspale">
-                    <Crown size={9} className="text-brass" /> {t.badge}
-                  </span>
-                )}
-              </div>
-              <div className="mt-2.5 text-[13.5px] font-medium text-parchment/95">{t.name}</div>
-              <div className="mt-0.5 text-[11px] leading-snug text-faded">{t.line}</div>
-            </motion.button>
+              <t.icon size={16} weight="light" className="mt-0.5 shrink-0 text-brasspale/80" />
+              <span className="min-w-0">
+                <span className="block text-[13px] text-parchment/95">
+                  {t.name}
+                  {t.badge && <span className="ml-2 text-[10px] text-faded">{t.badge}</span>}
+                </span>
+                <span className="block text-[11px] leading-snug text-faded">{t.line}</span>
+              </span>
+            </button>
           ))}
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-2.5">
-          {AID_TILES.map((t, i) => (
-            <motion.button
+        <div className="mt-1 flex flex-col">
+          {AID_TILES.map((t) => (
+            <button
               key={t.kind}
               onClick={() => openAid(t.kind)}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ ...SOFT, delay: 0.3 + i * 0.05 }}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.015] px-3.5 py-2.5 text-left transition-colors duration-200 hover:border-brass/25 hover:bg-brass/[0.03]"
+              className="flex items-center gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2 text-left hover:bg-white/[0.04]"
             >
-              <t.icon size={14} className="shrink-0 text-faded transition-colors duration-200" />
-              <span className="truncate text-[12.5px] text-parchment/85">{t.name}</span>
-            </motion.button>
+              <t.icon size={16} weight="light" className="shrink-0 text-faded" />
+              <span className="truncate text-[13px] text-parchment/85">{t.name}</span>
+            </button>
           ))}
         </div>
 
-        <div className="mt-7">
-          <div className="label-mono mb-3">Saved work</div>
+        <div className="mt-5 border-t border-white/[0.07] px-2.5 pt-4">
+          <div className="mb-2 text-[12px] text-faded">Saved work</div>
           <div className="space-y-1.5">
             <AnimatePresence initial={false}>
               {gens.map((g) => (
@@ -178,7 +166,7 @@ export default function StudioPane({
                   transition={SOFT}
                   className="flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.015] px-3.5 py-2.5 text-left transition-colors duration-200 hover:border-white/15 hover:bg-white/[0.03]"
                 >
-                  <FileText size={13} className="shrink-0 text-faded" />
+                  <FileText size={13} weight="light" className="shrink-0 text-faded" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[12.5px] text-parchment/90">{g.title}</span>
                     <span className="block font-mono text-[9px] uppercase tracking-[0.14em] text-faded/60">

@@ -1,10 +1,17 @@
-import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { detectPlatform, isTauri } from "./lib/desktop";
 
 const LandingPage = lazy(() => import("./landing/LandingPage"));
 const StudioApp = lazy(() => import("./studio/StudioApp"));
 
 export default function App() {
+  const tauri = isTauri();
+
+  useEffect(() => {
+    document.documentElement.dataset.platform = detectPlatform();
+  }, []);
+
   return (
     <Suspense
       fallback={
@@ -14,11 +21,10 @@ export default function App() {
       }
     >
       <Routes>
-        <Route path="/" element={<LandingPage />} />
-        {/* One route for both shelf and workspace: navigating between them
-            re-renders the same mounted StudioApp instead of unmounting the
-            lazy element — and a rapid browser-back right after opening a
-            notebook no longer races a route-element swap. */}
+        <Route
+          path="/"
+          element={tauri ? <Navigate to="/studio" replace /> : <LandingPage />}
+        />
         <Route path="/studio/:notebookId?" element={<StudioApp />} />
       </Routes>
     </Suspense>

@@ -13,7 +13,7 @@ export default defineConfig({
           "vendor-motion": ["motion/react", "gsap"],
           "vendor-ai": ["@anthropic-ai/sdk", "openai"],
           "vendor-markdown": ["react-markdown", "remark-gfm"],
-          "vendor-icons": ["lucide-react"],
+          "vendor-icons": ["lucide-react", "@phosphor-icons/react"],
         },
       },
     },

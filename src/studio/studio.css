@@ -128,6 +128,22 @@
   scrollbar-gutter: stable;
 }
 
+.think-rule {
+  border-left: 2px solid rgba(127, 168, 201, 0.45);
+  background: rgba(127, 168, 201, 0.05);
+}
+
+.cite-mark {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.desk-split {
+  border-color: rgba(242, 237, 227, 0.09);
+}
+
 /* Streaming caret */
 @keyframes caret-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 .stream-caret::after {

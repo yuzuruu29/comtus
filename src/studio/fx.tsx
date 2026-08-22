@@ -13,10 +13,10 @@ export const SOFT = { type: "spring", stiffness: 240, damping: 26 } as const;
 /** Cubic approximation of the house ease, for non-spring tweens. */
 export const HOUSE = [0.22, 1, 0.36, 1] as const;
 
-/** Glass island surface — a pane that floats on the night instead
- *  of butting into it. No backdrop-blur: these wrap scroll areas. */
-export const glassPane =
-  "rounded-2xl border border-white/[0.07] bg-[#0d1220]/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_24px_60px_-30px_rgba(0,0,0,0.6)]";
+/** Bound desk pane — flush to the window, split by hairlines. */
+export const deskPane = "h-full min-h-0 bg-night";
+/** @deprecated Use deskPane. Kept so older imports fail loudly in typecheck. */
+export const glassPane = deskPane;
 
 /** Wraps the studio in motion's reduced-motion awareness so every
  *  spring/tween collapses to an instant state change when asked. */

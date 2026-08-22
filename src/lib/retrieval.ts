@@ -45,8 +45,13 @@ export interface RetrievalResult {
 export async function groundContext(
   notebookId: string,
   query: string,
+  sourceIds?: string[],
 ): Promise<RetrievalResult> {
-  const sources = await db.sources.where("notebookId").equals(notebookId).toArray();
+  let sources = await db.sources.where("notebookId").equals(notebookId).toArray();
+  if (sourceIds && sourceIds.length > 0) {
+    const allow = new Set(sourceIds);
+    sources = sources.filter((s) => allow.has(s.id));
+  }
   if (sources.length === 0) return { docs: [], mode: "full" };
 
   const totalTokens = sources.reduce((s, src) => s + src.tokens, 0);
@@ -58,7 +63,10 @@ export async function groundContext(
   }
 
   // Lexical retrieval over chunks.
-  const chunks = await db.chunks.where("notebookId").equals(notebookId).toArray();
+  const sourceAllow = new Set(sources.map((s) => s.id));
+  const chunks = (await db.chunks.where("notebookId").equals(notebookId).toArray()).filter((c) =>
+    sourceAllow.has(c.sourceId),
+  );
   const queryTerms = Array.from(new Set(tokenize(query)));
   const df = new Map<string, number>();
   const chunkTerms: string[][] = chunks.map((c) => tokenize(c.text));

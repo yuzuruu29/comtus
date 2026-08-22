@@ -11,7 +11,6 @@ export default function StudioApp() {
   const navigate = useNavigate();
   const hasKey = useSettings((s) => s.hasKey());
 
-  // Title the tab like the product, not the route.
   useEffect(() => {
     document.title = "Comtus — Studio";
     return () => {

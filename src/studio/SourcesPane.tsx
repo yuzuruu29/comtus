@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Plus, FileText, Globe, ClipboardType, Trash2, PanelLeftClose, X, FileJson, FileType2, Flame, Image as ImageIcon } from "lucide-react";
+import { ClipboardText, FilePdf, FileJs, FileText, Flame, Globe, Image as ImageIcon, Plus, SidebarSimple, Trash, X } from "@phosphor-icons/react";
+import { loadFocus, saveFocus } from "./focus";
 import { db, deleteSource } from "../lib/db";
 import type { Source } from "../lib/types";
 import { importFiles, extractUrl, chunkText } from "../lib/import";
@@ -11,13 +12,13 @@ import { SOFT } from "./fx";
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, timeAgo } from "./ui";
 
 const KIND_ICON = {
-  pdf: FileType2,
+  pdf: FilePdf,
   docx: FileText,
   txt: FileText,
   md: FileText,
-  json: FileJson,
+  json: FileJs,
   url: Globe,
-  paste: ClipboardType,
+  paste: ClipboardText,
   img: ImageIcon,
 } as const;
 
@@ -28,6 +29,9 @@ export default function SourcesPane({
   onChanged,
   pendingView,
   onPendingConsumed,
+  importTick,
+  dropFiles,
+  onDropConsumed,
 }: {
   notebookId: string;
   version: number;
@@ -35,6 +39,9 @@ export default function SourcesPane({
   onChanged: () => void;
   pendingView?: { sourceId: string; startChar?: number } | null;
   onPendingConsumed?: () => void;
+  importTick?: number;
+  dropFiles?: FileList | null;
+  onDropConsumed?: () => void;
 }) {
   const [sources, setSources] = useState<Source[]>([]);
   const [importing, setImporting] = useState<{ done: number; total: number; current: string } | null>(null);
@@ -42,7 +49,18 @@ export default function SourcesPane({
   const [urlOpen, setUrlOpen] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [viewing, setViewing] = useState<{ source: Source; startChar?: number } | null>(null);
+  const [focused, setFocused] = useState<string[] | null>(() => loadFocus(notebookId));
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (importTick && importTick > 0) fileRef.current?.click();
+  }, [importTick]);
+
+  useEffect(() => {
+    if (!dropFiles || dropFiles.length === 0) return;
+    void handleFiles(dropFiles);
+    onDropConsumed?.();
+  }, [dropFiles]);
 
   const refresh = useCallback(async () => {
     setSources(
@@ -87,20 +105,20 @@ export default function SourcesPane({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center justify-between px-5 pb-2 pt-4">
-        <div className="label-mono">Sources · {sources.length}</div>
+      <div className="flex items-center justify-between px-[var(--desk-pad)] pb-2 pt-3">
+        <div className="text-[12px] text-faded">Sources · {sources.length}</div>
         {onCollapse && (
           <button
             onClick={onCollapse}
             className="rounded p-1 text-faded transition-colors hover:text-parchment lg:block"
             aria-label="Collapse sources"
           >
-            <PanelLeftClose size={14} />
+            <SidebarSimple size={16} weight="light" />
           </button>
         )}
       </div>
 
-      <div className="px-5">
+      <div className="px-[var(--desk-pad)]">
         <input
           ref={fileRef}
           type="file"
@@ -115,23 +133,23 @@ export default function SourcesPane({
         <button
           onClick={() => fileRef.current?.click()}
           disabled={!!importing}
-          className="group flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-4 py-3 text-[13px] font-medium text-faded transition-colors duration-200 hover:border-brass/40 hover:text-brasspale disabled:opacity-50"
+          className="group flex w-full items-center justify-center gap-2 rounded-[var(--radius-control)] border border-white/12 px-3 py-2 text-[12.5px] font-medium text-faded hover:border-brass/40 hover:text-brasspale disabled:opacity-50"
         >
-          <Plus size={15} className="transition-transform duration-300 group-hover:rotate-90" />
-          {importing ? "Importing…" : "Add PDFs, DOCX, Images, Notes"}
+          <Plus size={15} weight="light" />
+          {importing ? "Importing…" : "Add sources"}
         </button>
         <div className="mt-2.5 flex gap-2">
           <button
             onClick={() => setUrlOpen(true)}
-            className="flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2.5 text-[12px] text-faded transition-colors hover:text-parchment active:scale-95 sm:rounded-lg sm:py-1.5 sm:text-[11.5px]"
+            className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-white/[0.08] px-3 py-2 text-[12px] text-faded hover:text-parchment sm:min-h-0 sm:py-1.5"
           >
-            <Globe size={13} /> Web page
+            <Globe size={13} weight="light" /> Web
           </button>
           <button
             onClick={() => setPasteOpen(true)}
-            className="flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2.5 text-[12px] text-faded transition-colors hover:text-parchment active:scale-95 sm:rounded-lg sm:py-1.5 sm:text-[11.5px]"
+            className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-white/[0.08] px-3 py-2 text-[12px] text-faded hover:text-parchment sm:min-h-0 sm:py-1.5"
           >
-            <ClipboardType size={13} /> Paste text
+            <ClipboardText size={13} weight="light" /> Paste
           </button>
         </div>
         {importing && (
@@ -171,12 +189,29 @@ export default function SourcesPane({
                 transition={i < 10 ? { ...SOFT, delay: i * 0.045 } : SOFT}
                 className="group flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 transition-colors hover:bg-white/[0.04] sm:py-2"
               >
+              <label className="flex h-8 w-8 shrink-0 items-center justify-center">
+                <input
+                  type="checkbox"
+                  checked={focused === null || focused.includes(s.id)}
+                  onChange={() => {
+                    const selected = focused ?? sources.map((x) => x.id);
+                    const next = selected.includes(s.id)
+                      ? selected.filter((id) => id !== s.id)
+                      : [...selected, s.id];
+                    const value = next.length === sources.length ? null : next;
+                    setFocused(value);
+                    saveFocus(notebookId, value);
+                  }}
+                  className="h-3.5 w-3.5 accent-[var(--color-brass)]"
+                  aria-label={`Include ${s.title} in chat`}
+                />
+              </label>
               <button
                 onClick={() => setViewing({ source: s })}
-                className="flex min-w-0 flex-1 items-center gap-2.5 text-left transition-transform duration-200 group-hover:translate-x-0.5"
+                className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.03] text-faded transition-colors duration-200 group-hover:border-brass/30 group-hover:text-brasspale sm:h-7 sm:w-7">
-                  <Icon size={14} />
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center text-faded group-hover:text-brasspale">
+                  <Icon size={14} weight="light" />
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-[13px] text-parchment/90">{s.title}</span>
@@ -194,7 +229,7 @@ export default function SourcesPane({
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-faded/60 transition-all duration-200 hover:!bg-rust/10 hover:!text-rust active:scale-90 sm:h-auto sm:w-auto sm:p-1.5 sm:text-faded/0 sm:group-hover:text-faded"
                 aria-label={`Delete ${s.title}`}
               >
-                <Trash2 size={14} />
+                <Trash size={14} weight="light" />
               </button>
               </motion.div>
             );
@@ -202,7 +237,7 @@ export default function SourcesPane({
         </AnimatePresence>
         {sources.length === 0 && !importing && (
           <div className="anim-fade px-3 py-10 text-center" style={{ "--d": "200ms" } as React.CSSProperties}>
-            <Flame size={18} className="breathe mx-auto mb-3 text-brass/60" />
+            <Flame size={18} weight="light" className="breathe mx-auto mb-3 text-brass/60" />
             <p className="text-[13px] leading-relaxed text-faded">
               No sources yet. Every answer traces back to a source you added.
             </p>
@@ -436,7 +471,7 @@ function SourceViewer({
       </div>
       <div className="pointer-events-none sticky bottom-0 -mx-6 mt-4 flex justify-end bg-gradient-to-t from-study via-study/90 to-transparent px-6 pb-1 pt-8">
         <button onClick={onClose} className={`pointer-events-auto ${btnGhost} !bg-study`}>
-          <X size={13} className="mr-1.5 inline" />
+          <X size={13} weight="light" className="mr-1.5 inline" />
           Close
         </button>
       </div>

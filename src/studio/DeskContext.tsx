@@ -1,0 +1,36 @@
+import { createContext, useContext } from "react";
+import type { LayoutMode } from "./layout";
+
+export type DeskActions = {
+  openSettings: () => void;
+  newNotebook: () => void;
+  openNotebook: (id: string) => void;
+  setLayout: (mode: LayoutMode) => void;
+  cycleLayout: (dir: 1 | -1) => void;
+  toggleSources: () => void;
+  toggleStudio: () => void;
+  focusChat: () => void;
+  importFiles: () => void;
+  openPalette: () => void;
+};
+
+const noop = () => {};
+
+export const defaultDeskActions: DeskActions = {
+  openSettings: noop,
+  newNotebook: noop,
+  openNotebook: noop,
+  setLayout: noop,
+  cycleLayout: noop,
+  toggleSources: noop,
+  toggleStudio: noop,
+  focusChat: noop,
+  importFiles: noop,
+  openPalette: noop,
+};
+
+export const DeskContext = createContext<DeskActions>(defaultDeskActions);
+
+export function useDesk(): DeskActions {
+  return useContext(DeskContext);
+}

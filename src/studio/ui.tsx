@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { X } from "lucide-react";
+import { X } from "@phosphor-icons/react";
 import { SOFT } from "./fx";
 
 /** Shared studio primitives — quiet, warm, in-palette. */
@@ -65,7 +65,7 @@ export function Modal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97, transition: { duration: 0.18 } }}
             transition={SOFT}
-            className={`pointer-events-auto relative flex max-h-[92svh] w-full flex-col overflow-hidden rounded-t-[1.6rem] border border-white/10 bg-study pb-[calc(1.25rem+var(--sab))] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.7)] sm:rounded-[1.6rem] sm:pb-0 ${
+            className={`pointer-events-auto relative z-[90] flex max-h-[92svh] w-full flex-col overflow-hidden rounded-t-[var(--radius-dialog)] border border-white/10 bg-study pb-[calc(1.25rem+var(--sab))] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.7)] sm:rounded-[var(--radius-dialog)] sm:pb-0 ${
               wide ? "sm:max-w-3xl" : "sm:max-w-xl"
             }`}
             role="dialog"
@@ -78,7 +78,7 @@ export function Modal({
                 className="flex h-10 w-10 items-center justify-center rounded-full text-faded transition-all duration-300 hover:rotate-90 hover:bg-white/5 hover:text-parchment active:scale-95"
                 aria-label="Close"
               >
-                <X size={18} />
+                <X size={18} weight="light" />
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
@@ -108,13 +108,13 @@ export function Field({
 }
 
 export const inputCls =
-  "w-full rounded-xl border border-white/10 bg-night/60 px-3.5 py-2.5 text-[16px] text-parchment placeholder:text-faded/60 outline-none transition-[border-color,box-shadow] duration-200 focus:border-brass/50 focus:shadow-[0_0_0_3px_rgba(227,176,75,0.09)] sm:text-[14px]";
+  "w-full rounded-[var(--radius-field)] border border-white/10 bg-night/60 px-3.5 py-2.5 text-[16px] text-parchment placeholder:text-faded/60 outline-none transition-[border-color,box-shadow] duration-200 focus:border-brass/50 focus:shadow-[0_0_0_3px_rgba(227,176,75,0.09)] sm:text-[14px]";
 
 export const btnGhost =
-  "inline-flex min-h-[44px] items-center justify-center rounded-full border border-white/10 bg-white/[0.03] px-5 py-2.5 text-[13px] font-medium text-parchment/90 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100 sm:min-h-[38px]";
+  "inline-flex min-h-[44px] items-center justify-center rounded-[var(--radius-control)] border border-white/10 bg-white/[0.03] px-5 py-2.5 text-[13px] font-medium text-parchment/90 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100 sm:min-h-[38px]";
 
 export const btnLamp =
-  "inline-flex min-h-[44px] items-center justify-center rounded-full grad-lamp px-5 py-2.5 text-[13px] font-semibold text-night transition-all duration-200 hover:shadow-[0_8px_30px_rgba(227,176,75,0.3)] hover:brightness-[1.06] active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100 disabled:hover:shadow-none sm:min-h-[38px]";
+  "inline-flex min-h-[44px] items-center justify-center rounded-[var(--radius-control)] grad-lamp px-5 py-2.5 text-[13px] font-semibold text-night transition-all duration-200 hover:brightness-[1.06] active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100 sm:min-h-[38px]";
 
 export function ErrorNote({ children }: { children: ReactNode }) {
   return (
