@@ -11,3 +11,4 @@ src-tauri/gen
 *.zip
 
 .playwright-mcp/
+.commandcode/
