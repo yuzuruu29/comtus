@@ -8,6 +8,7 @@ const TABLES = [
   "sources",
   "chunks",
   "messages",
+  "chatSessions",
   "generations",
   "cardProgress",
 ] as const;
@@ -30,7 +31,7 @@ async function buildPayload(): Promise<BackupPayload> {
   for (const t of TABLES) data[t] = await db[t].toArray();
   return {
     app: "comtus",
-    schema: 1,
+    schema: 2,
     exportedAt: new Date().toISOString(),
     data,
   };

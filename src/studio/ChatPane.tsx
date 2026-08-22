@@ -1,11 +1,36 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { motion } from "motion/react";
-import { ArrowUp, Brain, CaretDown, Flame, Quotes, Stop } from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "motion/react";
+import {
+  ArrowUp,
+  Brain,
+  CaretDown,
+  Chats,
+  Flame,
+  PencilSimple,
+  Plus,
+  Quotes,
+  Stop,
+  Trash,
+} from "@phosphor-icons/react";
 import { loadFocus } from "./focus";
-import { db, saveMessage, uid } from "../lib/db";
-import type { ChatMessage, Notebook, Citation } from "../lib/types";
+import {
+  db,
+  saveMessage,
+  uid,
+  ensureChatSessions,
+  createChatSession,
+  renameChatSession,
+  deleteChatSession,
+} from "../lib/db";
+import type { ChatMessage, ChatSession, Notebook, Citation } from "../lib/types";
+import { deriveSessionTitle } from "../lib/sessionText";
 import { streamChat, friendlyError, isAbort } from "../lib/llm";
 import { useSettings, useCallSettings } from "../lib/settings";
 import { Collapse, SOFT, SPRING } from "./fx";
@@ -18,6 +43,9 @@ const STARTERS = [
   "Make me a 10-item quiz on the hardest part",
 ];
 
+/** Remembered thread per notebook — survives reloads and desk restarts. */
+const lastSessionKey = (notebookId: string) => `comtus:lastChat:${notebookId}`;
+
 export default function ChatPane({
   notebook,
   sourcesVersion,
@@ -29,24 +57,50 @@ export default function ChatPane({
 }) {
   const cs = useCallSettings();
   const hasKey = useSettings((s) => s.hasKey);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+  const [armedDeleteId, setArmedDeleteId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [sourceCount, setSourceCount] = useState(0);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState<{ text: string; thinking: string } | null>(null);
   const [thinkingOpen, setThinkingOpen] = useState(true);
   const [error, setError] = useState("");
-  const [sourceCount, setSourceCount] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickBottom = useRef(true);
+  /** Guards async loads against out-of-order resolution when switching fast. */
+  const loadToken = useRef(0);
+  const menuRef = useRef<HTMLDivElement>(null);
 
+  const activeSession = sessions.find((s) => s.id === activeId) ?? null;
+
+  // Notebook changed: load its threads, restore the remembered one.
+  // Keyed on identity, not the object — renaming a notebook shouldn't
+  // reset an open thread.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- id-only reload
   useEffect(() => {
-    if (!notebook) return;
-    void db.messages
-      .where("notebookId")
-      .equals(notebook.id)
-      .sortBy("createdAt")
-      .then(setMessages);
-  }, [notebook]);
+    abortRef.current?.abort();
+    const nbId = notebook?.id;
+    if (!nbId) return;
+    const token = ++loadToken.current;
+    void (async () => {
+      const list = await ensureChatSessions(nbId);
+      if (token !== loadToken.current) return;
+      setSessions(list);
+      const remembered = localStorage.getItem(lastSessionKey(nbId));
+      const active = list.find((s) => s.id === remembered) ?? list[0] ?? null;
+      setActiveId(active?.id ?? null);
+      const msgs = active
+        ? await db.messages.where("sessionId").equals(active.id).sortBy("createdAt")
+        : [];
+      if (token !== loadToken.current) return;
+      setMessages(msgs);
+    })();
+  }, [notebook?.id]);
 
   useEffect(() => {
     if (!notebook) return;
@@ -56,6 +110,23 @@ export default function ChatPane({
       .count()
       .then(setSourceCount);
   }, [notebook, sourcesVersion]);
+
+  // Close the switcher on outside click or Escape; disarm pending delete.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: PointerEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("pointerdown", onDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
 
   // Keep pinned to the bottom while content arrives, unless the user scrolled up.
   useEffect(() => {
@@ -79,10 +150,124 @@ export default function ChatPane({
     return () => vp.removeEventListener("resize", handleResize);
   }, []);
 
+  // Leaving the notebook mid-stream shouldn't keep spending tokens.
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
+
   const onScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
     stickBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  };
+
+  const rememberActive = (nbId: string, id: string) => {
+    try {
+      localStorage.setItem(lastSessionKey(nbId), id);
+    } catch {
+      /* private mode */
+    }
+  };
+
+  /** Mirror a db-side updatedAt bump into the local, sorted list. */
+  const bumpSession = (id: string) => {
+    setSessions((prev) =>
+      [...prev.map((s) => (s.id === id ? { ...s, updatedAt: Date.now() } : s))].sort(
+        (a, b) => b.updatedAt - a.updatedAt,
+      ),
+    );
+  };
+
+  const selectSession = useCallback(
+    (id: string) => {
+      setMenuOpen(false);
+      if (!notebook || id === activeId) return;
+      abortRef.current?.abort();
+      const token = ++loadToken.current;
+      setActiveId(id);
+      rememberActive(notebook.id, id);
+      void db.messages
+        .where("sessionId")
+        .equals(id)
+        .sortBy("createdAt")
+        .then((msgs) => {
+          if (token !== loadToken.current) return;
+          setMessages(msgs);
+          stickBottom.current = true;
+        });
+    },
+    [notebook, activeId],
+  );
+
+  const newSession = useCallback(async () => {
+    if (!notebook) return;
+    abortRef.current?.abort();
+    const token = ++loadToken.current;
+    const session = await createChatSession(notebook.id);
+    if (token !== loadToken.current) return; // notebook switched meanwhile
+    setSessions((prev) => [session, ...prev]);
+    setActiveId(session.id);
+    rememberActive(notebook.id, session.id);
+    setMessages([]);
+    stickBottom.current = true;
+    setMenuOpen(false);
+    setError("");
+  }, [notebook]);
+
+  const startRename = (session: ChatSession) => {
+    setArmedDeleteId(null);
+    setRenamingId(session.id);
+    setRenameDraft(session.title);
+  };
+
+  const commitRename = async () => {
+    const id = renamingId;
+    const title = renameDraft.replace(/\s+/g, " ").trim();
+    setRenamingId(null);
+    if (!id || !title) return;
+    await renameChatSession(id, title);
+    setSessions((prev) =>
+      [...prev.map((s) => (s.id === id ? { ...s, title, updatedAt: Date.now() } : s))].sort(
+        (a, b) => b.updatedAt - a.updatedAt,
+      ),
+    );
+  };
+
+  const removeSession = async (id: string) => {
+    if (!notebook) return;
+    // Two-click confirm — first click arms, second click deletes.
+    if (armedDeleteId !== id) {
+      setArmedDeleteId(id);
+      return;
+    }
+    setArmedDeleteId(null);
+    await deleteChatSession(id);
+    const rest = sessions.filter((s) => s.id !== id);
+    setSessions(rest);
+    if (id !== activeId) return;
+
+    abortRef.current?.abort();
+    const token = ++loadToken.current;
+    const next = rest[0];
+    if (!next) {
+      // Last thread deleted — hand back a clean one.
+      const fresh = await createChatSession(notebook.id);
+      if (token !== loadToken.current) return;
+      setSessions([fresh]);
+      setActiveId(fresh.id);
+      rememberActive(notebook.id, fresh.id);
+      setMessages([]);
+      return;
+    }
+    setActiveId(next.id);
+    rememberActive(notebook.id, next.id);
+    const msgs = await db.messages
+      .where("sessionId")
+      .equals(next.id)
+      .sortBy("createdAt");
+    if (token !== loadToken.current) return;
+    setMessages(msgs);
+    stickBottom.current = true;
   };
 
   const send = useCallback(
@@ -96,14 +281,46 @@ export default function ChatPane({
       setError("");
       setInput("");
 
+      // A thread to type into is guaranteed on load; this is belt-and-braces.
+      let sessionId = activeId;
+      let untitled = activeSession ? !activeSession.title : true;
+      if (!sessionId) {
+        const createToken = ++loadToken.current;
+        const created = await createChatSession(notebook.id);
+        if (createToken !== loadToken.current) {
+          setError("Switched threads mid-send — try again.");
+          return;
+        }
+        sessionId = created.id;
+        untitled = true;
+        setSessions((prev) => [created, ...prev]);
+        setActiveId(created.id);
+        rememberActive(notebook.id, created.id);
+      }
+
       const userMsg: ChatMessage = {
         id: uid(),
         notebookId: notebook.id,
+        sessionId,
         role: "user",
         content: question,
         createdAt: Date.now(),
       };
       await saveMessage(userMsg);
+
+      // First question names the chat.
+      if (untitled) {
+        const title = deriveSessionTitle(question);
+        if (title) {
+          await renameChatSession(sessionId, title);
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.id === sessionId ? { ...s, title, updatedAt: Date.now() } : s,
+            ),
+          );
+        }
+      }
+
       const history = [...messages, userMsg];
       setMessages(history);
       stickBottom.current = true;
@@ -133,6 +350,7 @@ export default function ChatPane({
         const assistant: ChatMessage = {
           id: uid(),
           notebookId: notebook.id,
+          sessionId,
           role: "assistant",
           content: reply.text,
           thinking: reply.thinking,
@@ -141,6 +359,7 @@ export default function ChatPane({
         };
         await saveMessage(assistant);
         setMessages((m) => [...m, assistant]);
+        bumpSession(sessionId);
       } catch (err) {
         if (!isAbort(err) && !controller.signal.aborted) {
           setError(friendlyError(err));
@@ -150,18 +369,161 @@ export default function ChatPane({
         setStreaming(null);
       }
     },
-    [input, notebook, streaming, hasKey, cs, messages],
+    [input, notebook, streaming, hasKey, cs, messages, activeId, activeSession],
   );
-
-  // Leaving the notebook mid-stream shouldn't keep spending tokens.
-  useEffect(() => {
-    return () => abortRef.current?.abort();
-  }, []);
 
   if (!notebook) return <div className="flex-1" />;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      {/* Session bar — the ref spans bar + dropdown so interacting with
+          either never counts as an outside click. */}
+      <div
+        ref={menuRef}
+        className="relative z-30 flex h-11 shrink-0 items-center gap-1 border-b border-hairline bg-ground px-2 sm:px-3"
+      >
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-haspopup="listbox"
+          aria-expanded={menuOpen}
+          className="no-drag flex min-w-0 items-center gap-2 rounded-[var(--radius-control)] px-2 py-1.5 transition-colors duration-fast hover:bg-ink/5"
+        >
+          <Chats size={14} weight="light" className="shrink-0 text-brass" />
+          <span className="label-mono hidden !text-[10px] sm:inline">Chats</span>
+          <span className="min-w-0 max-w-[36vw] truncate text-[13px] font-[450] text-ink sm:max-w-[22rem]">
+            {activeSession?.title || "New chat"}
+          </span>
+          <CaretDown
+            size={12}
+            weight="light"
+            className={`shrink-0 text-muted transition-transform duration-300 ${menuOpen ? "rotate-180" : ""}`}
+          />
+        </button>
+        <div className="flex-1" />
+        <button
+          onClick={() => void newSession()}
+          className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted transition-colors duration-fast hover:bg-brass/[0.1] hover:text-brasspale"
+          aria-label="New chat"
+          title="New chat"
+        >
+          <Plus size={15} weight="light" />
+        </button>
+
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.98, transition: { duration: 0.14 } }}
+              transition={SOFT}
+              role="listbox"
+              aria-label="Chat sessions"
+              className="absolute left-2 top-[calc(100%+6px)] w-[min(21rem,calc(100vw-1.5rem))] overflow-hidden rounded-[var(--radius-field)] border border-hairline bg-surface shadow-modal sm:left-3"
+            >
+              <div className="max-h-[min(20rem,52vh)] overflow-y-auto py-1">
+                {sessions.length === 0 && (
+                  <div className="px-4 py-6 text-center text-[12.5px] text-muted">
+                    No chats yet.
+                  </div>
+                )}
+                {sessions.map((session) => {
+                  const isActive = session.id === activeId;
+                  const isRenaming = renamingId === session.id;
+                  return (
+                    <div key={session.id} className="group/row relative">
+                      {isRenaming ? (
+                        <div className="px-3 py-1.5">
+                          <input
+                            autoFocus
+                            value={renameDraft}
+                            onChange={(e) => setRenameDraft(e.target.value)}
+                            onBlur={() => void commitRename()}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                void commitRename();
+                              } else if (e.key === "Escape") {
+                                e.preventDefault();
+                                setRenamingId(null);
+                              }
+                            }}
+                            className="w-full rounded-[var(--radius-field)] border border-brass/50 bg-ground/60 px-2.5 py-1.5 text-[13px] text-ink outline-none"
+                            aria-label="Chat name"
+                          />
+                        </div>
+                      ) : (
+                        <button
+                          role="option"
+                          aria-selected={isActive}
+                          onClick={() => selectSession(session.id)}
+                          className={`flex w-full items-center gap-2.5 px-3 py-2 pr-[4.6rem] text-left transition-colors duration-fast ${
+                            isActive ? "bg-brass/[0.07]" : "hover:bg-ink/[0.04]"
+                          }`}
+                        >
+                          <span
+                            aria-hidden
+                            className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                              isActive ? "bg-brass" : "border border-hairline-strong"
+                            }`}
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[13px] leading-tight text-ink">
+                              {session.title || "New chat"}
+                            </span>
+                            <span className="mt-0.5 block font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted/60">
+                              {timeAgo(session.updatedAt)}
+                            </span>
+                          </span>
+                        </button>
+                      )}
+                      {!isRenaming && (
+                        <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 opacity-0 transition-opacity duration-fast focus-within:opacity-100 group-hover/row:opacity-100">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startRename(session);
+                            }}
+                            className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/[0.06] hover:text-ink"
+                            aria-label={`Rename ${session.title || "chat"}`}
+                          >
+                            <PencilSimple size={13} weight="light" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void removeSession(session.id);
+                            }}
+                            className={`flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] ${
+                              armedDeleteId === session.id
+                                ? "bg-rust/[0.12] text-rust"
+                                : "text-muted hover:bg-rust/[0.08] hover:text-rust"
+                            }`}
+                            aria-label={
+                              armedDeleteId === session.id
+                                ? `Click again to delete ${session.title || "chat"}`
+                                : `Delete ${session.title || "chat"}`
+                            }
+                          >
+                            <Trash size={13} weight="light" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => void newSession()}
+                className="flex w-full items-center gap-2 border-t border-hairline px-3.5 py-2.5 text-left text-[12.5px] text-muted transition-colors duration-fast hover:bg-brass/[0.06] hover:text-brasspale"
+              >
+                <Plus size={13} weight="light" />
+                New chat
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
       <div
         ref={scrollRef}
         onScroll={onScroll}
@@ -169,7 +531,7 @@ export default function ChatPane({
       >
         <div className="mx-auto w-full max-w-3xl px-5 pb-8 pt-8">
           {messages.length === 0 && !streaming && (
-            <div className="mt-[12vh]">
+            <div className="mt-[10vh]">
               <div className="anim-rise label-mono flex items-center gap-3">
                 <span className="h-px w-8 grad-lamp" />
                 {sourceCount > 0
@@ -221,6 +583,7 @@ export default function ChatPane({
                 msg={{
                   id: "streaming",
                   notebookId: notebook.id,
+                  sessionId: activeId ?? undefined,
                   role: "assistant",
                   content: streaming.text,
                   thinking: streaming.thinking,

@@ -49,9 +49,22 @@ export interface Citation {
   endChar?: number;
 }
 
+/** One named conversation inside a notebook. Messages carry `sessionId`
+ *  to point at their thread; v2 migration folds pre-session messages
+ *  into a single per-notebook session. */
+export interface ChatSession {
+  id: string;
+  notebookId: string;
+  /** "" renders as "New chat"; auto-titled from the first user question. */
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface ChatMessage {
   id: string;
   notebookId: string;
+  sessionId?: string;
   role: "user" | "assistant";
   content: string;
   thinking?: string;

@@ -4,9 +4,11 @@ import type {
   Source,
   Chunk,
   ChatMessage,
+  ChatSession,
   Generation,
   CardProgress,
 } from "./types";
+import { DEFAULT_SESSION_TITLE, deriveSessionTitle } from "./sessionText";
 
 /** Local-first store. Everything lives in IndexedDB on this device.
  *  (Settings live in localStorage via zustand — not here.) */
@@ -15,6 +17,7 @@ class ComtusDB extends Dexie {
   sources!: Table<Source, string>;
   chunks!: Table<Chunk, string>;
   messages!: Table<ChatMessage, string>;
+  chatSessions!: Table<ChatSession, string>;
   generations!: Table<Generation, string>;
   cardProgress!: Table<CardProgress, string>;
 
@@ -28,6 +31,62 @@ class ComtusDB extends Dexie {
       generations: "id, notebookId, kind, createdAt",
       cardProgress: "id, generationId, notebookId, dueAt",
     });
+    // v2 — chatbot sessions. Every notebook's original flat thread is
+    // folded into one titled session so history survives the upgrade.
+    this.version(2)
+      .stores({
+        notebooks: "id, updatedAt",
+        sources: "id, notebookId, addedAt",
+        chunks: "id, sourceId, notebookId",
+        messages: "id, notebookId, sessionId, createdAt",
+        chatSessions: "id, notebookId, updatedAt",
+        generations: "id, notebookId, kind, createdAt",
+        cardProgress: "id, generationId, notebookId, dueAt",
+      })
+      .upgrade(async (tx) => {
+        const messages = tx.table("messages");
+        // Rows read through an upgrade transaction are untyped — this is
+        // the v1 message shape the migration walks.
+        const groups = new Map<
+          string,
+          { ids: string[]; first: number; title: string }
+        >();
+        await messages.each(
+          (msg: {
+            id: string;
+            notebookId: string;
+            sessionId?: string;
+            role: string;
+            content: string;
+            createdAt: number;
+          }) => {
+          if (msg.sessionId) return;
+          const group = groups.get(msg.notebookId) ?? {
+            ids: [] as string[],
+            first: msg.createdAt,
+            title: "",
+          };
+          group.ids.push(msg.id);
+          if (msg.role === "user" && !group.title) {
+            group.title = deriveSessionTitle(msg.content);
+          }
+          groups.set(msg.notebookId, group);
+        });
+        for (const [notebookId, group] of groups) {
+          const now = Date.now();
+          const session: ChatSession = {
+            id: uid(),
+            notebookId,
+            title: group.title || DEFAULT_SESSION_TITLE,
+            createdAt: group.first,
+            updatedAt: now,
+          };
+          await tx.table("chatSessions").add(session);
+          await messages.where("id").anyOf(group.ids).modify({
+            sessionId: session.id,
+          });
+        }
+      });
   }
 }
 
@@ -52,12 +111,13 @@ export async function touchNotebook(id: string) {
 export async function deleteNotebook(id: string) {
   await db.transaction(
     "rw",
-    [db.notebooks, db.sources, db.chunks, db.messages, db.generations, db.cardProgress],
+    [db.notebooks, db.sources, db.chunks, db.messages, db.chatSessions, db.generations, db.cardProgress],
     async () => {
       await db.notebooks.delete(id);
       await db.sources.where("notebookId").equals(id).delete();
       await db.chunks.where("notebookId").equals(id).delete();
       await db.messages.where("notebookId").equals(id).delete();
+      await db.chatSessions.where("notebookId").equals(id).delete();
       await db.generations.where("notebookId").equals(id).delete();
       await db.cardProgress.where("notebookId").equals(id).delete();
     },
@@ -84,10 +144,87 @@ export async function deleteSource(sourceId: string) {
   });
 }
 
+/* ── Chat sessions ────────────────────────────────────────── */
+
+/** Sessions of a notebook, most recently active first. */
+export async function listChatSessions(notebookId: string): Promise<ChatSession[]> {
+  const rows = await db.chatSessions
+    .where("notebookId")
+    .equals(notebookId)
+    .sortBy("updatedAt");
+  return rows.reverse();
+}
+
+/** A notebook always has at least one thread to type into. The check and
+ *  create share one write transaction so concurrent callers (the workspace
+ *  mounts a desktop and a mobile ChatPane) can never both see an empty
+ *  list and mint duplicate defaults. */
+export async function ensureChatSessions(notebookId: string): Promise<ChatSession[]> {
+  const now = Date.now();
+  return db.transaction(
+    "rw",
+    [db.chatSessions, db.notebooks],
+    async () => {
+      const existing = await db.chatSessions
+        .where("notebookId")
+        .equals(notebookId)
+        .sortBy("updatedAt");
+      if (existing.length > 0) return existing.reverse();
+      const session: ChatSession = {
+        id: uid(),
+        notebookId,
+        title: "",
+        createdAt: now,
+        updatedAt: now,
+      };
+      await db.chatSessions.add(session);
+      await touchNotebook(notebookId);
+      return [session];
+    },
+  );
+}
+
+export async function createChatSession(notebookId: string): Promise<ChatSession> {
+  const now = Date.now();
+  const session: ChatSession = {
+    id: uid(),
+    notebookId,
+    title: "",
+    createdAt: now,
+    updatedAt: now,
+  };
+  await db.chatSessions.add(session);
+  await touchNotebook(notebookId);
+  return session;
+}
+
+export async function renameChatSession(id: string, title: string) {
+  await db.chatSessions.update(id, { title, updatedAt: Date.now() });
+}
+
+/** Removes the thread and every message in it. */
+export async function deleteChatSession(id: string) {
+  await db.transaction(
+    "rw",
+    [db.chatSessions, db.messages, db.notebooks],
+    async () => {
+      const session = await db.chatSessions.get(id);
+      await db.chatSessions.delete(id);
+      if (session) {
+        await db.messages.where("sessionId").equals(id).delete();
+        await touchNotebook(session.notebookId);
+      }
+    },
+  );
+}
+
 /* ── Messages & generations ───────────────────────────────── */
 
 export async function saveMessage(msg: ChatMessage) {
   await db.messages.put(msg);
+  if (msg.sessionId) {
+    await db.chatSessions.update(msg.sessionId, { updatedAt: Date.now() });
+  }
   await touchNotebook(msg.notebookId);
 }
 
