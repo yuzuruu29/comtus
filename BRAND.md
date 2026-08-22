@@ -31,42 +31,47 @@ Two images carry the whole identity:
    numbered mono section indices (`01 — THE METHOD`), underline strokes like pencil
    marks, citation chips like footnote markers.
 
-## 3 · Palette — "Lamplight Study"
+## 3 · Palette — "Lamplight Study" + "Daylight Study"
 
-Deep ink-blue ground, warm parchment text, one brass accent. Cool moon-slate as the
-secondary voice. Nothing pure black, nothing pure white.
+Two themes share one semantic layer. Dark (Lamplight) is the default. Light (Daylight)
+applies only to app surfaces (`/studio`, desk). The landing stays dark.
 
-| Token | Hex | Role |
-|---|---|---|
-| `night` | `#0B0F1A` | Page ground |
-| `study` | `#121828` | Raised surfaces, cards |
-| `shelf` | `#1A2136` | Hover / active surfaces |
-| `parchment` | `#F2EDE3` | Primary text |
-| `faded` | `#8E96AB` | Muted text, labels at rest |
-| `brass` | `#E3B04B` | Primary accent — actions, ignition, highlights |
-| `moon` | `#7FA8C9` | Secondary accent — cool information, links, thinking |
-| `sage` | `#8FBF98` | Success / correct |
-| `rust` | `#C96A5E` | Error / incorrect (muted, never alarm-red) |
-| `hairline` | `rgba(242,237,227,0.09)` | All borders and dividers |
+### Semantic tokens (app)
 
-- **Signature gradient:** `linear-gradient(92deg, #C99236, #F0CE8C)` — deep brass to
-  pale gold. Used for emphasized words, rules that draw in, and primary buttons.
-- **Glows:** warm `rgba(227,176,75,0.14)` and cool `rgba(42,54,84,0.35)` — layered,
-  never alone. The hero is lit from above like a reading lamp.
-- **Thinking panel tint (app):** `rgba(127,168,201,0.06)` with a moon left-rule —
-  reasoning is moonlight; answers are parchment; actions are brass.
+| Token | Dark (Lamplight) | Light (Daylight) | Role |
+|---|---|---|---|
+| `ground` | `#0B0F1A` | `#F5F1E8` | Page ground |
+| `surface` | `#121828` | `#FCFAF4` | Raised surfaces, cards |
+| `raised` | `#1A2136` | `#EAE4D6` | Hover / active surfaces |
+| `ink` | `#F2EDE3` | `#1B2334` | Primary text |
+| `muted` | `#8E96AB` | `#5A6274` | Muted text, labels at rest |
+| `hairline` | `rgba(242,237,227,0.09)` | `rgba(27,35,52,0.12)` | Borders and dividers |
+| `brass` | `#E3B04B` | `#A5731C` | Primary accent |
+| `moon` | `#7FA8C9` | `#3D6E9E` | Secondary accent |
+| `sage` | `#8FBF98` | `#4F8A5A` | Success / correct |
+| `rust` | `#C96A5E` | `#B2554A` | Error / incorrect |
+
+Landing keeps the literal names (`night`, `study`, `shelf`, `parchment`, `faded`) so the
+marketing page never follows Daylight.
+
+Elevation: `--shadow-card`, `--shadow-lift`, `--shadow-modal`. Motion: `--dur-fast 120ms`,
+`--dur-med 220ms`. Glows become soft warm washes at lower opacity in Daylight.
+
+- **Signature gradient:** `linear-gradient(92deg, var(--brassdeep), var(--brasspale))`.
+- **Glows (dark):** warm `rgba(227,176,75,0.14)` and cool `rgba(42,54,84,0.35)`.
+- **Thinking panel tint (app):** moon wash with a moon left-rule.
 
 ## 4 · Typography
 
-All three families from Google Fonts — one CDN, self-hostable later.
+All three families are self-hosted via `@fontsource` (Fraunces and Inter variable, JetBrains Mono static). No Google Fonts CDN.
 
 | Role | Family | Usage |
 |---|---|---|
-| Display | **Fraunces** (variable serif, optical size) | Headlines, notebook titles, big numbers. Weight 340–560, line-height 0.98–1.1, tracking −0.01em. *Italics* for emphasized words. |
-| Body | **Inter** | Paragraphs, UI text, chat. 15–16px, line-height 1.6. |
-| Label | **JetBrains Mono** | Eyebrows, indices, chips, stats. 10–12px, uppercase, tracking 0.2–0.34em. |
+| Display | **Fraunces** (variable serif, optical size / `opsz` auto) | Headlines, notebook titles, big numbers. Weight 340–560. *Italics* for emphasized words. Tokens: `text-display`, `text-title`. |
+| Body | **Inter** | Paragraphs, UI text, chat. Tokens: `text-heading`, `text-body`. |
+| Label | **JetBrains Mono** | Eyebrows (`.label-mono`), indices, chips, stats. Token: `text-label`. |
 
-Scale: hero `clamp(2.8rem, 7.5vw, 6.8rem)` · section titles `clamp(2.1rem, 4.6vw, 3.8rem)`
+Landing scale: hero `clamp(2.8rem, 7.5vw, 6.8rem)` · section titles `clamp(2.1rem, 4.6vw, 3.8rem)`
 · statement `clamp(2.4rem, 6vw, 5.2rem)` · body 16px.
 
 ## 5 · Motion — "Light Behaves Like Light"

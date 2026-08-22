@@ -7,12 +7,12 @@ import { SOFT } from "./fx";
 
 export function LampPulse({ label }: { label?: string }) {
   return (
-    <div className="flex items-center gap-3 text-faded">
+    <div className="flex items-center gap-3 text-muted">
       <span className="relative flex h-3 w-3">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brass/50 [animation-duration:1.6s]" />
         <span className="relative inline-flex h-3 w-3 rounded-full bg-brass" />
       </span>
-      {label && <span className="text-[13px]">{label}</span>}
+      {label && <span className="text-body">{label}</span>}
     </div>
   );
 }
@@ -53,7 +53,7 @@ export function Modal({
             transition={{ duration: 0.22 }}
             className="pointer-events-auto absolute inset-0"
           >
-            <div className="absolute inset-0 bg-night/80 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-ground/80 backdrop-blur-sm" onClick={onClose} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -65,17 +65,17 @@ export function Modal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97, transition: { duration: 0.18 } }}
             transition={SOFT}
-            className={`pointer-events-auto relative z-[90] flex max-h-[92svh] w-full flex-col overflow-hidden rounded-t-[var(--radius-dialog)] border border-white/10 bg-study pb-[calc(1.25rem+var(--sab))] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.7)] sm:rounded-[var(--radius-dialog)] sm:pb-0 ${
+            className={`pointer-events-auto relative z-[90] flex max-h-[92svh] w-full flex-col overflow-hidden rounded-t-[var(--radius-dialog)] border border-hairline bg-surface pb-[calc(1.25rem+var(--sab))] shadow-modal sm:rounded-[var(--radius-dialog)] sm:pb-0 ${
               wide ? "sm:max-w-3xl" : "sm:max-w-xl"
             }`}
             role="dialog"
             aria-modal
           >
-            <div className="flex items-center justify-between border-b border-white/[0.07] px-6 py-4">
-              <div className="font-display text-lg font-[450] text-parchment">{title}</div>
+            <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
+              <div className="font-display text-heading font-[450] text-ink">{title}</div>
               <button
                 onClick={onClose}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-faded transition-all duration-300 hover:rotate-90 hover:bg-white/5 hover:text-parchment active:scale-95"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-muted transition-all duration-med hover:rotate-90 hover:bg-ink/5 hover:text-ink active:scale-95"
                 aria-label="Close"
               >
                 <X size={18} weight="light" />
@@ -102,23 +102,23 @@ export function Field({
     <label className="block">
       <div className="label-mono !text-[10px] mb-2">{label}</div>
       {children}
-      {hint && <div className="mt-1.5 text-[12px] text-faded">{hint}</div>}
+      {hint && <div className="mt-1.5 text-label text-muted">{hint}</div>}
     </label>
   );
 }
 
 export const inputCls =
-  "w-full rounded-[var(--radius-field)] border border-white/10 bg-night/60 px-3.5 py-2.5 text-[16px] text-parchment placeholder:text-faded/60 outline-none transition-[border-color,box-shadow] duration-200 focus:border-brass/50 focus:shadow-[0_0_0_3px_rgba(227,176,75,0.09)] sm:text-[14px]";
+  "w-full rounded-[var(--radius-field)] border border-hairline bg-ground/60 px-3.5 py-2.5 text-[16px] text-ink placeholder:text-muted/60 outline-none transition-[border-color,box-shadow] duration-fast focus:border-brass/50 focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brass)_9%,transparent)] sm:text-body";
 
 export const btnGhost =
-  "inline-flex min-h-[44px] items-center justify-center rounded-[var(--radius-control)] border border-white/10 bg-white/[0.03] px-5 py-2.5 text-[13px] font-medium text-parchment/90 transition-all duration-200 hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100 sm:min-h-[38px]";
+  "inline-flex min-h-[44px] items-center justify-center rounded-[var(--radius-control)] border border-hairline bg-ink/[0.03] px-5 py-2.5 text-body font-medium text-ink/90 transition-all duration-fast hover:border-hairline-strong hover:bg-ink/[0.07] active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100 sm:min-h-[38px]";
 
 export const btnLamp =
-  "inline-flex min-h-[44px] items-center justify-center rounded-[var(--radius-control)] grad-lamp px-5 py-2.5 text-[13px] font-semibold text-night transition-all duration-200 hover:brightness-[1.06] active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100 sm:min-h-[38px]";
+  "relative inline-flex min-h-[44px] items-center justify-center overflow-hidden rounded-[var(--radius-control)] grad-lamp px-5 py-2.5 text-body font-semibold text-night transition-all duration-fast hover:brightness-[1.06] active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100 sm:min-h-[38px]";
 
 export function ErrorNote({ children }: { children: ReactNode }) {
   return (
-    <div className="anim-shake rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] leading-relaxed text-rust">
+    <div className="anim-shake rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-body leading-relaxed text-rust">
       {children}
     </div>
   );

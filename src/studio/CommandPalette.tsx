@@ -145,7 +145,7 @@ export default function CommandPalette({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, transition: { duration: 0.16 } }}
         >
-          <div className="absolute inset-0 bg-night/70" onClick={onClose} />
+          <div className="absolute inset-0 bg-ground/70" onClick={onClose} />
           <motion.div
             role="dialog"
             aria-label="Command palette"
@@ -153,23 +153,23 @@ export default function CommandPalette({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8, transition: { duration: 0.14 } }}
             transition={SOFT}
-            className="relative w-full max-w-lg overflow-hidden rounded-[var(--radius-field)] border border-white/[0.08] bg-study shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"
+            className="relative w-full max-w-lg overflow-hidden rounded-[var(--radius-field)] border border-hairline bg-surface shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"
           >
-            <div className="flex items-center gap-2.5 border-b border-white/[0.07] px-3.5 py-2.5">
-              <MagnifyingGlass size={16} weight="light" className="text-faded" />
+            <div className="flex items-center gap-2.5 border-b border-hairline px-3.5 py-2.5">
+              <MagnifyingGlass size={16} weight="light" className="text-muted" />
               <input
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onKey}
                 placeholder="Open a notebook, change layout, or jump to settings"
-                className="min-w-0 flex-1 bg-transparent text-[14px] text-parchment outline-none placeholder:text-faded/55"
+                className="min-w-0 flex-1 bg-transparent text-[14px] text-ink outline-none placeholder:text-muted/55"
               />
-              <kbd className="font-mono text-[10px] text-faded/70">esc</kbd>
+              <kbd className="font-mono text-[10px] text-muted/70">esc</kbd>
             </div>
             <div className="max-h-[min(52vh,22rem)] overflow-y-auto py-1.5">
               {items.length === 0 && (
-                <div className="px-4 py-8 text-center text-[13px] text-faded">Nothing matches.</div>
+                <div className="px-4 py-8 text-center text-[13px] text-muted">Nothing matches.</div>
               )}
               {items.map((item, i) => {
                 const showGroup = item.group !== lastGroup;
@@ -177,7 +177,7 @@ export default function CommandPalette({
                 return (
                   <div key={item.id}>
                     {showGroup && (
-                      <div className="px-3.5 pb-1 pt-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-faded/60">
+                      <div className="px-3.5 pb-1 pt-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted/60">
                         {item.group}
                       </div>
                     )}
@@ -186,13 +186,13 @@ export default function CommandPalette({
                       onMouseEnter={() => setActive(i)}
                       onClick={() => run(item)}
                       className={`flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[13.5px] ${
-                        i === active ? "bg-brass/[0.1] text-parchment" : "text-parchment/85"
+                        i === active ? "bg-brass/[0.1] text-ink" : "text-ink/85"
                       }`}
                     >
-                      <item.icon size={16} weight="light" className="shrink-0 text-faded" />
+                      <item.icon size={16} weight="light" className="shrink-0 text-muted" />
                       <span className="min-w-0 flex-1 truncate">{item.label}</span>
                       {item.hint && (
-                        <span className="font-mono text-[10px] text-faded/55">{item.hint}</span>
+                        <span className="font-mono text-[10px] text-muted/55">{item.hint}</span>
                       )}
                     </button>
                   </div>

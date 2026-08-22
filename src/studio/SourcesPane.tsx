@@ -8,7 +8,7 @@ import { importFiles, extractUrl, chunkText } from "../lib/import";
 import { estTokens } from "../lib/retrieval";
 import { uid } from "../lib/db";
 import { addSourceWithChunks } from "../lib/db";
-import { SOFT } from "./fx";
+import { SOFT, Spotlight } from "./fx";
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, timeAgo } from "./ui";
 
 const KIND_ICON = {
@@ -106,11 +106,11 @@ export default function SourcesPane({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between px-[var(--desk-pad)] pb-2 pt-3">
-        <div className="text-[12px] text-faded">Sources · {sources.length}</div>
+        <div className="text-[12px] text-muted">Sources · {sources.length}</div>
         {onCollapse && (
           <button
             onClick={onCollapse}
-            className="rounded p-1 text-faded transition-colors hover:text-parchment lg:block"
+            className="rounded p-1 text-muted transition-colors hover:text-ink lg:block"
             aria-label="Collapse sources"
           >
             <SidebarSimple size={16} weight="light" />
@@ -133,7 +133,7 @@ export default function SourcesPane({
         <button
           onClick={() => fileRef.current?.click()}
           disabled={!!importing}
-          className="group flex w-full items-center justify-center gap-2 rounded-[var(--radius-control)] border border-white/12 px-3 py-2 text-[12.5px] font-medium text-faded hover:border-brass/40 hover:text-brasspale disabled:opacity-50"
+          className="group flex w-full items-center justify-center gap-2 rounded-[var(--radius-control)] border border-hairline-strong px-3 py-2 text-[12.5px] font-medium text-muted hover:border-brass/40 hover:text-brasspale disabled:opacity-50"
         >
           <Plus size={15} weight="light" />
           {importing ? "Importing…" : "Add sources"}
@@ -141,23 +141,23 @@ export default function SourcesPane({
         <div className="mt-2.5 flex gap-2">
           <button
             onClick={() => setUrlOpen(true)}
-            className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-white/[0.08] px-3 py-2 text-[12px] text-faded hover:text-parchment sm:min-h-0 sm:py-1.5"
+            className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3 py-2 text-[12px] text-muted hover:text-ink sm:min-h-0 sm:py-1.5"
           >
             <Globe size={13} weight="light" /> Web
           </button>
           <button
             onClick={() => setPasteOpen(true)}
-            className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-white/[0.08] px-3 py-2 text-[12px] text-faded hover:text-parchment sm:min-h-0 sm:py-1.5"
+            className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3 py-2 text-[12px] text-muted hover:text-ink sm:min-h-0 sm:py-1.5"
           >
             <ClipboardText size={13} weight="light" /> Paste
           </button>
         </div>
         {importing && (
-          <div className="mt-3 rounded-xl border border-white/[0.08] bg-white/[0.02] px-3.5 py-3">
-            <div className="text-[11.5px] text-faded">
+          <div className="mt-3 rounded-xl border border-hairline bg-ink/[0.02] px-3.5 py-3">
+            <div className="text-[11.5px] text-muted">
               {importing.current || "Finishing…"} ({importing.done}/{importing.total})
             </div>
-            <div className="relative mt-2 h-1 overflow-hidden rounded bg-white/[0.07]">
+            <div className="relative mt-2 h-1 overflow-hidden rounded bg-ink/[0.07]">
               <div
                 className="h-full grad-lamp transition-all duration-300"
                 style={{ width: `${(importing.done / Math.max(1, importing.total)) * 100}%` }}
@@ -180,14 +180,14 @@ export default function SourcesPane({
           {sources.map((s, i) => {
             const Icon = KIND_ICON[s.kind] ?? FileText;
             return (
+              <Spotlight key={s.id} className="rounded-xl" radius={180}>
               <motion.div
-                key={s.id}
                 layout
                 initial={{ opacity: 0, y: -12, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, x: -14, scale: 0.96, transition: { duration: 0.18 } }}
                 transition={i < 10 ? { ...SOFT, delay: i * 0.045 } : SOFT}
-                className="group flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 transition-colors hover:bg-white/[0.04] sm:py-2"
+                className="group flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 transition-colors hover:bg-ink/[0.04] sm:py-2"
               >
               <label className="flex h-8 w-8 shrink-0 items-center justify-center">
                 <input
@@ -210,12 +210,12 @@ export default function SourcesPane({
                 onClick={() => setViewing({ source: s })}
                 className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
               >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center text-faded group-hover:text-brasspale">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center text-muted group-hover:text-brasspale">
                   <Icon size={14} weight="light" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-[13px] text-parchment/90">{s.title}</span>
-                  <span className="block font-mono text-[9.5px] uppercase tracking-[0.14em] text-faded/70">
+                  <span className="block truncate text-[13px] text-ink/90">{s.title}</span>
+                  <span className="block font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted/70">
                     {(s.tokens / 1000).toFixed(1)}k tok · {timeAgo(s.addedAt)}
                   </span>
                 </span>
@@ -226,27 +226,29 @@ export default function SourcesPane({
                   onChanged();
                   void refresh();
                 }}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-faded/60 transition-all duration-200 hover:!bg-rust/10 hover:!text-rust active:scale-90 sm:h-auto sm:w-auto sm:p-1.5 sm:text-faded/0 sm:group-hover:text-faded"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted/60 transition-all duration-200 hover:!bg-rust/10 hover:!text-rust active:scale-90 sm:h-auto sm:w-auto sm:p-1.5 sm:text-muted/0 sm:group-hover:text-muted"
                 aria-label={`Delete ${s.title}`}
               >
                 <Trash size={14} weight="light" />
               </button>
               </motion.div>
+              </Spotlight>
             );
           })}
         </AnimatePresence>
         {sources.length === 0 && !importing && (
           <div className="anim-fade px-3 py-10 text-center" style={{ "--d": "200ms" } as React.CSSProperties}>
             <Flame size={18} weight="light" className="breathe mx-auto mb-3 text-brass/60" />
-            <p className="text-[13px] leading-relaxed text-faded">
+            <p className="text-body leading-relaxed text-muted">
               No sources yet. Every answer traces back to a source you added.
+              Sources never upload. They are read on this device.
             </p>
           </div>
         )}
       </div>
 
       {sources.length > 0 && (
-        <div className="border-t border-white/[0.06] px-5 py-3 font-mono text-[10px] uppercase tracking-[0.16em] text-faded/70">
+        <div className="border-t border-hairline px-5 py-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted/70">
           {totalTokens.toLocaleString()} tokens grounded
         </div>
       )}
@@ -441,7 +443,7 @@ function SourceViewer({
 
   return (
     <Modal open onClose={onClose} title={source.title} wide>
-      <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-faded">
+      <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
         {source.kind} · {source.tokens.toLocaleString()} tokens
         {source.meta?.url && (
           <>
@@ -452,7 +454,7 @@ function SourceViewer({
           </>
         )}
       </div>
-      <div ref={bodyRef} className="space-y-2 font-[15px] leading-[1.75] text-parchment/85">
+      <div ref={bodyRef} className="space-y-2 font-[15px] leading-[1.75] text-ink/85">
         {blocks.map((b) => (
           <p
             key={b.at}
@@ -469,8 +471,8 @@ function SourceViewer({
           </p>
         ))}
       </div>
-      <div className="pointer-events-none sticky bottom-0 -mx-6 mt-4 flex justify-end bg-gradient-to-t from-study via-study/90 to-transparent px-6 pb-1 pt-8">
-        <button onClick={onClose} className={`pointer-events-auto ${btnGhost} !bg-study`}>
+      <div className="pointer-events-none sticky bottom-0 -mx-6 mt-4 flex justify-end bg-gradient-to-t from-surface via-study/90 to-transparent px-6 pb-1 pt-8">
+        <button onClick={onClose} className={`pointer-events-auto ${btnGhost} !bg-surface`}>
           <X size={13} weight="light" className="mr-1.5 inline" />
           Close
         </button>

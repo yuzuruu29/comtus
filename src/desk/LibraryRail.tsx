@@ -4,7 +4,7 @@ import { Plus, SidebarSimple, Trash } from "@phosphor-icons/react";
 import { liveQuery } from "dexie";
 import { db, deleteNotebook } from "../lib/db";
 import type { Notebook } from "../lib/types";
-import { SPRING } from "../studio/fx";
+import { SPRING, Spotlight } from "../studio/fx";
 import { timeAgo } from "../studio/ui";
 
 const WIDE = 236;
@@ -71,26 +71,26 @@ export default function LibraryRail({
       initial={false}
       animate={{ width: collapsed ? SLIM : WIDE }}
       transition={SPRING}
-      className="relative z-20 flex shrink-0 flex-col overflow-hidden border-r border-white/[0.07] bg-night"
+      className="relative z-20 flex shrink-0 flex-col overflow-hidden border-r border-hairline bg-ground"
     >
       {/* Rail head */}
       <div className="flex h-10 shrink-0 items-center px-2.5">
         {collapsed ? (
           <button
             onClick={toggle}
-            className="mx-auto flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-faded hover:bg-white/[0.05] hover:text-parchment"
+            className="mx-auto flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
             aria-label="Expand library"
           >
             <SidebarSimple size={15} weight="light" />
           </button>
         ) : (
           <>
-            <span className="select-none font-mono text-[10px] uppercase tracking-[0.26em] text-faded">
+            <span className="select-none font-mono text-[10px] uppercase tracking-[0.26em] text-muted">
               Library
             </span>
             <button
               onClick={toggle}
-              className="ml-auto flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-faded hover:bg-white/[0.05] hover:text-parchment"
+              className="ml-auto flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
               aria-label="Collapse library"
             >
               <SidebarSimple size={15} weight="light" />
@@ -125,24 +125,27 @@ export default function LibraryRail({
       <div
         className={`scroll-thin min-h-0 flex-1 overflow-y-auto py-1 ${collapsed ? "px-1.5" : "px-2"}`}
       >
-        {notebooks.map((nb) =>
+        {notebooks.map((nb, i) =>
           collapsed ? (
-            <RailItemSlim key={nb.id} notebook={nb} active={nb.id === activeId} onSelect={onSelect} />
+            <div key={nb.id} className="anim-rise" style={{ ["--d" as string]: `${i * 40}ms` }}>
+              <RailItemSlim notebook={nb} active={nb.id === activeId} onSelect={onSelect} />
+            </div>
           ) : (
-            <RailItemWide
-              key={nb.id}
-              notebook={nb}
-              active={nb.id === activeId}
-              confirming={confirming === nb.id}
-              onSelect={onSelect}
-              onConfirmToggle={() => setConfirming((c) => (c === nb.id ? null : nb.id))}
-              onCancelConfirm={() => setConfirming((c) => (c === nb.id ? null : c))}
-              onDelete={() => void remove(nb.id)}
-            />
+            <div key={nb.id} className="anim-rise" style={{ ["--d" as string]: `${i * 40}ms` }}>
+              <RailItemWide
+                notebook={nb}
+                active={nb.id === activeId}
+                confirming={confirming === nb.id}
+                onSelect={onSelect}
+                onConfirmToggle={() => setConfirming((c) => (c === nb.id ? null : nb.id))}
+                onCancelConfirm={() => setConfirming((c) => (c === nb.id ? null : c))}
+                onDelete={() => void remove(nb.id)}
+              />
+            </div>
           ),
         )}
         {!collapsed && notebooks.length === 0 && (
-          <p className="px-2 pt-3 text-[12px] leading-relaxed text-faded">
+          <p className="px-2 pt-3 text-[12px] leading-relaxed text-muted">
             No notebooks yet. One per subject works best.
           </p>
         )}
@@ -178,23 +181,23 @@ function RailItemWide({
   onDelete: () => void;
 }) {
   return (
-    <div key={notebook.id} className="group relative" onBlur={onCancelConfirm}>
+    <Spotlight className="group relative rounded-md" radius={180} onBlur={onCancelConfirm}>
       {active && (
         <span className="pointer-events-none absolute inset-y-[7px] left-0 w-[2px] rounded-full bg-brass shadow-[0_0_8px_rgba(227,176,75,0.45)]" />
       )}
       <button
         onClick={() => onSelect(notebook.id)}
         className={`relative flex w-full items-center gap-2.5 rounded-md px-2 py-[7px] text-left transition-colors duration-150 ${
-          active ? "bg-white/[0.055]" : "hover:bg-white/[0.03]"
+          active ? "bg-ink/[0.055]" : "hover:bg-ink/[0.03]"
         }`}
         title={notebook.name}
       >
         <LetterTile name={notebook.name} />
         <span className="min-w-0 flex-1">
-          <span className={`block truncate text-[13px] leading-tight ${active ? "text-parchment" : "text-parchment/80"}`}>
+          <span className={`block truncate text-[13px] leading-tight ${active ? "text-ink" : "text-ink/80"}`}>
             {notebook.name}
           </span>
-          <span className="block truncate text-[10.5px] leading-tight text-faded">
+          <span className="block truncate text-[10.5px] leading-tight text-muted">
             {timeAgo(notebook.updatedAt)}
           </span>
         </span>
@@ -202,13 +205,13 @@ function RailItemWide({
       <button
         onClick={() => (confirming ? onDelete() : onConfirmToggle())}
         className={`absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-control)] opacity-0 transition-opacity group-hover:opacity-100 ${
-          confirming ? "!opacity-100 bg-rust/15 text-rust" : "text-faded/60 hover:text-rust"
+          confirming ? "!opacity-100 bg-rust/15 text-rust" : "text-muted/60 hover:text-rust"
         }`}
         aria-label={confirming ? "Confirm delete" : "Delete notebook"}
       >
         <Trash size={13} weight="light" />
       </button>
-    </div>
+    </Spotlight>
   );
 }
 
@@ -227,7 +230,7 @@ function RailItemSlim({
       title={notebook.name}
       aria-label={notebook.name}
       className={`group relative mx-auto my-0.5 flex h-9 w-9 items-center justify-center rounded-md ${
-        active ? "bg-white/[0.06]" : "hover:bg-white/[0.03]"
+        active ? "bg-ink/[0.06]" : "hover:bg-ink/[0.03]"
       }`}
     >
       {active && (

@@ -146,7 +146,7 @@ export default function PayPalCheckout({
       )}
 
       {!sdkReady && !error && (
-        <div className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] py-3 text-[12px] text-faded">
+        <div className="flex items-center justify-center gap-2 rounded-lg border border-hairline bg-ink/[0.02] py-3 text-[12px] text-muted">
           <Loader2 size={14} className="animate-spin text-brass" />
           <span>Loading secure PayPal checkout…</span>
         </div>

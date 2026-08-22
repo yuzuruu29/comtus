@@ -176,14 +176,15 @@ export default function ChatPane({
                   ? `${sourceCount} source${sourceCount === 1 ? "" : "s"} on the desk`
                   : "An empty desk"}
               </div>
-              <h2 className="anim-rise mt-5 font-display text-[clamp(1.7rem,3.5vw,2.4rem)] font-[400] leading-snug text-parchment" style={{ "--d": "60ms" } as React.CSSProperties}>
+              <h2 className="anim-rise mt-5 font-display text-[clamp(1.7rem,3.5vw,2.4rem)] font-[400] leading-snug text-ink" style={{ "--d": "60ms" } as React.CSSProperties}>
                 Ask about what you've read —{" "}
                 <em className="font-[420] text-lamp">the sources answer.</em>
               </h2>
               {sourceCount === 0 && (
-                <p className="anim-rise mt-4 max-w-md text-[14px] leading-relaxed text-faded" style={{ "--d": "120ms" } as React.CSSProperties}>
+                <p className="anim-rise mt-4 max-w-md text-body leading-relaxed text-muted" style={{ "--d": "120ms" } as React.CSSProperties}>
                   Add a source or two on the left, then come back. Comtus answers
-                  from your material, not from thin air.
+                  from your material, not from thin air. Sources never upload.
+                  They are read on this device.
                 </p>
               )}
               <motion.div
@@ -202,7 +203,7 @@ export default function ChatPane({
                     whileHover={{ y: -3 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => void send(s)}
-                    className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-3 text-left text-[13px] leading-snug text-parchment/80 transition-colors duration-200 hover:border-brass/30 hover:bg-brass/[0.04]"
+                    className="rounded-xl border border-hairline bg-ink/[0.02] px-4 py-3 text-left text-[13px] leading-snug text-ink/80 transition-colors duration-200 hover:border-brass/30 hover:bg-brass/[0.04]"
                   >
                     {s}
                   </motion.button>
@@ -243,9 +244,9 @@ export default function ChatPane({
       </div>
 
       {/* Composer */}
-      <div className="shrink-0 border-t border-white/[0.06] bg-night px-4 py-3 pb-[calc(0.75rem+var(--sab))] sm:px-5 sm:py-3 sm:pb-3">
+      <div className="shrink-0 border-t border-hairline bg-ground px-4 py-3 pb-[calc(0.75rem+var(--sab))] sm:px-5 sm:py-3 sm:pb-3">
         <div className="mx-auto w-full max-w-3xl">
-          <div className="flex items-end gap-2 rounded-[var(--radius-field)] border border-white/[0.09] bg-study px-3 py-2 transition-colors focus-within:border-brass/40">
+          <div className="flex items-end gap-2 rounded-[var(--radius-field)] border border-hairline bg-surface px-3 py-2 transition-colors focus-within:border-brass/40">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -257,13 +258,13 @@ export default function ChatPane({
               }}
               rows={1}
               placeholder="Ask, or say what to drill…"
-              className="max-h-40 min-h-[26px] flex-1 resize-none bg-transparent text-[16px] leading-relaxed text-parchment outline-none placeholder:text-faded/60 sm:text-[14px]"
+              className="max-h-40 min-h-[26px] flex-1 resize-none bg-transparent text-[16px] leading-relaxed text-ink outline-none placeholder:text-muted/60 sm:text-[14px]"
             />
             {streaming ? (
               <motion.button
                 onClick={() => abortRef.current?.abort()}
                 whileTap={{ scale: 0.9 }}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] border border-white/15 text-parchment hover:bg-white/5"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] border border-hairline-strong text-ink hover:bg-ink/5"
                 aria-label="Stop"
               >
                 <Stop size={14} weight="fill" />
@@ -280,7 +281,7 @@ export default function ChatPane({
               </motion.button>
             )}
           </div>
-          <div className="mt-1.5 text-center text-[11px] text-faded/55">
+          <div className="mt-1.5 text-center text-[11px] text-muted/55">
             Double-check answers against sources. The key stays on this machine.
           </div>
         </div>
@@ -313,7 +314,7 @@ function MessageBubble({
         transition={SPRING}
         className="flex justify-end"
       >
-        <div className="max-w-[78%] text-right text-[14px] leading-relaxed text-parchment/80">
+        <div className="max-w-[78%] text-right text-[14px] leading-relaxed text-ink/80">
           {msg.content}
         </div>
       </motion.div>
@@ -345,7 +346,7 @@ function MessageBubble({
             <CaretDown
               size={13}
               weight="light"
-              className={`ml-auto shrink-0 text-faded transition-transform duration-300 ${open ? "" : "-rotate-90"}`}
+              className={`ml-auto shrink-0 text-muted transition-transform duration-300 ${open ? "" : "-rotate-90"}`}
             />
           </button>
           <Collapse open={open}>
@@ -363,7 +364,7 @@ function MessageBubble({
         </div>
       ) : (
         streaming && (
-          <div className="flex items-center gap-2 text-[13px] text-faded">
+          <div className="flex items-center gap-2 text-[13px] text-muted">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brass" />
             Reading the sources…
           </div>
@@ -383,7 +384,7 @@ function MessageBubble({
           variants={{ show: { transition: { staggerChildren: 0.05 } } }}
           className="flex flex-wrap items-center gap-1.5 pt-0.5"
         >
-          <Quotes size={12} weight="light" className="text-faded/70" />
+          <Quotes size={12} weight="light" className="text-muted/70" />
           {citations.map((c, i) => (
             <motion.button
               key={i}
@@ -402,7 +403,7 @@ function MessageBubble({
       )}
 
       {!streaming && (
-        <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-faded/40">
+        <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted/40">
           {timeAgo(msg.createdAt)}
         </div>
       )}

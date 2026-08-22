@@ -141,12 +141,12 @@ function RailButton({
     <div className="group relative">
       <button
         onClick={onClick}
-        className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] text-faded hover:bg-white/[0.05] hover:text-brasspale"
+        className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-brasspale"
         aria-label={`Show ${label}`}
       >
         <Icon size={16} weight="light" />
       </button>
-      <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-control)] border border-white/10 bg-study px-2 py-1 text-[11px] text-parchment opacity-0 transition-opacity group-hover:opacity-100">
+      <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-control)] border border-hairline bg-surface px-2 py-1 text-[11px] text-ink opacity-0 transition-opacity group-hover:opacity-100">
         {label}
       </span>
     </div>

@@ -53,7 +53,7 @@ export default function ExportMenu({ gen }: { gen: Generation }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={busy}
-        className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[12px] text-parchment/85 transition-colors hover:border-white/25 hover:text-parchment disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded-full border border-hairline bg-ink/[0.03] px-3 py-1.5 text-[12px] text-ink/85 transition-colors hover:border-hairline-strong hover:text-ink disabled:opacity-50"
         aria-label="Download artifact"
         aria-expanded={open}
       >
@@ -62,7 +62,7 @@ export default function ExportMenu({ gen }: { gen: Generation }) {
       </button>
 
       {err && (
-        <div className="absolute right-0 top-full z-10 mt-1.5 flex w-56 items-start gap-1.5 rounded-lg border border-white/10 bg-study px-3 py-2 text-[11.5px] text-rust">
+        <div className="absolute right-0 top-full z-10 mt-1.5 flex w-56 items-start gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-2 text-[11.5px] text-rust">
           <Warning size={13} className="mt-0.5 shrink-0" />
           {err}
         </div>
@@ -75,7 +75,7 @@ export default function ExportMenu({ gen }: { gen: Generation }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -3, transition: { duration: 0.12 } }}
             transition={{ duration: 0.16 }}
-            className="absolute right-0 top-full z-10 mt-1.5 w-52 overflow-hidden rounded-xl border border-white/10 bg-study py-1 shadow-[0_16px_50px_-12px_rgba(0,0,0,0.7)]"
+            className="absolute right-0 top-full z-10 mt-1.5 w-52 overflow-hidden rounded-xl border border-hairline bg-surface py-1 shadow-[0_16px_50px_-12px_rgba(0,0,0,0.7)]"
           >
             {formats.map((f) => {
               const meta = FORMAT_META[f];
@@ -84,12 +84,12 @@ export default function ExportMenu({ gen }: { gen: Generation }) {
                   key={f}
                   type="button"
                   onClick={() => void run(f)}
-                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-white/[0.05]"
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors hover:bg-ink/5"
                 >
                   <meta.icon size={16} weight="light" className="shrink-0 text-brasspale/85" />
                   <span className="min-w-0">
-                    <span className="block text-[12.5px] text-parchment/90">{meta.label}</span>
-                    <span className="block text-[10.5px] text-faded">{meta.hint}</span>
+                    <span className="block text-[12.5px] text-ink/90">{meta.label}</span>
+                    <span className="block text-[10.5px] text-muted">{meta.hint}</span>
                   </span>
                 </button>
               );

@@ -1,5 +1,7 @@
 import type { Table } from "dexie";
 import { db } from "./db";
+import { isTauri } from "./desktop";
+import { useSettings } from "./settings";
 
 const TABLES = [
   "notebooks",
@@ -12,40 +14,77 @@ const TABLES = [
 
 type TableName = (typeof TABLES)[number];
 
-/** Full local store → downloadable JSON file. */
-export async function exportBackup(): Promise<void> {
+export interface BackupPayload {
+  app?: string;
+  schema?: number;
+  exportedAt?: string;
+  data?: Partial<Record<TableName, unknown[]>>;
+}
+
+function backupFilename(): string {
+  return `comtus-backup-${new Date().toISOString().slice(0, 10)}.json`;
+}
+
+async function buildPayload(): Promise<BackupPayload> {
   const data: Partial<Record<TableName, unknown[]>> = {};
   for (const t of TABLES) data[t] = await db[t].toArray();
-  const payload = {
+  return {
     app: "comtus",
     schema: 1,
     exportedAt: new Date().toISOString(),
     data,
   };
-  const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+}
+
+function markBackedUp(): void {
+  useSettings.getState().update({ lastBackupAt: Date.now() });
+}
+
+function downloadBlob(json: string, filename: string): void {
+  const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `comtus-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
 }
 
-/** Merge rows from a backup file into the local store (existing ids win). */
-export async function importBackup(file: File): Promise<number> {
-  let payload: {
-    app?: string;
-    data?: Partial<Record<TableName, unknown[]>>;
-  };
+/** Full local store → native save dialog on Tauri, browser download otherwise. */
+export async function exportBackup(): Promise<void> {
+  const json = JSON.stringify(await buildPayload());
+  const filename = backupFilename();
+
+  if (isTauri()) {
+    const { save } = await import("@tauri-apps/plugin-dialog");
+    const { writeTextFile } = await import("@tauri-apps/plugin-fs");
+    const path = await save({
+      defaultPath: filename,
+      filters: [{ name: "JSON", extensions: ["json"] }],
+    });
+    if (!path) return;
+    await writeTextFile(path, json);
+  } else {
+    downloadBlob(json, filename);
+  }
+  markBackedUp();
+}
+
+export function parseBackupPayload(text: string): BackupPayload {
+  let payload: BackupPayload;
   try {
-    payload = JSON.parse(await file.text());
+    payload = JSON.parse(text);
   } catch {
     throw new Error("That file isn't valid JSON.");
   }
   if (payload?.app !== "comtus" || !payload.data) {
     throw new Error("That isn't a Comtus backup file.");
   }
-  // The per-table generics differ, so normalize through a wide row type.
+  return payload;
+}
+
+export async function importBackupText(text: string): Promise<number> {
+  const payload = parseBackupPayload(text);
   const tables: Array<Table<Record<string, unknown>, string>> = TABLES.map(
     (t) => db[t] as unknown as Table<Record<string, unknown>, string>,
   );
@@ -60,4 +99,21 @@ export async function importBackup(file: File): Promise<number> {
     }
   });
   return count;
+}
+
+/** Merge rows from a backup file into the local store (existing ids win). */
+export async function importBackup(file: File): Promise<number> {
+  return importBackupText(await file.text());
+}
+
+/** Native open dialog on Tauri. Returns 0 if the user cancelled. */
+export async function importBackupNative(): Promise<number | null> {
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const { readTextFile } = await import("@tauri-apps/plugin-fs");
+  const path = await open({
+    multiple: false,
+    filters: [{ name: "JSON", extensions: ["json"] }],
+  });
+  if (!path || Array.isArray(path)) return null;
+  return importBackupText(await readTextFile(path));
 }

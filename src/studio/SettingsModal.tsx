@@ -12,7 +12,6 @@ import {
   Crown,
   Eye,
   EyeSlash,
-  Flame,
   Gauge,
   Key,
   Lightning,
@@ -26,6 +25,7 @@ import {
   Warning,
 } from "@phosphor-icons/react";
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, LampPulse } from "./ui";
+import { BorderBeam } from "./fx";
 import { useSettings } from "../lib/settings";
 import {
   MODELS,
@@ -39,7 +39,7 @@ import {
 import type { ProviderId, StoredKey } from "../lib/types";
 import { STUDY_PLANS, type StudyPlan } from "../lib/paypal";
 import PayPalCheckout from "./PayPalCheckout";
-import { exportBackup, importBackup } from "../lib/backup";
+import DataTrustPanel from "./DataTrustPanel";
 import { isTauri } from "../lib/desktop";
 import { requestUpdateCheck } from "./useUpdater";
 
@@ -146,40 +146,7 @@ export default function SettingsModal({
   const [newKeyModel, setNewKeyModel] = useState("deepseek/deepseek-r1:free");
   const [quickSaveName, setQuickSaveName] = useState("");
 
-  // Backup (export/import of the local store)
-  const [backupBusy, setBackupBusy] = useState(false);
-  const [backupMsg, setBackupMsg] = useState("");
-  const [backupErr, setBackupErr] = useState(false);
-
-  const handleExport = async () => {
-    setBackupBusy(true);
-    setBackupErr(false);
-    try {
-      await exportBackup();
-      setBackupMsg("Backup saved to your downloads.");
-    } catch {
-      setBackupErr(true);
-      setBackupMsg("Export failed — please retry.");
-    } finally {
-      setBackupBusy(false);
-    }
-  };
-
-  const handleImport = async (file: File) => {
-    setBackupBusy(true);
-    setBackupErr(false);
-    setBackupMsg("");
-    try {
-      const count = await importBackup(file);
-      setBackupMsg(`Restored ${count.toLocaleString()} records.`);
-    } catch (e) {
-      setBackupErr(true);
-      setBackupMsg(e instanceof Error ? e.message : "Import failed.");
-    } finally {
-      setBackupBusy(false);
-    }
-  };
-
+  const theme = useSettings((st) => st.theme) ?? "system";
   const recentModels = useSettings((st) => st.recentModels) ?? [];
 
   // Recurring live sync for OpenAI-compatible endpoints (OpenRouter, Groq, local)
@@ -382,6 +349,38 @@ export default function SettingsModal({
     <>
       <Modal open={open} onClose={onClose} title="Settings" wide>
       <div className="space-y-6">
+        <div>
+          <div className="label-mono !text-[10px] mb-2">Appearance</div>
+          <div className="grid grid-cols-3 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
+            {(
+              [
+                ["system", "System"],
+                ["dark", "Dark"],
+                ["light", "Daylight"],
+              ] as const
+            ).map(([id, label]) => {
+              const active = theme === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => useSettings.getState().update({ theme: id })}
+                  className={`flex min-h-[42px] items-center justify-center rounded-lg px-3 py-2 text-body font-medium transition-all active:scale-[0.97] ${
+                    active
+                      ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
+                      : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-label leading-relaxed text-muted">
+            Daylight is a paper-bright study. The landing page stays lamplit.
+          </p>
+        </div>
+
         {/* Provider switch */}
         <div>
           <div className="label-mono !text-[10px] mb-2">Provider & Access Tier</div>
@@ -398,16 +397,16 @@ export default function SettingsModal({
                 className={`min-h-[52px] rounded-xl border px-4 py-3 text-left transition-all active:scale-[0.99] ${
                   draft.provider === id
                     ? "border-brass/60 bg-brass/[0.09] shadow-[0_0_20px_rgba(227,176,75,0.12)]"
-                    : "border-white/[0.08] bg-white/[0.02] hover:border-white/20"
+                    : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="text-[13.5px] font-medium text-parchment">{label}</div>
+                  <div className="text-[13.5px] font-medium text-ink">{label}</div>
                   {draft.provider === id && (
                     <span className="flex h-2 w-2 rounded-full bg-brass shadow-[0_0_8px_var(--color-brass)]" />
                   )}
                 </div>
-                <div className="mt-1 text-[11.5px] leading-snug text-faded">{note}</div>
+                <div className="mt-1 text-[11.5px] leading-snug text-muted">{note}</div>
               </button>
             ))}
           </div>
@@ -422,7 +421,7 @@ export default function SettingsModal({
           >
             <div className="flex items-center gap-2.5">
               <Question size={16} className="text-brass shrink-0" />
-              <span className="text-[13px] font-medium text-parchment">
+              <span className="text-[13px] font-medium text-ink">
                 Access Guide: Free Models (BYOK) vs. Smarter Models (PayPal Tier)
               </span>
             </div>
@@ -433,7 +432,7 @@ export default function SettingsModal({
           </button>
 
           {byokGuideOpen && (
-            <div className="border-t border-brass/15 bg-night/70 p-4.5 text-[12.5px] leading-relaxed text-parchment/90 space-y-3.5">
+            <div className="border-t border-brass/15 bg-ground/70 p-4.5 text-[12.5px] leading-relaxed text-ink/90 space-y-3.5">
               <div className="flex items-start gap-2.5 rounded-lg border border-sage/20 bg-sage/[0.05] p-3 text-sage text-[12px]">
                 <ShieldCheck size={16} className="shrink-0 mt-0.5" />
                 <span>
@@ -447,15 +446,15 @@ export default function SettingsModal({
                     <Lock size={13} className="text-brass" />
                     <span>Smarter Models Access (Anthropic BYOK Disabled):</span>
                   </div>
-                  <p className="text-[12px] leading-relaxed text-faded">
+                  <p className="text-[12px] leading-relaxed text-muted">
                     To deliver maximum reasoning power with zero complex developer setup, <strong>Anthropic BYOK is disabled</strong>. Smarter models (Claude Opus 5 & Sonnet 5) run directly on our managed key. You simply pay based on usage through PayPal.
                   </p>
                   <div className="rounded-lg border border-brass/25 bg-brass/[0.06] p-3 space-y-2 text-[12px]">
-                    <div className="font-medium text-parchment flex items-center gap-1.5">
+                    <div className="font-medium text-ink flex items-center gap-1.5">
                       <CreditCard size={14} className="text-brass" />
                       <span>How to Unlock Access via PayPal:</span>
                     </div>
-                    <ol className="list-decimal pl-5 space-y-1.5 text-faded">
+                    <ol className="list-decimal pl-5 space-y-1.5 text-muted">
                       <li>Choose your preferred usage pass below based on your study load.</li>
                       <li>Send payment through PayPal to receive your personal Access Pass / Token.</li>
                       <li>Paste the code into the <strong>Access Pass</strong> field below.</li>
@@ -467,7 +466,7 @@ export default function SettingsModal({
                 <div className="space-y-3.5">
                   <div className="rounded-lg border border-brass/25 bg-brass/[0.06] p-3.5 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className="font-medium text-parchment flex items-center gap-1.5">
+                      <div className="font-medium text-ink flex items-center gap-1.5">
                         <Sparkle size={14} className="text-brass" />
                         <span>Recommended: OpenRouter BYOK (with Free AI Models)</span>
                       </div>
@@ -480,7 +479,7 @@ export default function SettingsModal({
                         openrouter.ai/keys <ArrowSquareOut size={11} />
                       </a>
                     </div>
-                    <ol className="list-decimal pl-5 space-y-1.5 text-faded text-[12px]">
+                    <ol className="list-decimal pl-5 space-y-1.5 text-muted text-[12px]">
                       <li>
                         Create an account at <a href="https://openrouter.ai" target="_blank" rel="noreferrer" className="text-moon hover:underline">openrouter.ai</a>.
                       </li>
@@ -506,51 +505,51 @@ export default function SettingsModal({
                     All Compatible Providers & Local Endpoints:
                   </div>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
-                      <div className="font-medium text-parchment flex items-center justify-between">
+                    <div className="rounded-lg border border-hairline bg-ink/[0.02] p-3">
+                      <div className="font-medium text-ink flex items-center justify-between">
                         <span>1. OpenRouter (Multi-Model & Free)</span>
                         <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
                           openrouter.ai <ArrowSquareOut size={10} />
                         </a>
                       </div>
-                      <p className="mt-1 text-[11.5px] text-faded">
+                      <p className="mt-1 text-[11.5px] text-muted">
                         One key connects DeepSeek R1, Llama 3.3, Claude 3.5, Gemini 2.0, and free models.
                       </p>
                     </div>
-                    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
-                      <div className="font-medium text-parchment flex items-center justify-between">
+                    <div className="rounded-lg border border-hairline bg-ink/[0.02] p-3">
+                      <div className="font-medium text-ink flex items-center justify-between">
                         <span>2. Groq (Ultra-Fast Free Tier)</span>
                         <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
                           groq.com <ArrowSquareOut size={10} />
                         </a>
                       </div>
-                      <p className="mt-1 text-[11.5px] text-faded">
+                      <p className="mt-1 text-[11.5px] text-muted">
                         Instant, ultra-low latency inference for Llama 3.3 70B and Mixtral.
                       </p>
                     </div>
-                    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
-                      <div className="font-medium text-parchment flex items-center justify-between">
+                    <div className="rounded-lg border border-hairline bg-ink/[0.02] p-3">
+                      <div className="font-medium text-ink flex items-center justify-between">
                         <span>3. DeepSeek (Direct)</span>
                         <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noreferrer" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
                           deepseek.com <ArrowSquareOut size={10} />
                         </a>
                       </div>
-                      <p className="mt-1 text-[11.5px] text-faded">
+                      <p className="mt-1 text-[11.5px] text-muted">
                         Ultra-capable direct reasoning models (<code className="text-brasspale">deepseek-reasoner</code>).
                       </p>
                     </div>
-                    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
-                      <div className="font-medium text-parchment flex items-center justify-between">
+                    <div className="rounded-lg border border-hairline bg-ink/[0.02] p-3">
+                      <div className="font-medium text-ink flex items-center justify-between">
                         <span>4. Local (Ollama / LM Studio)</span>
                         <span className="text-sage text-[10.5px] font-mono">100% FREE</span>
                       </div>
-                      <p className="mt-1 text-[11.5px] text-faded">
+                      <p className="mt-1 text-[11.5px] text-muted">
                         Run offline models directly on your hardware. <strong>No key or internet needed.</strong>
                       </p>
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 font-mono text-[10.5px]">
-                    <span className="uppercase tracking-[0.14em] text-faded/60">More free tiers:</span>
+                    <span className="uppercase tracking-[0.14em] text-muted/60">More free tiers:</span>
                     <a href="https://opencode.ai/zen" target="_blank" rel="noreferrer" className="flex items-center gap-0.5 text-moon hover:underline">
                       OpenCode Zen <ArrowSquareOut size={9} />
                     </a>
@@ -574,7 +573,7 @@ export default function SettingsModal({
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-brass/15 pb-3">
                 <div className="flex items-center gap-2">
                   <Crown size={17} className="text-brass shrink-0" />
-                  <span className="font-display text-[15px] font-[450] text-parchment">
+                  <span className="font-display text-[15px] font-[450] text-ink">
                     Smarter Models (Claude Opus 5 & Sonnet 5)
                   </span>
                 </div>
@@ -583,7 +582,7 @@ export default function SettingsModal({
                 </span>
               </div>
 
-              <p className="text-[12.5px] leading-relaxed text-faded">
+              <p className="text-[12.5px] leading-relaxed text-muted">
                 Anthropic BYOK is disabled. Access to Claude Opus 5 & Sonnet 5 is powered directly by our managed key. Pay based on your usage via PayPal to unlock your personal access pass.
               </p>
 
@@ -603,12 +602,12 @@ export default function SettingsModal({
                         className={`text-left rounded-xl border p-3 flex flex-col justify-between transition-all active:scale-[0.98] ${
                           isPlanSelected
                             ? "border-brass/70 bg-brass/[0.12] shadow-[0_0_20px_rgba(227,176,75,0.15)] ring-1 ring-brass/40"
-                            : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                            : "border-hairline bg-ink/[0.03] hover:border-hairline-strong"
                         }`}
                       >
                         <div>
                           <div className="flex items-center justify-between">
-                            <span className="font-medium text-parchment text-[13px] flex items-center gap-1">
+                            <span className="font-medium text-ink text-[13px] flex items-center gap-1">
                               {plan.name}
                               {plan.popular && (
                                 <span className="rounded bg-brass/25 px-1 py-0.2 font-mono text-[8.5px] text-brasspale uppercase">
@@ -617,7 +616,7 @@ export default function SettingsModal({
                               )}
                             </span>
                             <span className="flex items-baseline gap-1.5">
-                              <span className="font-mono text-[10.5px] text-faded/60 line-through">
+                              <span className="font-mono text-[10.5px] text-muted/60 line-through">
                                 ${plan.compareAt}
                               </span>
                               <span className="font-mono text-brass font-bold text-[13px]">${plan.price}</span>
@@ -626,8 +625,8 @@ export default function SettingsModal({
                               </span>
                             </span>
                           </div>
-                          <div className="mt-1 font-mono text-[10px] text-faded/70">{plan.tokens}</div>
-                          <p className="mt-1.5 text-[11.5px] leading-snug text-faded">{plan.desc}</p>
+                          <div className="mt-1 font-mono text-[10px] text-muted/70">{plan.tokens}</div>
+                          <p className="mt-1.5 text-[11.5px] leading-snug text-muted">{plan.desc}</p>
                         </div>
                         {isPlanSelected && (
                           <div className="mt-2 text-right font-mono text-[10px] text-brasspale font-medium">
@@ -641,9 +640,9 @@ export default function SettingsModal({
               </div>
 
               {/* PayPal Smart Checkout Section */}
-              <div className="rounded-xl border border-white/10 bg-night/80 p-3.5 space-y-2.5">
+              <div className="rounded-xl border border-hairline bg-ground/80 p-3.5 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[12.5px] text-parchment font-medium">
+                  <div className="flex items-center gap-2 text-[12.5px] text-ink font-medium">
                     <CreditCard size={15} className="text-brass shrink-0" />
                     <span>
                       Pay with PayPal: {selectedPlan.name} (${selectedPlan.price} USD ·{" "}
@@ -682,7 +681,7 @@ export default function SettingsModal({
                   />
                   <button
                     onClick={() => setShowAnthropicKey((v) => !v)}
-                    className="flex h-9 w-9 items-center justify-center absolute right-1.5 top-1/2 -translate-y-1/2 text-faded hover:text-parchment"
+                    className="flex h-9 w-9 items-center justify-center absolute right-1.5 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
                     aria-label={showAnthropicKey ? "Hide key" : "Show key"}
                     tabIndex={-1}
                   >
@@ -706,17 +705,17 @@ export default function SettingsModal({
                       className={`group relative flex min-h-[76px] flex-col justify-between rounded-xl border p-4 text-left transition-all active:scale-[0.99] ${
                         isSelected
                           ? "border-brass/60 bg-brass/[0.09] shadow-[0_4px_24px_rgba(227,176,75,0.14)]"
-                          : "border-white/[0.08] bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"
+                          : "border-hairline bg-ink/[0.02] hover:border-hairline-strong hover:bg-ink/[0.04]"
                       }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
                           {isOpus ? (
-                            <Brain size={16} className={isSelected ? "text-brass" : "text-faded"} />
+                            <Brain size={16} className={isSelected ? "text-brass" : "text-muted"} />
                           ) : (
-                            <Lightning size={16} className={isSelected ? "text-brass" : "text-faded"} />
+                            <Lightning size={16} className={isSelected ? "text-brass" : "text-muted"} />
                           )}
-                          <div className="font-display text-[15px] font-[450] text-parchment">
+                          <div className="font-display text-[15px] font-[450] text-ink">
                             {m.label}
                           </div>
                         </div>
@@ -724,14 +723,14 @@ export default function SettingsModal({
                           className={`rounded-full px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.14em] ${
                             isSelected
                               ? "border border-brass/30 bg-brass/20 text-brasspale"
-                              : "border border-white/10 bg-white/[0.04] text-faded"
+                              : "border border-hairline bg-ink/[0.04] text-muted"
                           }`}
                         >
                           {m.badge}
                         </span>
                       </div>
-                      <div className="mt-2 text-[12px] leading-snug text-faded">{m.note}</div>
-                      <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.16em] text-faded/70">
+                      <div className="mt-2 text-[12px] leading-snug text-muted">{m.note}</div>
+                      <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted/70">
                         {m.ctx}
                       </div>
                     </button>
@@ -756,11 +755,11 @@ export default function SettingsModal({
         ) : (
           <>
             {/* Free provider picker — one click fills endpoint + default model */}
-            <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.035] to-transparent p-4">
+            <div className="overflow-hidden rounded-2xl border border-hairline bg-gradient-to-b from-white/[0.035] to-transparent p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Gauge size={15} className="text-brass shrink-0" />
-                  <span className="text-[13px] font-medium text-parchment">
+                  <span className="text-[13px] font-medium text-ink">
                     Free AI Providers — pick one, grab a key, connect
                   </span>
                 </div>
@@ -786,7 +785,7 @@ export default function SettingsModal({
                       className={`group relative overflow-hidden rounded-xl border p-4 transition-all duration-300 ${
                         active
                           ? "border-brass/50 bg-brass/[0.06] shadow-[0_0_20px_rgba(227,176,75,0.08)]"
-                          : "border-white/[0.08] bg-night/50 hover:border-white/20 hover:bg-night/70"
+                          : "border-hairline bg-ground/50 hover:border-hairline-strong hover:bg-ground/70"
                       }`}
                     >
                       <div
@@ -812,21 +811,21 @@ export default function SettingsModal({
                           <div className="flex items-center gap-2.5">
                             <span
                               className={`flex h-8 w-8 items-center justify-center rounded-lg border shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] ${
-                                active ? "border-brass/40 bg-brass/15" : "border-white/10 bg-white/[0.05]"
+                                active ? "border-brass/40 bg-brass/15" : "border-hairline bg-white/[0.05]"
                               }`}
                             >
-                              <Icon size={14} className={active ? "text-brasspale" : "text-parchment/80"} />
+                              <Icon size={14} className={active ? "text-brasspale" : "text-ink/80"} />
                             </span>
-                            <span className="text-[13.5px] font-medium text-parchment">{p.name}</span>
+                            <span className="text-[13.5px] font-medium text-ink">{p.name}</span>
                           </div>
-                          <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-faded">
+                          <span className="shrink-0 rounded-full border border-hairline bg-ink/[0.04] px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted">
                             {p.tag}
                           </span>
                         </div>
-                        <p className="mt-2.5 text-[11.5px] leading-relaxed text-faded">{p.desc}</p>
-                        <div className="mt-2.5 flex flex-wrap gap-1 font-mono text-[9px] text-parchment/75">
+                        <p className="mt-2.5 text-[11.5px] leading-relaxed text-muted">{p.desc}</p>
+                        <div className="mt-2.5 flex flex-wrap gap-1 font-mono text-[9px] text-ink/75">
                           {p.chips.map((c) => (
-                            <span key={c} className="rounded bg-white/[0.06] px-1.5 py-0.5">
+                            <span key={c} className="rounded bg-ink/[0.06] px-1.5 py-0.5">
                               {c}
                             </span>
                           ))}
@@ -847,11 +846,11 @@ export default function SettingsModal({
             </div>
 
             {/* Saved BYOK Keys Vault Manager */}
-            <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3.5 space-y-3">
+            <div className="overflow-hidden rounded-xl border border-hairline bg-ink/[0.02] p-3.5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Key size={15} className="text-brass shrink-0" />
-                  <span className="text-[13px] font-medium text-parchment">
+                  <span className="text-[13px] font-medium text-ink">
                     Stored BYOK Keys Vault ({storedKeys.length})
                   </span>
                 </div>
@@ -865,7 +864,7 @@ export default function SettingsModal({
               </div>
 
               {storedKeys.length === 0 ? (
-                <p className="text-[11.5px] leading-relaxed text-faded">
+                <p className="text-[11.5px] leading-relaxed text-muted">
                   No stored keys yet. Save multiple OpenRouter, Groq, or DeepSeek API keys below to switch between them in 1 click.
                 </p>
               ) : (
@@ -880,15 +879,15 @@ export default function SettingsModal({
                         className={`rounded-xl border p-2.5 flex flex-col justify-between transition-all ${
                           isActive
                             ? "border-brass/60 bg-brass/[0.09] shadow-[0_0_15px_rgba(227,176,75,0.1)]"
-                            : "border-white/10 bg-night/60 hover:border-white/20"
+                            : "border-hairline bg-ground/60 hover:border-hairline-strong"
                         }`}
                       >
                         <div>
                           <div className="flex items-center justify-between gap-1.5">
-                            <span className="font-medium text-[12.5px] text-parchment truncate">
+                            <span className="font-medium text-[12.5px] text-ink truncate">
                               {k.name}
                             </span>
-                            <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 rounded bg-white/5 text-faded border border-white/10 shrink-0">
+                            <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 rounded bg-ink/5 text-muted border border-hairline shrink-0">
                               {k.provider}
                             </span>
                           </div>
@@ -896,13 +895,13 @@ export default function SettingsModal({
                             {maskKey(k.apiKey)}
                           </div>
                           {k.defaultModel && (
-                            <div className="mt-0.5 font-mono text-[10px] text-faded truncate">
+                            <div className="mt-0.5 font-mono text-[10px] text-muted truncate">
                               {k.defaultModel}
                             </div>
                           )}
                         </div>
 
-                        <div className="mt-2.5 pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2">
+                        <div className="mt-2.5 pt-2 border-t border-hairline flex items-center justify-between gap-2">
                           {isActive ? (
                             <span className="flex items-center gap-1 font-mono text-[10px] text-sage font-medium">
                               <Check size={11} /> Active Key
@@ -925,7 +924,7 @@ export default function SettingsModal({
                           <button
                             type="button"
                             onClick={() => removeStoredKey(k.id)}
-                            className="p-1 text-faded hover:text-rust transition-colors"
+                            className="p-1 text-muted hover:text-rust transition-colors"
                             aria-label={`Delete ${k.name}`}
                           >
                             <Trash size={12} />
@@ -941,7 +940,7 @@ export default function SettingsModal({
               {draft.compatKey.trim().length > 0 &&
                 !storedKeys.some((k) => k.apiKey.trim() === draft.compatKey.trim()) && (
                   <div className="mt-2 rounded-lg border border-brass/25 bg-brass/[0.05] p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 text-[12px] text-parchment">
+                    <div className="flex items-center gap-1.5 text-[12px] text-ink">
                       <Bookmark size={13} className="text-brass shrink-0" />
                       <span>Save current key to vault?</span>
                     </div>
@@ -951,7 +950,7 @@ export default function SettingsModal({
                         placeholder="Key name (e.g. Work OpenRouter)"
                         value={quickSaveName}
                         onChange={(e) => setQuickSaveName(e.target.value)}
-                        className="rounded border border-white/10 bg-study px-2 py-0.5 text-[11px] font-mono text-parchment placeholder:text-faded/50 outline-none focus:border-brass/40"
+                        className="rounded border border-hairline bg-surface px-2 py-0.5 text-[11px] font-mono text-ink placeholder:text-muted/50 outline-none focus:border-brass/40"
                       />
                       <button
                         type="button"
@@ -981,11 +980,11 @@ export default function SettingsModal({
                     className={`min-h-[50px] rounded-xl border px-3 py-2.5 text-left transition-all active:scale-[0.98] ${
                       draft.compatBaseUrl === p.baseUrl
                         ? "border-brass/60 bg-brass/[0.08]"
-                        : "border-white/[0.08] bg-white/[0.02] hover:border-white/20"
+                        : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
                     }`}
                   >
                     <div className="font-mono text-[11px] font-medium text-brasspale">{p.label}</div>
-                    <div className="mt-0.5 line-clamp-1 text-[10.5px] leading-snug text-faded">{p.note}</div>
+                    <div className="mt-0.5 line-clamp-1 text-[10.5px] leading-snug text-muted">{p.note}</div>
                   </button>
                 ))}
               </div>
@@ -1007,7 +1006,7 @@ export default function SettingsModal({
                   />
                   <button
                     onClick={() => setShowCompatKey((v) => !v)}
-                    className="flex h-9 w-9 items-center justify-center absolute right-1.5 top-1/2 -translate-y-1/2 text-faded hover:text-parchment"
+                    className="flex h-9 w-9 items-center justify-center absolute right-1.5 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
                     aria-label={showCompatKey ? "Hide key" : "Show key"}
                     tabIndex={-1}
                   >
@@ -1053,7 +1052,7 @@ export default function SettingsModal({
               {/* Recent quick chips */}
               {recentModels.length > 0 && (
                 <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                  <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.14em] text-faded/70">
+                  <span className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.14em] text-muted/70">
                     <ArrowClockwise size={11} /> Recent:
                   </span>
                   {recentModels.map((m) => (
@@ -1064,7 +1063,7 @@ export default function SettingsModal({
                       className={`rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-colors ${
                         draft.compatModel === m
                           ? "border-brass/50 bg-brass/15 text-brasspale"
-                          : "border-white/10 bg-white/[0.02] text-faded hover:border-white/20 hover:text-parchment"
+                          : "border-hairline bg-ink/[0.02] text-muted hover:border-hairline-strong hover:text-ink"
                       }`}
                     >
                       {m}
@@ -1075,16 +1074,16 @@ export default function SettingsModal({
 
               {/* Fetched models dropdown panel */}
               {modelIds.length > 0 && (
-                <div className="relative mt-3 overflow-hidden rounded-xl border border-white/10 bg-night/80 p-3">
+                <div className="relative mt-3 overflow-hidden rounded-xl border border-hairline bg-ground/80 p-3">
                   <div
                     aria-hidden
                     className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-brass/40 to-transparent"
                   />
                   <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-faded flex items-center gap-1.5 flex-wrap">
+                    <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted flex items-center gap-1.5 flex-wrap">
                       <span>{modelsNote}</span>
                       {lastFetchedAt && (
-                        <span className="text-[9.5px] text-faded/60">
+                        <span className="text-[9.5px] text-muted/60">
                           · {new Date(lastFetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                         </span>
                       )}
@@ -1094,13 +1093,13 @@ export default function SettingsModal({
                       placeholder="Filter models (e.g. :free)…"
                       value={filterQuery}
                       onChange={(e) => setFilterQuery(e.target.value)}
-                      className="w-full sm:w-44 rounded-lg border border-white/10 bg-study/80 px-2.5 py-1 font-mono text-[11px] text-parchment placeholder:text-faded/50 outline-none focus:border-brass/40"
+                      className="w-full sm:w-44 rounded-lg border border-hairline bg-surface/80 px-2.5 py-1 font-mono text-[11px] text-ink placeholder:text-muted/50 outline-none focus:border-brass/40"
                     />
                   </div>
 
                   {/* Quick Filter Chips */}
-                  <div className="mb-2 flex flex-wrap items-center gap-1.5 border-b border-white/[0.06] pb-2">
-                    <span className="font-mono text-[9.5px] uppercase tracking-wider text-faded/60">Quick:</span>
+                  <div className="mb-2 flex flex-wrap items-center gap-1.5 border-b border-hairline pb-2">
+                    <span className="font-mono text-[9.5px] uppercase tracking-wider text-muted/60">Quick:</span>
                     {[
                       { label: "All", q: "" },
                       { label: "✨ :free (OpenRouter Free)", q: ":free" },
@@ -1116,7 +1115,7 @@ export default function SettingsModal({
                         className={`rounded px-2 py-0.5 font-mono text-[10px] transition-colors ${
                           filterQuery === chip.q
                             ? "bg-brass/20 text-brasspale font-medium"
-                            : "bg-white/[0.04] text-faded hover:bg-white/[0.08] hover:text-parchment"
+                            : "bg-ink/[0.04] text-muted hover:bg-ink/[0.08] hover:text-ink"
                         }`}
                       >
                         {chip.label}
@@ -1135,7 +1134,7 @@ export default function SettingsModal({
                           className={`flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-left font-mono text-[12px] transition-all ${
                             selected
                               ? "border-brass/40 bg-brass/[0.14] text-brasspale shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-                              : "border-transparent text-parchment/80 hover:border-white/10 hover:bg-white/5"
+                              : "border-transparent text-ink/80 hover:border-hairline hover:bg-ink/5"
                           }`}
                         >
                           <span className="truncate">{id}</span>
@@ -1149,7 +1148,7 @@ export default function SettingsModal({
                       );
                     })}
                     {filteredModelIds.length > 50 && (
-                      <div className="pt-1 text-center font-mono text-[10px] text-faded/60">
+                      <div className="pt-1 text-center font-mono text-[10px] text-muted/60">
                         + {filteredModelIds.length - 50} more models. Type to filter.
                       </div>
                     )}
@@ -1164,11 +1163,11 @@ export default function SettingsModal({
         <div>
           <div className="flex items-center justify-between mb-2">
             <div className="label-mono !text-[10px]">Thinking Effort</div>
-            <span className="font-mono text-[10px] text-faded/70">
+            <span className="font-mono text-[10px] text-muted/70">
               Reasoning depth
             </span>
           </div>
-          <div className="grid grid-cols-3 gap-2 rounded-xl border border-white/[0.08] bg-night/60 p-1.5">
+          <div className="grid grid-cols-3 gap-2 rounded-xl border border-hairline bg-ground/60 p-1.5">
             {EFFORTS.map((e) => {
               const active = draft.effort === e.id;
               return (
@@ -1179,7 +1178,7 @@ export default function SettingsModal({
                   className={`flex min-h-[42px] items-center justify-center rounded-lg px-3 py-2 text-[12.5px] font-medium transition-all active:scale-[0.97] ${
                     active
                       ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_rgba(227,176,75,0.25)]"
-                      : "text-faded hover:text-parchment"
+                      : "text-muted hover:text-ink"
                   }`}
                 >
                   {e.id === "xhigh" && <Sparkle size={13} className="mr-1.5 inline" />}
@@ -1188,7 +1187,7 @@ export default function SettingsModal({
               );
             })}
           </div>
-          <p className="mt-2 text-[11.5px] leading-relaxed text-faded">
+          <p className="mt-2 text-[11.5px] leading-relaxed text-muted">
             How long Comtus reasons before answering. Compatible endpoints surface reasoning when supported by the model.
           </p>
         </div>
@@ -1202,73 +1201,31 @@ export default function SettingsModal({
         {err && <ErrorNote>{err}</ErrorNote>}
 
         {/* AI Accuracy & Verification Disclaimer */}
-        <div className="rounded-xl border border-brass/20 bg-amber-500/[0.04] p-3.5 text-parchment/90">
+        <div className="rounded-xl border border-brass/20 bg-amber-500/[0.04] p-3.5 text-ink/90">
           <div className="flex items-start gap-2.5">
             <Warning size={16} className="text-brass shrink-0 mt-0.5" />
-            <div className="text-[12px] leading-relaxed text-faded">
-              <strong className="text-parchment font-medium">Important AI Disclaimer:</strong> AI models (including free and open-source models) can make mistakes, hallucinate details, or misinterpret nuanced concepts. Always double-check citations, formulas, and answers against your primary study materials and authoritative sources.
+            <div className="text-[12px] leading-relaxed text-muted">
+              <strong className="text-ink font-medium">Important AI Disclaimer:</strong> AI models (including free and open-source models) can make mistakes, hallucinate details, or misinterpret nuanced concepts. Always double-check citations, formulas, and answers against your primary study materials and authoritative sources.
             </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3.5">
-          <div className="flex items-center gap-2 text-[13px] text-parchment/85">
-            <Flame size={14} className="text-brass" />
-            Local-first, on-device data.
-          </div>
-          <p className="mt-1.5 text-[12.5px] leading-relaxed text-faded">
-            Notebooks, sources, and history stay inside this browser's IndexedDB. Your questions
-            stream directly to your chosen provider endpoint.
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+        <DataTrustPanel open={open} />
+
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-muted/70">
+            Comtus v{__APP_VERSION__}
+            {isTauri() ? " · Desk App" : ""}
+          </span>
+          {isTauri() && (
             <button
               type="button"
-              onClick={() => void handleExport()}
-              disabled={backupBusy}
-              className={btnGhost + " !px-3 !py-1.5 text-[12px]"}
+              onClick={requestUpdateCheck}
+              className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-muted/70 transition-colors hover:text-brasspale"
             >
-              {backupBusy ? "Working…" : "Export backup"}
+              Check for updates
             </button>
-            <label
-              className={
-                btnGhost +
-                " cursor-pointer !px-3 !py-1.5 text-[12px]" +
-                (backupBusy ? " pointer-events-none opacity-50" : "")
-              }
-            >
-              Import backup
-              <input
-                type="file"
-                accept="application/json,.json"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void handleImport(f);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-            {backupMsg && (
-              <span className={`text-[11.5px] ${backupErr ? "text-rust" : "text-sage"}`}>
-                {backupMsg}
-              </span>
-            )}
-          </div>
-          <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-2.5">
-            <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-faded/70">
-              Comtus v{__APP_VERSION__}
-              {isTauri() ? " · Desk App" : ""}
-            </span>
-            {isTauri() && (
-              <button
-                type="button"
-                onClick={requestUpdateCheck}
-                className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-faded/70 transition-colors hover:text-brasspale"
-              >
-                Check for updates
-              </button>
-            )}
-          </div>
+          )}
         </div>
 
         <div className="flex justify-end gap-3 pt-1">
@@ -1276,6 +1233,7 @@ export default function SettingsModal({
             Done
           </button>
           <button className={btnLamp} onClick={saveAndTest} disabled={testing}>
+            <BorderBeam size={52} duration={8} />
             {testing ? "Testing…" : "Save & test"}
           </button>
         </div>
@@ -1319,7 +1277,7 @@ export default function SettingsModal({
                 className={`rounded-lg border px-2.5 py-1.5 font-mono text-[11px] transition-colors text-left ${
                   newKeyProvider === p
                     ? "border-brass/60 bg-brass/20 text-brasspale font-medium"
-                    : "border-white/10 bg-white/[0.02] text-faded hover:border-white/20"
+                    : "border-hairline bg-ink/[0.02] text-muted hover:border-hairline-strong"
                 }`}
               >
                 {label}

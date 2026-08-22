@@ -128,11 +128,11 @@ Return ONLY the markdown document — no preamble.`,
             className={`rounded-xl border p-4 text-left transition-colors disabled:opacity-60 ${
               kind === a.kind
                 ? "border-brass/50 bg-brass/[0.08]"
-                : "border-white/[0.08] bg-white/[0.02] hover:border-white/20"
+                : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
             }`}
           >
-            <div className="font-display text-[1.02rem] font-[440] text-parchment">{a.name}</div>
-            <div className="mt-1 text-[11.5px] leading-snug text-faded">{a.line}</div>
+            <div className="font-display text-[1.02rem] font-[440] text-ink">{a.name}</div>
+            <div className="mt-1 text-[11.5px] leading-snug text-muted">{a.line}</div>
           </button>
         ))}
       </div>
@@ -158,7 +158,7 @@ export function DocViewer({ payload }: { payload: DocPayload }) {
           setCopied(true);
           setTimeout(() => setCopied(false), 1600);
         }}
-        className="absolute right-0 top-0 z-10 flex items-center gap-1.5 rounded-full border border-white/10 bg-night/70 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-faded backdrop-blur transition-colors hover:text-parchment"
+        className="absolute right-0 top-0 z-10 flex items-center gap-1.5 rounded-full border border-hairline bg-ground/70 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted backdrop-blur transition-colors hover:text-ink"
       >
         {copied ? <Check size={11} className="text-sage" /> : <Copy size={11} />}
         {copied ? "copied" : "copy"}
@@ -247,7 +247,7 @@ JSON shape: {"cards":[{"front":"...","back":"...","topic":"..."}]}`,
               className={`rounded-lg border px-3 py-1 font-mono text-[11px] transition-colors ${
                 count === p
                   ? "border-brass/60 bg-brass/20 text-brasspale font-medium"
-                  : "border-white/10 bg-white/[0.02] text-faded hover:border-white/20"
+                  : "border-hairline bg-ink/[0.02] text-muted hover:border-hairline-strong"
               }`}
             >
               {p} cards
@@ -264,7 +264,7 @@ JSON shape: {"cards":[{"front":"...","back":"...","topic":"..."}]}`,
             placeholder="Custom count (e.g. 15)"
             className={inputCls + " font-mono text-[13px] w-44"}
           />
-          <span className="text-[12px] text-faded">Custom count (1–100)</span>
+          <span className="text-[12px] text-muted">Custom count (1–100)</span>
         </div>
       </div>
 
@@ -342,7 +342,7 @@ export function FlashcardsView({
     return (
       <div className="space-y-5 text-center">
         <div className="font-display text-[2rem] font-[420] text-lamp">Deck cleared.</div>
-        <p className="text-[13px] text-faded">
+        <p className="text-[13px] text-muted">
           Ratings saved — the cards you rated hardest will come back sooner.
         </p>
         <div className="flex justify-center gap-3">
@@ -392,7 +392,7 @@ export function FlashcardsView({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.16em] text-faded">
+      <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
         <span>
           Card {pos + 1} / {cards.length}
         </span>
@@ -400,7 +400,7 @@ export function FlashcardsView({
           <span>{card.topic}</span>
           <button
             onClick={() => setAddModalOpen(true)}
-            className="flex items-center gap-1 rounded border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-faded hover:text-parchment"
+            className="flex items-center gap-1 rounded border border-hairline bg-ink/5 px-2 py-0.5 text-[10px] text-muted hover:text-ink"
           >
             <Plus size={10} /> Add card
           </button>
@@ -418,26 +418,26 @@ export function FlashcardsView({
           style={{ transformStyle: "preserve-3d" }}
         >
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center rounded-[1.4rem] border border-white/[0.09] bg-study/80 p-6 text-center transition-colors duration-300 hover:border-brass/30 sm:p-7"
+            className="absolute inset-0 flex flex-col items-center justify-center rounded-[1.4rem] border border-hairline bg-surface/80 p-6 text-center transition-colors duration-300 hover:border-brass/30 sm:p-7"
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
           >
             <div className="my-auto max-h-full overflow-y-auto px-1 py-3">
-              <span className="font-display text-[1.25rem] font-[430] leading-snug text-parchment sm:text-[1.35rem]">
+              <span className="font-display text-[1.25rem] font-[430] leading-snug text-ink sm:text-[1.35rem]">
                 {card.front}
               </span>
             </div>
-            <span className="shrink-0 font-mono text-[9.5px] uppercase tracking-[0.2em] text-faded/60">
+            <span className="shrink-0 font-mono text-[9.5px] uppercase tracking-[0.2em] text-muted/60">
               tap to flip
             </span>
           </div>
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center rounded-[1.4rem] border border-brass/25 bg-study p-6 text-center shadow-[0_18px_50px_rgba(0,0,0,0.35)] sm:p-7"
+            className="absolute inset-0 flex flex-col items-center justify-center rounded-[1.4rem] border border-brass/25 bg-surface p-6 text-center shadow-[0_18px_50px_rgba(0,0,0,0.35)] sm:p-7"
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
           >
             <div className="my-auto max-h-full overflow-y-auto px-1 py-3">
-              <span className="text-[13.5px] leading-relaxed text-parchment/90 sm:text-[14px]">{card.back}</span>
+              <span className="text-[13.5px] leading-relaxed text-ink/90 sm:text-[14px]">{card.back}</span>
             </div>
-            <span className="shrink-0 font-mono text-[9.5px] uppercase tracking-[0.2em] text-faded/60">
+            <span className="shrink-0 font-mono text-[9.5px] uppercase tracking-[0.2em] text-muted/60">
               tap to flip
             </span>
           </div>
@@ -457,7 +457,7 @@ export function FlashcardsView({
             <button
               key={q}
               onClick={() => void rate(q)}
-              className={`flex min-h-[44px] items-center justify-center rounded-xl border ${borderCls} ${textCls} bg-white/[0.02] py-2.5 font-mono text-[11px] uppercase tracking-[0.12em] transition-all hover:bg-white/[0.06] active:scale-95`}
+              className={`flex min-h-[44px] items-center justify-center rounded-xl border ${borderCls} ${textCls} bg-ink/[0.02] py-2.5 font-mono text-[11px] uppercase tracking-[0.12em] transition-all hover:bg-ink/[0.06] active:scale-95`}
             >
               {q}
             </button>
@@ -472,7 +472,7 @@ export function FlashcardsView({
       )}
 
       {ratings > 0 && (
-        <div className="text-center font-mono text-[9.5px] uppercase tracking-[0.18em] text-faded/60">
+        <div className="text-center font-mono text-[9.5px] uppercase tracking-[0.18em] text-muted/60">
           {ratings} ratings on this deck
         </div>
       )}
@@ -615,17 +615,17 @@ JSON shape:
   if (!isAnthropic) {
     return (
       <div className="space-y-4">
-        <div className="overflow-hidden rounded-2xl border border-brass/40 bg-gradient-to-b from-brass/[0.1] to-night/90 p-5 sm:p-6 space-y-3">
+        <div className="overflow-hidden rounded-2xl border border-brass/40 bg-gradient-to-b from-brass/[0.1] to-ground/90 p-5 sm:p-6 space-y-3">
           <div className="flex items-center gap-2">
             <Crown size={18} className="text-brass" />
-            <span className="font-display text-[1.2rem] font-[430] text-parchment">
+            <span className="font-display text-[1.2rem] font-[430] text-ink">
               Anthropic Exclusive Feature
             </span>
           </div>
-          <p className="text-[13px] leading-relaxed text-faded">
+          <p className="text-[13px] leading-relaxed text-muted">
             The <strong>PPT & Slideshow Maker</strong> requires the deep architectural synthesis and structured reasoning of <strong>Claude Opus 5 & Sonnet 5</strong> to produce production-grade slide decks and speaker scripts.
           </p>
-          <div className="rounded-xl border border-white/10 bg-night/70 p-3 text-[12px] text-brasspale flex items-center justify-between">
+          <div className="rounded-xl border border-hairline bg-ground/70 p-3 text-[12px] text-brasspale flex items-center justify-between">
             <span>Powered by our hosted Anthropic key · PayPal pass from $2.99</span>
             {onOpenSettings && (
               <button
@@ -662,11 +662,11 @@ JSON shape:
               className={`rounded-xl border p-3 text-left transition-colors ${
                 style === s.name
                   ? "border-brass/50 bg-brass/[0.08]"
-                  : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                  : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
               }`}
             >
-              <div className="font-medium text-[13px] text-parchment">{s.name}</div>
-              <div className="mt-0.5 text-[11px] text-faded">{s.desc}</div>
+              <div className="font-medium text-[13px] text-ink">{s.name}</div>
+              <div className="mt-0.5 text-[11px] text-muted">{s.desc}</div>
             </button>
           ))}
         </div>
@@ -683,7 +683,7 @@ JSON shape:
                 className={`rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-colors ${
                   slideCount === n
                     ? "border-brass/60 bg-brass/20 text-brasspale font-medium"
-                    : "border-white/10 bg-white/[0.02] text-faded"
+                    : "border-hairline bg-ink/[0.02] text-muted"
                 }`}
               >
                 {n}
@@ -741,7 +741,7 @@ export function SlideshowView({ gen }: { gen: Generation }) {
   }, [slides.length, fullscreen]);
 
   if (!slides.length) {
-    return <div className="text-center text-faded py-8">No slides found in this presentation.</div>;
+    return <div className="text-center text-muted py-8">No slides found in this presentation.</div>;
   }
 
   const exportMarkdown = () => {
@@ -761,15 +761,15 @@ export function SlideshowView({ gen }: { gen: Generation }) {
   };
 
   return (
-    <div className={`space-y-4 ${fullscreen ? "fixed inset-0 z-50 bg-night p-6 sm:p-12 overflow-y-auto flex flex-col justify-between" : ""}`}>
+    <div className={`space-y-4 ${fullscreen ? "fixed inset-0 z-50 bg-ground p-6 sm:p-12 overflow-y-auto flex flex-col justify-between" : ""}`}>
       {/* Top Deck Info & Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/[0.08] pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-hairline pb-3">
         <div>
-          <h3 className="font-display text-[1.25rem] font-[430] text-parchment">
+          <h3 className="font-display text-[1.25rem] font-[430] text-ink">
             {payload.deckTitle || "Presentation Deck"}
           </h3>
           {payload.deckSubtitle && (
-            <p className="text-[12px] text-faded">{payload.deckSubtitle}</p>
+            <p className="text-[12px] text-muted">{payload.deckSubtitle}</p>
           )}
         </div>
 
@@ -777,21 +777,21 @@ export function SlideshowView({ gen }: { gen: Generation }) {
           <button
             onClick={() => setShowNotes((v) => !v)}
             className={`rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-colors ${
-              showNotes ? "border-brass/50 bg-brass/15 text-brasspale" : "border-white/10 text-faded hover:text-parchment"
+              showNotes ? "border-brass/50 bg-brass/15 text-brasspale" : "border-hairline text-muted hover:text-ink"
             }`}
           >
             Speaker Notes {showNotes ? "On" : "Off"}
           </button>
           <button
             onClick={exportMarkdown}
-            className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-[11px] text-faded hover:text-parchment"
+            className="flex items-center gap-1 rounded-lg border border-hairline bg-ink/5 px-2.5 py-1 font-mono text-[11px] text-muted hover:text-ink"
           >
             {copied ? <Check size={12} className="text-sage" /> : <Copy size={12} />}
             {copied ? "Copied" : "Copy Deck"}
           </button>
           <button
             onClick={() => setFullscreen((v) => !v)}
-            className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-[11px] text-faded hover:text-parchment"
+            className="flex items-center gap-1 rounded-lg border border-hairline bg-ink/5 px-2.5 py-1 font-mono text-[11px] text-muted hover:text-ink"
           >
             {fullscreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
             {fullscreen ? "Exit" : "Fullscreen"}
@@ -800,30 +800,30 @@ export function SlideshowView({ gen }: { gen: Generation }) {
       </div>
 
       {/* Active Slide Card */}
-      <div className="relative min-h-[340px] sm:min-h-[380px] rounded-2xl border border-brass/30 bg-gradient-to-b from-study/95 to-night p-6 sm:p-8 flex flex-col justify-between shadow-[0_15px_40px_rgba(0,0,0,0.4)]">
+      <div className="relative min-h-[340px] sm:min-h-[380px] rounded-2xl border border-brass/30 bg-gradient-to-b from-surface/95 to-ground p-6 sm:p-8 flex flex-col justify-between shadow-[0_15px_40px_rgba(0,0,0,0.4)]">
         <div>
           <div className="flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase tracking-widest text-brasspale bg-brass/10 border border-brass/25 px-2.5 py-0.5 rounded-full">
               Slide {activeIdx + 1} of {slides.length}
             </span>
             {slide.visualLayoutHint && (
-              <span className="font-mono text-[10px] text-faded/70 border border-white/10 px-2 py-0.5 rounded">
+              <span className="font-mono text-[10px] text-muted/70 border border-hairline px-2 py-0.5 rounded">
                 Layout: {slide.visualLayoutHint}
               </span>
             )}
           </div>
 
-          <h2 className="mt-4 font-display text-[1.5rem] sm:text-[1.8rem] font-[430] text-parchment leading-snug">
+          <h2 className="mt-4 font-display text-[1.5rem] sm:text-[1.8rem] font-[430] text-ink leading-snug">
             {slide.title}
           </h2>
 
           {slide.subtitle && (
-            <p className="mt-1 text-[13px] text-faded italic">{slide.subtitle}</p>
+            <p className="mt-1 text-[13px] text-muted italic">{slide.subtitle}</p>
           )}
 
           <ul className="mt-6 space-y-2.5">
             {slide.bullets?.map((b, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-[14px] leading-relaxed text-parchment/90">
+              <li key={i} className="flex items-start gap-2.5 text-[14px] leading-relaxed text-ink/90">
                 <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-brass shrink-0" />
                 <span>{b}</span>
               </li>
@@ -833,11 +833,11 @@ export function SlideshowView({ gen }: { gen: Generation }) {
 
         {/* Speaker Notes Drawer */}
         {showNotes && slide.notes && (
-          <div className="mt-6 pt-4 border-t border-white/[0.08] bg-night/50 rounded-xl p-3.5 space-y-1">
+          <div className="mt-6 pt-4 border-t border-hairline bg-ground/50 rounded-xl p-3.5 space-y-1">
             <span className="font-mono text-[9.5px] uppercase tracking-wider text-brasspale font-medium">
               🎙️ Presenter Script / Speaker Notes:
             </span>
-            <p className="text-[12.5px] leading-relaxed text-faded">{slide.notes}</p>
+            <p className="text-[12.5px] leading-relaxed text-muted">{slide.notes}</p>
           </div>
         )}
       </div>

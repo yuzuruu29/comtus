@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { useNavigate } from "react-router-dom";
 import { createNotebook } from "../lib/db";
 import { detectPlatform, isTauri } from "../lib/desktop";
+import { useThemeEffect } from "../lib/theme";
 import { DeskContext, defaultDeskActions, type DeskActions } from "./DeskContext";
 import CommandPalette from "./CommandPalette";
 import UpdateToast from "./UpdateToast";
@@ -26,6 +27,7 @@ export default function DeskShell({
   const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const platform = detectPlatform();
+  useThemeEffect();
 
   useEffect(() => {
     document.documentElement.dataset.shell = isTauri() ? "desktop" : "browser";

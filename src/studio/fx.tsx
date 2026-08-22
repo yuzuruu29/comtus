@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type HTMLAttributes, type MouseEvent, type ReactNode } from "react";
 import { AnimatePresence, MotionConfig, animate, motion, useReducedMotion } from "motion/react";
 
 /* ── Motion primitives for the studio ────────────────────────
@@ -14,7 +14,7 @@ export const SOFT = { type: "spring", stiffness: 240, damping: 26 } as const;
 export const HOUSE = [0.22, 1, 0.36, 1] as const;
 
 /** Bound desk pane — flush to the window, split by hairlines. */
-export const deskPane = "h-full min-h-0 bg-night";
+export const deskPane = "h-full min-h-0 bg-ground";
 /** @deprecated Use deskPane. Kept so older imports fail loudly in typecheck. */
 export const glassPane = deskPane;
 
@@ -33,13 +33,14 @@ export function Spotlight({
   children,
   className = "",
   radius = 260,
+  ...rest
 }: {
   children: ReactNode;
   className?: string;
   radius?: number;
-}) {
+} & HTMLAttributes<HTMLDivElement>) {
   const ref = useRef<HTMLDivElement>(null);
-  const onMove = (e: React.MouseEvent) => {
+  const onMove = (e: MouseEvent) => {
     // Only track cursor on fine hover-capable pointers
     if (typeof window !== "undefined" && window.matchMedia("(hover: none)").matches) return;
     const el = ref.current;
@@ -49,7 +50,7 @@ export function Spotlight({
     el.style.setProperty("--sy", `${e.clientY - r.top}px`);
   };
   return (
-    <div ref={ref} onMouseMove={onMove} className={`spotlight group relative ${className}`}>
+    <div ref={ref} {...rest} onMouseMove={onMove} className={`spotlight group relative ${className}`}>
       <div
         aria-hidden
         className="spotlight-glow pointer-events-none absolute inset-0 z-0 rounded-[inherit] opacity-0 transition-opacity duration-500 group-hover:opacity-100"

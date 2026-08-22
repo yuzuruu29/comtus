@@ -5,21 +5,31 @@
 @import "@fontsource/jetbrains-mono/500.css";
 
 @theme {
-  /* ── Comtus · Lamplight Study ─────────────────────────────
-     See BRAND.md — deep ink-blue ground, parchment text,
-     one brass accent, moon-slate secondary. */
+  /* ── Comtus · Lamplight Study / Daylight Study ────────────
+     Semantic tokens (ground, surface, ink…) follow html[data-theme].
+     Literal night/study/shelf/parchment/faded stay dark for the landing. */
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+
+  --color-brass: var(--brass);
+  --color-brassdeep: var(--brassdeep);
+  --color-brasspale: var(--brasspale);
+  --color-moon: var(--moon);
+  --color-moondeep: var(--moondeep);
+  --color-sage: var(--sage);
+  --color-rust: var(--rust);
+
+  /* Landing-only literals — always Lamplight dark */
   --color-night: #0b0f1a;
   --color-study: #121828;
   --color-shelf: #1a2136;
   --color-parchment: #f2ede3;
   --color-faded: #8e96ab;
-  --color-brass: #e3b04b;
-  --color-brassdeep: #c99236;
-  --color-brasspale: #f0ce8c;
-  --color-moon: #7fa8c9;
-  --color-moondeep: #2a3654;
-  --color-sage: #8fbf98;
-  --color-rust: #c96a5e;
 
   --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-body: "Inter", system-ui, -apple-system, sans-serif;
@@ -27,9 +37,37 @@
 
   --ease-house: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-house-inout: cubic-bezier(0.76, 0, 0.24, 1);
+
+  --shadow-card: var(--elev-card);
+  --shadow-lift: var(--elev-lift);
+  --shadow-modal: var(--elev-modal);
+
+  --duration-fast: 120ms;
+  --duration-med: 220ms;
+
+  --text-display: clamp(1.9rem, 3.2vw, 2.6rem);
+  --text-display--line-height: 1.08;
+  --text-display--letter-spacing: -0.01em;
+  --text-display--font-weight: 400;
+
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.25;
+  --text-title--letter-spacing: -0.01em;
+  --text-title--font-weight: 440;
+
+  --text-heading: 1.05rem;
+  --text-heading--line-height: 1.35;
+  --text-heading--font-weight: 500;
+
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.6;
+
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1.4;
+  --text-label--letter-spacing: 0.02em;
 }
 
-/* ── Ground ─────────────────────────────────────────────── */
+/* ── Theme values ───────────────────────────────────────── */
 :root {
   --sat: env(safe-area-inset-top, 0px);
   --sar: env(safe-area-inset-right, 0px);
@@ -45,6 +83,54 @@
   --z-titlebar: 40;
   --z-palette: 80;
   --z-modal: 90;
+
+  --dur-fast: 120ms;
+  --dur-med: 220ms;
+
+  /* Lamplight (dark) — default */
+  --ground: #0b0f1a;
+  --surface: #121828;
+  --raised: #1a2136;
+  --ink: #f2ede3;
+  --muted: #8e96ab;
+  --hairline: rgba(242, 237, 227, 0.09);
+  --hairline-strong: rgba(242, 237, 227, 0.18);
+  --brass: #e3b04b;
+  --brassdeep: #c99236;
+  --brasspale: #f0ce8c;
+  --moon: #7fa8c9;
+  --moondeep: #2a3654;
+  --sage: #8fbf98;
+  --rust: #c96a5e;
+  --glow-warm: rgba(227, 176, 75, 0.14);
+  --glow-cool: rgba(42, 54, 84, 0.35);
+  --elev-card: 0 1px 2px rgba(8, 11, 20, 0.35), 0 8px 24px rgba(8, 11, 20, 0.28);
+  --elev-lift: 0 4px 16px rgba(8, 11, 20, 0.4), 0 0 24px var(--glow-warm);
+  --elev-modal: 0 40px 100px -20px rgba(0, 0, 0, 0.7);
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  --ground: #f5f1e8;
+  --surface: #fcfaf4;
+  --raised: #eae4d6;
+  --ink: #1b2334;
+  --muted: #5a6274;
+  --hairline: rgba(27, 35, 52, 0.12);
+  --hairline-strong: rgba(27, 35, 52, 0.22);
+  --brass: #a5731c;
+  --brassdeep: #8a5e16;
+  --brasspale: #c4923a;
+  --moon: #3d6e9e;
+  --moondeep: #2a4a6e;
+  --sage: #4f8a5a;
+  --rust: #b2554a;
+  --glow-warm: rgba(165, 115, 28, 0.08);
+  --glow-cool: rgba(61, 110, 158, 0.06);
+  --elev-card: 0 1px 2px rgba(27, 35, 52, 0.06), 0 8px 24px rgba(27, 35, 52, 0.06);
+  --elev-lift: 0 6px 18px rgba(27, 35, 52, 0.1), 0 0 20px var(--glow-warm);
+  --elev-modal: 0 28px 64px -12px rgba(27, 35, 52, 0.28);
+  color-scheme: light;
 }
 
 html[data-shell="desktop"] {
@@ -72,16 +158,20 @@ html[data-shell="desktop"][data-platform="mac"] .desk-header {
 }
 
 html {
-  background: var(--color-night);
+  background: var(--ground);
   scroll-behavior: auto; /* Lenis owns scrolling */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   overflow-x: hidden;
 }
 
+html[data-shell] {
+  transition: background-color 240ms var(--ease-house), color 240ms var(--ease-house);
+}
+
 body {
-  background: var(--color-night);
-  color: var(--color-parchment);
+  background: var(--ground);
+  color: var(--ink);
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.6;
@@ -90,6 +180,15 @@ body {
   overflow-x: hidden;
   min-height: 100svh;
   touch-action: manipulation;
+}
+
+html[data-shell] body {
+  transition: background-color 240ms var(--ease-house), color 240ms var(--ease-house);
+}
+
+.font-display {
+  font-optical-sizing: auto;
+  font-variation-settings: "opsz" auto;
 }
 
 /* Prevent iOS auto-zoom on input focus while keeping custom desktop sizing */
@@ -107,24 +206,24 @@ body {
 }
 
 ::selection {
-  background: rgba(227, 176, 75, 0.28);
-  color: var(--color-parchment);
+  background: color-mix(in srgb, var(--brass) 28%, transparent);
+  color: var(--ink);
 }
 
 /* ── Signature helpers ─────────────────────────────────── */
 .grad-lamp {
-  background: linear-gradient(92deg, #c99236, #f0ce8c);
+  background: linear-gradient(92deg, var(--brassdeep), var(--brasspale));
 }
 
 .text-lamp {
-  background: linear-gradient(92deg, #c99236 10%, #f0ce8c 90%);
+  background: linear-gradient(92deg, var(--brassdeep) 10%, var(--brasspale) 90%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .hairline {
-  border-color: rgba(242, 237, 227, 0.09);
+  border-color: var(--hairline);
 }
 
 /* Desktop-window mockup gloss — a slow light sweep across the install
@@ -143,9 +242,9 @@ body {
   background: linear-gradient(
     100deg,
     transparent,
-    rgba(227, 176, 75, 0.07) 30%,
-    rgba(242, 237, 227, 0.12) 50%,
-    rgba(227, 176, 75, 0.07) 70%,
+    color-mix(in srgb, var(--brass) 7%, transparent) 30%,
+    color-mix(in srgb, var(--ink) 12%, transparent) 50%,
+    color-mix(in srgb, var(--brass) 7%, transparent) 70%,
     transparent
   );
   animation: desk-gloss 4.5s var(--ease-house-inout) infinite;
@@ -158,7 +257,7 @@ body {
   font-weight: 500;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--color-faded);
+  color: var(--muted);
 }
 
 /* Film grain — fixed overlay, jittered */
@@ -198,19 +297,19 @@ body {
 .cursor-dot {
   width: 6px;
   height: 6px;
-  background: var(--color-brasspale);
+  background: var(--brasspale);
 }
 .cursor-ring {
   width: 38px;
   height: 38px;
-  border: 1px solid rgba(227, 176, 75, 0.45);
+  border: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
   transition: width 0.3s var(--ease-house), height 0.3s var(--ease-house),
     border-color 0.3s;
 }
 .cursor-ring.is-active {
   width: 58px;
   height: 58px;
-  border-color: rgba(240, 206, 140, 0.8);
+  border-color: color-mix(in srgb, var(--brasspale) 80%, transparent);
 }
 
 @media (hover: none), (pointer: coarse) {
@@ -229,10 +328,50 @@ body {
   }
 }
 
+/* Focus — brass ring on app surfaces */
+html[data-shell] :focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brass) 75%, transparent);
+  outline-offset: 2px;
+}
+
+/* Pencil underline for text links / nav */
+.link-pencil {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0 1px;
+  transition: background-size var(--dur-med) var(--ease-house), color var(--dur-med) var(--ease-house);
+}
+@media (hover: hover) {
+  .link-pencil:hover,
+  .link-pencil:focus-visible {
+    background-size: 100% 1px;
+  }
+}
+
+/* Card lift — gated behind hover + motion preference */
+.hover-lift {
+  transition:
+    transform var(--dur-med) var(--ease-house),
+    border-color var(--dur-med) var(--ease-house),
+    box-shadow var(--dur-med) var(--ease-house);
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .hover-lift:hover {
+    transform: translateY(-1px);
+    border-color: var(--hairline-strong);
+    box-shadow: var(--elev-lift);
+  }
+}
+
 /* Reduced motion — everything appears, nothing moves */
 @media (prefers-reduced-motion: reduce) {
   .grain {
     animation: none;
+  }
+  html[data-shell],
+  html[data-shell] body {
+    transition: none;
   }
   *,
   *::before,
@@ -245,14 +384,14 @@ body {
 /* Scrollbars — thin, in-palette */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(142, 150, 171, 0.35) transparent;
+  scrollbar-color: color-mix(in srgb, var(--muted) 35%, transparent) transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(142, 150, 171, 0.3);
+  background: color-mix(in srgb, var(--muted) 30%, transparent);
   border-radius: 8px;
 }
 *::-webkit-scrollbar-track {

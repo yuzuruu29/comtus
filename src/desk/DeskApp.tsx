@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Flame, GearSix, MagnifyingGlass } from "@phosphor-icons/react";
 import { createNotebook, db } from "../lib/db";
@@ -10,6 +11,7 @@ import DeskShell from "../studio/DeskShell";
 import SettingsModal from "../studio/SettingsModal";
 import CaptionButtons from "../studio/Titlebar";
 import { LampPulse } from "../studio/ui";
+import { HOUSE } from "../studio/fx";
 import { useDesk } from "../studio/DeskContext";
 import { useNotebookDesk } from "../studio/useNotebookDesk";
 import { modLabel } from "../studio/shortcuts";
@@ -106,7 +108,7 @@ export default function DeskApp() {
       onImport={() => void requestImport()}
     >
       <div
-        className="relative flex h-[100svh] flex-col overflow-hidden bg-night text-parchment"
+        className="relative flex h-[100svh] flex-col overflow-hidden bg-ground text-ink"
         onDragEnter={(e) => {
           e.preventDefault();
           desk.setDropping((n) => n + 1);
@@ -120,7 +122,7 @@ export default function DeskApp() {
         }}
       >
         {desk.dropping > 0 && (
-          <div className="pointer-events-none absolute inset-0 z-[50] flex items-center justify-center bg-night/70 text-[15px] text-parchment">
+          <div className="pointer-events-none absolute inset-0 z-[50] flex items-center justify-center bg-ground/70 text-[15px] text-ink">
             Drop onto this notebook
           </div>
         )}
@@ -146,37 +148,57 @@ export default function DeskApp() {
               if (id === notebookId) navigate("/studio");
             }}
           />
-          {notebookId ? (
-            desk.notebook ? (
-              <NotebookDesk
-                notebookId={notebookId}
-                notebook={desk.notebook}
-                sourcesVersion={desk.sourcesVersion}
-                bumpSources={desk.bumpSources}
-                layout={desk.layout}
-                setLayout={desk.setLayout}
-                importSignal={importSignal}
-                dropFiles={desk.dropFiles}
-                clearDropFiles={() => desk.setDropFiles(null)}
-                pendingView={desk.pendingView}
-                openSource={desk.openSource}
-                clearPendingView={desk.clearPendingView}
-              />
+          <AnimatePresence mode="wait">
+            {notebookId ? (
+              <motion.div
+                key={notebookId}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22, ease: HOUSE }}
+                className="flex min-h-0 flex-1"
+              >
+                {desk.notebook ? (
+                  <NotebookDesk
+                    notebookId={notebookId}
+                    notebook={desk.notebook}
+                    sourcesVersion={desk.sourcesVersion}
+                    bumpSources={desk.bumpSources}
+                    layout={desk.layout}
+                    setLayout={desk.setLayout}
+                    importSignal={importSignal}
+                    dropFiles={desk.dropFiles}
+                    clearDropFiles={() => desk.setDropFiles(null)}
+                    pendingView={desk.pendingView}
+                    openSource={desk.openSource}
+                    clearPendingView={desk.clearPendingView}
+                  />
+                ) : (
+                  <div className="flex min-h-0 flex-1 items-center justify-center">
+                    <LampPulse />
+                  </div>
+                )}
+              </motion.div>
             ) : (
-              <div className="flex min-h-0 flex-1 items-center justify-center">
-                <LampPulse />
-              </div>
-            )
-          ) : (
-            <DeskHome
-              hasKey={hasKey}
-              resume={resume}
-              onOpenResume={openNotebook}
-              onNew={() => void newNotebook()}
-              onImport={() => void requestImport()}
-              onSettings={() => setSettingsOpen(true)}
-            />
-          )}
+              <motion.div
+                key="home"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22, ease: HOUSE }}
+                className="flex min-h-0 flex-1"
+              >
+                <DeskHome
+                  hasKey={hasKey}
+                  resume={resume}
+                  onOpenResume={openNotebook}
+                  onNew={() => void newNotebook()}
+                  onImport={() => void requestImport()}
+                  onSettings={() => setSettingsOpen(true)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
@@ -210,11 +232,11 @@ function AppHeader({
   return (
     <header
       data-tauri-drag-region={tauriDrag ? true : undefined}
-      className="desk-header relative z-[40] flex h-[calc(var(--desk-header)+var(--sat))] shrink-0 items-center gap-3 border-b border-white/[0.07] bg-night px-3 pt-[var(--sat)]"
+      className="desk-header relative z-[40] flex h-[calc(var(--desk-header)+var(--sat))] shrink-0 items-center gap-3 border-b border-hairline bg-ground px-3 pt-[var(--sat)]"
     >
       <div className="flex shrink-0 select-none items-center gap-2">
         <Flame size={14} weight="light" className="text-brass" />
-        <span className="font-display text-[12px] font-[480] tracking-[0.24em] text-parchment">
+        <span className="font-display text-[12px] font-[480] tracking-[0.24em] text-ink">
           COMTUS
         </span>
       </div>
@@ -227,7 +249,7 @@ function AppHeader({
             defaultValue={notebook.name}
             onBlur={(e) => onRename(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-            className="no-drag w-[min(34ch,34vw)] truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-0.5 font-display text-[14px] font-[450] outline-none hover:border-white/10 focus:border-brass/40"
+            className="no-drag w-[min(34ch,34vw)] truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-0.5 font-display text-[14px] font-[450] outline-none hover:border-hairline focus:border-brass/40"
             aria-label="Notebook name"
           />
         </>
@@ -235,13 +257,13 @@ function AppHeader({
       <div className="no-drag ml-auto flex shrink-0 items-center gap-1 pr-1">
         <button
           onClick={onSettings}
-          className="hidden items-center rounded-[var(--radius-control)] px-2.5 py-1.5 text-[11.5px] text-faded hover:bg-white/[0.05] hover:text-parchment sm:flex"
+          className="hidden items-center rounded-[var(--radius-control)] px-2.5 py-1.5 text-[11.5px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
         >
           {modelLabel} · {effortLabel}
         </button>
         <button
           onClick={desk.openPalette}
-          className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2 py-1.5 font-mono text-[10.5px] text-faded hover:bg-white/[0.05] hover:text-parchment sm:flex"
+          className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2 py-1.5 font-mono text-[10.5px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
           aria-label="Command palette"
         >
           <MagnifyingGlass size={13} weight="light" />
@@ -249,7 +271,7 @@ function AppHeader({
         </button>
         <button
           onClick={onSettings}
-          className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-faded hover:bg-white/5 hover:text-parchment"
+          className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
           aria-label="Settings"
         >
           <GearSix size={16} weight="light" />

@@ -118,7 +118,7 @@ export default function Hero({ ready }: { ready: boolean }) {
         <div className="mt-10 flex w-full max-w-xs flex-col items-stretch gap-3 sm:max-w-none sm:w-auto sm:flex-row sm:items-center sm:gap-4">
           <Link
             to="/studio"
-            className="hero-cta hero-anim group flex min-h-[48px] items-center justify-center gap-2.5 rounded-full grad-lamp py-3.5 pl-7 pr-2.5 text-[14px] font-semibold text-night shadow-[0_10px_44px_rgba(227,176,75,0.22)] transition-all duration-500 hover:shadow-[0_14px_60px_rgba(227,176,75,0.34)] active:scale-[0.98] opacity-0"
+            className="hero-cta hero-anim group flex min-h-[48px] items-center justify-center gap-2.5 rounded-full grad-lamp py-3.5 pl-7 pr-2.5 text-[14px] font-semibold text-night shadow-[0_10px_44px_rgba(227,176,75,0.22)] transition-all duration-500 motion-safe:hover:-translate-y-px hover:shadow-[0_14px_60px_rgba(227,176,75,0.34)] active:scale-[0.98] opacity-0"
           >
             Open the studio
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-night/15 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px">

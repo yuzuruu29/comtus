@@ -50,7 +50,7 @@ export default function TiltCard({
       ref={outerRef}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
-      className={`group relative rounded-[1.9rem] border border-white/[0.07] bg-white/[0.035] p-1.5 ${className}`}
+      className={`group relative rounded-[1.9rem] border border-white/[0.07] bg-white/[0.035] p-1.5 motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-[0_18px_40px_rgba(11,15,26,0.45),0_0_32px_rgba(227,176,75,0.12)] transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${className}`}
     >
       {/* pointer glow */}
       <div

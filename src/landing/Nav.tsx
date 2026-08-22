@@ -87,7 +87,7 @@ export default function Nav({ ready }: { ready: boolean }) {
         ))}
         <Link
           to="/studio"
-          className="group ml-3 flex items-center gap-2 rounded-full grad-lamp py-2 pl-5 pr-2 text-[13px] font-semibold text-night transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97]"
+          className="group ml-3 flex items-center gap-2 rounded-full grad-lamp py-2 pl-5 pr-2 text-[13px] font-semibold text-night shadow-[0_0_0_0_rgba(227,176,75,0)] transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(227,176,75,0.28)] active:scale-[0.97]"
         >
           Open the studio
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-night/15 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px">

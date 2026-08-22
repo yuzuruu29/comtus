@@ -2,12 +2,14 @@ import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
 import { detectPlatform, isTauri } from "./lib/desktop";
+import { useThemeEffect } from "./lib/theme";
 
 const LandingPage = lazy(() => import("./landing/LandingPage"));
 const StudioApp = lazy(() => import("./studio/StudioApp"));
 
 export default function App() {
   const tauri = isTauri();
+  useThemeEffect();
 
   useEffect(() => {
     document.documentElement.dataset.platform = detectPlatform();
@@ -16,7 +18,7 @@ export default function App() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[100svh] items-center justify-center bg-night">
+        <div className="flex min-h-[100svh] items-center justify-center bg-ground">
           <div className="h-8 w-8 animate-pulse rounded-full bg-brass/40" />
         </div>
       }

@@ -4,7 +4,7 @@
 .md {
   font-size: 14.5px;
   line-height: 1.7;
-  color: rgba(242, 237, 227, 0.92);
+  color: color-mix(in srgb, var(--ink) 92%, transparent);
   overflow-wrap: break-word;
 }
 .md > * + * {
@@ -16,14 +16,14 @@
 .md h4 {
   font-family: var(--font-display);
   font-weight: 450;
-  color: var(--color-parchment);
+  color: var(--ink);
   line-height: 1.25;
   margin-top: 1.4em;
 }
 .md h1 { font-size: 1.35rem; }
 .md h2 { font-size: 1.2rem; }
 .md h3 { font-size: 1.05rem; }
-.md strong { color: var(--color-parchment); font-weight: 600; }
+.md strong { color: var(--ink); font-weight: 600; }
 .md em { color: var(--color-brasspale); }
 .md a { color: var(--color-moon); text-underline-offset: 3px; }
 .md ul, .md ol {
@@ -38,7 +38,7 @@
 .md blockquote {
   border-left: 2px solid rgba(227, 176, 75, 0.4);
   padding-left: 1em;
-  color: var(--color-faded);
+  color: var(--muted);
   font-style: italic;
 }
 .md code {
@@ -50,7 +50,7 @@
 }
 .md pre {
   background: rgba(11, 15, 26, 0.8);
-  border: 1px solid rgba(242, 237, 227, 0.08);
+  border: 1px solid var(--hairline);
   border-radius: 12px;
   padding: 1em 1.2em;
   overflow-x: auto;
@@ -66,7 +66,7 @@
   font-size: 13px;
 }
 .md th, .md td {
-  border: 1px solid rgba(242, 237, 227, 0.1);
+  border: 1px solid var(--hairline-strong);
   padding: 0.5em 0.75em;
   text-align: left;
 }
@@ -75,10 +75,10 @@
   font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: var(--color-faded);
+  color: var(--muted);
   background: rgba(255, 255, 255, 0.03);
 }
-.md hr { border-color: rgba(242, 237, 227, 0.1); }
+.md hr { border-color: var(--hairline-strong); }
 
 /* Thinking panel shimmer */
 @keyframes think-shimmer {
@@ -89,7 +89,7 @@
   background: linear-gradient(
     90deg,
     rgba(127, 168, 201, 0.55) 30%,
-    rgba(242, 237, 227, 0.95) 50%,
+    color-mix(in srgb, var(--ink) 95%, transparent) 50%,
     rgba(127, 168, 201, 0.55) 70%
   );
   background-size: 200% 100%;
@@ -116,7 +116,7 @@
     100deg,
     transparent,
     rgba(127, 168, 201, 0.09) 30%,
-    rgba(242, 237, 227, 0.13) 50%,
+    color-mix(in srgb, var(--ink) 13%, transparent) 50%,
     rgba(127, 168, 201, 0.09) 70%,
     transparent
   );
@@ -141,7 +141,7 @@
 }
 
 .desk-split {
-  border-color: rgba(242, 237, 227, 0.09);
+  border-color: var(--hairline);
 }
 
 /* Streaming caret */
@@ -233,16 +233,16 @@
 /* Thin quiet scrollbar for the library rail */
 .scroll-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgba(242, 237, 227, 0.14) transparent;
+  scrollbar-color: color-mix(in srgb, var(--ink) 14%, transparent) transparent;
 }
 .scroll-thin::-webkit-scrollbar { width: 8px; }
 .scroll-thin::-webkit-scrollbar-thumb {
-  background: rgba(242, 237, 227, 0.12);
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
   border-radius: 4px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
-.scroll-thin::-webkit-scrollbar-thumb:hover { background-color: rgba(242, 237, 227, 0.22); }
+.scroll-thin::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--ink) 22%, transparent); }
 
 /* Modal choreography — backdrop fades while the panel rises to meet it */
 @keyframes modal-backdrop-in {
@@ -270,7 +270,7 @@
   position: absolute;
   inset: 0;
   width: 45%;
-  background: linear-gradient(100deg, transparent, rgba(242, 237, 227, 0.35), transparent);
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--ink) 35%, transparent), transparent);
   animation: sheen 1.3s var(--ease-house-inout) infinite;
 }
 
@@ -287,15 +287,15 @@
 .spotlight-glow {
   background: radial-gradient(
     calc(var(--sr, 260px)) circle at var(--sx, 50%) var(--sy, 50%),
-    rgba(227, 176, 75, 0.1),
-    rgba(127, 168, 201, 0.05) 45%,
+    var(--glow-warm),
+    var(--glow-cool) 45%,
     transparent 70%
   );
 }
 
 /* ── Dot grid — quiet texture for pane interiors ──────────── */
 .dot-grid {
-  background-image: radial-gradient(rgba(242, 237, 227, 0.045) 1px, transparent 1px);
+  background-image: radial-gradient(color-mix(in srgb, var(--ink) 4.5%, transparent) 1px, transparent 1px);
   background-size: 22px 22px;
 }
 

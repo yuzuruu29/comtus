@@ -19,6 +19,8 @@ interface SettingsState {
   storedKeys: StoredKey[];
   /* Shared */
   effort: Effort;
+  theme: "system" | "dark" | "light";
+  lastBackupAt: number;
   setProvider: (p: ProviderId) => void;
   update: (patch: Partial<SettingsState>) => void;
   addRecentModel: (modelId: string) => void;
@@ -49,6 +51,8 @@ export const useSettings = create<SettingsState>()(
       ],
       storedKeys: [],
       effort: "high",
+      theme: "system",
+      lastBackupAt: 0,
       setProvider: (provider) => set({ provider }),
       update: (patch) => set(patch),
       addRecentModel: (modelId) => {
@@ -95,7 +99,7 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: "comtus-settings",
-      version: 4,
+      version: 5,
       migrate: (persisted, version) => {
         const old = persisted as Partial<SettingsState> & {
           apiKey?: string;
@@ -103,8 +107,10 @@ export const useSettings = create<SettingsState>()(
         };
         const base: Partial<SettingsState> = {
           recentModels: ["deepseek/deepseek-r1", "meta-llama/llama-3.3-70b-instruct", "qwen/qwen-2.5-72b-instruct"],
-          storedKeys: old.storedKeys || [],
           ...old,
+          storedKeys: old.storedKeys || [],
+          theme: old.theme ?? "system",
+          lastBackupAt: old.lastBackupAt ?? 0,
         };
         if (version < 2) {
           return {
@@ -112,6 +118,13 @@ export const useSettings = create<SettingsState>()(
             anthropicKey: old.apiKey ?? "",
             anthropicModel:
               old.model === "claude-sonnet-5" ? "claude-sonnet-5" : "claude-opus-5",
+          };
+        }
+        if (version < 5) {
+          return {
+            ...base,
+            theme: old.theme ?? "system",
+            lastBackupAt: old.lastBackupAt ?? 0,
           };
         }
         return base;

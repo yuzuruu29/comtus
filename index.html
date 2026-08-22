@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
@@ -16,6 +16,29 @@
       content="Comtus — a thinking study companion. Grounded answers from your own sources, mock exams, essay grading, and reasoning you can watch. Rough thought, polished."
     />
     <meta name="theme-color" content="#0B0F1A" />
+    <meta name="color-scheme" content="dark" />
+    <script>
+      (function () {
+        try {
+          var path = location.pathname;
+          if (path === "/" || path === "") return;
+          var raw = localStorage.getItem("comtus-settings");
+          if (!raw) return;
+          var parsed = JSON.parse(raw);
+          var state = parsed.state || parsed;
+          var theme = state.theme || "system";
+          var light =
+            theme === "light" ||
+            (theme === "system" &&
+              window.matchMedia("(prefers-color-scheme: light)").matches);
+          document.documentElement.dataset.theme = light ? "light" : "dark";
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", light ? "#F5F1E8" : "#0B0F1A");
+          var scheme = document.querySelector('meta[name="color-scheme"]');
+          if (scheme) scheme.setAttribute("content", light ? "light" : "dark");
+        } catch (e) {}
+      })();
+    </script>
     <link rel="canonical" href="https://comtus-ai.vercel.app/" />
     <!-- Social preview cards -->
     <meta property="og:type" content="website" />

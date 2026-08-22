@@ -15,7 +15,7 @@ import {
 } from "@phosphor-icons/react";
 import { db } from "../lib/db";
 import type { Generation, GenerationKind } from "../lib/types";
-import { SOFT } from "./fx";
+import { SOFT, Spotlight } from "./fx";
 import { timeAgo, Modal } from "./ui";
 import ExportMenu from "./ExportMenu";
 import { QuizConfigForm, QuizTaker } from "./generators/QuizFlow";
@@ -107,11 +107,11 @@ export default function StudioPane({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between px-[var(--desk-pad)] pb-2 pt-3">
-        <div className="text-[12px] text-faded">Studio</div>
+        <div className="text-[12px] text-muted">Studio</div>
         {onCollapse && (
           <button
             onClick={onCollapse}
-            className="rounded p-1 text-faded transition-colors hover:text-parchment"
+            className="rounded p-1 text-muted transition-colors hover:text-ink"
             aria-label="Collapse studio"
           >
             <SidebarSimple size={16} weight="light" />
@@ -121,21 +121,22 @@ export default function StudioPane({
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-6">
         <div className="flex flex-col">
-          {TILES.map((t) => (
+          {TILES.map((t, i) => (
+            <Spotlight key={t.name} className="anim-rise rounded-[var(--radius-control)]" radius={200} style={{ ["--d" as string]: `${i * 40}ms` }}>
             <button
-              key={t.name}
               onClick={() => setFlow(t.flow as Flow)}
-              className="flex items-start gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2 text-left hover:bg-white/[0.04]"
+              className="flex w-full items-start gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2 text-left hover:bg-ink/[0.04]"
             >
               <t.icon size={16} weight="light" className="mt-0.5 shrink-0 text-brasspale/80" />
               <span className="min-w-0">
-                <span className="block text-[13px] text-parchment/95">
+                <span className="block text-[13px] text-ink/95">
                   {t.name}
-                  {t.badge && <span className="ml-2 text-[10px] text-faded">{t.badge}</span>}
+                  {t.badge && <span className="ml-2 text-[10px] text-muted">{t.badge}</span>}
                 </span>
-                <span className="block text-[11px] leading-snug text-faded">{t.line}</span>
+                <span className="block text-label leading-snug text-muted">{t.line}</span>
               </span>
             </button>
+            </Spotlight>
           ))}
         </div>
 
@@ -144,41 +145,42 @@ export default function StudioPane({
             <button
               key={t.kind}
               onClick={() => openAid(t.kind)}
-              className="flex items-center gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2 text-left hover:bg-white/[0.04]"
+              className="flex items-center gap-2.5 rounded-[var(--radius-control)] px-2.5 py-2 text-left hover:bg-ink/[0.04]"
             >
-              <t.icon size={16} weight="light" className="shrink-0 text-faded" />
-              <span className="truncate text-[13px] text-parchment/85">{t.name}</span>
+              <t.icon size={16} weight="light" className="shrink-0 text-muted" />
+              <span className="truncate text-[13px] text-ink/85">{t.name}</span>
             </button>
           ))}
         </div>
 
-        <div className="mt-5 border-t border-white/[0.07] px-2.5 pt-4">
-          <div className="mb-2 text-[12px] text-faded">Saved work</div>
+        <div className="mt-5 border-t border-hairline px-2.5 pt-4">
+          <div className="mb-2 text-[12px] text-muted">Saved work</div>
           <div className="space-y-1.5">
             <AnimatePresence initial={false}>
               {gens.map((g) => (
+                <Spotlight key={g.id} className="hover-lift rounded-xl" radius={180}>
                 <motion.button
-                  key={g.id}
                   layout
                   onClick={() => setViewing(g)}
                   initial={{ opacity: 0, y: -10, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, x: -12, scale: 0.96, transition: { duration: 0.18 } }}
                   transition={SOFT}
-                  className="flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.015] px-3.5 py-2.5 text-left transition-colors duration-200 hover:border-white/15 hover:bg-white/[0.03]"
+                  className="flex w-full items-center gap-3 rounded-xl border border-hairline bg-ink/[0.015] px-3.5 py-2.5 text-left"
                 >
-                  <FileText size={13} weight="light" className="shrink-0 text-faded" />
+                  <FileText size={13} weight="light" className="shrink-0 text-muted" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[12.5px] text-parchment/90">{g.title}</span>
-                    <span className="block font-mono text-[9px] uppercase tracking-[0.14em] text-faded/60">
+                    <span className="block truncate text-[12.5px] text-ink/90">{g.title}</span>
+                    <span className="block font-mono text-[9px] uppercase tracking-[0.14em] text-muted/60">
                       {g.kind} · {timeAgo(g.createdAt)}
                     </span>
                   </span>
                 </motion.button>
+                </Spotlight>
               ))}
             </AnimatePresence>
             {gens.length === 0 && (
-              <p className="px-1 py-4 text-[12.5px] leading-relaxed text-faded">
+              <p className="px-1 py-4 text-[12.5px] leading-relaxed text-muted">
                 Quizzes, exams, essays, and aids you generate collect here.
               </p>
             )}

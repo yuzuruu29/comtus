@@ -21,7 +21,7 @@ export default function CaptionButtons() {
       <button
         type="button"
         onClick={() => void go("minimize")}
-        className="flex w-[46px] items-center justify-center text-faded hover:bg-white/[0.06] hover:text-parchment"
+        className="flex w-[46px] items-center justify-center text-muted hover:bg-ink/[0.06] hover:text-ink"
         aria-label="Minimize"
       >
         <Minus size={14} weight="light" />
@@ -29,7 +29,7 @@ export default function CaptionButtons() {
       <button
         type="button"
         onClick={() => void go("toggleMaximize")}
-        className="flex w-[46px] items-center justify-center text-faded hover:bg-white/[0.06] hover:text-parchment"
+        className="flex w-[46px] items-center justify-center text-muted hover:bg-ink/[0.06] hover:text-ink"
         aria-label="Maximize"
       >
         <Square size={12} weight="light" />
@@ -37,7 +37,7 @@ export default function CaptionButtons() {
       <button
         type="button"
         onClick={() => void go("close")}
-        className="flex w-[46px] items-center justify-center text-faded hover:bg-rust/80 hover:text-parchment"
+        className="flex w-[46px] items-center justify-center text-muted hover:bg-rust/80 hover:text-ink"
         aria-label="Close"
       >
         <X size={14} weight="light" />

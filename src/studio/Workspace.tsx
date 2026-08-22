@@ -52,7 +52,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
       onImport={desk.requestImport}
     >
       <div
-        className="relative flex h-[100svh] flex-col overflow-hidden bg-night text-parchment"
+        className="relative flex h-[100svh] flex-col overflow-hidden bg-ground text-ink"
         onDragEnter={(e) => {
           e.preventDefault();
           desk.setDropping((n) => n + 1);
@@ -66,7 +66,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
         }}
       >
         {desk.dropping > 0 && (
-          <div className="pointer-events-none absolute inset-0 z-[50] flex items-center justify-center bg-night/70 text-[15px] text-parchment">
+          <div className="pointer-events-none absolute inset-0 z-[50] flex items-center justify-center bg-ground/70 text-[15px] text-ink">
             Drop onto this notebook
           </div>
         )}
@@ -154,7 +154,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             )}
             {mobilePane === "studio" && <StudioPane notebookId={notebookId} />}
           </div>
-          <nav className="flex h-[calc(4.25rem+var(--sab))] shrink-0 items-center justify-around border-t border-white/[0.06] bg-night/95 px-3 pb-[var(--sab)] pt-1">
+          <nav className="flex h-[calc(4.25rem+var(--sab))] shrink-0 items-center justify-around border-t border-hairline bg-ground/95 px-3 pb-[var(--sab)] pt-1">
             {(
               [
                 ["sources", Notebook, "Sources"],
@@ -166,7 +166,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 key={id}
                 onClick={() => setMobilePane(id)}
                 className={`relative flex min-h-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-[var(--radius-control)] px-3 py-1.5 text-[10.5px] font-medium tracking-[0.08em] transition-colors duration-200 active:scale-95 ${
-                  mobilePane === id ? "text-brasspale" : "text-faded"
+                  mobilePane === id ? "text-brasspale" : "text-muted"
                 }`}
               >
                 {mobilePane === id && (
@@ -210,11 +210,11 @@ function WorkspaceHeader({
   return (
     <header
       data-tauri-drag-region={tauri ? true : undefined}
-      className={`desk-header relative z-[40] flex h-[calc(var(--desk-header)+var(--sat))] shrink-0 items-center gap-2 border-b border-white/[0.07] bg-night px-2 pt-[var(--sat)] sm:gap-3 sm:px-3 ${macPad ? "pl-[78px]" : ""}`}
+      className={`desk-header relative z-[40] flex h-[calc(var(--desk-header)+var(--sat))] shrink-0 items-center gap-2 border-b border-hairline bg-ground px-2 pt-[var(--sat)] sm:gap-3 sm:px-3 ${macPad ? "pl-[78px]" : ""}`}
     >
       <Link
         to="/studio"
-        className="no-drag flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] text-faded hover:bg-white/5 hover:text-parchment"
+        className="no-drag flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
         aria-label="All notebooks"
       >
         <CaretLeft size={18} weight="light" />
@@ -225,14 +225,14 @@ function WorkspaceHeader({
         key={notebook?.name}
         onBlur={(e) => onRename(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-        className="no-drag min-w-0 max-w-[42vw] flex-none truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-1 font-display text-[15px] font-[450] outline-none hover:border-white/10 focus:border-brass/40 sm:max-w-xs sm:text-[16px]"
+        className="no-drag min-w-0 max-w-[42vw] flex-none truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-1 font-display text-[15px] font-[450] outline-none hover:border-hairline focus:border-brass/40 sm:max-w-xs sm:text-[16px]"
         aria-label="Notebook name"
       />
       <div className="no-drag ml-auto flex items-center gap-1">
         <button
           type="button"
           onClick={desk.openPalette}
-          className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2 py-1.5 font-mono text-[10.5px] text-faded hover:bg-white/[0.05] hover:text-parchment sm:flex"
+          className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2 py-1.5 font-mono text-[10.5px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
           aria-label="Command palette"
         >
           <MagnifyingGlass size={14} weight="light" />
@@ -240,13 +240,13 @@ function WorkspaceHeader({
         </button>
         <button
           onClick={onSettings}
-          className="hidden items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-[12px] text-faded hover:bg-white/[0.05] hover:text-parchment sm:flex"
+          className="hidden items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-[12px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
         >
           {modelLabel} · {effortLabel}
         </button>
         <button
           onClick={onSettings}
-          className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] text-faded hover:bg-white/5 hover:text-parchment"
+          className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
           aria-label="Settings"
         >
           <GearSix size={17} weight="light" />
@@ -272,13 +272,13 @@ function RailButton({
     <div className="group relative">
       <button
         onClick={onClick}
-        className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] text-faded hover:bg-white/[0.05] hover:text-brasspale"
+        className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-brasspale"
         aria-label={`Show ${label}`}
       >
         <Icon size={16} weight="light" />
       </button>
       <span
-        className={`pointer-events-none absolute top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-control)] border border-white/10 bg-study px-2 py-1 text-[11px] text-parchment opacity-0 transition-opacity group-hover:opacity-100 ${
+        className={`pointer-events-none absolute top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-control)] border border-hairline bg-surface px-2 py-1 text-[11px] text-ink opacity-0 transition-opacity group-hover:opacity-100 ${
           side === "left" ? "left-full ml-2" : "right-full mr-2"
         }`}
       >

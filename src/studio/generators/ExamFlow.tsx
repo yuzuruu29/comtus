@@ -195,13 +195,13 @@ JSON shape: an array of
               className={`rounded-xl border px-3.5 py-3 text-left transition-colors ${
                 presetId === p.id
                   ? "border-brass/50 bg-brass/[0.08]"
-                  : "border-white/[0.08] bg-white/[0.02] hover:border-white/20"
+                  : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
               }`}
             >
               <div className="font-mono text-[11px] font-medium tracking-[0.1em] text-brasspale">
                 {p.name}
               </div>
-              <div className="mt-1 text-[11.5px] leading-snug text-faded">{p.blurb}</div>
+              <div className="mt-1 text-[11.5px] leading-snug text-muted">{p.blurb}</div>
             </button>
           ))}
         </div>
@@ -257,7 +257,7 @@ JSON shape: an array of
               />
               <button
                 onClick={() => setBlueprint((b) => ({ ...b, sections: b.sections.filter((_, xi) => xi !== i) }))}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-faded transition-colors hover:text-rust active:scale-95"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:text-rust active:scale-95"
                 aria-label="Remove section"
               >
                 <X size={16} />
@@ -268,7 +268,7 @@ JSON shape: an array of
             onClick={() =>
               setBlueprint((b) => ({ ...b, sections: [...b.sections, { topic: "New topic", items: 10 }] }))
             }
-            className="flex min-h-[40px] items-center text-[12.5px] font-medium text-faded transition-colors hover:text-brasspale active:scale-95"
+            className="flex min-h-[40px] items-center text-[12.5px] font-medium text-muted transition-colors hover:text-brasspale active:scale-95"
           >
             + Add section
           </button>
@@ -331,30 +331,30 @@ export function ExamRunner({
   if (!mode) {
     return (
       <div className="space-y-6">
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 text-center">
-          <div className="font-display text-[1.5rem] font-[430] text-parchment">{payload.blueprint.title}</div>
-          <div className="mt-2 font-mono text-[11px] uppercase tracking-[0.18em] text-faded">
+        <div className="rounded-2xl border border-hairline bg-ink/[0.02] p-6 text-center">
+          <div className="font-display text-[1.5rem] font-[430] text-ink">{payload.blueprint.title}</div>
+          <div className="mt-2 font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
             {payload.blueprint.totalItems} items · {payload.blueprint.minutes} minutes · shaded scoring
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <button
             onClick={() => setMode("simulated")}
-            className="rounded-2xl border border-white/[0.09] bg-white/[0.02] p-5 text-left transition-colors hover:border-brass/40 hover:bg-brass/[0.04]"
+            className="rounded-2xl border border-hairline bg-ink/[0.02] p-5 text-left transition-colors hover:border-brass/40 hover:bg-brass/[0.04]"
           >
             <Timer size={17} className="text-brasspale" />
-            <div className="mt-3 font-display text-[1.1rem] font-[440] text-parchment">Simulated</div>
-            <p className="mt-1.5 text-[12.5px] leading-relaxed text-faded">
+            <div className="mt-3 font-display text-[1.1rem] font-[440] text-ink">Simulated</div>
+            <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
               Clock runs, answers stay hidden until you submit — the dress rehearsal.
             </p>
           </button>
           <button
             onClick={() => setMode("drill")}
-            className="rounded-2xl border border-white/[0.09] bg-white/[0.02] p-5 text-left transition-colors hover:border-brass/40 hover:bg-brass/[0.04]"
+            className="rounded-2xl border border-hairline bg-ink/[0.02] p-5 text-left transition-colors hover:border-brass/40 hover:bg-brass/[0.04]"
           >
             <PencilLine size={17} className="text-brasspale" />
-            <div className="mt-3 font-display text-[1.1rem] font-[440] text-parchment">Drill</div>
-            <p className="mt-1.5 text-[12.5px] leading-relaxed text-faded">
+            <div className="mt-3 font-display text-[1.1rem] font-[440] text-ink">Drill</div>
+            <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
               Every answer explained the moment you commit — for learning, not timing.
             </p>
           </button>
@@ -390,7 +390,7 @@ export function ExamRunner({
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-faded">
+        <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
           Item {idx + 1} / {qs.length} · {q.topic}
         </div>
         {mode === "simulated" ? (
@@ -402,7 +402,7 @@ export function ExamRunner({
           <div className="font-mono text-[11px] text-brasspale">{answeredCount} answered</div>
         )}
       </div>
-      <div className="h-1 overflow-hidden rounded bg-white/[0.06]">
+      <div className="h-1 overflow-hidden rounded bg-ink/[0.06]">
         <motion.div
           className="h-full grad-lamp"
           initial={false}
@@ -420,7 +420,7 @@ export function ExamRunner({
           transition={SOFT}
           className="space-y-5"
         >
-          <p className="text-[15px] font-medium leading-relaxed text-parchment">{q.stem}</p>
+          <p className="text-[15px] font-medium leading-relaxed text-ink">{q.stem}</p>
           <div className="space-y-2">
             {q.options.map((opt, oi) => {
               const isPicked = answers[idx] === oi;
@@ -440,13 +440,13 @@ export function ExamRunner({
                         ? "border-sage/40 bg-sage/[0.07]"
                         : state === "wrong"
                           ? "border-rust/40 bg-rust/[0.07]"
-                          : "border-white/[0.08] bg-white/[0.02] hover:border-white/20"
+                          : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
                   }`}
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 font-mono text-[10.5px] text-faded">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-hairline-strong font-mono text-[10.5px] text-muted">
                     {String.fromCharCode(65 + oi)}
                   </span>
-                  <span className="flex-1 text-parchment/90">{opt}</span>
+                  <span className="flex-1 text-ink/90">{opt}</span>
                   <AnimatePresence>
                     {state === "answer" && (
                       <motion.span
@@ -486,7 +486,7 @@ export function ExamRunner({
                 className="rounded-xl border border-moon/15 bg-moon/[0.05] px-4 py-3.5"
               >
                 <div className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-moon/80">Why</div>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-parchment/85">{q.rationale}</p>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-ink/85">{q.rationale}</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -520,7 +520,7 @@ export function ExamRunner({
       </AnimatePresence>
 
       {mode === "simulated" && (
-        <div className="flex flex-wrap justify-center gap-2 border-t border-white/[0.06] pt-4 sm:gap-1.5">
+        <div className="flex flex-wrap justify-center gap-2 border-t border-hairline pt-4 sm:gap-1.5">
           {qs.map((_, i) => (
             <button
               key={i}
@@ -529,8 +529,8 @@ export function ExamRunner({
                 i === idx
                   ? "bg-brass/25 text-brasspale ring-1 ring-brass/40"
                   : answers[i] !== null
-                    ? "bg-white/[0.09] text-parchment/80"
-                    : "bg-white/[0.03] text-faded/60"
+                    ? "bg-white/[0.09] text-ink/80"
+                    : "bg-ink/[0.03] text-muted/60"
               }`}
             >
               {i + 1}
@@ -581,13 +581,13 @@ function ExamResults({
         initial={{ opacity: 0, scale: 0.94 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ ...SPRING, delay: 0.08 }}
-        className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-7 text-center"
+        className="rounded-2xl border border-hairline bg-ink/[0.02] p-7 text-center"
       >
         <div className="label-mono">{title} — Result</div>
         <div className={`mt-3 font-display text-[2.8rem] font-[420] leading-none sm:text-[3.4rem] ${pct >= 75 ? "text-sage" : "text-lamp"}`}>
           {shownPct}%
         </div>
-        <div className="mt-2 text-[13px] text-faded">
+        <div className="mt-2 text-[13px] text-muted">
           {correctCount} of {questions.length} correct · {verdict}
         </div>
       </motion.div>
@@ -596,8 +596,8 @@ function ExamResults({
         <div className="space-y-2.5">
           {[...byTopic.entries()].map(([topic, { c, t }], i) => (
             <div key={topic} className="flex items-center gap-3">
-              <span className="w-32 shrink-0 truncate text-[12px] text-parchment/80 sm:w-44 sm:text-[12.5px]">{topic}</span>
-              <div className="h-1.5 flex-1 overflow-hidden rounded bg-white/[0.06]">
+              <span className="w-32 shrink-0 truncate text-[12px] text-ink/80 sm:w-44 sm:text-[12.5px]">{topic}</span>
+              <div className="h-1.5 flex-1 overflow-hidden rounded bg-ink/[0.06]">
                 <motion.div
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
@@ -606,7 +606,7 @@ function ExamResults({
                   style={{ width: `${(c / t) * 100}%` }}
                 />
               </div>
-              <span className="w-10 text-right font-mono text-[10.5px] text-faded">{c}/{t}</span>
+              <span className="w-10 text-right font-mono text-[10.5px] text-muted">{c}/{t}</span>
             </div>
           ))}
         </div>
@@ -617,20 +617,20 @@ function ExamResults({
           {questions.map((q, i) => {
             const ok = answers[i] === q.answerIndex;
             return (
-              <div key={i} className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
+              <div key={i} className="rounded-xl border border-hairline bg-ink/[0.02] p-4">
                 <div className="flex items-start gap-3">
                   <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${ok ? "bg-sage/15 text-sage" : "bg-rust/15 text-rust"}`}>
                     {ok ? <Check size={11} /> : <X size={11} />}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13.5px] font-medium leading-relaxed text-parchment/90">{q.stem}</p>
+                    <p className="text-[13.5px] font-medium leading-relaxed text-ink/90">{q.stem}</p>
                     {!ok && (
-                      <p className="mt-1.5 text-[12px] text-faded">
+                      <p className="mt-1.5 text-[12px] text-muted">
                         Yours: {answers[i] !== null ? q.options[answers[i]!] : "— skipped"} · Key:{" "}
                         <span className="text-sage">{q.options[q.answerIndex]}</span>
                       </p>
                     )}
-                    <p className="mt-1.5 text-[12.5px] leading-relaxed text-parchment/70">{q.rationale}</p>
+                    <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink/70">{q.rationale}</p>
                   </div>
                 </div>
               </div>
