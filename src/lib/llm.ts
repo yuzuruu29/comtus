@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import type { AnthropicModelId, Citation, Effort, ProviderId } from "./types";
 import { groundContext, type GroundingDoc } from "./retrieval";
+import { compatFetchBase } from "./compatRoute";
 
 /**
  * The lamp. Two ways to light it:
@@ -143,7 +144,9 @@ function getCompat(cs: CallSettings): OpenAI {
     // Local endpoints (Ollama/LM Studio) need no key; the SDK demands a
     // non-empty string, so stand-ins are fine — they're never validated.
     apiKey: cs.apiKey.trim() || "comtus-local",
-    baseURL: cs.baseUrl,
+    // CORS-hostile hosts (Zen, Mistral) are relayed same-origin; the rest
+    // go direct. See compatRoute.ts for why.
+    baseURL: compatFetchBase(cs.baseUrl),
     dangerouslyAllowBrowser: true,
     maxRetries: 2,
     defaultHeaders: { "X-Title": "Comtus" },
@@ -171,6 +174,12 @@ export function friendlyError(err: unknown): string {
   if (err instanceof Anthropic.APIError || err instanceof OpenAI.APIError) {
     if (err.status === 402) return "This pass has reached its request limit.";
     return `The API returned ${err.status}. ${err.message.slice(0, 180)}`;
+  }
+  if (err instanceof Anthropic.APIConnectionError || err instanceof OpenAI.APIConnectionError) {
+    // The SDK's bare "Connection error." hides real causes: an offline
+    // machine, a local server that isn't running, or a provider the
+    // browser can't read directly. Say what to actually check.
+    return "Couldn't reach the endpoint — check your connection, and if it's a local server (Ollama / LM Studio) make sure it's running.";
   }
   return err instanceof Error ? err.message : "Something went wrong.";
 }
@@ -612,7 +621,7 @@ export async function listCompatModels(
 ): Promise<string[]> {
   const client = new OpenAI({
     apiKey: apiKey.trim() || "comtus-local",
-    baseURL: baseUrl,
+    baseURL: compatFetchBase(baseUrl),
     dangerouslyAllowBrowser: true,
     defaultHeaders: { "X-Title": "Comtus" },
   });

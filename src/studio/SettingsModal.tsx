@@ -33,6 +33,7 @@ import {
   COMPAT_PRESETS,
   validateConnection,
   listCompatModels,
+  friendlyError,
   type CallSettings,
 } from "../lib/llm";
 import type { ProviderId, StoredKey } from "../lib/types";
@@ -188,11 +189,14 @@ export default function SettingsModal({
     if (!isLocal && !draft.compatKey.trim() && !draft.compatBaseUrl.includes("openrouter")) return;
 
     let cancel = false;
+    const requestedBase = draft.compatBaseUrl.trim();
     const runFetch = async () => {
       setFetchingModels(true);
       try {
-        const ids = await listCompatModels(draft.compatKey.trim(), draft.compatBaseUrl.trim());
-        if (!cancel && ids.length > 0) {
+        const ids = await listCompatModels(draft.compatKey.trim(), requestedBase);
+        if (!cancel && ids.length > 0 && draft.compatBaseUrl.trim() === requestedBase) {
+          // Drop the response if the user switched endpoints mid-flight —
+          // a list must never outlive the base URL it came from.
           setModelIds(ids);
           setLastFetchedAt(Date.now());
           setModelsNote(`${ids.length} models auto-updated live from endpoint.`);
@@ -357,13 +361,14 @@ export default function SettingsModal({
     try {
       const ids = await listCompatModels(draft.compatKey.trim(), draft.compatBaseUrl.trim());
       setModelIds(ids);
+      setLastFetchedAt(Date.now());
       setModelsNote(
         ids.length
           ? `${ids.length} models found — select from the list below or search.`
           : "The endpoint listed no models — type a model id manually.",
       );
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Couldn't reach that endpoint.");
+      setErr(friendlyError(e));
     } finally {
       setFetchingModels(false);
     }
@@ -792,7 +797,15 @@ export default function SettingsModal({
                       />
                       <button
                         type="button"
-                        onClick={() => set({ compatBaseUrl: p.baseUrl, compatModel: p.model })}
+                        onClick={() => {
+                          set({ compatBaseUrl: p.baseUrl, compatModel: p.model });
+                          // The list belongs to the endpoint it was fetched
+                          // from — drop it so Zen never shows OpenRouter's
+                          // models (and vice versa).
+                          setModelIds([]);
+                          setModelsNote("");
+                          setLastFetchedAt(null);
+                        }}
                         className="w-full text-left"
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -958,7 +971,13 @@ export default function SettingsModal({
                 {COMPAT_PRESETS.map((p) => (
                   <button
                     key={p.id}
-                    onClick={() => set({ compatBaseUrl: p.baseUrl })}
+                    onClick={() => {
+                      set({ compatBaseUrl: p.baseUrl });
+                      // List belongs to its endpoint — never carry it across.
+                      setModelIds([]);
+                      setModelsNote("");
+                      setLastFetchedAt(null);
+                    }}
                     className={`min-h-[50px] rounded-xl border px-3 py-2.5 text-left transition-all active:scale-[0.98] ${
                       draft.compatBaseUrl === p.baseUrl
                         ? "border-brass/60 bg-brass/[0.08]"

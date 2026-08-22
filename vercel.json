@@ -5,6 +5,10 @@
       "source": "/api/anthropic/:path*",
       "destination": "/api/anthropic?p=:path*"
     },
+    {
+      "source": "/api/compat/:provider/:path*",
+      "destination": "/api/compat?p=:provider&path=:path*"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
