@@ -17,6 +17,7 @@ import { db } from "../lib/db";
 import type { Generation, GenerationKind } from "../lib/types";
 import { SOFT } from "./fx";
 import { timeAgo, Modal } from "./ui";
+import ExportMenu from "./ExportMenu";
 import { QuizConfigForm, QuizTaker } from "./generators/QuizFlow";
 import { ExamConfigForm, ExamRunner } from "./generators/ExamFlow";
 import { EssayConfigForm, EssayFeedback } from "./generators/EssayFlow";
@@ -247,7 +248,12 @@ export default function StudioPane({
       <Modal
         open={viewing !== null}
         onClose={() => setViewing(null)}
-        title={viewing?.title ?? ""}
+        title={
+          <span className="flex items-center gap-3">
+            <span className="min-w-0 truncate">{viewing?.title ?? ""}</span>
+            {viewing && <ExportMenu gen={viewing} />}
+          </span>
+        }
         wide
       >
         {viewing && <ArtifactView gen={viewing} notebookId={notebookId} onRetake={() => setViewing(null)} />}
