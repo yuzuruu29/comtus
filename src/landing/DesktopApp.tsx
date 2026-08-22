@@ -13,9 +13,9 @@ interface BeforeInstallPromptEvent extends Event {
 
 /* Hosted installers — one click, ready for setup. */
 const DESKTOP_BUILDS = {
-  mac: "/desktop/Comtus_0.2.0_aarch64.dmg",
-  macIntel: "/desktop/Comtus_0.2.0_x64.dmg",
-  win: "/desktop/Comtus_0.2.0_x64-setup.exe",
+  mac: "/desktop/Comtus_0.3.0_aarch64.dmg",
+  macIntel: "/desktop/Comtus_0.3.0_x64.dmg",
+  win: "/desktop/Comtus_0.3.0_x64-setup.exe",
 };
 
 /** Per-browser install pointers when the one-click PWA prompt isn't available. */
