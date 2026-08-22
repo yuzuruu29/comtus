@@ -26,6 +26,26 @@ type Item = {
   run: () => void;
 };
 
+/** Subsequence fuzzy match; higher is better, -1 means no match. */
+function fuzzyScore(label: string, group: string, q: string): number {
+  const hay = `${group} ${label}`.toLowerCase();
+  let cursor = 0;
+  let score = 0;
+  let streak = 0;
+  for (const ch of q) {
+    if (ch === " ") continue;
+    const idx = hay.indexOf(ch, cursor);
+    if (idx === -1) return -1;
+    streak = idx === cursor ? streak + 1 : 0;
+    score += 10 + streak * 6 - Math.min(8, idx - cursor);
+    if (idx > 0 && /[\s\-_/.,+]/.test(hay[idx - 1])) score += 8;
+    cursor = idx + 1;
+  }
+  // Prefer matches later in the string being the label itself.
+  if (label.toLowerCase().startsWith(q)) score += 12;
+  return score;
+}
+
 export default function CommandPalette({
   open,
   onClose,
@@ -71,16 +91,21 @@ export default function CommandPalette({
       layout("writing", "Chat + studio"),
       layout("focus", "Chat only"),
     ];
-    const nbItems: Item[] = notebooks.map((nb) => ({
+    const nbItems: Item[] = notebooks.map((nb, i) => ({
       id: `nb-${nb.id}`,
-      group: "Notebooks",
+      // Notebooks arrive newest-first; surface the top few as recents.
+      group: !q && i < 3 ? "Recent" : "Notebooks",
       label: nb.name,
       icon: Notebook,
       run: () => desk.openNotebook(nb.id),
     }));
     const all = [...nbItems, ...actions];
     if (!q) return all;
-    return all.filter((item) => item.label.toLowerCase().includes(q) || item.group.toLowerCase().includes(q));
+    return all
+      .map((item) => ({ item, score: fuzzyScore(item.label, item.group, q) }))
+      .filter(({ score }) => score >= 0)
+      .sort((a, b) => b.score - a.score)
+      .map(({ item }) => item);
   }, [desk, mod, notebooks, query]);
 
   useEffect(() => {

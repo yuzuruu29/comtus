@@ -3,7 +3,9 @@
    build assets and fonts. API calls (LLM providers, PayPal) are never
    touched. */
 
-const VERSION = "comtus-shell-v1";
+// Stamped at build time by the "stamp-sw-version" Vite plugin — every deploy
+// gets a fresh cache version, so stale hashed assets are purged on activate.
+const VERSION = "__SW_VERSION__";
 const SHELL = ["/", "/studio", "/manifest.json", "/favicon.svg", "/app-icon.jpg"];
 
 self.addEventListener("install", (event) => {

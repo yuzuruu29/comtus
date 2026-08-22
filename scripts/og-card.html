@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { margin: 0; box-sizing: border-box; }
+      html, body { width: 1200px; height: 630px; overflow: hidden; }
+      body {
+        font-family: "Inter", system-ui, sans-serif;
+        background: #0b0f1a;
+        color: #f3ead8;
+        position: relative;
+      }
+      .well {
+        position: absolute; inset: 0;
+        background:
+          radial-gradient(58% 90% at 50% -10%, rgba(227, 176, 75, 0.16), transparent 68%),
+          radial-gradient(40% 60% at 82% 108%, rgba(42, 54, 84, 0.5), transparent 72%);
+      }
+      .frame {
+        position: absolute; inset: 26px;
+        border: 1px solid rgba(243, 234, 216, 0.09);
+        border-radius: 28px;
+      }
+      .thread {
+        position: absolute; top: 26px; left: 120px; right: 120px; height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(227, 176, 75, 0.85), transparent);
+      }
+      .wrap {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; padding: 0 110px;
+      }
+      .kicker {
+        font-size: 15px; letter-spacing: 0.34em; text-transform: uppercase;
+        color: #e3b04b; margin-bottom: 30px; font-weight: 500;
+      }
+      h1 {
+        font-family: "Fraunces", serif;
+        font-weight: 380;
+        font-size: 92px;
+        line-height: 1.04;
+        letter-spacing: -0.015em;
+      }
+      h1 em { font-style: italic; color: #e9c98a; font-weight: 340; }
+      p {
+        margin-top: 30px; font-size: 21.5px; line-height: 1.55;
+        color: rgba(243, 234, 216, 0.62); max-width: 780px; font-weight: 400;
+      }
+      .foot {
+        position: absolute; bottom: 52px; left: 0; right: 0;
+        display: flex; justify-content: center; gap: 14px; align-items: center;
+        font-size: 13.5px; letter-spacing: 0.22em; text-transform: uppercase;
+        color: rgba(243, 234, 216, 0.4);
+      }
+      .dot { width: 5px; height: 5px; border-radius: 50%; background: #e3b04b; opacity: 0.85; }
+    </style>
+  </head>
+  <body>
+    <div class="well"></div>
+    <div class="frame"></div>
+    <div class="thread"></div>
+    <div class="wrap">
+      <div class="kicker">Comtus · A Thinking Study Companion</div>
+      <h1>Rough thought,<br /><em>polished.</em></h1>
+      <p>
+        Grounded answers from your own sources — mock exams, essay grading, and
+        reasoning you can watch happen.
+      </p>
+    </div>
+    <div class="foot">
+      <span>comtus-ai.vercel.app</span>
+      <span class="dot"></span>
+      <span>macOS · Windows · Web</span>
+    </div>
+  </body>
+</html>

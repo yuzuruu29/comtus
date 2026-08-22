@@ -1,9 +1,14 @@
 name: Desktop release build
 
 # Builds the Comtus Desk App (Tauri 2) for macOS (Apple Silicon + Intel,
-# .dmg/.app) and Windows (.exe NSIS installer), and attaches them to a
-# GitHub release. Runs on version tags (v*) or manually from the Actions
-# tab — manual runs only build & upload artifacts without publishing.
+# .dmg/.app) and Windows (.exe NSIS installer), signs the auto-update
+# bundles, and attaches everything to a GitHub release. Runs on version
+# tags (v*) or manually from the Actions tab — manual runs only build &
+# upload artifacts without publishing.
+#
+# After publishing, copy into public/desktop/ and commit:
+#   Comtus_<ver>_aarch64.dmg · Comtus_<ver>_x64.dmg ·
+#   Comtus_<ver>_x64-setup.exe · latest.json (+ *.sig / *.exe.sig / *.app.sig)
 
 on:
   push:
@@ -55,6 +60,8 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
           releaseName: "Comtus Desk App v__VERSION__"
@@ -62,3 +69,20 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+      # The updater manifest is per-platform; keep each so the site's
+      # /desktop/latest.json can be assembled from all three.
+      - name: Collect updater artifacts
+        if: always()
+        run: |
+          mkdir -p update-out
+          find target -name "latest.json" -exec cp {} update-out/ \; 2>/dev/null || true
+          find target -name "*.sig" -exec cp {} update-out/ \; 2>/dev/null || true
+          ls update-out || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: updater-${{ matrix.rust-target || 'x86_64-pc-windows-msvc' }}
+          path: update-out/*
+          if-no-files-found: ignore

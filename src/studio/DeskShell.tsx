@@ -4,6 +4,7 @@ import { createNotebook } from "../lib/db";
 import { detectPlatform, isTauri } from "../lib/desktop";
 import { DeskContext, defaultDeskActions, type DeskActions } from "./DeskContext";
 import CommandPalette from "./CommandPalette";
+import UpdateToast from "./UpdateToast";
 import { cycleLayout, loadLayout, saveLayout, type LayoutMode } from "./layout";
 import { matchesShortcut } from "./shortcuts";
 
@@ -128,6 +129,7 @@ export default function DeskShell({
     <DeskContext.Provider value={actions}>
       {children}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      {isTauri() && <UpdateToast />}
     </DeskContext.Provider>
   );
 }

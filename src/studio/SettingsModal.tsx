@@ -38,6 +38,9 @@ import {
 import type { ProviderId, StoredKey } from "../lib/types";
 import { STUDY_PLANS, type StudyPlan } from "../lib/paypal";
 import PayPalCheckout from "./PayPalCheckout";
+import { exportBackup, importBackup } from "../lib/backup";
+import { isTauri } from "../lib/desktop";
+import { requestUpdateCheck } from "./useUpdater";
 
 /* Free-tier providers highlighted in the picker — one click fills the
    endpoint + a sensible default model; the key link sits beside them. */
@@ -141,6 +144,40 @@ export default function SettingsModal({
   const [newKeyBaseUrl, setNewKeyBaseUrl] = useState("https://openrouter.ai/api/v1");
   const [newKeyModel, setNewKeyModel] = useState("deepseek/deepseek-r1:free");
   const [quickSaveName, setQuickSaveName] = useState("");
+
+  // Backup (export/import of the local store)
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [backupMsg, setBackupMsg] = useState("");
+  const [backupErr, setBackupErr] = useState(false);
+
+  const handleExport = async () => {
+    setBackupBusy(true);
+    setBackupErr(false);
+    try {
+      await exportBackup();
+      setBackupMsg("Backup saved to your downloads.");
+    } catch {
+      setBackupErr(true);
+      setBackupMsg("Export failed — please retry.");
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  const handleImport = async (file: File) => {
+    setBackupBusy(true);
+    setBackupErr(false);
+    setBackupMsg("");
+    try {
+      const count = await importBackup(file);
+      setBackupMsg(`Restored ${count.toLocaleString()} records.`);
+    } catch (e) {
+      setBackupErr(true);
+      setBackupMsg(e instanceof Error ? e.message : "Import failed.");
+    } finally {
+      setBackupBusy(false);
+    }
+  };
 
   const recentModels = useSettings((st) => st.recentModels) ?? [];
 
@@ -1164,6 +1201,55 @@ export default function SettingsModal({
             Notebooks, sources, and history stay inside this browser's IndexedDB. Your questions
             stream directly to your chosen provider endpoint.
           </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleExport()}
+              disabled={backupBusy}
+              className={btnGhost + " !px-3 !py-1.5 text-[12px]"}
+            >
+              {backupBusy ? "Working…" : "Export backup"}
+            </button>
+            <label
+              className={
+                btnGhost +
+                " cursor-pointer !px-3 !py-1.5 text-[12px]" +
+                (backupBusy ? " pointer-events-none opacity-50" : "")
+              }
+            >
+              Import backup
+              <input
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void handleImport(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {backupMsg && (
+              <span className={`text-[11.5px] ${backupErr ? "text-rust" : "text-sage"}`}>
+                {backupMsg}
+              </span>
+            )}
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-2.5">
+            <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-faded/70">
+              Comtus v{__APP_VERSION__}
+              {isTauri() ? " · Desk App" : ""}
+            </span>
+            {isTauri() && (
+              <button
+                type="button"
+                onClick={requestUpdateCheck}
+                className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-faded/70 transition-colors hover:text-brasspale"
+              >
+                Check for updates
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-end gap-3 pt-1">

@@ -11,6 +11,9 @@
     "core:window:allow-toggle-maximize",
     "core:window:allow-start-dragging",
     "core:event:default",
-    "core:menu:default"
+    "core:menu:default",
+    "updater:default",
+    "process:allow-restart",
+    "process:allow-exit"
   ]
 }

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { detectPlatform, isTauri } from "./lib/desktop";
 
 const LandingPage = lazy(() => import("./landing/LandingPage"));
@@ -27,6 +28,7 @@ export default function App() {
         />
         <Route path="/studio/:notebookId?" element={<StudioApp />} />
       </Routes>
+      {!tauri && <Analytics />}
     </Suspense>
   );
 }

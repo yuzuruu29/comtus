@@ -198,6 +198,11 @@ export default function DesktopApp() {
                   )}
                 </a>
               </div>
+
+              <p className="border-t border-white/[0.06] px-4 py-2.5 text-center text-[11px] leading-relaxed text-faded/75">
+                First run on Windows may show a security prompt — choose “More info → Run
+                anyway”. The app is built fresh from this site's own releases.
+              </p>
             </div>
           </div>
 
