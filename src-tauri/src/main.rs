@@ -1,8 +1,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::menu::{
-    Menu, MenuBuilder, MenuEvent, MenuItem, PredefinedMenuItem, Submenu, SubmenuBuilder,
-};
+/// Only referenced from the non-macOS File menu (which appends a Quit
+/// item); macOS gets Quit from its native app menu instead.
+#[cfg(not(target_os = "macos"))]
+use tauri::menu::PredefinedMenuItem;
+use tauri::menu::{Menu, MenuBuilder, MenuEvent, MenuItem, Submenu, SubmenuBuilder};
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
 use tauri::{App, AppHandle, Emitter, Manager, Wry};
