@@ -931,6 +931,11 @@ export default function ChatPane({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* AI Disclaimer — spacious, centered, un-cramped */}
+        <p className="mx-auto mt-2 text-center text-[11px] text-muted/55 select-none tracking-normal">
+          Comtus can make mistakes. Double-check important information with your sources.
+        </p>
       </div>
 
       {/* Note Saved Toast Notification */}
