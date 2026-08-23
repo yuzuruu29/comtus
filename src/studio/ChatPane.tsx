@@ -378,11 +378,13 @@ export default function ChatPane({
   const hasText = !!input.trim();
 
   // Auto-grow — the field stretches with its content, up to the cap.
+  // Floor of 36px keeps a single-line field exactly as tall as the send
+  // button so their centers align.
   useEffect(() => {
     const el = taRef.current;
     if (!el) return;
     el.style.height = "0px";
-    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, 36), 160)}px`;
   }, [input]);
 
   if (!notebook) return <div className="flex-1" />;
@@ -636,7 +638,7 @@ export default function ChatPane({
             focused || streaming ? "is-lit" : ""
           }`}
         />
-        <Spotlight radius={230} className="mx-auto w-full max-w-3xl">
+        <Spotlight radius={230} className="mx-auto w-full max-w-3xl px-5">
           <motion.div
             data-focused={focused ? "" : undefined}
             data-streaming={streaming ? "" : undefined}
@@ -662,7 +664,7 @@ export default function ChatPane({
                 }}
                 rows={1}
                 placeholder="Ask, or say what to drill…"
-                className="min-h-[26px] flex-1 resize-none bg-transparent text-[16px] leading-relaxed text-ink caret-brass outline-none placeholder:text-muted/55 sm:text-[14px]"
+                className="min-h-9 flex-1 resize-none bg-transparent text-[16px] leading-relaxed text-ink caret-brass outline-none placeholder:text-muted/55 sm:text-[14px]"
               />
               <AnimatePresence mode="popLayout" initial={false}>
                 {streaming ? (
@@ -729,7 +731,7 @@ export default function ChatPane({
         </Spotlight>
 
         {/* Footer rail — quiet affordances that brighten with focus */}
-        <div className="relative mx-auto mt-2 flex w-full max-w-3xl flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <div className="relative mx-auto mt-2 flex w-full max-w-3xl flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5">
           <span
             className={`hidden items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.16em] transition-colors duration-300 sm:flex ${
               focused ? "text-muted" : "text-muted/45"
