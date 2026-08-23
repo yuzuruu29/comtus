@@ -7,7 +7,6 @@ import {
   DotsThreeVertical,
   FileText,
   GraduationCap,
-  Info,
   ListChecks,
   NotePencil,
   PencilSimple,
@@ -16,7 +15,6 @@ import {
   Presentation,
   Question,
   SidebarSimple,
-  SpeakerHigh,
   Stack,
   Trash,
 } from "@phosphor-icons/react";
@@ -29,7 +27,6 @@ import type {
   EssayReviewPayload,
   DocPayload,
   NotePayload,
-  AudioOverviewPayload,
 } from "../lib/types";
 import { SOFT, Spotlight } from "./fx";
 import { timeAgo, Modal, Field, inputCls, btnLamp, btnGhost } from "./ui";
@@ -45,13 +42,9 @@ import {
   PresentationConfigForm,
   SlideshowView,
 } from "./generators/AidsFlow";
-import {
-  AudioOverviewModal,
-  AudioOverviewViewer,
-} from "./generators/AudioOverviewFlow";
 import { useDesk } from "./DeskContext";
 
-type Flow = "quiz" | "exam" | "essay" | "flashcards" | "presentation" | "aids" | "audio-overview" | null;
+type Flow = "quiz" | "exam" | "essay" | "flashcards" | "presentation" | "aids" | null;
 
 const QUICK_AID_PILLS: { kind: GenerationKind; icon: typeof BookOpen; name: string }[] = [
   { kind: "study-guide", icon: BookOpen, name: "Study guide" },
@@ -75,7 +68,6 @@ const FLOW_TITLES: Record<string, string> = {
   flashcards: "Flashcards",
   presentation: "Presentation & Slides",
   aids: "Study aid",
-  "audio-overview": "Audio Overview",
 };
 
 export default function StudioPane({
@@ -95,7 +87,6 @@ export default function StudioPane({
   const [aidKind, setAidKind] = useState<GenerationKind | undefined>(undefined);
   const [viewing, setViewing] = useState<Generation | null>(null);
   const [showMoreTools, setShowMoreTools] = useState(false);
-  const [infoOpen, setInfoOpen] = useState(false);
 
   // Note editor modal
   const [noteModalOpen, setNoteModalOpen] = useState(false);
@@ -132,8 +123,6 @@ export default function StudioPane({
   }, [notebookId, onPendingGenerationConsumed, pendingGenerationId]);
 
   // Find latest audio overview if any
-  const latestAudio = gens.find((g) => g.kind === "audio-overview");
-
   const openAid = (kind: GenerationKind) => {
     setAidKind(kind);
     setFlow("aids");
@@ -191,58 +180,40 @@ export default function StudioPane({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3.5 py-4 space-y-6">
-        {/* Section 1: Audio Overview matching Screenshot 2 */}
+        {/* Section 1: Audio Overview — Coming Soon */}
         <section aria-labelledby="audio-overview-title">
           <div className="flex items-center justify-between mb-2.5">
             <div className="flex items-center gap-1.5">
               <h3 id="audio-overview-title" className="font-display text-[14px] font-[450] text-ink">
                 Audio Overview
               </h3>
-              <button
-                onClick={() => setInfoOpen((v) => !v)}
-                className="text-muted hover:text-ink transition-colors"
-                title="Audio Overview information"
-                aria-label="Audio Overview information"
-              >
-                <Info size={14} />
-              </button>
+              <span className="rounded-full border border-brass/30 bg-brass/10 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-brasspale font-semibold">
+                Coming Soon
+              </span>
             </div>
           </div>
 
-          {infoOpen && (
-            <div className="mb-3 rounded-xl border border-moon/30 bg-moon/[0.05] p-3 text-[12px] text-muted leading-relaxed">
-              Two AI hosts generate an interactive deep-dive discussion exploring the key insights, debates, and connections across your sources.
-            </div>
-          )}
-
-          {/* Audio Overview Card */}
-          <div className="rounded-2xl border border-hairline bg-surface/80 p-4 shadow-sm hover:border-brass/30 transition-all">
+          <div className="rounded-2xl border border-hairline bg-surface/80 p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brass/10 text-brass">
-                  <SpeakerHigh size={18} weight="light" />
+                  <ClockCounterClockwise size={18} weight="light" />
                 </div>
                 <div className="min-w-0">
                   <span className="block truncate text-[13px] font-[450] text-ink">
-                    {latestAudio ? latestAudio.title : "Click to load the conversation."}
+                    2-host audio deep dive
                   </span>
                   <span className="block text-[11px] text-muted line-clamp-1">
-                    {latestAudio ? "Deep dive conversation ready" : "2-host discussion based on your sources"}
+                    Interactive conversation analyzing your sources — coming soon
                   </span>
                 </div>
               </div>
 
               <button
-                onClick={() => {
-                  if (latestAudio) {
-                    setViewing(latestAudio);
-                  } else {
-                    setFlow("audio-overview");
-                  }
-                }}
-                className="shrink-0 rounded-full border border-hairline-strong bg-surface px-4 py-1.5 text-[12px] font-medium text-ink hover:border-brass/40 hover:bg-raised transition-all"
+                disabled
+                className="shrink-0 rounded-full border border-hairline-strong bg-surface px-4 py-1.5 text-[12px] font-medium text-muted cursor-not-allowed opacity-70"
               >
-                {latestAudio ? "Play" : "Load"}
+                Soon
               </button>
             </div>
           </div>
@@ -332,7 +303,6 @@ export default function StudioPane({
             <AnimatePresence initial={false}>
               {gens.map((g) => {
                 const isNote = g.kind === "note";
-                const isAudio = g.kind === "audio-overview";
 
                 return (
                   <Spotlight key={g.id} className="hover-lift rounded-xl" radius={180}>
@@ -348,8 +318,6 @@ export default function StudioPane({
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 mt-0.5">
                         {isNote ? (
                           <NotePencil size={16} weight="fill" />
-                        ) : isAudio ? (
-                          <SpeakerHigh size={16} weight="fill" />
                         ) : (
                           <FileText size={16} weight="fill" />
                         )}
@@ -449,14 +417,6 @@ export default function StudioPane({
             }}
           />
         )}
-        {flow === "audio-overview" && (
-          <AudioOverviewModal
-            notebookId={notebookId}
-            open={true}
-            onClose={() => setFlow(null)}
-            onDone={done}
-          />
-        )}
       </Modal>
 
       {/* Custom Note Creator & Editor Modal */}
@@ -549,8 +509,6 @@ function ArtifactView({
     case "presentation":
     case "slideshow":
       return <SlideshowView gen={gen} />;
-    case "audio-overview":
-      return <AudioOverviewViewer payload={gen.payload as AudioOverviewPayload} onRegenerate={onRetake} />;
     case "note":
       return (
         <div className="prose max-w-none text-ink text-[14.5px] leading-relaxed whitespace-pre-wrap">
