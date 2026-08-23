@@ -370,7 +370,7 @@
 .send-halo {
   position: absolute;
   inset: -3px;
-  border-radius: 999px;
+  border-radius: 12px;
   background: linear-gradient(92deg, var(--brassdeep), var(--brasspale));
   filter: blur(9px);
   opacity: 0;
@@ -380,6 +380,35 @@
 button[data-armed="true"] .send-halo {
   opacity: 0.42;
   animation: breathe 2.6s ease-in-out infinite;
+}
+
+/* ── Console-deck composer ──────────────────────────────────
+   Streaming phase pill docked to the shell's top edge. */
+.phase-pill {
+  position: absolute;
+  top: -11px;
+  left: 16px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brasspale);
+  background: color-mix(in srgb, var(--surface) 92%, var(--ground));
+  border: 1px solid color-mix(in srgb, var(--brass) 35%, transparent);
+  border-radius: 999px;
+  padding: 3px 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+.phase-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--brass);
+  animation: breathe 1.4s ease-in-out infinite;
 }
 
 /* Beat html[data-shell] :focus-visible — that global brass ring

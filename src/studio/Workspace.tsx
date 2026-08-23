@@ -138,7 +138,20 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
 
           <main className="min-w-0 flex-1">
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={SOFT} className={`${deskPane} overflow-hidden`}>
-              <ChatPane notebook={desk.notebook} sourcesVersion={desk.sourcesVersion} onNavigateSources={openSource} />
+              <ChatPane
+                notebook={desk.notebook}
+                sourcesVersion={desk.sourcesVersion}
+                onNavigateSources={openSource}
+                modelLabel={modelLabel}
+                onOpenSettings={() => setSettingsOpen(true)}
+                onAddSources={() => {
+                  if (window.matchMedia("(min-width: 1024px)").matches) {
+                    desk.setLayout(panes.studio ? "standard" : "reading");
+                  } else {
+                    setMobilePane("sources");
+                  }
+                }}
+              />
             </motion.div>
           </main>
 
@@ -179,7 +192,14 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               />
             )}
             {mobilePane === "chat" && (
-              <ChatPane notebook={desk.notebook} sourcesVersion={desk.sourcesVersion} onNavigateSources={openSource} />
+              <ChatPane
+                notebook={desk.notebook}
+                sourcesVersion={desk.sourcesVersion}
+                onNavigateSources={openSource}
+                modelLabel={modelLabel}
+                onOpenSettings={() => setSettingsOpen(true)}
+                onAddSources={() => setMobilePane("sources")}
+              />
             )}
             {mobilePane === "studio" && <StudioPane notebookId={notebookId} />}
           </div>

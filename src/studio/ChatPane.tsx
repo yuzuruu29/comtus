@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -22,10 +23,12 @@ import {
   Plus,
   Quotes,
   SlidersHorizontal,
+  Sparkle,
+  Stack,
   Stop,
   Trash,
 } from "@phosphor-icons/react";
-import { loadFocus } from "./focus";
+import { loadFocus, saveFocus } from "./focus";
 import {
   db,
   saveMessage,
@@ -63,10 +66,16 @@ export default function ChatPane({
   notebook,
   sourcesVersion,
   onNavigateSources,
+  modelLabel,
+  onOpenSettings,
+  onAddSources,
 }: {
   notebook: Notebook | null;
   sourcesVersion: number;
   onNavigateSources: (sourceId: string, startChar?: number) => void;
+  modelLabel?: string;
+  onOpenSettings?: () => void;
+  onAddSources?: () => void;
 }) {
   const cs = useCallSettings();
   const hasKey = useSettings((s) => s.hasKey);
@@ -386,6 +395,13 @@ export default function ChatPane({
 
   const hasText = !!input.trim();
   const coverEmoji = getNotebookCoverEmoji(notebook?.name ?? "");
+  const tkEstimate = useMemo(
+    () =>
+      Math.round(
+        (input.length + messages.reduce((n, m) => n + m.content.length, 0)) / 4,
+      ),
+    [input, messages],
+  );
 
   useEffect(() => {
     const el = taRef.current;
@@ -608,9 +624,9 @@ export default function ChatPane({
         </div>
       </div>
 
-      {/* Composer — the lamp-lit writing instrument. Wakes on focus:
-          brass hairline, lamplight lift shadow, an orbiting border
-          beam, and a warm pool of light gathering beneath it. */}
+      {/* Composer — console deck. Three bands inside the lamp-lit
+          shell: context strip, textarea, action rail. Wakes on
+          focus with beam + lamplight as before. */}
       <div className="relative shrink-0 px-4 pb-[calc(0.9rem+var(--sab))] pt-2 sm:px-5 sm:pb-[0.95rem]">
         <div
           aria-hidden
@@ -633,124 +649,185 @@ export default function ChatPane({
             {(focused || streaming) && (
               <BorderBeam size={84} duration={streaming ? 3.4 : 5} />
             )}
-            <div className="relative z-[2] flex items-end gap-2 px-3.5 pb-2.5 pt-3">
-              <textarea
-                ref={taRef}
-                aria-label="Ask Comtus"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    void send();
-                  }
-                }}
-                rows={1}
-                placeholder="Ask, or say what to drill…"
-                className="min-h-9 flex-1 resize-none bg-transparent text-[16px] leading-relaxed text-ink caret-brass outline-none placeholder:text-muted/55 sm:text-[14px]"
-              />
-              <span className="mb-1 hidden font-mono text-[10px] text-muted/60 sm:inline">
-                {sourceCount} {sourceCount === 1 ? "source" : "sources"}
-              </span>
-              <AnimatePresence mode="popLayout" initial={false}>
-                {streaming ? (
-                  <motion.button
-                    key="stop"
-                    initial={{ opacity: 0, scale: 0.55, rotate: -90 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                    exit={{ opacity: 0, scale: 0.55, rotate: 90 }}
-                    transition={SPRING}
-                    whileHover={{ scale: 1.07 }}
-                    whileTap={{ scale: 0.88 }}
-                    onClick={() => abortRef.current?.abort()}
-                    className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hairline-strong text-ink transition-colors duration-fast hover:border-rust/60 hover:bg-rust/[0.09] hover:text-rust"
-                    aria-label="Stop generating"
-                    title="Stop"
-                  >
-                    <Stop size={13} weight="fill" />
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    key="send"
-                    data-armed={hasText}
-                    initial={{ opacity: 0, scale: 0.55, rotate: 90 }}
-                    animate={{ opacity: hasText ? 1 : 0.45, scale: 1, rotate: 0 }}
-                    whileHover={hasText ? { scale: 1.08 } : undefined}
-                    whileTap={{ scale: 0.88 }}
-                    transition={SPRING}
-                    onClick={() => void send()}
-                    disabled={!hasText}
-                    className="relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full grad-lamp text-night disabled:cursor-not-allowed"
-                    aria-label="Send"
-                  >
-                    <span aria-hidden className="send-halo" />
-                    <AnimatePresence mode="wait" initial={false}>
-                      {hasText ? (
-                        <motion.span
-                          key="plane"
-                          initial={{ opacity: 0, y: 9, scale: 0.5 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -9, scale: 0.5 }}
-                          transition={{ duration: 0.17, ease: HOUSE }}
-                          className="relative z-[1] flex"
-                        >
-                          <PaperPlaneRight size={15} weight="bold" />
-                        </motion.span>
-                      ) : (
-                        <motion.span
-                          key="up"
-                          initial={{ opacity: 0, y: -9, scale: 0.5 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 9, scale: 0.5 }}
-                          transition={{ duration: 0.17, ease: HOUSE }}
-                          className="relative z-[1] flex"
-                        >
-                          <ArrowUp size={16} weight="bold" />
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </motion.button>
+            <AnimatePresence>
+              {streaming && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4, transition: { duration: 0.12 } }}
+                  transition={SOFT}
+                  className="phase-pill"
+                  role="status"
+                >
+                  <span className="phase-dot" />
+                  {streaming.phase === "thinking"
+                    ? "thinking"
+                    : streaming.phase === "answering"
+                      ? "answering"
+                      : "reading sources"}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="relative z-[2]">
+              {/* Context strip */}
+              <div className="flex items-center gap-1.5 px-3.5 pb-2 pt-2.5">
+                <button
+                  onClick={() => onOpenSettings?.()}
+                  title="Change model in Settings"
+                  className="flex items-center gap-1.5 rounded-full border border-brass/35 bg-brass/[0.07] px-2.5 py-1 font-mono text-[10px] tracking-[0.04em] text-brasspale transition-colors hover:bg-brass/[0.14]"
+                >
+                  <Sparkle size={10} weight="fill" className="text-brass" />
+                  <span className="max-w-[11rem] truncate">{modelLabel ?? cs.model}</span>
+                  <CaretDown size={9} />
+                </button>
+                {notebook && <FocusMenu notebook={notebook} sourcesVersion={sourcesVersion} />}
+                <span className="flex-1" />
+                {sourceCount > 0 && (
+                  <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted/60">
+                    grounded
+                  </span>
                 )}
-              </AnimatePresence>
+              </div>
+              <div className="mx-3.5 border-t border-hairline" />
+
+              {/* Textarea band */}
+              <div className="px-3.5 pb-1.5 pt-2.5">
+                <textarea
+                  ref={taRef}
+                  aria-label="Ask Comtus"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void send();
+                    }
+                  }}
+                  rows={1}
+                  placeholder="Ask, or say what to drill…"
+                  className="min-h-9 w-full resize-none bg-transparent text-[16px] leading-relaxed text-ink caret-brass outline-none placeholder:text-muted/55 sm:text-[14px]"
+                />
+              </div>
+
+              {/* Action rail */}
+              <div className="flex items-center gap-1 px-2.5 pb-2.5 pt-1">
+                <button
+                  onClick={() => onAddSources?.()}
+                  title="Add sources"
+                  aria-label="Add sources"
+                  className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted transition-colors hover:bg-ink/[0.06] hover:text-ink"
+                >
+                  <Plus size={14} weight="light" />
+                </button>
+                {!streaming && (
+                  <>
+                    <span className="mx-0.5 h-4 w-px bg-ink/10" />
+                    {(
+                      [
+                        ["Quiz me", "Make me a 10-item quiz on the hardest part of my sources"],
+                        ["Flashcards", "Turn the key concepts in my sources into flashcards, front and back"],
+                        ["Outline", "Build me a structured study outline from my sources"],
+                      ] as const
+                    ).map(([label, prompt]) => (
+                      <button
+                        key={label}
+                        onClick={() => void send(prompt)}
+                        className="rounded-full border border-hairline bg-ink/[0.03] px-2.5 py-1 text-[11px] text-muted transition-colors hover:border-brass/40 hover:bg-brass/[0.08] hover:text-brasspale"
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </>
+                )}
+                <span className="flex-1" />
+                {tkEstimate > 0 && (
+                  <span className="mr-1 font-mono text-[9.5px] tracking-[0.06em] text-muted/60">
+                    ~{tkEstimate.toLocaleString()} tk
+                  </span>
+                )}
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {streaming ? (
+                    <motion.button
+                      key="stop"
+                      initial={{ opacity: 0, scale: 0.55, rotate: -90 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      exit={{ opacity: 0, scale: 0.55, rotate: 90 }}
+                      transition={SPRING}
+                      whileHover={{ scale: 1.07 }}
+                      whileTap={{ scale: 0.88 }}
+                      onClick={() => abortRef.current?.abort()}
+                      className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hairline-strong text-ink transition-colors duration-fast hover:border-rust/60 hover:bg-rust/[0.09] hover:text-rust"
+                      aria-label="Stop generating"
+                      title="Stop"
+                    >
+                      <Stop size={13} weight="fill" />
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      key="send"
+                      data-armed={hasText}
+                      initial={{ opacity: 0, scale: 0.55, rotate: 90 }}
+                      animate={{ opacity: hasText ? 1 : 0.45, scale: 1, rotate: 0 }}
+                      whileHover={hasText ? { scale: 1.08 } : undefined}
+                      whileTap={{ scale: 0.88 }}
+                      transition={SPRING}
+                      onClick={() => void send()}
+                      disabled={!hasText}
+                      className="relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[12px] grad-lamp text-night disabled:cursor-not-allowed"
+                      aria-label="Send"
+                    >
+                      <span aria-hidden className="send-halo" />
+                      <AnimatePresence mode="wait" initial={false}>
+                        {hasText ? (
+                          <motion.span
+                            key="plane"
+                            initial={{ opacity: 0, y: 9, scale: 0.5 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -9, scale: 0.5 }}
+                            transition={{ duration: 0.17, ease: HOUSE }}
+                            className="relative z-[1] flex"
+                          >
+                            <PaperPlaneRight size={15} weight="bold" />
+                          </motion.span>
+                        ) : (
+                          <motion.span
+                            key="up"
+                            initial={{ opacity: 0, y: -9, scale: 0.5 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 9, scale: 0.5 }}
+                            transition={{ duration: 0.17, ease: HOUSE }}
+                            className="relative z-[1] flex"
+                          >
+                            <ArrowUp size={16} weight="bold" />
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </motion.div>
         </Spotlight>
 
-        <div className="relative mx-auto mt-2 flex w-full max-w-3xl flex-wrap items-center justify-between gap-x-4 gap-y-1">
-          <span
-            className={`hidden items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.16em] transition-colors duration-300 sm:flex ${
-              focused ? "text-muted" : "text-muted/45"
-            }`}
-          >
-            <kbd className="kbd-chip">↵</kbd> send
-            <kbd className="kbd-chip ml-1">⇧↵</kbd> newline
-          </span>
-          <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted/45 transition-colors duration-300">
-            {streaming ? (
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-1 w-1 animate-pulse rounded-full bg-brass" />
-                Answering from your sources…
-              </span>
-            ) : (
-              "Answers cite your sources · key stays local"
-            )}
-          </span>
-        </div>
-
-        <div className="relative mx-auto mt-2 flex w-full max-w-3xl items-center gap-2 overflow-x-auto scroll-thin">
-          {FOLLOW_UPS.map((prompt) => (
-            <button
-              key={prompt}
-              onClick={() => void send(prompt)}
-              className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-ink/[0.04] px-3 py-1 text-[11.5px] text-muted transition-colors hover:bg-brass/10 hover:text-brasspale"
-            >
-              <span className="max-w-[20rem] truncate">{prompt}</span>
-              <ArrowRight size={11} className="shrink-0 opacity-60" />
-            </button>
-          ))}
-        </div>
+        {/* Follow-up rail — only once there is an answer to follow up on */}
+        {!streaming && messages.some((m) => m.role === "assistant") && (
+          <div className="relative mx-auto mt-2 flex w-full max-w-3xl items-center justify-center gap-2 overflow-x-auto scroll-thin">
+            {FOLLOW_UPS.map((prompt) => (
+              <button
+                key={prompt}
+                onClick={() => void send(prompt)}
+                className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-ink/[0.04] px-3 py-1 text-[11.5px] text-muted transition-colors hover:bg-brass/10 hover:text-brasspale"
+              >
+                <span className="max-w-[20rem] truncate">{prompt}</span>
+                <ArrowRight size={11} className="shrink-0 opacity-60" />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Note Saved Toast Notification */}
@@ -913,6 +990,121 @@ function MessageBubble({
         </div>
       )}
     </motion.div>
+  );
+}
+
+function FocusMenu({
+  notebook,
+  sourcesVersion,
+}: {
+  notebook: Notebook;
+  sourcesVersion: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const [sources, setSources] = useState<{ id: string; title: string }[]>([]);
+  const [focus, setFocus] = useState<string[] | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    void db.sources
+      .where("notebookId")
+      .equals(notebook.id)
+      .toArray()
+      .then((rows) => setSources(rows.map((r) => ({ id: r.id, title: r.title }))));
+    setFocus(loadFocus(notebook.id));
+  }, [notebook.id, sourcesVersion]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("pointerdown", onDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const toggle = (id: string) => {
+    const effective = focus ?? sources.map((s) => s.id);
+    const next = effective.includes(id)
+      ? effective.filter((x) => x !== id)
+      : [...effective, id];
+    const value = next.length === sources.length || next.length === 0 ? null : next;
+    setFocus(value);
+    saveFocus(notebook.id, value);
+  };
+
+  const label =
+    sources.length === 0
+      ? "no sources yet"
+      : focus === null
+        ? `all ${sources.length} sources`
+        : `${focus.length} of ${sources.length} sources`;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        title="Choose which sources answers ground in"
+        className="flex items-center gap-1.5 rounded-full border border-hairline bg-ink/[0.03] px-2.5 py-1 font-mono text-[10px] tracking-[0.04em] text-muted transition-colors hover:border-brass/40 hover:text-brasspale"
+      >
+        <Stack size={11} weight="light" />
+        {label}
+        <CaretDown size={9} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98, transition: { duration: 0.12 } }}
+            transition={SOFT}
+            role="listbox"
+            className="absolute left-0 top-[calc(100%+8px)] z-50 w-72 overflow-hidden rounded-[var(--radius-dialog)] border border-hairline bg-surface p-1 shadow-modal"
+          >
+            <div className="max-h-60 overflow-y-auto py-1">
+              {sources.length === 0 && (
+                <div className="px-3 py-2 text-[12px] text-muted">
+                  Add sources on the left to ground your answers.
+                </div>
+              )}
+              {sources.map((s) => {
+                const checked = focus === null || focus.includes(s.id);
+                return (
+                  <button
+                    key={s.id}
+                    role="option"
+                    aria-selected={checked}
+                    onClick={() => toggle(s.id)}
+                    className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12.5px] text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
+                  >
+                    <span
+                      className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border ${
+                        checked ? "border-brass/60 bg-brass/25 text-brasspale" : "border-hairline-strong"
+                      }`}
+                    >
+                      {checked && <Check size={9} weight="bold" />}
+                    </span>
+                    <span className="truncate">{s.title}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="border-t border-hairline px-3 py-2 font-mono text-[9px] uppercase tracking-[0.14em] text-muted/70">
+              Answers cite your sources · key stays local
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
