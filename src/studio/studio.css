@@ -323,3 +323,70 @@
   justify-content: center;
 }
 .flip-face.is-back { transform: rotateY(180deg) translate3d(0, 0, 0); }
+
+/* ── Composer — the lamp-lit writing instrument ─────────────
+   A dialog-grade surface that wakes when engaged: hairline →
+   brass border, card shadow → lamplight lift, plus an ambient
+   pool of warm light pooling beneath it. */
+.composer-shell {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface) 86%, transparent),
+    var(--surface)
+  );
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-dialog);
+  box-shadow: var(--elev-card);
+  transition:
+    border-color var(--dur-med) var(--ease-house),
+    box-shadow var(--dur-med) var(--ease-house);
+}
+.composer-shell[data-focused],
+.composer-shell[data-streaming] {
+  border-color: color-mix(in srgb, var(--brass) 42%, transparent);
+  box-shadow: var(--elev-lift);
+}
+
+.composer-ambience {
+  background: radial-gradient(
+    62% 130% at 50% 100%,
+    var(--glow-warm),
+    transparent 72%
+  );
+  opacity: 0.5;
+  transition: opacity 480ms var(--ease-house);
+}
+.composer-ambience.is-lit {
+  opacity: 1;
+}
+
+/* Breathing brass halo behind the armed send button */
+.send-halo {
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  background: linear-gradient(92deg, var(--brassdeep), var(--brasspale));
+  filter: blur(9px);
+  opacity: 0;
+  transition: opacity var(--dur-med) var(--ease-house);
+  pointer-events: none;
+}
+button[data-armed="true"] .send-halo {
+  opacity: 0.42;
+  animation: breathe 2.6s ease-in-out infinite;
+}
+
+/* Keycap chips in the composer footer */
+.kbd-chip {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 3px 5px 4px;
+  border: 1px solid var(--hairline-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  color: var(--muted);
+}

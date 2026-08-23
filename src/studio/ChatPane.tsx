@@ -13,6 +13,7 @@ import {
   CaretDown,
   Chats,
   Flame,
+  PaperPlaneRight,
   PencilSimple,
   Plus,
   Quotes,
@@ -33,7 +34,7 @@ import type { ChatMessage, ChatSession, Notebook, Citation } from "../lib/types"
 import { deriveSessionTitle } from "../lib/sessionText";
 import { streamChat, friendlyError, isAbort } from "../lib/llm";
 import { useSettings, useCallSettings } from "../lib/settings";
-import { Collapse, SOFT, SPRING } from "./fx";
+import { Collapse, SOFT, SPRING, HOUSE, Spotlight, BorderBeam } from "./fx";
 import { timeAgo } from "./ui";
 
 const STARTERS = [
@@ -66,7 +67,7 @@ export default function ChatPane({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sourceCount, setSourceCount] = useState(0);
   const [input, setInput] = useState("");
-  const [streaming, setStreaming] = useState<{ text: string; thinking: string } | null>(null);
+  const [streaming, setStreaming] = useState<{ text: string; thinking: string; phase?: "reading" | "thinking" | "answering" } | null>(null);
   const [thinkingOpen, setThinkingOpen] = useState(true);
   const [error, setError] = useState("");
   const abortRef = useRef<AbortController | null>(null);
@@ -75,6 +76,9 @@ export default function ChatPane({
   /** Guards async loads against out-of-order resolution when switching fast. */
   const loadToken = useRef(0);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [focused, setFocused] = useState(false);
+  /** Composer textarea — measured imperatively for auto-grow. */
+  const taRef = useRef<HTMLTextAreaElement>(null);
 
   const activeSession = sessions.find((s) => s.id === activeId) ?? null;
 
@@ -325,7 +329,7 @@ export default function ChatPane({
       setMessages(history);
       stickBottom.current = true;
       setThinkingOpen(true);
-      setStreaming({ text: "", thinking: "" });
+      setStreaming({ text: "", thinking: "", phase: "reading" });
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -340,10 +344,9 @@ export default function ChatPane({
           sourceIds: focused && focused.length > 0 ? focused : undefined,
           signal: controller.signal,
           onThinking: (_d, full) =>
-            setStreaming((s) => (s ? { ...s, thinking: full } : s)),
+            setStreaming((s) => (s ? { ...s, thinking: full, phase: "thinking" } : s)),
           onText: (_d, full) => {
-            setStreaming((s) => (s ? { ...s, text: full } : s));
-            // Once the answer starts, tuck the thinking panel away.
+            setStreaming((s) => (s ? { ...s, text: full, phase: "answering" } : s));
             setThinkingOpen(false);
           },
         });
@@ -371,6 +374,16 @@ export default function ChatPane({
     },
     [input, notebook, streaming, hasKey, cs, messages, activeId, activeSession],
   );
+
+  const hasText = !!input.trim();
+
+  // Auto-grow — the field stretches with its content, up to the cap.
+  useEffect(() => {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = "0px";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [input]);
 
   if (!notebook) return <div className="flex-1" />;
 
@@ -590,6 +603,7 @@ export default function ChatPane({
                   createdAt: Date.now(),
                 }}
                 streaming
+                phase={streaming.phase}
                 thinkingOpen={thinkingOpen}
                 onToggleThinking={() => setThinkingOpen((v) => !v)}
                 onCite={onNavigateSources}
@@ -606,47 +620,134 @@ export default function ChatPane({
         </div>
       </div>
 
-      {/* Composer */}
-      <div className="shrink-0 border-t border-hairline bg-ground px-4 py-3 pb-[calc(0.75rem+var(--sab))] sm:px-5 sm:py-3 sm:pb-3">
-        <div className="mx-auto w-full max-w-3xl">
-          <div className="flex items-end gap-2 rounded-[var(--radius-field)] border border-hairline bg-surface px-3 py-2 transition-colors focus-within:border-brass/40">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  void send();
-                }
-              }}
-              rows={1}
-              placeholder="Ask, or say what to drill…"
-              className="max-h-40 min-h-[26px] flex-1 resize-none bg-transparent text-[16px] leading-relaxed text-ink outline-none placeholder:text-muted/60 sm:text-[14px]"
-            />
-            {streaming ? (
-              <motion.button
-                onClick={() => abortRef.current?.abort()}
-                whileTap={{ scale: 0.9 }}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] border border-hairline-strong text-ink hover:bg-ink/5"
-                aria-label="Stop"
-              >
-                <Stop size={14} weight="fill" />
-              </motion.button>
-            ) : (
-              <motion.button
-                onClick={() => void send()}
-                disabled={!input.trim()}
-                whileTap={{ scale: 0.9 }}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] grad-lamp text-night disabled:opacity-30"
-                aria-label="Send"
-              >
-                <ArrowUp size={16} weight="bold" />
-              </motion.button>
+      {/* Composer — the lamp-lit writing instrument. Wakes on focus:
+          brass hairline, lamplight lift shadow, an orbiting border
+          beam, and a warm pool of light gathering beneath it. */}
+      <div className="relative shrink-0 px-4 pb-[calc(0.9rem+var(--sab))] pt-2 sm:px-5 sm:pb-[0.95rem]">
+        {/* Fade trailing messages into the desk as they pass under */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 -top-7 h-7 bg-gradient-to-b from-transparent to-ground"
+        />
+        {/* Ambient lamplight pooling beneath the composer */}
+        <div
+          aria-hidden
+          className={`composer-ambience pointer-events-none absolute inset-x-6 -top-12 bottom-0 ${
+            focused || streaming ? "is-lit" : ""
+          }`}
+        />
+        <Spotlight radius={230} className="mx-auto w-full max-w-3xl">
+          <motion.div
+            data-focused={focused ? "" : undefined}
+            data-streaming={streaming ? "" : undefined}
+            animate={{ y: focused || streaming ? -2 : 0 }}
+            transition={{ duration: 0.34, ease: HOUSE }}
+            className="composer-shell relative"
+          >
+            {(focused || streaming) && (
+              <BorderBeam size={84} duration={streaming ? 3.4 : 5} />
             )}
-          </div>
-          <div className="mt-1.5 text-center text-[11px] text-muted/55">
-            Double-check answers against sources. The key stays on this machine.
-          </div>
+            <div className="relative z-[2] flex items-end gap-2 px-3.5 pb-2.5 pt-3">
+              <textarea
+                ref={taRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    void send();
+                  }
+                }}
+                rows={1}
+                placeholder="Ask, or say what to drill…"
+                className="min-h-[26px] flex-1 resize-none bg-transparent text-[16px] leading-relaxed text-ink caret-brass outline-none placeholder:text-muted/55 sm:text-[14px]"
+              />
+              <AnimatePresence mode="popLayout" initial={false}>
+                {streaming ? (
+                  <motion.button
+                    key="stop"
+                    initial={{ opacity: 0, scale: 0.55, rotate: -90 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    exit={{ opacity: 0, scale: 0.55, rotate: 90 }}
+                    transition={SPRING}
+                    whileHover={{ scale: 1.07 }}
+                    whileTap={{ scale: 0.88 }}
+                    onClick={() => abortRef.current?.abort()}
+                    className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hairline-strong text-ink transition-colors duration-fast hover:border-rust/60 hover:bg-rust/[0.09] hover:text-rust"
+                    aria-label="Stop generating"
+                    title="Stop"
+                  >
+                    <Stop size={13} weight="fill" />
+                  </motion.button>
+                ) : (
+                  <motion.button
+                    key="send"
+                    data-armed={hasText}
+                    initial={{ opacity: 0, scale: 0.55, rotate: 90 }}
+                    animate={{ opacity: hasText ? 1 : 0.45, scale: 1, rotate: 0 }}
+                    whileHover={hasText ? { scale: 1.08 } : undefined}
+                    whileTap={{ scale: 0.88 }}
+                    transition={SPRING}
+                    onClick={() => void send()}
+                    disabled={!hasText}
+                    className="relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full grad-lamp text-night disabled:cursor-not-allowed"
+                    aria-label="Send"
+                  >
+                    <span aria-hidden className="send-halo" />
+                    <AnimatePresence mode="wait" initial={false}>
+                      {hasText ? (
+                        <motion.span
+                          key="plane"
+                          initial={{ opacity: 0, y: 9, scale: 0.5 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -9, scale: 0.5 }}
+                          transition={{ duration: 0.17, ease: HOUSE }}
+                          className="relative z-[1] flex"
+                        >
+                          <PaperPlaneRight size={15} weight="bold" />
+                        </motion.span>
+                      ) : (
+                        <motion.span
+                          key="up"
+                          initial={{ opacity: 0, y: -9, scale: 0.5 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 9, scale: 0.5 }}
+                          transition={{ duration: 0.17, ease: HOUSE }}
+                          className="relative z-[1] flex"
+                        >
+                          <ArrowUp size={16} weight="bold" />
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        </Spotlight>
+
+        {/* Footer rail — quiet affordances that brighten with focus */}
+        <div className="relative mx-auto mt-2 flex w-full max-w-3xl flex-wrap items-center justify-between gap-x-4 gap-y-1">
+          <span
+            className={`hidden items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.16em] transition-colors duration-300 sm:flex ${
+              focused ? "text-muted" : "text-muted/45"
+            }`}
+          >
+            <kbd className="kbd-chip">↵</kbd> send
+            <kbd className="kbd-chip ml-1">⇧↵</kbd> newline
+          </span>
+          <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted/45 transition-colors duration-300">
+            {streaming ? (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-1 w-1 animate-pulse rounded-full bg-brass" />
+                Answering from your sources…
+              </span>
+            ) : (
+              "Answers cite your sources · key stays local"
+            )}
+          </span>
         </div>
       </div>
     </div>
@@ -656,12 +757,15 @@ export default function ChatPane({
 function MessageBubble({
   msg,
   streaming = false,
+  phase,
   thinkingOpen = false,
   onToggleThinking,
   onCite,
 }: {
   msg: ChatMessage;
   streaming?: boolean;
+  /** Present only while live-streaming: what the model is doing right now. */
+  phase?: "reading" | "thinking" | "answering";
   thinkingOpen?: boolean;
   onToggleThinking?: () => void;
   onCite: (sourceId: string, startChar?: number) => void;
@@ -729,7 +833,7 @@ function MessageBubble({
         streaming && (
           <div className="flex items-center gap-2 text-[13px] text-muted">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brass" />
-            Reading the sources…
+            {phase === "thinking" ? "Thinking…" : phase === "answering" ? "Answering…" : "Reading the sources…"}
           </div>
         )
       )}
