@@ -1,0 +1,4 @@
+# The desktop app's Rust/Tauri tree never ships to the web deployment.
+# Its target/ dir churns whenever a local cargo build runs, which breaks
+# Vercel's upload scan with ENOENT on vanishing .rmeta/.tmp files.
+src-tauri/

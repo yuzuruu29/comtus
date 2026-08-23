@@ -263,30 +263,38 @@ function NotebookCard({
       transition={SOFT}
       className="group relative rounded-[var(--radius-dialog)] border border-hairline bg-surface/40"
     >
-      <button onClick={onOpen} className="block w-full p-5 text-left">
-        <h3 className="font-display text-title text-ink">
-          {notebook.name}
-        </h3>
-        <div className="mt-2 text-[12px] text-muted">
-          {sources} {sources === 1 ? "source" : "sources"} · {timeAgo(notebook.updatedAt)}
+      {/* One padding authority for the whole card; the delete control
+          rides in the title row (-mt/-mr trim its oversized hit area so
+          the glyph centers on the title line instead of drifting up
+          into the corner radius). */}
+      <div className="p-5">
+        <div className="flex items-start gap-1.5">
+          <button onClick={onOpen} className="min-w-0 flex-1 text-left">
+            <h3 className="truncate font-display text-title text-ink">
+              {notebook.name}
+            </h3>
+            <div className="mt-2 text-[12px] text-muted">
+              {sources} {sources === 1 ? "source" : "sources"} · {timeAgo(notebook.updatedAt)}
+            </div>
+          </button>
+          <button
+            onClick={() => {
+              if (confirming) onDelete();
+              else setConfirming(true);
+            }}
+            onBlur={() => setConfirming(false)}
+            className={`-mr-2 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-control)] transition-colors duration-fast ${
+              confirming ? "bg-rust/15 text-rust" : "text-muted/50 hover:text-rust"
+            }`}
+            aria-label={confirming ? "Confirm delete" : "Delete notebook"}
+          >
+            <Trash size={15} weight="light" />
+          </button>
         </div>
-      </button>
-      <button
-        onClick={() => {
-          if (confirming) onDelete();
-          else setConfirming(true);
-        }}
-        onBlur={() => setConfirming(false)}
-        className={`absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] ${
-          confirming ? "bg-rust/15 text-rust" : "text-muted/50 hover:text-rust"
-        }`}
-        aria-label={confirming ? "Confirm delete" : "Delete notebook"}
-      >
-        <Trash size={15} weight="light" />
-      </button>
-      {confirming && (
-        <div className="px-5 pb-4 text-label text-rust">Click again to delete everything inside.</div>
-      )}
+        {confirming && (
+          <div className="mt-2.5 text-label text-rust">Click again to delete everything inside.</div>
+        )}
+      </div>
     </motion.div>
     </Spotlight>
   );
