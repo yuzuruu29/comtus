@@ -10,6 +10,7 @@ import { externalMarkdownComponents } from "./ExternalLink";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowRight,
+  ArrowUp,
   BookmarkSimple,
   Brain,
   CaretDown,
@@ -40,7 +41,7 @@ import { deriveSessionTitle } from "../lib/sessionText";
 import { streamChat, friendlyError, isAbort } from "../lib/llm";
 import { useSettings, useCallSettings } from "../lib/settings";
 import { getNotebookCoverEmoji } from "../lib/emoji";
-import { Collapse, SOFT, SPRING, Spotlight } from "./fx";
+import { Collapse, SOFT, SPRING, HOUSE, Spotlight, BorderBeam } from "./fx";
 import { timeAgo } from "./ui";
 
 const STARTERS = [
@@ -390,7 +391,7 @@ export default function ChatPane({
     const el = taRef.current;
     if (!el) return;
     el.style.height = "0px";
-    el.style.height = `${Math.min(Math.max(el.scrollHeight, 38), 160)}px`;
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, 36), 160)}px`;
   }, [input]);
 
   if (!notebook) return <div className="flex-1" />;
@@ -607,16 +608,32 @@ export default function ChatPane({
         </div>
       </div>
 
-      {/* Bottom Sticky Composer matching Screenshot 2 */}
-      <div className="relative shrink-0 px-4 pb-4 pt-2 sm:px-6">
-        {/* Floating Capsule Composer */}
-        <Spotlight radius={230} className="mx-auto w-full max-w-3xl">
-          <div
-            className={`relative rounded-2xl border transition-all duration-200 bg-surface/90 shadow-sm ${
-              focused ? "border-hairline-strong shadow-lg" : "border-hairline hover:border-hairline-strong"
-            }`}
+      {/* Composer — the lamp-lit writing instrument. Wakes on focus:
+          brass hairline, lamplight lift shadow, an orbiting border
+          beam, and a warm pool of light gathering beneath it. */}
+      <div className="relative shrink-0 px-4 pb-[calc(0.9rem+var(--sab))] pt-2 sm:px-5 sm:pb-[0.95rem]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 -top-7 h-7 bg-gradient-to-b from-transparent to-ground"
+        />
+        <div
+          aria-hidden
+          className={`composer-ambience pointer-events-none absolute inset-x-6 -top-12 bottom-0 ${
+            focused || streaming ? "is-lit" : ""
+          }`}
+        />
+        <Spotlight radius={230} className="mx-auto w-full max-w-3xl rounded-[var(--radius-dialog)]">
+          <motion.div
+            data-focused={focused ? "" : undefined}
+            data-streaming={streaming ? "" : undefined}
+            animate={{ y: focused || streaming ? -2 : 0 }}
+            transition={{ duration: 0.34, ease: HOUSE }}
+            className="composer-shell relative"
           >
-            <div className="flex items-end gap-2.5 px-4 pb-2.5 pt-3">
+            {(focused || streaming) && (
+              <BorderBeam size={84} duration={streaming ? 3.4 : 5} />
+            )}
+            <div className="relative z-[2] flex items-end gap-2 px-3.5 pb-2.5 pt-3">
               <textarea
                 ref={taRef}
                 aria-label="Ask Comtus"
@@ -631,54 +648,109 @@ export default function ChatPane({
                   }
                 }}
                 rows={1}
-                placeholder="Start typing…"
-                className="min-h-9 flex-1 resize-none bg-transparent text-[14.5px] leading-relaxed text-ink caret-brass outline-none placeholder:text-muted/60"
+                placeholder="Ask, or say what to drill…"
+                className="min-h-9 flex-1 resize-none bg-transparent text-[16px] leading-relaxed text-ink caret-brass outline-none placeholder:text-muted/55 sm:text-[14px]"
               />
-
-              {/* Source count badge inside composer on right */}
-              <div className="mb-1 flex items-center gap-2">
-                <span className="font-mono text-[11px] text-muted/70 whitespace-nowrap select-none">
-                  {sourceCount} {sourceCount === 1 ? "source" : "sources"}
-                </span>
-
-                {/* Circular Send Button */}
+              <span className="mb-1 hidden font-mono text-[10px] text-muted/60 sm:inline">
+                {sourceCount} {sourceCount === 1 ? "source" : "sources"}
+              </span>
+              <AnimatePresence mode="popLayout" initial={false}>
                 {streaming ? (
-                  <button
+                  <motion.button
+                    key="stop"
+                    initial={{ opacity: 0, scale: 0.55, rotate: -90 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    exit={{ opacity: 0, scale: 0.55, rotate: 90 }}
+                    transition={SPRING}
+                    whileHover={{ scale: 1.07 }}
+                    whileTap={{ scale: 0.88 }}
                     onClick={() => abortRef.current?.abort()}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rust/20 text-rust hover:bg-rust/30 transition-all active:scale-95"
-                    title="Stop generating"
+                    className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hairline-strong text-ink transition-colors duration-fast hover:border-rust/60 hover:bg-rust/[0.09] hover:text-rust"
                     aria-label="Stop generating"
+                    title="Stop"
                   >
-                    <Stop size={14} weight="fill" />
-                  </button>
+                    <Stop size={13} weight="fill" />
+                  </motion.button>
                 ) : (
-                  <button
+                  <motion.button
+                    key="send"
+                    data-armed={hasText}
+                    initial={{ opacity: 0, scale: 0.55, rotate: 90 }}
+                    animate={{ opacity: hasText ? 1 : 0.45, scale: 1, rotate: 0 }}
+                    whileHover={hasText ? { scale: 1.08 } : undefined}
+                    whileTap={{ scale: 0.88 }}
+                    transition={SPRING}
                     onClick={() => void send()}
                     disabled={!hasText}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm hover:bg-blue-500 active:scale-95 disabled:opacity-40 disabled:hover:bg-blue-600 transition-all"
-                    aria-label="Send message"
+                    className="relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full grad-lamp text-night disabled:cursor-not-allowed"
+                    aria-label="Send"
                   >
-                    <PaperPlaneRight size={15} weight="bold" />
-                  </button>
+                    <span aria-hidden className="send-halo" />
+                    <AnimatePresence mode="wait" initial={false}>
+                      {hasText ? (
+                        <motion.span
+                          key="plane"
+                          initial={{ opacity: 0, y: 9, scale: 0.5 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -9, scale: 0.5 }}
+                          transition={{ duration: 0.17, ease: HOUSE }}
+                          className="relative z-[1] flex"
+                        >
+                          <PaperPlaneRight size={15} weight="bold" />
+                        </motion.span>
+                      ) : (
+                        <motion.span
+                          key="up"
+                          initial={{ opacity: 0, y: -9, scale: 0.5 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 9, scale: 0.5 }}
+                          transition={{ duration: 0.17, ease: HOUSE }}
+                          className="relative z-[1] flex"
+                        >
+                          <ArrowUp size={16} weight="bold" />
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
                 )}
-              </div>
+              </AnimatePresence>
             </div>
-
-            {/* Follow-up Prompt Chips Carousel matching Screenshot 2 */}
-            <div className="border-t border-hairline/60 px-3.5 py-2 flex items-center gap-2 overflow-x-auto scroll-thin">
-              {FOLLOW_UPS.map((prompt) => (
-                <button
-                  key={prompt}
-                  onClick={() => void send(prompt)}
-                  className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-ink/[0.04] px-3 py-1 text-[11.5px] text-muted hover:bg-brass/10 hover:text-brasspale transition-colors"
-                >
-                  <span className="truncate max-w-[20rem]">{prompt}</span>
-                  <ArrowRight size={11} className="shrink-0 opacity-60" />
-                </button>
-              ))}
-            </div>
-          </div>
+          </motion.div>
         </Spotlight>
+
+        <div className="relative mx-auto mt-2 flex w-full max-w-3xl flex-wrap items-center justify-between gap-x-4 gap-y-1">
+          <span
+            className={`hidden items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.16em] transition-colors duration-300 sm:flex ${
+              focused ? "text-muted" : "text-muted/45"
+            }`}
+          >
+            <kbd className="kbd-chip">↵</kbd> send
+            <kbd className="kbd-chip ml-1">⇧↵</kbd> newline
+          </span>
+          <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted/45 transition-colors duration-300">
+            {streaming ? (
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-1 w-1 animate-pulse rounded-full bg-brass" />
+                Answering from your sources…
+              </span>
+            ) : (
+              "Answers cite your sources · key stays local"
+            )}
+          </span>
+        </div>
+
+        <div className="relative mx-auto mt-2 flex w-full max-w-3xl items-center gap-2 overflow-x-auto scroll-thin">
+          {FOLLOW_UPS.map((prompt) => (
+            <button
+              key={prompt}
+              onClick={() => void send(prompt)}
+              className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-ink/[0.04] px-3 py-1 text-[11.5px] text-muted transition-colors hover:bg-brass/10 hover:text-brasspale"
+            >
+              <span className="max-w-[20rem] truncate">{prompt}</span>
+              <ArrowRight size={11} className="shrink-0 opacity-60" />
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Note Saved Toast Notification */}

@@ -382,12 +382,14 @@ button[data-armed="true"] .send-halo {
   animation: breathe 2.6s ease-in-out infinite;
 }
 
-/* The shell carries the focus treatment (brass border + lamplight lift),
-   so suppress the global brass focus ring on the field itself — it drew
-   a stray yellow box inside the composer. Keyboard focus stays obvious
-   through the shell's border, lift, and orbiting beam. */
-.composer-shell textarea:focus-visible {
+/* Beat html[data-shell] :focus-visible — that global brass ring
+   drew a stray yellow rectangle inside the composer. The shell
+   itself carries focus (border, lift, orbiting beam). */
+html[data-shell] .composer-shell textarea:focus,
+html[data-shell] .composer-shell textarea:focus-visible,
+html[data-shell] .composer-shell button:focus-visible {
   outline: none;
+  outline-offset: 0;
 }
 
 /* Keycap chips in the composer footer */
