@@ -613,7 +613,7 @@ export default function ChatPane({
         <Spotlight radius={230} className="mx-auto w-full max-w-3xl">
           <div
             className={`relative rounded-2xl border transition-all duration-200 bg-surface/90 shadow-sm ${
-              focused ? "border-brass/50 shadow-md ring-1 ring-brass/20" : "border-hairline hover:border-hairline-strong"
+              focused ? "border-hairline-strong shadow-lg" : "border-hairline hover:border-hairline-strong"
             }`}
           >
             <div className="flex items-end gap-2.5 px-4 pb-2.5 pt-3">
