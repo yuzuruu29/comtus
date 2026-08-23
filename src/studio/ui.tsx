@@ -44,10 +44,28 @@ export function Modal({
     restoreFocusRef.current = document.activeElement as HTMLElement | null;
 
     const focusTimer = window.setTimeout(() => {
-      const first = panelRef.current?.querySelector<HTMLElement>(
-        '[autofocus], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      if (!panelRef.current) return;
+      // If focus is already inside the panel (e.g. React autofocus on input), do not steal it
+      if (document.activeElement && panelRef.current.contains(document.activeElement)) {
+        return;
+      }
+      // Prioritize autofocus element, then text inputs / textareas, then non-close buttons, then any focusable
+      const auto = panelRef.current.querySelector<HTMLElement>('[autofocus]:not([disabled])');
+      if (auto) {
+        auto.focus();
+        return;
+      }
+      const input = panelRef.current.querySelector<HTMLElement>(
+        'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled])',
       );
-      (first ?? panelRef.current)?.focus();
+      if (input) {
+        input.focus();
+        return;
+      }
+      const first = panelRef.current.querySelector<HTMLElement>(
+        'button:not([disabled]):not([aria-label="Close"]), [href], [tabindex]:not([tabindex="-1"])',
+      );
+      (first ?? panelRef.current).focus();
     }, 30);
 
     const onKey = (e: KeyboardEvent) => {

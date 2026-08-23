@@ -112,6 +112,11 @@ export default function NotebookList({
     return list;
   }, [notebooks, searchQuery, sortOption]);
 
+  const openCreateModal = () => {
+    setName("");
+    setCreating(true);
+  };
+
   const create = async () => {
     const trimmed = name.trim();
     if (!trimmed) return;
@@ -164,7 +169,7 @@ export default function NotebookList({
   };
 
   return (
-    <DeskShell onSettings={() => setSettingsOpen(true)} onNewNotebook={() => setCreating(true)}>
+    <DeskShell onSettings={() => setSettingsOpen(true)} onNewNotebook={openCreateModal}>
       <div className="min-h-[100svh] bg-ground">
         <div className="pointer-events-none fixed inset-x-0 top-0 h-[45vh] bg-[radial-gradient(75%_100%_at_50%_0%,rgba(227,176,75,0.06),transparent_80%)]" />
         <div className="relative mx-auto w-full max-w-6xl px-6 pb-24 sm:px-10 lg:px-12">
@@ -320,7 +325,7 @@ export default function NotebookList({
 
               {/* + Create New Button */}
               <button
-                onClick={() => setCreating(true)}
+                onClick={openCreateModal}
                 className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] grad-lamp px-4 text-[13px] font-semibold text-night shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
               >
                 <Plus size={15} weight="bold" />
@@ -342,7 +347,7 @@ export default function NotebookList({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {/* 1st Card: + Create new notebook */}
               <button
-                onClick={() => setCreating(true)}
+                onClick={openCreateModal}
                 className="group flex min-h-[175px] flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed border-hairline-strong bg-surface/30 p-5 text-center transition-all duration-200 hover:border-brass/50 hover:bg-surface/60 hover-lift"
               >
                 <CreateNotebookEmblem />

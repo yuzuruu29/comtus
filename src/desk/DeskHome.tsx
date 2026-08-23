@@ -135,6 +135,11 @@ export default function DeskHome({
     return list;
   }, [notebooks, searchQuery, sortOption]);
 
+  const openCreateModal = () => {
+    setNewNotebookName("");
+    setCreateModalOpen(true);
+  };
+
   const handleCreate = async () => {
     const trimmed = newNotebookName.trim();
     if (!trimmed) return;
@@ -343,7 +348,7 @@ export default function DeskHome({
 
             {/* + Create New Button */}
             <button
-              onClick={() => setCreateModalOpen(true)}
+              onClick={openCreateModal}
               className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] grad-lamp px-4 text-[13px] font-semibold text-night shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
             >
               <Plus size={15} weight="bold" />
@@ -374,7 +379,7 @@ export default function DeskHome({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* 1st Card: + Create new notebook (matches Screenshot 1) */}
             <button
-              onClick={() => setCreateModalOpen(true)}
+              onClick={openCreateModal}
               className="group flex min-h-[175px] flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed border-hairline-strong bg-surface/30 p-5 text-center transition-all duration-200 hover:border-brass/50 hover:bg-surface/60 hover-lift"
             >
               <CreateNotebookEmblem />
