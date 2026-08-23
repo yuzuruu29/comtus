@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Comtus — Chat &amp; Composer Redesign Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..700&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ground: #0b0f1a;
+    --surface: #121828;
+    --raised: #18203a;
+    --ink: #f2ede3;
+    --muted: rgba(242, 237, 227, 0.55);
+    --hairline: rgba(242, 237, 227, 0.09);
+    --hairline-strong: rgba(242, 237, 227, 0.18);
+    --brass: #e3b04b;
+    --brassdeep: #c99236;
+    --brasspale: #f0ce8c;
+    --moon: #7fa8c9;
+    --moondeep: #2a3654;
+    --sage: #8fbf98;
+    --rust: #c96a5e;
+    --night: #0b0f1a;
+    --glow-warm: rgba(227, 176, 75, 0.13);
+    --glow-cool: rgba(127, 168, 201, 0.07);
+    --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+    --font-body: "Inter", system-ui, -apple-system, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+    --radius-dialog: 20px;
+    --radius-control: 10px;
+  }
+
+  @property --ba { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 56px 24px 120px;
+  }
+  .dotgrid {
+    background-image: radial-gradient(rgba(242,237,227,0.045) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  /* ── Page chrome ─────────────────────────────────────── */
+  .pagehead { max-width: 1060px; margin: 0 auto 52px; }
+  .kicker {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--brass); margin-bottom: 14px;
+  }
+  h1.page-title {
+    font-family: var(--font-display); font-weight: 450; font-size: 34px;
+    line-height: 1.15; margin: 0 0 12px; letter-spacing: 0.01em;
+  }
+  .page-sub { color: var(--muted); max-width: 62ch; font-size: 14.5px; }
+
+  section.panel {
+    max-width: 1060px; margin: 0 auto 72px;
+    border: 1px solid var(--hairline); border-radius: 24px;
+    background: linear-gradient(180deg, rgba(18,24,40,0.55), rgba(11,15,26,0.9));
+    overflow: hidden;
+  }
+  .panel-head {
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    padding: 22px 28px 6px;
+  }
+  .panel-letter {
+    font-family: var(--font-display); font-size: 30px; font-weight: 500;
+    color: var(--brasspale); min-width: 34px;
+  }
+  .panel-name { font-family: var(--font-display); font-size: 21px; font-weight: 500; }
+  .panel-tag {
+    font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--muted); border: 1px solid var(--hairline-strong);
+    padding: 3px 8px; border-radius: 999px;
+  }
+  .panel-thesis { padding: 4px 28px 0 76px; color: var(--muted); font-size: 13.5px; max-width: 78ch; }
+  ul.changes { padding: 10px 28px 4px 76px; margin: 0; list-style: none; color: var(--muted); font-size: 12.5px; }
+  ul.changes li { padding-left: 16px; position: relative; margin-bottom: 3px; }
+  ul.changes li::before { content: "◆"; position: absolute; left: 0; top: 1px; font-size: 8px; color: var(--brass); opacity: 0.8; }
+  ul.changes b { color: var(--ink); font-weight: 550; }
+
+  /* ── Shared chat column ──────────────────────────────── */
+  .stage { padding: 20px 28px 30px; }
+  .chatcol { max-width: 720px; margin: 0 auto; }
+
+  .msg-user-row { display: flex; justify-content: flex-end; margin-bottom: 18px; }
+  .bubble-user {
+    max-width: 82%;
+    background: rgba(227, 176, 75, 0.12);
+    border: 1px solid rgba(227, 176, 75, 0.25);
+    border-radius: 16px;
+    padding: 10px 16px;
+    font-size: 13.5px;
+  }
+  .bubble-user.quiet { background: rgba(242,237,227,0.05); border-color: var(--hairline-strong); color: var(--ink); }
+
+  .answer-card {
+    border: 1px solid var(--hairline);
+    background: rgba(18, 24, 40, 0.7);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  }
+  .answer-open { padding: 4px 2px; }
+  .md p { margin: 0 0 10px; font-size: 13.8px; color: rgba(242,237,227,0.92); }
+  .md p:last-child { margin-bottom: 0; }
+  .md strong { color: var(--ink); font-weight: 600; }
+  .md em { color: var(--brasspale); }
+  .md ul { margin: 8px 0 4px; padding-left: 1.3em; color: rgba(242,237,227,0.88); font-size: 13.5px; }
+  .md li { margin-bottom: 4px; }
+  sup.cite {
+    font-family: var(--font-mono); font-size: 9px; color: var(--brasspale);
+    vertical-align: super; margin-left: 2px; letter-spacing: 0.02em;
+  }
+  .cite-pill {
+    font-family: var(--font-mono); font-size: 10px; color: var(--brasspale);
+    border: 1px solid var(--hairline); background: rgba(11,15,26,0.55);
+    padding: 2px 7px; border-radius: 6px; cursor: pointer;
+  }
+  .cite-pill:hover { border-color: rgba(227,176,75,0.4); background: rgba(227,176,75,0.1); }
+  .cites-row {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    border-top: 1px solid rgba(242,237,227,0.06); margin-top: 12px; padding-top: 10px;
+  }
+  .acts {
+    display: flex; gap: 4px; align-items: center;
+    font-size: 11.5px; color: var(--muted);
+  }
+  .act-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 9px; border-radius: 7px; cursor: pointer; color: var(--muted);
+    transition: background 0.2s, color 0.2s;
+  }
+  .act-btn:hover { background: rgba(242,237,227,0.06); color: var(--ink); }
+  .meta-time { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); opacity: 0.6; }
+  .foot-row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; }
+
+  svg.ic { width: 13px; height: 13px; stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+  /* ── Composer primitives ─────────────────────────────── */
+  .composer-zone { position: relative; max-width: 720px; margin: 26px auto 0; }
+  .ambience {
+    position: absolute; inset: -46px -10px -6px; pointer-events: none;
+    background: radial-gradient(60% 130% at 50% 100%, var(--glow-warm), transparent 72%);
+    opacity: 0.85;
+  }
+  .shell {
+    position: relative;
+    background: linear-gradient(180deg, rgba(18,24,40,0.86), #121828);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-dialog);
+    box-shadow: 0 10px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.25);
+    transition: border-color .3s;
+  }
+  .shell.lit { border-color: rgba(227,176,75,0.42); box-shadow: 0 16px 44px rgba(0,0,0,0.45), 0 4px 14px rgba(0,0,0,0.3), 0 0 42px rgba(227,176,75,0.06); }
+  .beam {
+    position: absolute; inset: -1px; border-radius: inherit; pointer-events: none;
+    padding: 1px;
+    background: conic-gradient(from var(--ba),
+      transparent 0turn, transparent 0.72turn,
+      rgba(227,176,75,0.05) 0.78turn,
+      rgba(227,176,75,0.95) 0.88turn,
+      rgba(240,206,140,1) 0.92turn,
+      transparent 0.97turn);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask-composite: exclude;
+    animation: orbit 5s linear infinite;
+  }
+  @keyframes orbit { to { --ba: 360deg; } }
+
+  textarea.mock {
+    width: 100%; resize: none; border: 0; outline: 0; background: transparent;
+    color: var(--ink); caret-color: var(--brass);
+    font-family: var(--font-body); font-size: 14px; line-height: 1.55;
+  }
+  textarea.mock::placeholder { color: rgba(242,237,227,0.35); }
+
+  .send-circle {
+    width: 36px; height: 36px; border-radius: 999px; border: 0; cursor: pointer;
+    background: linear-gradient(92deg, var(--brassdeep), var(--brasspale));
+    color: var(--night); display: flex; align-items: center; justify-content: center;
+    position: relative; flex-shrink: 0;
+  }
+  .send-circle.dim { opacity: 0.45; }
+  .send-halo {
+    position: absolute; inset: -3px; border-radius: 999px;
+    background: linear-gradient(92deg, var(--brassdeep), var(--brasspale));
+    filter: blur(9px); opacity: 0.42; animation: breathe 2.6s ease-in-out infinite; pointer-events: none;
+  }
+  @keyframes breathe { 0%,100% { opacity: 0.35; transform: scale(1);} 50% { opacity: 0.6; transform: scale(1.06);} }
+  .send-sq {
+    width: 34px; height: 30px; border-radius: 9px; border: 0; cursor: pointer;
+    background: linear-gradient(92deg, var(--brassdeep), var(--brasspale));
+    color: var(--night); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .iconbtn {
+    width: 30px; height: 30px; border-radius: 9px; border: 0; background: transparent;
+    color: var(--muted); display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: background .2s, color .2s;
+  }
+  .iconbtn:hover { background: rgba(242,237,227,0.07); color: var(--ink); }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.05em;
+    color: var(--muted); border: 1px solid var(--hairline);
+    background: rgba(242,237,227,0.03);
+    padding: 4px 9px; border-radius: 999px; white-space: nowrap; cursor: pointer;
+    transition: border-color .2s, color .2s;
+  }
+  .chip:hover { border-color: rgba(227,176,75,0.4); color: var(--brasspale); }
+  .chip.brassy { color: var(--brasspale); border-color: rgba(227,176,75,0.35); background: rgba(227,176,75,0.07); }
+  .chip .dot { width: 5px; height: 5px; border-radius: 99px; background: var(--brass); }
+
+  .kbd-chip {
+    display: inline-block; font-family: var(--font-mono); font-size: 9px;
+    padding: 3px 5px 4px; border: 1px solid var(--hairline-strong);
+    border-bottom-width: 2px; border-radius: 4px;
+    background: rgba(242,237,227,0.04); color: var(--muted);
+  }
+  .microcopy {
+    font-family: var(--font-mono); font-size: 9px; text-transform: uppercase;
+    letter-spacing: 0.16em; color: var(--muted); opacity: 0.65;
+  }
+  .fu-rail { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .fu-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(242,237,227,0.04); color: var(--muted);
+    border-radius: 999px; padding: 5px 12px; font-size: 11.5px; cursor: pointer;
+    transition: background .2s, color .2s;
+  }
+  .fu-pill:hover { background: rgba(227,176,75,0.1); color: var(--brasspale); }
+
+  .phase-pill {
+    position: absolute; top: -11px; left: 18px; z-index: 3;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--brasspale); background: linear-gradient(180deg, #141b2e, #10162700) , #131a2c;
+    background: #131a2c;
+    border: 1px solid rgba(227,176,75,0.35); border-radius: 999px; padding: 3px 10px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  }
+  .phase-pill .dot { width: 5px; height: 5px; border-radius: 99px; background: var(--brass); animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+  .divider-v { width: 1px; align-self: stretch; background: var(--hairline); margin: 2px 4px; }
+  .hairline-h { height: 1px; background: var(--hairline); }
+
+  .annot {
+    position: relative; font-family: var(--font-mono); font-size: 9px;
+    color: var(--moon); border: 1px dashed rgba(127,168,201,0.4);
+    border-radius: 6px; padding: 2px 7px; letter-spacing: 0.08em;
+  }
+
+  /* ══ Panel 0 — CURRENT ════════════════════════════════ */
+  .cur-underrow { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+  .stream-caret { display:inline-block; width: 6px; height: 14px; background: var(--brass); box-shadow: 0 0 10px rgba(227,176,75,.55); animation: blink 1s steps(1) infinite; border-radius: 2px; vertical-align: -2px; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ══ Panel A — REFINED LAMP ═══════════════════════════ */
+  .a-toolbar { display: flex; align-items: center; gap: 4px; padding: 0 12px 11px 16px; }
+  .a-textarea-pad { padding: 15px 16px 8px; }
+  .fu-above { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .fu-x { color: var(--muted); opacity: .5; font-size: 11px; margin-left: 2px; }
+
+  /* ══ Panel B — CONSOLE DECK ═══════════════════════════ */
+  .b-topstrip { display: flex; align-items: center; gap: 8px; padding: 10px 14px; }
+  .b-body { padding: 4px 14px 6px; }
+  .b-bottomrow { display: flex; align-items: center; gap: 6px; padding: 6px 12px 12px 14px; }
+  .meter { font-family: var(--font-mono); font-size: 9px; color: var(--muted); opacity: .7; letter-spacing: .08em; }
+  .rail-actions { position: absolute; left: -40px; top: 4px; display: flex; flex-direction: column; gap: 4px; opacity: 0.55; }
+  .jump-pill {
+    position: absolute; right: 14px; top: -38px;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--raised); border: 1px solid var(--hairline-strong);
+    color: var(--ink); font-size: 11px; border-radius: 999px; padding: 5px 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.4); cursor: pointer;
+  }
+  .open-answer { position: relative; }
+
+  /* ══ Panel C — QUIET PAGE ═════════════════════════════ */
+  .q-turn { padding: 18px 2px; }
+  .q-label {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
+  }
+  .q-label.you { color: var(--brasspale); opacity: .8; text-align: right; }
+  .q-user-text { text-align: right; font-size: 13.8px; color: rgba(242,237,227,0.92); }
+  .q-rule { height: 1px; background: linear-gradient(90deg, transparent, rgba(227,176,75,0.28), transparent); margin: 6px 0; }
+  .q-composer-min {
+    border-top: 1px solid var(--hairline-strong); padding: 14px 4px 6px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .q-mini {
+    border: 1px solid var(--hairline); border-radius: 14px; padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px; color: rgba(242,237,227,0.4);
+    background: rgba(18,24,40,0.5); width: 320px; font-size: 13px; cursor: pointer;
+    transition: border-color .25s;
+  }
+  .q-mini:hover { border-color: rgba(227,176,75,0.35); }
+  .q-links { text-align: center; margin-bottom: 14px; font-size: 12px; color: var(--muted); }
+  .q-links a { color: var(--brasspale); text-decoration: none; border-bottom: 1px dotted rgba(227,176,75,.5); cursor: pointer; margin: 0 7px; }
+  .duo { display: flex; gap: 22px; align-items: flex-end; }
+  .duo .cap { font-family: var(--font-mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--moon); opacity: .8; margin-bottom: 8px; }
+
+  /* ══ Panel D — STUDIO DOCK ════════════════════════════ */
+  .dock-wrap { position: relative; max-width: 720px; margin: 250px auto 0; }
+  .dock {
+    position: relative;
+    background: linear-gradient(180deg, rgba(21,27,46,0.94), #10162a);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 22px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 6px 20px rgba(0,0,0,0.35);
+  }
+  .dock-progress { height: 2px; margin: 3px 12px 0; border-radius: 999px; background: linear-gradient(90deg, transparent, var(--brass), var(--brasspale), transparent); background-size: 200% 100%; animation: slide-bg 2.4s linear infinite; }
+  @keyframes slide-bg { from { background-position: 200% 0;} to { background-position: -200% 0;} }
+  .ctx-strip { display: flex; align-items: center; gap: 7px; padding: 10px 14px 0; flex-wrap: wrap; }
+  .src-chip {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11px;
+    color: var(--ink); background: rgba(242,237,227,0.05);
+    border: 1px solid var(--hairline); border-radius: 999px; padding: 4px 10px; cursor: pointer;
+  }
+  .src-chip .tick { color: var(--sage); font-size: 10px; }
+  .src-chip.off { color: var(--muted); opacity: .55; }
+  .src-add { border-style: dashed; color: var(--muted); }
+  .ctx-label { font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); opacity: .7; margin-right: 2px; }
+  .slash-ghost { position: relative; }
+  .slash-ghost .typed { color: var(--ink); }
+  .slash-ghost .ghost { color: rgba(242,237,227,0.3); }
+  .cmd-menu {
+    position: absolute; bottom: calc(100% + 58px); left: 14px; z-index: 5;
+    width: 280px; border-radius: 14px; border: 1px solid var(--hairline-strong);
+    background: rgba(18,24,40,0.97); box-shadow: 0 18px 48px rgba(0,0,0,.55);
+    padding: 6px; backdrop-filter: blur(6px);
+  }
+  .cmd-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 9px; font-size: 12.5px; cursor: pointer; }
+  .cmd-item:hover, .cmd-item.sel { background: rgba(227,176,75,0.1); color: var(--brasspale); }
+  .cmd-item .k { font-family: var(--font-mono); font-size: 10.5px; color: var(--brasspale); width: 74px; }
+  .cmd-item .d { color: var(--muted); font-size: 11px; }
+  .ans-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .model-dot { font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--moon); opacity: .85; border: 1px solid rgba(127,168,201,.3); border-radius: 999px; padding: 2px 8px; }
+
+  footer.note { max-width: 1060px; margin: 0 auto; color: var(--muted); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="pagehead">
+  <div class="kicker">Comtus Studio · Design proposals · Aug 2026</div>
+  <h1 class="page-title">Chat &amp; Composer — four directions</h1>
+  <p class="page-sub">Same transcript in every panel so the differences read clearly. The lamp-lit identity
+  (brass hairline, orbiting beam, warm pool of light) is preserved everywhere except C, which trades ornament for calm.
+  Pick one as-is or mix elements — e.g. D's source chips inside A's shell.</p>
+</div>
+
+<!-- ═══════════ PANEL 0 — CURRENT ═══════════ -->
+<section class="panel" id="current">
+  <div class="panel-head">
+    <span class="panel-letter">·</span>
+    <span class="panel-name">Current state</span>
+    <span class="panel-tag">baseline</span>
+  </div>
+  <div class="panel-thesis">Lamp-lit composer with beam + spotlight. Pain points: three loose utility rows stack under the input
+  (hints / status / follow-ups) eating ~90px of vertical space; no attach, model, or drill affordances; follow-up chips always visible.</div>
+  <div class="stage dotgrid">
+    <div class="chatcol">
+      <div class="msg-user-row"><div class="bubble-user">Where do Alvarez and Kwan disagree about the 1997 crisis?</div></div>
+      <div class="answer-card">
+        <div class="md">
+          <p>They diverge on cause. <strong>Alvarez</strong> treats capital flight as the trigger — policy error invited speculation<sup class="cite">[1]</sup>. <strong>Kwan</strong> counters that external contagion, Japan's yen-carry unwind, did the real damage<sup class="cite">[2]</sup>.</p>
+          <ul>
+            <li><em>Alvarez:</em> domestic mismanagement, recoverable by policy</li>
+            <li><em>Kwan:</em> structural exposure, fixed only by regional coordination</li>
+          </ul>
+        </div>
+        <div class="foot-row">
+          <span class="meta-time">2m ago</span>
+          <div class="acts">
+            <span class="act-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>Save to note</span>
+            <span class="act-btn"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</span>
+          </div>
+        </div>
+      </div>
+      <div class="composer-zone">
+        <div class="ambience"></div>
+        <div class="shell lit"><div class="beam"></div>
+          <div style="display:flex;align-items:flex-end;gap:10px;padding:13px 14px 10px;">
+            <textarea class="mock" rows="1">Add a comparison table of their causes and fixes</textarea>
+            <span class="microcopy" style="margin-bottom:8px;">3 sources</span>
+            <button class="send-circle"><span class="send-halo"></span><svg class="ic" viewBox="0 0 24 24" style="stroke:#0b0f1a;stroke-width:2;"><path d="M12 19V6M6 12l6-6 6 6"/></svg></button>
+          </div>
+        </div>
+        <div class="cur-underrow">
+          <span class="microcopy"><kbd class="kbd-chip">↵</kbd> send&nbsp;&nbsp;<kbd class="kbd-chip">⇧↵</kbd> newline</span>
+          <span class="microcopy">answers cite your sources · key stays local</span>
+        </div>
+        <div class="fu-rail">
+          <span class="fu-pill">What are the main key takeaways…<svg class="ic" style="width:10px;height:10px;" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          <span class="fu-pill">Compare and contrast the primary themes…<svg class="ic" style="width:10px;height:10px;" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          <span class="fu-pill">Generate a detailed study outline…<svg class="ic" style="width:10px;height:10px;" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ PANEL A — REFINED LAMP ═══════════ -->
+<section class="panel" id="option-a">
+  <div class="panel-head">
+    <span class="panel-letter">A</span>
+    <span class="panel-name">Refined Lamp</span>
+    <span class="panel-tag">recommended · evolution</span>
+  </div>
+  <div class="panel-thesis">Keeps today's soul, reorganizes its anatomy. Everything loose below the composer folds into the shell itself;
+  tools appear where the hand already is.</div>
+  <ul class="changes">
+    <li><b>All meta lives inside the shell</b> — hints/status/follow-up rows removed from below; ~90px of vertical space reclaimed for messages.</li>
+    <li><b>Tool row inside the composer</b>: attach (+), quote-from-source, and a Drill menu (quiz · flashcards · outline) on the left; model chip + grounded-source chip on the right.</li>
+    <li><b>Follow-ups move above the composer</b> as dismissible context chips — shown once after each answer, never during typing.</li>
+    <li><b>Streaming phase pill</b> docks to the shell's top edge ("reading → thinking → answering"), replacing the loose pulsing row.</li>
+  </ul>
+  <div class="stage dotgrid">
+    <div class="chatcol">
+      <div class="msg-user-row"><div class="bubble-user">Where do Alvarez and Kwan disagree about the 1997 crisis?</div></div>
+      <div class="answer-card">
+        <div class="md">
+          <p>They diverge on cause. <strong>Alvarez</strong> treats capital flight as the trigger — policy error invited speculation<sup class="cite">[1]</sup>. <strong>Kwan</strong> counters that external contagion, Japan's yen-carry unwind, did the real damage<sup class="cite">[2]</sup>.</p>
+          <ul>
+            <li><em>Alvarez:</em> domestic mismanagement, recoverable by policy</li>
+            <li><em>Kwan:</em> structural exposure, fixed only by regional coordination</li>
+          </ul>
+        </div>
+        <div class="foot-row">
+          <span class="meta-time">2m ago</span>
+          <div class="acts">
+            <span class="act-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>Save to note</span>
+            <span class="act-btn"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copy</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="composer-zone">
+        <div class="ambience"></div>
+        <div class="fu-above">
+          <span class="chip">Try:<span style="letter-spacing:0;">&nbsp;comparison table of causes &amp; fixes</span><span class="fu-x">✕</span></span>
+          <span class="chip">Study outline from this thread<span class="fu-x">✕</span></span>
+        </div>
+        <div class="shell lit"><div class="beam"></div>
+          <div class="phase-pill"><span class="dot"></span>answering</div>
+          <div class="a-textarea-pad">
+            <textarea class="mock" rows="1">Add a comparison table of their causes and fixes</textarea>
+          </div>
+          <div class="a-toolbar">
+            <button class="iconbtn" title="Attach source"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button class="iconbtn" title="Quote from a source"><svg class="ic" viewBox="0 0 24 24"><path d="M9 7H5v5h4M9 12c0 3-1.5 4.5-4 5M19 7h-4v5h4M19 12c0 3-1.5 4.5-4 5"/></svg></button>
+            <button class="iconbtn" title="Drill menu — quiz, flashcards, outline"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3c1 3-2 4.5-2 7a4 4 0 0 0 8 .5C19.5 13 17 15 17 17a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.2 1 2 2 2.5-.5-3 .5-5.5 1-8z"/></svg></button>
+            <span style="flex:1;"></span>
+            <span class="chip brassy"><svg class="ic" style="width:10px;height:10px;" viewBox="0 0 24 24"><path d="M12 2l2.4 7.2H22l-6 4.6 2.3 7.2-6.3-4.5-6.3 4.5L8 13.8l-6-4.6h7.6z" fill="currentColor" stroke="none"/></svg>Llama 3.3 70B · Groq ▾</span>
+            <span class="chip">3 src</span>
+            <span class="microcopy" style="opacity:.55;"><kbd class="kbd-chip">↵</kbd></span>
+            <button class="send-circle"><span class="send-halo"></span><svg class="ic" viewBox="0 0 24 24" style="stroke:#0b0f1a;stroke-width:2;"><path d="M3 11.5 21 3l-8.5 18-2.2-7.3z"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ PANEL B — CONSOLE DECK ═══════════ -->
+<section class="panel" id="option-b">
+  <div class="panel-head">
+    <span class="panel-letter">B</span>
+    <span class="panel-name">Console Deck</span>
+    <span class="panel-tag">tool-forward</span>
+  </div>
+  <div class="panel-thesis">The composer becomes a small command console: settings up top, workspace below.
+  Answers shed their card boxes and sit directly on the page like terminal output in a fine journal.</div>
+  <ul class="changes">
+    <li><b>Three-band console</b>: context strip (model + focus selector) → textarea → action rail (attach, quiz/flashcard shortcuts, token meter, square send).</li>
+    <li><b>Cardless answers</b>: open typography with brass superscript citations; actions float in the left gutter on hover.</li>
+    <li><b>Jump-to-latest pill</b> appears when you scroll up during streaming.</li>
+    <li><b>Token meter</b> gives power users a live sense of context budget.</li>
+  </ul>
+  <div class="stage dotgrid">
+    <div class="chatcol">
+      <div class="msg-user-row"><div class="bubble-user quiet">Where do Alvarez and Kwan disagree about the 1997 crisis?</div></div>
+      <div class="answer-open open-answer">
+        <div class="rail-actions">
+          <button class="iconbtn" title="Save to note"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg></button>
+          <button class="iconbtn" title="Copy"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
+        </div>
+        <div class="md">
+          <p>They diverge on cause. <strong>Alvarez</strong> treats capital flight as the trigger — policy error invited speculation<sup class="cite">[1]</sup>. <strong>Kwan</strong> counters that external contagion, Japan's yen-carry unwind, did the real damage<sup class="cite">[2]</sup>.</p>
+          <ul>
+            <li><em>Alvarez:</em> domestic mismanagement, recoverable by policy</li>
+            <li><em>Kwan:</em> structural exposure, fixed only by regional coordination</li>
+          </ul>
+        </div>
+        <div class="cites-row">
+          <span class="cite-pill">1 · Alvarez · Ch. 4</span>
+          <span class="cite-pill">2 · Kwan · pp. 112–118</span>
+        </div>
+        <div class="foot-row" style="border-top:0;padding-top:2px;">
+          <span class="meta-time">2m ago</span>
+        </div>
+      </div>
+
+      <div class="composer-zone">
+        <div class="ambience"></div>
+        <div class="jump-pill"><svg class="ic" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></svg>Jump to latest<span class="dot" style="background:var(--brass);width:5px;height:5px;border-radius:99px;margin-left:2px;"></span></div>
+        <div class="shell lit"><div class="beam"></div>
+          <div class="b-topstrip">
+            <span class="chip brassy">llama-3.3-70b · groq <svg class="ic" style="width:9px;height:9px;" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>
+            <span class="chip">focus: 2 of 3 sources <svg class="ic" style="width:9px;height:9px;" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>
+            <span style="flex:1;"></span>
+            <span class="microcopy">grounded</span>
+          </div>
+          <div class="hairline-h"></div>
+          <div class="b-body">
+            <textarea class="mock" rows="1">Add a comparison table of their causes and fixes</textarea>
+          </div>
+          <div class="b-bottomrow">
+            <button class="iconbtn" title="Attach source"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+            <span class="chip">Quiz me</span>
+            <span class="chip">Flashcards</span>
+            <span class="chip">Outline</span>
+            <span style="flex:1;"></span>
+            <span class="meter">128 / 4,000 tk</span>
+            <button class="send-sq"><svg class="ic" viewBox="0 0 24 24" style="stroke:#0b0f1a;stroke-width:2;"><path d="M3 11.5 21 3l-8.5 18-2.2-7.3z"/></svg></button>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:10px;">
+          <span class="fu-pill" style="opacity:.8;">Main takeaways?</span>&nbsp;
+          <span class="fu-pill" style="opacity:.8;">Compare themes</span>&nbsp;
+          <span class="fu-pill" style="opacity:.8;">Study outline</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ PANEL C — QUIET PAGE ═══════════ -->
+<section class="panel" id="option-c">
+  <div class="panel-head">
+    <span class="panel-letter">C</span>
+    <span class="panel-name">Quiet Page</span>
+    <span class="panel-tag">minimal · content-first</span>
+  </div>
+  <div class="panel-thesis">Removes almost every box. The conversation reads like a well-set document; the composer is a single
+  hairline that only becomes furniture when you need it. Calmest option — closest to premium reading apps.</div>
+  <ul class="changes">
+    <li><b>No bubbles, no cards</b>: turns separated by a faint brass rule; "YOU" set in tiny mono caps, right-aligned.</li>
+    <li><b>Citations become superscripts</b> with dotted underlines; hover shows the quoted passage.</li>
+    <li><b>Collapsed composer</b>: one line — placeholder + arrow. Focus expands it into the familiar lamp-lit shell (both states shown).</li>
+    <li><b>Suggestions as quiet text links</b>, shown once per answer then gone.</li>
+  </ul>
+  <div class="stage dotgrid">
+    <div class="chatcol">
+      <div class="q-turn">
+        <div class="q-label you">You</div>
+        <div class="q-user-text">Where do Alvarez and Kwan disagree about the 1997 crisis?</div>
+      </div>
+      <div class="q-rule"></div>
+      <div class="q-turn">
+        <div class="md">
+          <p>They diverge on cause. <strong>Alvarez</strong> treats capital flight as the trigger — policy error invited speculation<sup class="cite" style="border-bottom:1px dotted rgba(240,206,140,.6);cursor:pointer;">1</sup>. <strong>Kwan</strong> counters that external contagion, Japan's yen-carry unwind, did the real damage<sup class="cite" style="border-bottom:1px dotted rgba(240,206,140,.6);cursor:pointer;">2</sup>.</p>
+          <ul>
+            <li><em>Alvarez:</em> domestic mismanagement, recoverable by policy</li>
+            <li><em>Kwan:</em> structural exposure, fixed only by regional coordination</li>
+          </ul>
+        </div>
+        <div class="acts" style="margin-top:10px;justify-content:flex-end;display:flex;">
+          <span class="act-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>note</span>
+          <span class="act-btn"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>copy</span>
+        </div>
+      </div>
+
+      <div class="q-links">try:&nbsp; <a>a comparison table</a>·<a>quiz me on this</a>·<a>study outline</a></div>
+
+      <div class="duo">
+        <div>
+          <div class="cap">collapsed — idle</div>
+          <div class="q-mini">
+            <svg class="ic" style="width:14px;height:14px;color:var(--brass);opacity:.8;" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            Ask, or say what to drill…
+            <span style="flex:1;"></span>
+            <svg class="ic" style="width:15px;height:15px;color:var(--muted);" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </div>
+        </div>
+        <div style="flex:1;">
+          <div class="cap">focused — expands to lamp shell</div>
+          <div class="composer-zone" style="margin:0;">
+            <div class="ambience"></div>
+            <div class="shell lit"><div class="beam"></div>
+              <div style="padding:14px 16px 4px;">
+                <textarea class="mock" rows="1">Add a comparison table of their|</textarea>
+              </div>
+              <div class="a-toolbar" style="padding-bottom:12px;">
+                <span class="microcopy" style="opacity:.5;">↵ send · ⇧↵ newline</span>
+                <span style="flex:1;"></span>
+                <span class="chip">3 src</span>
+                <button class="send-circle"><span class="send-halo"></span><svg class="ic" viewBox="0 0 24 24" style="stroke:#0b0f1a;stroke-width:2;"><path d="M12 19V6M6 12l6-6 6 6"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ PANEL D — STUDIO DOCK ═══════════ -->
+<section class="panel" id="option-d">
+  <div class="panel-head">
+    <span class="panel-letter">D</span>
+    <span class="panel-name">Studio Dock</span>
+    <span class="panel-tag">context-aware · command bar</span>
+  </div>
+  <div class="panel-thesis">A floating dock that carries its grounding with it. You always see <i>which sources</i> you're talking to,
+  and slash-commands put the study generators one keystroke away. Streaming reads as a light-line across the dock's crown.</div>
+  <ul class="changes">
+    <li><b>Context strip</b>: toggleable source chips (✓ = grounded) live inside the dock — replaces hidden focus state.</li>
+    <li><b>Slash commands</b>: type “/” for quiz · flashcards · outline · compare, with ghost autocomplete inline.</li>
+    <li><b>Crown progress line</b> sweeps the dock's top edge while streaming; stop button sits beside send.</li>
+    <li><b>Answers keep cards but get a header</b>: model badge + time + consolidated ⋯ menu — cleaner than two loose action buttons.</li>
+  </ul>
+  <div class="stage dotgrid">
+    <div class="chatcol">
+      <div class="msg-user-row"><div class="bubble-user">Where do Alvarez and Kwan disagree about the 1997 crisis?</div></div>
+      <div class="answer-card">
+        <div class="ans-head">
+          <span class="model-dot">llama-3.3 · groq</span>
+          <span class="meta-time">2m ago</span>
+          <span style="flex:1;"></span>
+          <span class="act-btn" style="padding:2px 8px;">⋯</span>
+        </div>
+        <div class="md">
+          <p>They diverge on cause. <strong>Alvarez</strong> treats capital flight as the trigger — policy error invited speculation<sup class="cite">[1]</sup>. <strong>Kwan</strong> counters that external contagion, Japan's yen-carry unwind, did the real damage<sup class="cite">[2]</sup>.</p>
+          <ul>
+            <li><em>Alvarez:</em> domestic mismanagement, recoverable by policy</li>
+            <li><em>Kwan:</em> structural exposure, fixed only by regional coordination</li>
+          </ul>
+        </div>
+        <div class="cites-row">
+          <span class="cite-pill">1 · Alvarez · Ch. 4</span>
+          <span class="cite-pill">2 · Kwan · pp. 112–118</span>
+          <span style="flex:1;"></span>
+          <div class="acts">
+            <span class="act-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg></span>
+            <span class="act-btn"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dock-wrap">
+        <div class="dock">
+          <div class="dock-progress"></div>
+          <div class="ctx-strip">
+            <span class="ctx-label">talking to</span>
+            <span class="src-chip"><svg class="ic" style="width:11px;height:11px;color:var(--moon);" viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2zm0 0a2 2 0 0 1 2-2h12"/></svg>Alvarez 1997<span class="tick">✓</span></span>
+            <span class="src-chip"><svg class="ic" style="width:11px;height:11px;color:var(--moon);" viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2zm0 0a2 2 0 0 1 2-2h12"/></svg>Kwan 2009<span class="tick">✓</span></span>
+            <span class="src-chip off"><svg class="ic" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2zm0 0a2 2 0 0 1 2-2h12"/></svg>Radelet &amp; Sachs</span>
+            <span class="src-chip src-add">+ add</span>
+          </div>
+          <div style="position:relative;padding:10px 16px 12px;" class="slash-ghost">
+            <div class="cmd-menu">
+              <div class="cmd-item sel"><span class="k">/quiz</span><span class="d">make me a quiz on the hardest part</span></div>
+              <div class="cmd-item"><span class="k">/flashcards</span><span class="d">deck from my highlights</span></div>
+              <div class="cmd-item"><span class="k">/outline</span><span class="d">structured study outline</span></div>
+              <div class="cmd-item"><span class="k">/compare</span><span class="d">contrast across sources</span></div>
+            </div>
+            <div class="mock" style="min-height:22px;font-size:14px;"><span class="typed">/qui</span><span class="ghost">z — 10 items on the hardest part&nbsp;&nbsp;⇥</span></div>
+            <div style="display:flex;align-items:center;gap:6px;padding:2px 0 0;">
+              <button class="iconbtn" title="Attach source"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+              <button class="iconbtn" title="Voice input (coming soon)" style="opacity:.45;"><svg class="ic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+              <span style="flex:1;"></span>
+              <span class="chip brassy">Llama 3.3 ▾</span>
+              <button class="iconbtn" title="Stop generating" style="color:var(--rust);"><svg class="ic" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none"/></svg></button>
+              <button class="send-circle dim"><svg class="ic" viewBox="0 0 24 24" style="stroke:#0b0f1a;stroke-width:2;"><path d="M12 19V6M6 12l6-6 6 6"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="note">
+  Mockups are static HTML using Comtus production tokens — anything here can be built with the existing fx vocabulary
+  (BorderBeam · Spotlight · SOFT/SPRING motion). Mix &amp; match welcome.
+</footer>
+
+</body>
+</html>
