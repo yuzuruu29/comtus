@@ -4,7 +4,6 @@ import {
   BookOpen,
   Briefcase,
   ClockCounterClockwise,
-  DotsThreeVertical,
   FileText,
   GraduationCap,
   ListChecks,
@@ -86,7 +85,6 @@ export default function StudioPane({
   const [flow, setFlow] = useState<Flow>(null);
   const [aidKind, setAidKind] = useState<GenerationKind | undefined>(undefined);
   const [viewing, setViewing] = useState<Generation | null>(null);
-  const [showMoreTools, setShowMoreTools] = useState(false);
 
   // Note editor modal
   const [noteModalOpen, setNoteModalOpen] = useState(false);
@@ -225,13 +223,6 @@ export default function StudioPane({
             <h3 id="notes-section-title" className="font-display text-[14px] font-[450] text-ink">
               Notes
             </h3>
-            <button
-              onClick={() => setShowMoreTools((v) => !v)}
-              className="text-muted hover:text-ink transition-colors p-1"
-              title="More study tools"
-            >
-              <DotsThreeVertical size={16} weight="bold" />
-            </button>
           </div>
 
           {/* + Add note button (Screenshot 2 primary button) */}
@@ -263,23 +254,15 @@ export default function StudioPane({
           </div>
 
           {/* Extended Tools Drawer (Quiz, Exam, Essay, Flashcards, Slides) */}
-          <AnimatePresence>
-            {showMoreTools && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-3 space-y-1 overflow-hidden border-t border-hairline pt-3"
-              >
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted mb-1 px-1">
-                  More Study Generators
-                </div>
+          <div className="mt-3 space-y-1 overflow-hidden border-t border-hairline pt-3">
+            <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brasspale mb-1 px-1 font-semibold">
+              More Study Generators
+            </div>
                 {MORE_TOOLS.map((t) => (
                   <button
                     key={t.flow}
                     onClick={() => {
                       setFlow(t.flow);
-                      setShowMoreTools(false);
                     }}
                     className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover:bg-ink/[0.04] transition-colors"
                   >
@@ -290,9 +273,7 @@ export default function StudioPane({
                     </div>
                   </button>
                 ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+              </div>
 
           {/* Saved Notes & Artifacts List matching Screenshot 2 */}
           <div className="mt-5 space-y-2">
