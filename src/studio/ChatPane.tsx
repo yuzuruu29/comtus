@@ -485,60 +485,92 @@ export default function ChatPane({
                 {sessions.map((session) => {
                   const isActive = session.id === activeId;
                   const isRenaming = renamingId === session.id;
+                  const isArmed = armedDeleteId === session.id;
+
+                  if (isRenaming) {
+                    return (
+                      <div key={session.id} className="p-1">
+                        <input
+                          autoFocus
+                          value={renameDraft}
+                          onChange={(e) => setRenameDraft(e.target.value)}
+                          onBlur={() => void commitRename()}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") void commitRename();
+                            if (e.key === "Escape") setRenamingId(null);
+                          }}
+                          className="w-full rounded-[var(--radius-control)] border border-brass/50 bg-ground px-2 py-1 text-[12.5px] text-ink outline-none"
+                        />
+                      </div>
+                    );
+                  }
+
                   return (
-                    <div key={session.id} className="group relative">
-                      {isRenaming ? (
-                        <div className="p-1">
-                          <input
-                            autoFocus
-                            value={renameDraft}
-                            onChange={(e) => setRenameDraft(e.target.value)}
-                            onBlur={() => void commitRename()}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") void commitRename();
-                              if (e.key === "Escape") setRenamingId(null);
-                            }}
-                            className="w-full rounded-[var(--radius-control)] border border-brass/50 bg-ground px-2 py-1 text-[12.5px] text-ink outline-none"
-                          />
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => selectSession(session.id)}
-                          className={`flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12.5px] transition-colors ${
-                            isActive ? "bg-brass/10 text-brasspale font-medium" : "text-muted hover:bg-ink/[0.04] hover:text-ink"
+                    <div
+                      key={session.id}
+                      onClick={() => selectSession(session.id)}
+                      className={`group relative flex w-full items-center justify-between gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12.5px] cursor-pointer transition-colors ${
+                        isActive
+                          ? "bg-brass/10 text-brasspale font-medium"
+                          : "text-muted hover:bg-ink/[0.04] hover:text-ink"
+                      }`}
+                    >
+                      <span className="truncate min-w-0 flex-1">{session.title || "New chat"}</span>
+
+                      {/* Right-hand slot: timestamp at rest, swaps smoothly to edit/delete buttons on hover */}
+                      <div
+                        className="relative flex items-center justify-end shrink-0 pl-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Timestamp — visible at rest, fades out on hover */}
+                        <span
+                          className={`font-mono text-[9px] text-muted/60 transition-all duration-200 ${
+                            isArmed
+                              ? "opacity-0 invisible scale-95"
+                              : "opacity-70 group-hover:opacity-0 group-hover:invisible group-hover:scale-95"
                           }`}
                         >
-                          <span className="truncate flex-1">{session.title || "New chat"}</span>
-                          <span className="font-mono text-[9px] opacity-60">{timeAgo(session.updatedAt)}</span>
-                        </button>
-                      )}
+                          {timeAgo(session.updatedAt)}
+                        </span>
 
-                      {!isRenaming && (
-                        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Edit & Delete Actions — hidden at rest, fades & glides in on hover */}
+                        <div
+                          className={`absolute right-0 flex items-center gap-0.5 transition-all duration-200 ${
+                            isArmed
+                              ? "opacity-100 translate-x-0 pointer-events-auto"
+                              : "opacity-0 translate-x-1 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 group-hover:pointer-events-auto"
+                          }`}
+                        >
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               startRename(session);
                             }}
-                            className="flex h-6 w-6 items-center justify-center rounded text-muted hover:text-ink"
+                            className="flex h-5 w-5 items-center justify-center rounded text-muted/70 hover:bg-ink/[0.08] hover:text-ink transition-colors"
                             title="Rename"
+                            aria-label="Rename"
                           >
-                            <PencilSimple size={12} />
+                            <PencilSimple size={12} weight="bold" />
                           </button>
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               void removeSession(session.id);
                             }}
-                            className={`flex h-6 w-6 items-center justify-center rounded ${
-                              armedDeleteId === session.id ? "text-rust bg-rust/15" : "text-muted hover:text-rust"
+                            className={`flex h-5 w-5 items-center justify-center rounded transition-colors ${
+                              isArmed
+                                ? "bg-rust/20 text-rust"
+                                : "text-muted/70 hover:bg-rust/15 hover:text-rust"
                             }`}
-                            title="Delete"
+                            title={isArmed ? "Click again to confirm delete" : "Delete"}
+                            aria-label="Delete"
                           >
-                            <Trash size={12} />
+                            <Trash size={12} weight={isArmed ? "fill" : "bold"} />
                           </button>
                         </div>
-                      )}
+                      </div>
                     </div>
                   );
                 })}
