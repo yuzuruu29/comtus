@@ -1,6 +1,14 @@
-/** Context-aware cover emoji resolver for notebooks.
+/** Context-aware cover glyph and emoji resolver for notebooks.
  * Matches keywords in the notebook title to evocative study glyphs,
- * or falls back to a deterministic themed emoji from a curated palette. */
+ * or falls back to a deterministic themed glyph/emoji. */
+
+import { resolveStudyGlyphKey, type StudyGlyphKey } from "../components/icons/StudyGlyph";
+
+export { resolveStudyGlyphKey, type StudyGlyphKey };
+
+export function getStudyGlyphKey(name: string): StudyGlyphKey {
+  return resolveStudyGlyphKey(name);
+}
 
 const KEYWORD_MAP: Array<{ regex: RegExp; emoji: string }> = [
   { regex: /health|nurs|medic|doctor|pharma|bio|clinic|patient|care/i, emoji: "🩺" },
@@ -36,7 +44,6 @@ export function getNotebookCoverEmoji(name: string): string {
     }
   }
 
-  // Deterministic fallback based on name hash
   let hash = 0;
   for (let i = 0; i < trimmed.length; i++) {
     hash = (hash << 5) - hash + trimmed.charCodeAt(i);

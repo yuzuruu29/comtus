@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { scrollToSection } from "../lib/scroll";
+import { ComtusEmblem } from "../components/brand/ComtusLogo";
 
 const LINKS = [
   { label: "The Method", hash: "#method" },
@@ -169,17 +170,6 @@ export default function Nav({ ready }: { ready: boolean }) {
   );
 }
 
-export function FlameMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 64 64" className={className} aria-hidden>
-      <path
-        d="M32 8 C 39 17, 44 23, 44 30 A 12 12 0 1 1 20 30 C 20 23, 25 17, 32 8 Z"
-        fill="#E3B04B"
-      />
-      <path
-        d="M32 19 C 35.5 23.5, 38 26.5, 38 30 A 6 6 0 1 1 26 30 C 26 26.5, 28.5 23.5, 32 19 Z"
-        fill="#F0CE8C"
-      />
-    </svg>
-  );
+export function FlameMark({ className = "h-6 w-6" }: { className?: string }) {
+  return <ComtusEmblem size={24} className={className} />;
 }

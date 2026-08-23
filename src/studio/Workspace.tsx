@@ -1,11 +1,13 @@
 import { useState, type ComponentType } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Books, CaretLeft, ChatCircle, Crown, Flame, GearSix, Notebook } from "@phosphor-icons/react";
+import { Books, CaretLeft, ChatCircle, GearSix, Notebook } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
 import { useCallSettings, useSettings } from "../lib/settings";
 import { MODELS } from "../lib/llm";
 import { detectPlatform, isTauri } from "../lib/desktop";
+import StudyGlyph from "../components/icons/StudyGlyph";
+import { ProBadge } from "../components/brand/BrandControls";
 import { SPRING, SOFT, deskPane } from "./fx";
 import SourcesPane from "./SourcesPane";
 import ChatPane from "./ChatPane";
@@ -262,12 +264,6 @@ function WorkspaceHeader({
   const tokensUsed = useSettings((s) => s.tokensUsed || 0);
   const remainingTokens = Math.max(0, tokenBalance - tokensUsed);
 
-  const formatTokens = (n: number) => {
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-    if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k`;
-    return n.toLocaleString();
-  };
-
   const openAnalytics = async () => {
     if (!notebook) return;
     const sources = await db.sources.where("notebookId").equals(notebook.id).toArray();
@@ -309,9 +305,7 @@ function WorkspaceHeader({
         >
           <CaretLeft size={18} weight="light" />
         </Link>
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brass/10 text-brass shrink-0">
-          <Flame size={15} weight="light" />
-        </div>
+        <StudyGlyph name={notebook?.name} size="sm" />
         <input
           defaultValue={notebook?.name}
           key={notebook?.name}
@@ -353,19 +347,12 @@ function WorkspaceHeader({
 
           {/* Plan Tier Status Badge (PRO only if Anthropic plan availed, else BYOK) */}
           {isPro && (
-            <button
+            <ProBadge
+              planTier="PRO"
+              remainingTokens={remainingTokens}
               onClick={onSettings}
-              className="hidden sm:flex items-center gap-1 rounded-full border border-brass/40 bg-brass/[0.12] px-2 py-0.5 font-mono text-[10px] font-medium text-brasspale hover:bg-brass/20 transition-all shadow-[0_0_10px_rgba(227,176,75,0.12)]"
-              title={`Anthropic Pro Plan Active · ${remainingTokens.toLocaleString()} tokens remaining`}
-            >
-              <Crown size={10} weight="fill" className="text-brass" />
-              <span>PRO</span>
-              {tokenBalance > 0 && (
-                <span className="border-l border-brass/30 pl-1 text-[9px] text-brasspale/70 font-normal">
-                  {formatTokens(remainingTokens)}
-                </span>
-              )}
-            </button>
+              className="hidden sm:flex"
+            />
           )}
 
           {/* User Avatar Badge matching Screenshot 2 */}

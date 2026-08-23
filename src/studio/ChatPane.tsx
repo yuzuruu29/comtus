@@ -44,7 +44,7 @@ import type { ChatMessage, ChatSession, Notebook, Citation } from "../lib/types"
 import { deriveSessionTitle } from "../lib/sessionText";
 import { streamChat, friendlyError, isAbort } from "../lib/llm";
 import { useSettings, useCallSettings } from "../lib/settings";
-import { getNotebookCoverEmoji } from "../lib/emoji";
+import StudyGlyph from "../components/icons/StudyGlyph";
 import { Collapse, SOFT, SPRING, HOUSE, Spotlight, BorderBeam } from "./fx";
 import { timeAgo } from "./ui";
 
@@ -402,7 +402,6 @@ export default function ChatPane({
   );
 
   const hasText = !!input.trim();
-  const coverEmoji = getNotebookCoverEmoji(notebook?.name ?? "");
   const tkEstimate = useMemo(
     () =>
       Math.round(
@@ -554,9 +553,9 @@ export default function ChatPane({
         <div className="mx-auto w-full max-w-3xl px-6 pb-8 pt-6">
           {/* Initial Overview Card matching Screenshot 2 */}
           <div className="mb-8 rounded-2xl border border-hairline/80 bg-surface/50 p-6 shadow-sm">
-            {/* Top Row: Mascot Emoji & Title */}
-            <div className="flex items-center gap-3 mb-2">
-              <span className="text-[28px] select-none">{coverEmoji}</span>
+            {/* Top Row: Study Glyph & Title */}
+            <div className="flex items-center gap-3.5 mb-2">
+              <StudyGlyph name={notebook.name} size="lg" />
               <div>
                 <h1 className="font-display text-[22px] font-[500] leading-snug text-ink">
                   {notebook.name}

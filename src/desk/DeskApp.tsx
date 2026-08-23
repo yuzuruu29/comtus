@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { Flame, GearSix, MagnifyingGlass, Crown } from "@phosphor-icons/react";
+import { GearSix } from "@phosphor-icons/react";
 import { createNotebook, db } from "../lib/db";
 import type { Notebook as NotebookRow } from "../lib/types";
 import { useCallSettings, useSettings } from "../lib/settings";
 import { MODELS } from "../lib/llm";
-import { detectPlatform, isTauri } from "../lib/desktop";
+import { isTauri } from "../lib/desktop";
+import ComtusLogo from "../components/brand/ComtusLogo";
+import { ProBadge } from "../components/brand/BrandControls";
 import DeskShell from "../studio/DeskShell";
 import SettingsModal from "../studio/SettingsModal";
 import CaptionButtons from "../studio/Titlebar";
 import { LampPulse, Modal, btnGhost } from "../studio/ui";
 import { HOUSE } from "../studio/fx";
-import { useDesk } from "../studio/DeskContext";
 import { useNotebookDesk } from "../studio/useNotebookDesk";
-import { modLabel } from "../studio/shortcuts";
 import LibraryRail from "./LibraryRail";
 import DeskHome from "./DeskHome";
 import NotebookDesk from "./NotebookDesk";
@@ -328,8 +328,6 @@ function AppHeader({
   onHome: () => void;
   onSettings: () => void;
 }) {
-  const desk = useDesk();
-  const platform = detectPlatform();
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [stats, setStats] = useState<{ sources: number; tokens: number; gens: number } | null>(null);
 
@@ -337,12 +335,6 @@ function AppHeader({
   const tokenBalance = useSettings((s) => s.tokenBalance || 0);
   const tokensUsed = useSettings((s) => s.tokensUsed || 0);
   const remainingTokens = Math.max(0, tokenBalance - tokensUsed);
-
-  const formatTokens = (n: number) => {
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-    if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k`;
-    return n.toLocaleString();
-  };
 
   const openAnalytics = async () => {
     if (!notebook) return;
@@ -381,15 +373,10 @@ function AppHeader({
         <button
           type="button"
           onClick={onHome}
-          className="no-drag flex shrink-0 select-none items-center gap-2 rounded-[var(--radius-control)] px-1.5 py-1 hover:bg-ink/5"
+          className="no-drag flex shrink-0 select-none items-center rounded-[var(--radius-control)] px-1.5 py-1 hover:bg-ink/5"
           aria-label="Comtus home"
         >
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-brass/10 text-brass">
-            <Flame size={14} weight="light" />
-          </div>
-          <span className="font-display text-[12px] font-[500] tracking-[0.22em] text-ink">
-            COMTUS
-          </span>
+          <ComtusLogo variant="full" size="xs" />
         </button>
         {notebook && (
           <>
@@ -430,14 +417,6 @@ function AppHeader({
             {modelLabel} · {effortLabel}
           </button>
           <button
-            onClick={desk.openPalette}
-            className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2 py-1.5 font-mono text-[10.5px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
-            aria-label="Command palette"
-          >
-            <MagnifyingGlass size={13} weight="light" />
-            {modLabel(platform)}K
-          </button>
-          <button
             onClick={onSettings}
             className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
             aria-label="Settings"
@@ -447,19 +426,12 @@ function AppHeader({
 
           {/* Plan Tier Status Badge (PRO only if Anthropic plan availed, else BYOK) */}
           {isPro && (
-            <button
+            <ProBadge
+              planTier="PRO"
+              remainingTokens={remainingTokens}
               onClick={onSettings}
-              className="hidden sm:flex items-center gap-1 rounded-full border border-brass/40 bg-brass/[0.12] px-2 py-0.5 font-mono text-[10px] font-medium text-brasspale hover:bg-brass/20 transition-all shadow-[0_0_10px_rgba(227,176,75,0.12)]"
-              title={`Anthropic Pro Plan Active · ${remainingTokens.toLocaleString()} tokens remaining`}
-            >
-              <Crown size={10} weight="fill" className="text-brass" />
-              <span>PRO</span>
-              {tokenBalance > 0 && (
-                <span className="border-l border-brass/30 pl-1 text-[9px] text-brasspale/70 font-normal">
-                  {formatTokens(remainingTokens)}
-                </span>
-              )}
-            </button>
+              className="hidden sm:flex"
+            />
           )}
 
           {/* User Avatar Badge */}

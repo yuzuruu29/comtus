@@ -2,16 +2,12 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  Crown,
   DotsThreeVertical,
   DownloadSimple,
-  Flame,
-  GearSix,
   ListDashes,
   MagnifyingGlass,
   PencilSimple,
   Plus,
-  Sparkle,
   SquaresFour,
   Trash,
   X,
@@ -19,14 +15,14 @@ import {
 import { db, createNotebook, deleteNotebook, touchNotebook } from "../lib/db";
 import type { Notebook, Source } from "../lib/types";
 import { detectPlatform, isTauri } from "../lib/desktop";
-import { getNotebookCoverEmoji } from "../lib/emoji";
+import StudyGlyph from "../components/icons/StudyGlyph";
+import ComtusLogo, { ComtusEmblem } from "../components/brand/ComtusLogo";
+import { ByokBadge, ProBadge, SettingsButton, CreateNotebookEmblem } from "../components/brand/BrandControls";
 import { SOFT, Spotlight } from "./fx";
 import { timeAgo, Modal, Field, inputCls, btnLamp, btnGhost } from "./ui";
 import SettingsModal from "./SettingsModal";
 import DeskShell from "./DeskShell";
 import CaptionButtons from "./Titlebar";
-import { useDesk } from "./DeskContext";
-import { modLabel } from "./shortcuts";
 import { useSettings } from "../lib/settings";
 
 type SortOption = "recent" | "az" | "oldest" | "sources";
@@ -178,7 +174,7 @@ export default function NotebookList({
             <div className="mt-4 mb-6 rounded-[var(--radius-dialog)] border border-brass/30 bg-brass/[0.06] p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3.5">
-                  <Flame className="breathe mt-0.5 h-5 w-5 shrink-0 text-brass" weight="light" />
+                  <ComtusEmblem size={22} breathe className="mt-0.5 shrink-0" />
                   <div>
                     <div className="text-[14px] font-medium text-ink">Light the lamp</div>
                     <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted">
@@ -349,9 +345,7 @@ export default function NotebookList({
                 onClick={() => setCreating(true)}
                 className="group flex min-h-[175px] flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed border-hairline-strong bg-surface/30 p-5 text-center transition-all duration-200 hover:border-brass/50 hover:bg-surface/60 hover-lift"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brass/10 text-brass transition-transform duration-200 group-hover:scale-110 group-hover:bg-brass/20">
-                  <Plus size={22} weight="light" />
-                </div>
+                <CreateNotebookEmblem />
                 <span className="font-display text-[15px] font-[450] text-ink/90 group-hover:text-brasspale">
                   Create new notebook
                 </span>
@@ -360,7 +354,6 @@ export default function NotebookList({
               {/* Notebook Cards */}
               <AnimatePresence initial={false}>
                 {processedNotebooks.map((nb) => {
-                  const coverEmoji = getNotebookCoverEmoji(nb.name);
                   const isMenuOpen = menuOpenId === nb.id;
 
                   return (
@@ -377,11 +370,9 @@ export default function NotebookList({
                         transition={SOFT}
                         className="group relative flex min-h-[175px] flex-col justify-between rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-5 transition-colors hover:border-brass/35 hover:bg-surface"
                       >
-                        {/* Top Row: Cover Emoji & 3-Dot Menu */}
+                        {/* Top Row: Study Glyph & 3-Dot Menu */}
                         <div className="flex items-start justify-between">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink/[0.04] text-[20px] shadow-sm select-none">
-                            {coverEmoji}
-                          </div>
+                          <StudyGlyph name={nb.name} size="md" />
 
                           {/* 3-Dot Context Menu */}
                           <div className="relative" data-notebook-menu>
@@ -472,7 +463,6 @@ export default function NotebookList({
             /* List View Mode */
             <div className="divide-y divide-hairline rounded-[var(--radius-dialog)] border border-hairline bg-surface/50 overflow-hidden">
               {processedNotebooks.map((nb) => {
-                const coverEmoji = getNotebookCoverEmoji(nb.name);
                 return (
                   <div
                     key={nb.id}
@@ -482,9 +472,7 @@ export default function NotebookList({
                       onClick={() => onOpen(nb.id)}
                       className="flex min-w-0 flex-1 items-center gap-3.5 text-left"
                     >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ink/[0.04] text-[17px]">
-                        {coverEmoji}
-                      </span>
+                      <StudyGlyph name={nb.name} size="sm" />
                       <div className="min-w-0">
                         <span className="block truncate font-display text-[15px] font-[450] text-ink group-hover:text-brasspale">
                           {nb.name}
@@ -616,7 +604,6 @@ export default function NotebookList({
 }
 
 function ShelfHeader({ onSettings }: { onSettings: () => void }) {
-  const desk = useDesk();
   const tauri = isTauri();
   const platform = detectPlatform();
   const macPad = tauri && platform === "mac";
@@ -627,75 +614,32 @@ function ShelfHeader({ onSettings }: { onSettings: () => void }) {
   const tokensUsed = useSettings((s) => s.tokensUsed || 0);
   const remainingTokens = Math.max(0, tokenBalance - tokensUsed);
 
-  const formatTokens = (n: number) => {
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-    if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k`;
-    return n.toLocaleString();
-  };
   return (
     <header
       data-tauri-drag-region={tauri ? true : undefined}
       className={`desk-header flex items-center justify-between pb-6 pt-[calc(1.25rem+var(--sat))] border-b border-hairline ${macPad ? "pl-[78px]" : ""}`}
     >
       {tauri ? (
-        <div className="flex select-none items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brass/10 text-brass">
-            <Flame className="h-4.5 w-4.5" weight="light" />
-          </div>
-          <span className="font-display text-[17px] font-[500] tracking-[-0.01em] text-ink">
-            COMTUS
-          </span>
+        <div className="flex select-none items-center">
+          <ComtusLogo variant="full" size="sm" />
         </div>
       ) : (
-        <Link to="/" className="flex items-center gap-2.5" aria-label="Back to landing">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brass/10 text-brass">
-            <Flame className="h-4.5 w-4.5" weight="light" />
-          </div>
-          <span className="font-display text-[17px] font-[500] tracking-[-0.01em] text-ink">
-            COMTUS
-          </span>
+        <Link to="/" className="flex items-center" aria-label="Back to landing">
+          <ComtusLogo variant="full" size="sm" />
         </Link>
       )}
-      <div className="no-drag flex items-center gap-2">
-        <button
-          type="button"
-          onClick={desk.openPalette}
-          className="hidden rounded-[var(--radius-control)] px-2.5 py-1.5 font-mono text-[11px] text-muted hover:text-ink sm:inline border border-hairline bg-surface/50"
-        >
-          {modLabel(platform)}K
-        </button>
-        <button
-          onClick={onSettings}
-          className="flex min-h-[36px] items-center gap-2 rounded-[var(--radius-control)] border border-hairline bg-surface/60 px-3.5 py-1.5 text-[12.5px] text-muted hover:text-ink hover:bg-surface transition-colors"
-        >
-          <GearSix size={14} weight="light" />
-          Settings
-        </button>
+      <div className="no-drag flex items-center gap-2.5">
+        <SettingsButton onClick={onSettings} />
 
-        {/* Plan Status Pill */}
+        {/* Plan Status Badge */}
         {isPro ? (
-          <button
+          <ProBadge
+            planTier={planTier}
+            remainingTokens={remainingTokens}
             onClick={onSettings}
-            className="flex items-center gap-1.5 rounded-full border border-brass/40 bg-brass/[0.12] px-3 py-1 font-mono text-[10.5px] font-medium text-brasspale hover:bg-brass/20 transition-all shadow-[0_0_12px_rgba(227,176,75,0.15)]"
-            title={`Anthropic Pro Plan Active (${planTier.toUpperCase()}) · ${remainingTokens.toLocaleString()} tokens available`}
-          >
-            <Crown size={12} weight="fill" className="text-brass" />
-            <span>PRO</span>
-            {tokenBalance > 0 && (
-              <span className="border-l border-brass/30 pl-1.5 text-[9.5px] text-brasspale/80 font-normal">
-                {formatTokens(remainingTokens)} tok
-              </span>
-            )}
-          </button>
+          />
         ) : (
-          <button
-            onClick={onSettings}
-            className="flex items-center gap-1.5 rounded-full border border-hairline bg-ink/[0.04] px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.08em] text-muted hover:border-brass/40 hover:text-brasspale transition-colors"
-            title="BYOK Mode (Bring Your Own Key) — Click to view Anthropic Pro Plans"
-          >
-            <span>BYOK</span>
-            <Sparkle size={11} className="text-muted/60" />
-          </button>
+          <ByokBadge onClick={onSettings} />
         )}
 
         <CaptionButtons />

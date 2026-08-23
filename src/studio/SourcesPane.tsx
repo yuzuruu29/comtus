@@ -6,7 +6,6 @@ import {
   FileJs,
   FilePdf,
   FileText,
-  Flame,
   Globe,
   Image as ImageIcon,
   Plus,
@@ -17,6 +16,7 @@ import {
   X,
   YoutubeLogo,
 } from "@phosphor-icons/react";
+import { ComtusEmblem } from "../components/brand/ComtusLogo";
 import { loadFocus, saveFocus } from "./focus";
 import { db, deleteSource } from "../lib/db";
 import type { Source } from "../lib/types";
@@ -421,7 +421,7 @@ export default function SourcesPane({
 
         {sources.length === 0 && !importing && (
           <div className="px-4 py-12 text-center">
-            <Flame size={20} weight="light" className="breathe mx-auto mb-3 text-brass/60" />
+            <ComtusEmblem size={24} breathe className="mx-auto mb-3" />
             <h3 className="font-display text-[14.5px] font-[450] text-ink">No sources added yet</h3>
             <p className="mt-2 text-[12px] leading-relaxed text-muted">
               Add PDFs, notes, documents, or links. Your questions and study aids ground directly in your materials.

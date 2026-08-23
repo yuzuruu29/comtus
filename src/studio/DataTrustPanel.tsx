@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Flame, Trash } from "@phosphor-icons/react";
+import { Trash } from "@phosphor-icons/react";
 import { deleteNotebook } from "../lib/db";
 import { exportBackup, importBackup, importBackupNative } from "../lib/backup";
 import { isTauri } from "../lib/desktop";
 import { useSettings } from "../lib/settings";
 import { formatBytes, getStorageStats, type StorageStats } from "../lib/storageStats";
+import { ComtusEmblem } from "../components/brand/ComtusLogo";
 import { btnGhost, timeAgo } from "./ui";
 
 function formatBackupAt(ts: number): string {
@@ -94,7 +95,7 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
   return (
     <div className="rounded-xl border border-hairline bg-ink/[0.02] px-4 py-3.5">
       <div className="flex items-center gap-2 text-body text-ink/85">
-        <Flame size={14} className="text-brass" weight="light" />
+        <ComtusEmblem size={16} />
         Your data
       </div>
       <p className="mt-1.5 text-label leading-relaxed text-muted">
