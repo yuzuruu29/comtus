@@ -10,6 +10,7 @@ import remarkGfm from "remark-gfm";
 import { externalMarkdownComponents } from "./ExternalLink";
 import { AnimatePresence, motion } from "motion/react";
 import {
+  ArrowDown,
   ArrowRight,
   ArrowUp,
   BookmarkSimple,
@@ -102,6 +103,7 @@ export default function ChatPane({
   const loadToken = useRef(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(false);
+  const [showJump, setShowJump] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
   const activeSession = sessions.find((s) => s.id === activeId) ?? null;
@@ -175,10 +177,16 @@ export default function ChatPane({
     return () => abortRef.current?.abort();
   }, []);
 
+  useEffect(() => {
+    if (!streaming) setShowJump(false);
+  }, [streaming]);
+
   const onScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
-    stickBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    const stuck = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    stickBottom.current = stuck;
+    setShowJump(!stuck);
   };
 
   const rememberActive = (nbId: string, id: string) => {
@@ -638,6 +646,27 @@ export default function ChatPane({
             focused || streaming ? "is-lit" : ""
           }`}
         />
+        <AnimatePresence>
+          {streaming && showJump && (
+            <motion.button
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8, transition: { duration: 0.12 } }}
+              transition={SOFT}
+              onClick={() => {
+                const el = scrollRef.current;
+                if (el) el.scrollTop = el.scrollHeight;
+                stickBottom.current = true;
+                setShowJump(false);
+              }}
+              className="absolute -top-9 right-4 z-20 flex items-center gap-1.5 rounded-full border border-hairline-strong bg-raised px-3 py-1.5 text-[11.5px] text-ink shadow-modal"
+            >
+              <ArrowDown size={11} weight="light" />
+              Jump to latest
+              <span className="h-1 w-1 rounded-full bg-brass" />
+            </motion.button>
+          )}
+        </AnimatePresence>
         <Spotlight radius={230} className="mx-auto w-full max-w-3xl rounded-[var(--radius-dialog)]">
           <motion.div
             data-focused={focused ? "" : undefined}
