@@ -28,6 +28,7 @@ import {
   Stack,
   Stop,
   Trash,
+  X,
 } from "@phosphor-icons/react";
 import { loadFocus, saveFocus } from "./focus";
 import {
@@ -56,9 +57,18 @@ const STARTERS = [
 ];
 
 const FOLLOW_UPS = [
-  "What are the main key takeaways and practical implications?",
-  "Compare and contrast the primary themes across sources",
-  "Generate a detailed study outline based on these materials",
+  {
+    label: "Key takeaways & practical implications",
+    prompt: "What are the main key takeaways and practical implications?",
+  },
+  {
+    label: "Compare and contrast themes across sources",
+    prompt: "Compare and contrast the primary themes across sources",
+  },
+  {
+    label: "Generate a detailed study outline",
+    prompt: "Generate a detailed study outline based on these materials",
+  },
 ];
 
 const lastSessionKey = (notebookId: string) => `comtus:lastChat:${notebookId}`;
@@ -97,6 +107,7 @@ export default function ChatPane({
   const [thinkingOpen, setThinkingOpen] = useState(true);
   const [error, setError] = useState("");
   const [toastNoteSaved, setToastNoteSaved] = useState(false);
+  const [dismissedFollowUps, setDismissedFollowUps] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickBottom = useRef(true);
@@ -220,6 +231,7 @@ export default function ChatPane({
         .then((msgs) => {
           if (token !== loadToken.current) return;
           setMessages(msgs);
+          setDismissedFollowUps(false);
           stickBottom.current = true;
         });
     },
@@ -353,6 +365,7 @@ export default function ChatPane({
 
       const history = [...messages, userMsg];
       setMessages(history);
+      setDismissedFollowUps(false);
       stickBottom.current = true;
       setThinkingOpen(true);
       setStreaming({ text: "", thinking: "", phase: "reading" });
@@ -851,27 +864,38 @@ export default function ChatPane({
           </motion.div>
         </Spotlight>
 
-        {/* Follow-up rail — only once there is an answer to follow up on */}
+        {/* Follow-up rail — only once there is an answer to follow up on and user has not dismissed */}
         <AnimatePresence>
-          {!streaming && messages.some((m) => m.role === "assistant") && (
+          {!streaming && !dismissedFollowUps && messages.some((m) => m.role === "assistant") && (
             <motion.div
               initial={{ opacity: 0, y: 6, height: 0 }}
               animate={{ opacity: 1, y: 0, height: "auto" }}
               exit={{ opacity: 0, y: 4, height: 0 }}
               transition={SOFT}
-              className="no-scrollbar scroll-mask-h relative mx-auto mt-2.5 flex w-full max-w-3xl items-center gap-2 overflow-x-auto px-1 py-0.5 sm:justify-center"
+              className="relative mx-auto mt-2 flex w-full max-w-3xl flex-wrap items-center justify-center gap-1.5 px-2 py-0.5"
             >
-              {FOLLOW_UPS.map((prompt) => (
+              {FOLLOW_UPS.map((item) => (
                 <button
-                  key={prompt}
-                  onClick={() => void send(prompt)}
-                  className="group flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-hairline/70 bg-surface/80 px-3 py-1.5 text-[11.5px] font-medium text-muted shadow-xs transition-all duration-200 hover:border-brass/45 hover:bg-brass/[0.08] hover:text-brasspale active:scale-[0.98]"
+                  key={item.label}
+                  type="button"
+                  onClick={() => void send(item.prompt)}
+                  title={item.prompt}
+                  className="group flex items-center gap-1.5 rounded-full border border-hairline/80 bg-surface/90 px-3 py-1 text-[11.5px] font-medium text-muted shadow-xs transition-all duration-200 hover:border-brass/45 hover:bg-brass/[0.08] hover:text-brasspale active:scale-[0.98]"
                 >
-                  <Sparkle size={10} weight="fill" className="shrink-0 text-brass/50 group-hover:text-brass transition-colors" />
-                  <span className="max-w-[19rem] truncate">{prompt}</span>
+                  <Sparkle size={10} weight="fill" className="shrink-0 text-brass/60 group-hover:text-brass transition-colors" />
+                  <span>{item.label}</span>
                   <ArrowRight size={11} className="shrink-0 opacity-50 group-hover:translate-x-0.5 group-hover:opacity-90 transition-all" />
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setDismissedFollowUps(true)}
+                title="Dismiss suggestions"
+                aria-label="Dismiss suggestions"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-muted/50 transition-colors hover:bg-ink/[0.08] hover:text-ink active:scale-90"
+              >
+                <X size={12} weight="bold" />
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
