@@ -635,7 +635,7 @@ export default function ChatPane({
       {/* Composer — console deck. Three bands inside the lamp-lit
           shell: context strip, textarea, action rail. Wakes on
           focus with beam + lamplight as before. */}
-      <div className="relative shrink-0 px-4 pb-[calc(0.9rem+var(--sab))] pt-2 sm:px-5 sm:pb-[0.95rem]">
+      <div className="relative shrink-0 px-4 pb-[0.9rem] pt-2 sm:px-5 sm:pb-[0.95rem] lg:pb-[calc(0.95rem+var(--sab))]">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 -top-7 h-7 bg-gradient-to-b from-transparent to-ground"
@@ -704,16 +704,16 @@ export default function ChatPane({
                 <button
                   onClick={() => onOpenSettings?.()}
                   title="Change model in Settings"
-                  className="flex items-center gap-1.5 rounded-full border border-brass/35 bg-brass/[0.07] px-2.5 py-1 font-mono text-[10px] tracking-[0.04em] text-brasspale transition-colors hover:bg-brass/[0.14]"
+                  className="flex min-w-0 items-center gap-1.5 rounded-full border border-brass/35 bg-brass/[0.07] px-2.5 py-1 font-mono text-[10px] tracking-[0.04em] text-brasspale transition-colors hover:bg-brass/[0.14]"
                 >
-                  <Sparkle size={10} weight="fill" className="text-brass" />
-                  <span className="max-w-[11rem] truncate">{modelLabel ?? cs.model}</span>
-                  <CaretDown size={9} />
+                  <Sparkle size={10} weight="fill" className="shrink-0 text-brass" />
+                  <span className="max-w-[9rem] truncate sm:max-w-[11rem]">{modelLabel ?? cs.model}</span>
+                  <CaretDown size={9} className="shrink-0" />
                 </button>
                 {notebook && <FocusMenu notebook={notebook} sourcesVersion={sourcesVersion} />}
                 <span className="flex-1" />
                 {sourceCount > 0 && (
-                  <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted/60">
+                  <span className="hidden font-mono text-[9px] uppercase tracking-[0.16em] text-muted/60 sm:inline">
                     grounded
                   </span>
                 )}
@@ -764,7 +764,7 @@ export default function ChatPane({
                       <button
                         key={label}
                         onClick={() => void send(prompt)}
-                        className="rounded-full border border-hairline bg-ink/[0.03] px-2.5 py-1 text-[11px] text-muted transition-colors hover:border-brass/40 hover:bg-brass/[0.08] hover:text-brasspale"
+                        className="shrink-0 whitespace-nowrap rounded-full border border-hairline bg-ink/[0.03] px-2 py-1 text-[10.5px] text-muted transition-colors hover:border-brass/40 hover:bg-brass/[0.08] hover:text-brasspale sm:px-2.5 sm:text-[11px]"
                       >
                         {label}
                       </button>
@@ -773,7 +773,7 @@ export default function ChatPane({
                 )}
                 <span className="flex-1" />
                 {tkEstimate > 0 && (
-                  <span className="mr-1 font-mono text-[9.5px] tracking-[0.06em] text-muted/60">
+                  <span className="mr-1 hidden font-mono text-[9.5px] tracking-[0.06em] text-muted/60 sm:inline">
                     ~{tkEstimate.toLocaleString()} tk
                   </span>
                 )}
@@ -844,7 +844,7 @@ export default function ChatPane({
 
         {/* Follow-up rail — only once there is an answer to follow up on */}
         {!streaming && messages.some((m) => m.role === "assistant") && (
-          <div className="relative mx-auto mt-2 flex w-full max-w-3xl items-center justify-center gap-2 overflow-x-auto scroll-thin">
+          <div className="relative mx-auto mt-2 flex w-full max-w-3xl items-center justify-start gap-2 overflow-x-auto scroll-thin sm:justify-center">
             {FOLLOW_UPS.map((prompt) => (
               <button
                 key={prompt}
@@ -1095,11 +1095,11 @@ function FocusMenu({
         aria-haspopup="listbox"
         aria-expanded={open}
         title="Choose which sources answers ground in"
-        className="flex items-center gap-1.5 rounded-full border border-hairline bg-ink/[0.03] px-2.5 py-1 font-mono text-[10px] tracking-[0.04em] text-muted transition-colors hover:border-brass/40 hover:text-brasspale"
+        className="flex min-w-0 items-center gap-1.5 rounded-full border border-hairline bg-ink/[0.03] px-2.5 py-1 font-mono text-[10px] tracking-[0.04em] text-muted transition-colors hover:border-brass/40 hover:text-brasspale"
       >
-        <Stack size={11} weight="light" />
-        {label}
-        <CaretDown size={9} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        <Stack size={11} weight="light" className="shrink-0" />
+        <span className="max-w-[10rem] truncate sm:max-w-none">{label}</span>
+        <CaretDown size={9} className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       <AnimatePresence>
         {open && (
