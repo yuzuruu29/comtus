@@ -868,6 +868,7 @@ function MessageBubble({
 }) {
   const [open, setOpen] = useState(thinkingOpen);
   const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
   useEffect(() => setOpen(thinkingOpen), [thinkingOpen]);
 
   const copyText = () => {
@@ -884,7 +885,7 @@ function MessageBubble({
         transition={SPRING}
         className="flex justify-end"
       >
-        <div className="max-w-[82%] rounded-2xl bg-brass/[0.12] border border-brass/25 px-4 py-3 text-[14px] leading-relaxed text-ink shadow-sm">
+        <div className="max-w-[82%] rounded-2xl bg-ink/[0.05] border border-hairline-strong px-4 py-3 text-[14px] leading-relaxed text-ink shadow-sm">
           {msg.content}
         </div>
       </motion.div>
@@ -900,7 +901,7 @@ function MessageBubble({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={SOFT}
-      className="space-y-3 rounded-2xl border border-hairline/80 bg-surface/70 p-4 shadow-sm"
+      className="space-y-3"
     >
       {/* Reasoning Process Drawer */}
       {hasThinking && (
@@ -945,46 +946,57 @@ function MessageBubble({
 
       {/* Citations list */}
       {citations.length > 0 && !streaming && (
-        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-hairline/60">
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
           <Quotes size={13} weight="light" className="text-muted/60 mr-1" />
           {citations.map((c, i) => (
             <button
               key={i}
               onClick={() => c.sourceId && onCite(c.sourceId, c.startChar)}
               title={c.citedText.slice(0, 160)}
-              className="rounded-md border border-hairline bg-surface px-2 py-0.5 font-mono text-[10.5px] text-brasspale hover:border-brass/40 hover:bg-brass/10 transition-colors"
+              className="rounded-md border border-hairline bg-ink/[0.03] px-2 py-0.5 font-mono text-[10.5px] text-brasspale hover:border-brass/40 hover:bg-brass/10 transition-colors"
             >
-              [{i + 1}] {c.sourceTitle.length > 24 ? `${c.sourceTitle.slice(0, 24)}…` : c.sourceTitle}
+              {i + 1} · {c.sourceTitle.length > 24 ? `${c.sourceTitle.slice(0, 24)}…` : c.sourceTitle}
             </button>
           ))}
         </div>
       )}
 
-      {/* Action Footer (Save to Note & Copy) */}
+      {/* Action bar — always visible, with explicit success feedback */}
       {!streaming && msg.content && (
-        <div className="flex items-center justify-between pt-1 text-[11.5px] text-muted">
-          <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] opacity-60">
+        <div aria-live="polite" className="flex items-center justify-between pt-1">
+          <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted opacity-60">
             {timeAgo(msg.createdAt)}
           </span>
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => {
+                if (saved) return;
                 const title = deriveSessionTitle(msg.content) || "Saved note";
                 onSaveToNote?.(title, msg.content);
+                setSaved(true);
+                setTimeout(() => setSaved(false), 2400);
               }}
-              className="flex items-center gap-1 rounded-md px-2.5 py-1 text-muted hover:bg-ink/[0.06] hover:text-ink transition-colors"
-              title="Save to Studio Notes"
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] transition-colors ${
+                saved
+                  ? "border-sage/40 bg-sage/[0.12] text-sage"
+                  : "border-brass/35 bg-brass/[0.08] text-brasspale hover:bg-brass/[0.16]"
+              }`}
+              title="Save this answer to Studio Notes"
             >
-              <BookmarkSimple size={13} />
-              <span>Save to note</span>
+              {saved ? <Check size={13} weight="bold" /> : <BookmarkSimple size={13} />}
+              <span>{saved ? "Saved ✓" : "Save to note"}</span>
             </button>
             <button
               onClick={copyText}
-              className="flex items-center gap-1 rounded-md px-2.5 py-1 text-muted hover:bg-ink/[0.06] hover:text-ink transition-colors"
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] transition-colors ${
+                copied
+                  ? "border-sage/40 bg-sage/[0.12] text-sage"
+                  : "border-hairline text-muted hover:border-hairline-strong hover:text-ink"
+              }`}
               title="Copy answer"
             >
-              {copied ? <Check size={13} className="text-sage" /> : <Copy size={13} />}
-              <span>{copied ? "Copied" : "Copy"}</span>
+              {copied ? <Check size={13} weight="bold" /> : <Copy size={13} />}
+              <span>{copied ? "Copied ✓" : "Copy"}</span>
             </button>
           </div>
         </div>
