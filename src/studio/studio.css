@@ -383,25 +383,26 @@ button[data-armed="true"] .send-halo {
 }
 
 /* ── Console-deck composer ──────────────────────────────────
-   Streaming phase pill docked to the shell's top edge. */
+   Streaming phase pill docked to the shell's top-right edge. */
 .phase-pill {
   position: absolute;
   top: -11px;
-  left: 16px;
-  z-index: 3;
+  right: 18px;
+  left: auto;
+  z-index: 4;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 9.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--brasspale);
-  background: color-mix(in srgb, var(--surface) 92%, var(--ground));
-  border: 1px solid color-mix(in srgb, var(--brass) 35%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, var(--ground));
+  border: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
   border-radius: 999px;
-  padding: 3px 10px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  padding: 3px 11px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), 0 0 12px color-mix(in srgb, var(--brass) 18%, transparent);
 }
 .phase-dot {
   width: 5px;
@@ -409,6 +410,32 @@ button[data-armed="true"] .send-halo {
   border-radius: 999px;
   background: var(--brass);
   animation: breathe 1.4s ease-in-out infinite;
+}
+
+/* Horizontal scroll hiding & edge fades for chip rails */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-mask-h {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 16px,
+    black calc(100% - 16px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 16px,
+    black calc(100% - 16px),
+    transparent 100%
+  );
 }
 
 /* Beat html[data-shell] :focus-visible — that global brass ring

@@ -81,7 +81,7 @@ export function BorderBeam({
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 rounded-[inherit] border-[1.5px] border-transparent [mask-clip:padding-box,border-box] [mask-composite:intersect] [mask-image:linear-gradient(transparent,transparent),linear-gradient(#000,#000)]"
+      className="pointer-events-none absolute inset-0 rounded-[inherit] border-[1.5px] border-transparent overflow-hidden [mask-clip:padding-box,border-box] [mask-composite:intersect] [mask-image:linear-gradient(transparent,transparent),linear-gradient(#000,#000)]"
     >
       <motion.div
         className="absolute aspect-square"

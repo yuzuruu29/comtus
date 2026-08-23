@@ -674,15 +674,26 @@ export default function ChatPane({
             transition={{ duration: 0.34, ease: HOUSE }}
             className="composer-shell relative"
           >
-            {(focused || streaming) && (
-              <BorderBeam size={84} duration={streaming ? 3.4 : 5} />
-            )}
+            <AnimatePresence>
+              {(focused || streaming) && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.22 }}
+                  className="pointer-events-none absolute inset-0 rounded-[inherit] overflow-hidden"
+                >
+                  <BorderBeam size={84} duration={streaming ? 3.4 : 5} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <AnimatePresence>
               {streaming && (
                 <motion.div
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 4, transition: { duration: 0.12 } }}
+                  initial={{ opacity: 0, y: 4, scale: 0.92 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 4, scale: 0.92, transition: { duration: 0.12 } }}
                   transition={SOFT}
                   className="phase-pill"
                   role="status"
@@ -805,7 +816,6 @@ export default function ChatPane({
                       onClick={() => void send()}
                       disabled={!hasText}
                       className="relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[12px] grad-lamp text-night disabled:cursor-not-allowed"
-                      aria-label="Send"
                     >
                       <span aria-hidden className="send-halo" />
                       <AnimatePresence mode="wait" initial={false}>
@@ -842,20 +852,29 @@ export default function ChatPane({
         </Spotlight>
 
         {/* Follow-up rail — only once there is an answer to follow up on */}
-        {!streaming && messages.some((m) => m.role === "assistant") && (
-          <div className="relative mx-auto mt-2 flex w-full max-w-3xl items-center justify-start gap-2 overflow-x-auto scroll-thin sm:justify-center">
-            {FOLLOW_UPS.map((prompt) => (
-              <button
-                key={prompt}
-                onClick={() => void send(prompt)}
-                className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-ink/[0.04] px-3 py-1 text-[11.5px] text-muted transition-colors hover:bg-brass/10 hover:text-brasspale"
-              >
-                <span className="max-w-[20rem] truncate">{prompt}</span>
-                <ArrowRight size={11} className="shrink-0 opacity-60" />
-              </button>
-            ))}
-          </div>
-        )}
+        <AnimatePresence>
+          {!streaming && messages.some((m) => m.role === "assistant") && (
+            <motion.div
+              initial={{ opacity: 0, y: 6, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: 4, height: 0 }}
+              transition={SOFT}
+              className="no-scrollbar scroll-mask-h relative mx-auto mt-2.5 flex w-full max-w-3xl items-center gap-2 overflow-x-auto px-1 py-0.5 sm:justify-center"
+            >
+              {FOLLOW_UPS.map((prompt) => (
+                <button
+                  key={prompt}
+                  onClick={() => void send(prompt)}
+                  className="group flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-hairline/70 bg-surface/80 px-3 py-1.5 text-[11.5px] font-medium text-muted shadow-xs transition-all duration-200 hover:border-brass/45 hover:bg-brass/[0.08] hover:text-brasspale active:scale-[0.98]"
+                >
+                  <Sparkle size={10} weight="fill" className="shrink-0 text-brass/50 group-hover:text-brass transition-colors" />
+                  <span className="max-w-[19rem] truncate">{prompt}</span>
+                  <ArrowRight size={11} className="shrink-0 opacity-50 group-hover:translate-x-0.5 group-hover:opacity-90 transition-all" />
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Note Saved Toast Notification */}
