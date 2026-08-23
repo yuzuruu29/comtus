@@ -104,23 +104,53 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
 
+      # Each build job uploads an updater-<rust-target> artifact containing
+      # its own .sig file, so signature ↔ platform pairing is deterministic.
+      # The three jobs also race on a single aggregated latest.json asset
+      # (last writer wins) — that file is metadata hints only.
       - uses: actions/download-artifact@v4
         with:
           pattern: updater-*
           path: update-input
 
-      - name: Merge updater manifests
-        run: node scripts/merge-updater-manifests.mjs update-input desktop-releases/latest.json
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p assets
+          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --dir assets
+
+      - name: Build site-hosted updater manifest
+        run: |
+          node scripts/build-site-manifest.mjs \
+            --artifacts update-input \
+            --assets assets \
+            --out desktop-releases/latest.json \
+            --config src-tauri/tauri.conf.json \
+            --site-base "${{ vars.PUBLIC_SITE_URL || 'https://comtus-ai.vercel.app' }}/desktop"
+
+      # The repo is private, so GitHub asset URLs 404 for end users —
+      # installers and updater payloads must ship from desktop-releases/
+      # (the vite copy-desktop-releases plugin serves them at /desktop).
+      - name: Mirror binaries into desktop-releases
+        run: |
+          cd desktop-releases
+          find . -maxdepth 1 -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.app.tar.gz" \) ! -name "Comtus_${GITHUB_REF_NAME#v}*" -delete
+          find . -maxdepth 1 -type f -name "*.sig" ! -name "*${GITHUB_REF_NAME#v}*" -delete
+          cp ../assets/*.dmg ../assets/*.exe ../assets/*.sig .
+          ls -la
 
       - name: Publish complete release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit "$GITHUB_REF_NAME" --draft=false --repo "$GITHUB_REPOSITORY"
+        run: |
+          gh release upload "$GITHUB_REF_NAME" desktop-releases/latest.json --clobber --repo "$GITHUB_REPOSITORY"
+          gh release edit "$GITHUB_REF_NAME" --draft=false --latest --repo "$GITHUB_REPOSITORY"
 
-      - name: Commit hosted updater manifest
+      - name: Commit hosted updater files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add desktop-releases/latest.json
+          git add desktop-releases
           git diff --cached --quiet || git commit -m "chore: publish desktop updater $GITHUB_REF_NAME"
           git push origin HEAD:${{ github.event.repository.default_branch }}
