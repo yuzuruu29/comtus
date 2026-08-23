@@ -6,6 +6,7 @@ import {
 } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { externalMarkdownComponents } from "./ExternalLink";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowUp,
@@ -85,7 +86,6 @@ export default function ChatPane({
   // Notebook changed: load its threads, restore the remembered one.
   // Keyed on identity, not the object — renaming a notebook shouldn't
   // reset an open thread.
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- id-only reload
   useEffect(() => {
     abortRef.current?.abort();
     const nbId = notebook?.id;
@@ -542,6 +542,9 @@ export default function ChatPane({
       <div
         ref={scrollRef}
         onScroll={onScroll}
+        role="log"
+        aria-label="Chat messages"
+        aria-busy={!!streaming}
         className="chat-scroll min-h-0 flex-1 overflow-y-auto"
       >
         <div className="mx-auto w-full max-w-3xl px-5 pb-8 pt-8">
@@ -560,8 +563,8 @@ export default function ChatPane({
               {sourceCount === 0 && (
                 <p className="anim-rise mt-4 max-w-md text-body leading-relaxed text-muted" style={{ "--d": "120ms" } as React.CSSProperties}>
                   Add a source or two on the left, then come back. Comtus answers
-                  from your material, not from thin air. Sources never upload.
-                  They are read on this device.
+                  from your material, not from thin air. Files stay local; relevant
+                  source text is sent only when you ask your selected model.
                 </p>
               )}
               <motion.div
@@ -614,7 +617,7 @@ export default function ChatPane({
           </div>
 
           {error && (
-            <div className="anim-shake mt-6 flex items-start gap-3 rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] leading-relaxed text-rust">
+            <div role="alert" className="anim-shake mt-6 flex items-start gap-3 rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] leading-relaxed text-rust">
               <Flame size={15} weight="light" className="mt-0.5 shrink-0" />
               {error}
             </div>
@@ -626,6 +629,15 @@ export default function ChatPane({
           brass hairline, lamplight lift shadow, an orbiting border
           beam, and a warm pool of light gathering beneath it. */}
       <div className="relative shrink-0 px-4 pb-[calc(0.9rem+var(--sab))] pt-2 sm:px-5 sm:pb-[0.95rem]">
+        <div role="status" aria-live="polite" className="sr-only">
+          {streaming
+            ? streaming.phase === "thinking"
+              ? "Comtus is thinking"
+              : streaming.phase === "answering"
+                ? "Comtus is answering"
+                : "Comtus is reading your sources"
+            : ""}
+        </div>
         {/* Fade trailing messages into the desk as they pass under */}
         <div
           aria-hidden
@@ -652,6 +664,7 @@ export default function ChatPane({
             <div className="relative z-[2] flex items-end gap-2 px-3.5 pb-2.5 pt-3">
               <textarea
                 ref={taRef}
+                aria-label="Ask Comtus"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onFocus={() => setFocused(true)}
@@ -828,7 +841,9 @@ function MessageBubble({
 
       {msg.content ? (
         <div className="md">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={externalMarkdownComponents}>
+            {msg.content}
+          </ReactMarkdown>
           {streaming && <span className="stream-caret" />}
         </div>
       ) : (

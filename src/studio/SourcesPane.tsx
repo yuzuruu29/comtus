@@ -10,6 +10,8 @@ import { uid } from "../lib/db";
 import { addSourceWithChunks } from "../lib/db";
 import { SOFT, Spotlight } from "./fx";
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, timeAgo } from "./ui";
+import ExternalLink from "./ExternalLink";
+import { isTauri } from "../lib/desktop";
 
 const KIND_ICON = {
   pdf: FilePdf,
@@ -22,6 +24,46 @@ const KIND_ICON = {
   img: ImageIcon,
 } as const;
 
+async function chooseNativeFiles(): Promise<File[] | null> {
+  const [{ open }, { readFile }] = await Promise.all([
+    import("@tauri-apps/plugin-dialog"),
+    import("@tauri-apps/plugin-fs"),
+  ]);
+  const paths = await open({
+    multiple: true,
+    directory: false,
+    filters: [
+      {
+        name: "Study sources",
+        extensions: [
+          "pdf",
+          "docx",
+          "txt",
+          "md",
+          "markdown",
+          "json",
+          "png",
+          "jpg",
+          "jpeg",
+          "webp",
+          "bmp",
+          "tiff",
+          "gif",
+          "avif",
+        ],
+      },
+    ],
+  });
+  if (!paths) return null;
+  return Promise.all(
+    paths.map(async (path) => {
+      const bytes = await readFile(path);
+      const name = path.split(/[\\/]/).pop() || "source";
+      return new File([bytes.slice().buffer as ArrayBuffer], name);
+    }),
+  );
+}
+
 export default function SourcesPane({
   notebookId,
   version,
@@ -30,7 +72,9 @@ export default function SourcesPane({
   pendingView,
   onPendingConsumed,
   importTick,
+  onImportTriggered,
   dropFiles,
+  dropRequestId,
   onDropConsumed,
 }: {
   notebookId: string;
@@ -40,7 +84,9 @@ export default function SourcesPane({
   pendingView?: { sourceId: string; startChar?: number } | null;
   onPendingConsumed?: () => void;
   importTick?: number;
+  onImportTriggered?: () => void;
   dropFiles?: FileList | null;
+  dropRequestId?: number;
   onDropConsumed?: () => void;
 }) {
   const [sources, setSources] = useState<Source[]>([]);
@@ -51,22 +97,79 @@ export default function SourcesPane({
   const [viewing, setViewing] = useState<{ source: Source; startChar?: number } | null>(null);
   const [focused, setFocused] = useState<string[] | null>(() => loadFocus(notebookId));
   const fileRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (importTick && importTick > 0) fileRef.current?.click();
-  }, [importTick]);
-
-  useEffect(() => {
-    if (!dropFiles || dropFiles.length === 0) return;
-    void handleFiles(dropFiles);
-    onDropConsumed?.();
-  }, [dropFiles]);
+  const seenImportTick = useRef<number | null>(null);
+  const seenDropSignal = useRef<number | FileList | null>(null);
 
   const refresh = useCallback(async () => {
     setSources(
       await db.sources.where("notebookId").equals(notebookId).sortBy("addedAt"),
     );
   }, [notebookId]);
+
+  const handleFiles = useCallback(async (files: FileList | File[] | null) => {
+    if (!files || files.length === 0) return;
+    const selected = Array.from(files);
+    setFailed([]);
+    setImporting({ done: 0, total: selected.length, current: selected[0].name });
+    const outcome = await importFiles(selected, notebookId, (done, total, current) =>
+      setImporting({ done, total, current }),
+    );
+    setImporting(null);
+    if (outcome.failed.length) {
+      setFailed(outcome.failed.map((failure) => `${failure.name}: ${failure.reason}`));
+    }
+    onChanged();
+    void refresh();
+  }, [notebookId, onChanged, refresh]);
+
+  const handleFilesRef = useRef(handleFiles);
+  const onImportTriggeredRef = useRef(onImportTriggered);
+
+  useEffect(() => {
+    handleFilesRef.current = handleFiles;
+    onImportTriggeredRef.current = onImportTriggered;
+  }, [handleFiles, onImportTriggered]);
+
+  useEffect(() => {
+    if (!importTick || importTick <= 0) return;
+    if (seenImportTick.current === importTick) return;
+    seenImportTick.current = importTick;
+    if (!isTauri()) {
+      fileRef.current?.click();
+      onImportTriggeredRef.current?.();
+      return;
+    }
+    let cancelled = false;
+    void chooseNativeFiles()
+      .then((files) => {
+        if (!cancelled && files) void handleFilesRef.current(files);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setFailed([
+            error instanceof Error ? error.message : "The native file picker could not be opened.",
+          ]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) onImportTriggeredRef.current?.();
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [importTick]);
+
+  useEffect(() => {
+    if (!dropFiles || dropFiles.length === 0) {
+      seenDropSignal.current = null;
+      return;
+    }
+    const signal = dropRequestId ?? dropFiles;
+    if (seenDropSignal.current === signal) return;
+    seenDropSignal.current = signal;
+    void handleFilesRef.current(dropFiles);
+    onDropConsumed?.();
+  }, [dropFiles, dropRequestId, onDropConsumed]);
 
   useEffect(() => {
     void refresh();
@@ -84,22 +187,7 @@ export default function SourcesPane({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingView]);
-
-  const handleFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    setFailed([]);
-    setImporting({ done: 0, total: files.length, current: files[0].name });
-    const outcome = await importFiles(Array.from(files), notebookId, (done, total, current) =>
-      setImporting({ done, total, current }),
-    );
-    setImporting(null);
-    if (outcome.failed.length)
-      setFailed(outcome.failed.map((f) => `${f.name}: ${f.reason}`));
-    onChanged();
-    void refresh();
-  };
+  }, [onPendingConsumed, pendingView]);
 
   const totalTokens = sources.reduce((s, x) => s + x.tokens, 0);
 
@@ -153,12 +241,17 @@ export default function SourcesPane({
           </button>
         </div>
         {importing && (
-          <div className="mt-3 rounded-xl border border-hairline bg-ink/[0.02] px-3.5 py-3">
+          <div role="status" aria-live="polite" className="mt-3 rounded-xl border border-hairline bg-ink/[0.02] px-3.5 py-3">
             <div className="text-[11.5px] text-muted">
               {importing.current || "Finishing…"} ({importing.done}/{importing.total})
             </div>
             <div className="relative mt-2 h-1 overflow-hidden rounded bg-ink/[0.07]">
               <div
+                role="progressbar"
+                aria-label="Import sources"
+                aria-valuemin={0}
+                aria-valuemax={importing.total}
+                aria-valuenow={importing.done}
                 className="h-full grad-lamp transition-all duration-300"
                 style={{ width: `${(importing.done / Math.max(1, importing.total)) * 100}%` }}
               />
@@ -240,8 +333,8 @@ export default function SourcesPane({
           <div className="anim-fade px-3 py-10 text-center" style={{ "--d": "200ms" } as React.CSSProperties}>
             <Flame size={18} weight="light" className="breathe mx-auto mb-3 text-brass/60" />
             <p className="text-body leading-relaxed text-muted">
-              No sources yet. Every answer traces back to a source you added.
-              Sources never upload. They are read on this device.
+              No sources yet. Every answer traces back to material you added.
+              Files stay local; relevant text is sent only when you ask your selected model.
             </p>
           </div>
         )}
@@ -448,9 +541,9 @@ function SourceViewer({
         {source.meta?.url && (
           <>
             {" · "}
-            <a href={source.meta.url} target="_blank" rel="noreferrer" className="text-moon underline-offset-2 hover:underline">
+            <ExternalLink href={source.meta.url} className="text-moon underline-offset-2 hover:underline">
               original
-            </a>
+            </ExternalLink>
           </>
         )}
       </div>

@@ -28,6 +28,7 @@ const ALLOWED_ORIGINS = new Set([
   "tauri://localhost",
   "http://localhost:5173",
   "http://localhost:5199",
+  "http://127.0.0.1:5199",
   "http://localhost:4173",
 ]);
 
@@ -39,7 +40,7 @@ interface PassPayload {
 }
 
 function json(status: number, body: Record<string, string>, origin?: string | null): Response {
-  return new Response(JSON.stringify(body), {
+  return new Response(status === 204 ? null : JSON.stringify(body), {
     status,
     headers: {
       "content-type": "application/json",

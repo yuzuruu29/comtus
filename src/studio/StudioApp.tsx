@@ -4,7 +4,7 @@ import NotebookList from "./NotebookList";
 import Workspace from "./Workspace";
 import DeskApp from "../desk/DeskApp";
 import { MotionPrefs } from "./fx";
-import { isTauri } from "../lib/desktop";
+import { isDeskShell } from "../lib/desktop";
 import { useSettings } from "../lib/settings";
 import "./studio.css";
 
@@ -22,7 +22,7 @@ export default function StudioApp() {
 
   // The desktop app is its own product surface: library rail + desk home,
   // not the web studio tree. The browser keeps the shelf + workspace.
-  if (isTauri()) {
+  if (isDeskShell()) {
     return (
       <MotionPrefs>
         <DeskApp />

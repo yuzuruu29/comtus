@@ -1,0 +1,20 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Comtus Dev",
+  "identifier": "studio.comtus.app.dev",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Comtus Dev",
+        "width": 1280,
+        "height": 840,
+        "minWidth": 800,
+        "minHeight": 560,
+        "backgroundColor": "#0B0F1A",
+        "center": true,
+        "shadow": true
+      }
+    ]
+  }
+}

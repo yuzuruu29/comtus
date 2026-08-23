@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { db } from "../lib/db";
 import type { Notebook as NotebookRow } from "../lib/types";
 import { applyCitationOpen, loadLayout, saveLayout, type LayoutMode } from "./layout";
@@ -8,7 +9,13 @@ import { applyCitationOpen, loadLayout, saveLayout, type LayoutMode } from "./la
     (Workspace) and the desktop desk surface (NotebookDesk) present this
     differently but run the exact same logic underneath. */
 export function useNotebookDesk(notebookId?: string) {
+  const navigate = useNavigate();
   const [notebook, setNotebook] = useState<NotebookRow | null>(null);
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "ready" | "error">(
+    notebookId ? "loading" : "idle",
+  );
+  const [loadError, setLoadError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [sourcesVersion, setSourcesVersion] = useState(0);
   const [layout, setLayoutState] = useState<LayoutMode>(loadLayout);
   const [importTick, setImportTick] = useState(0);
@@ -19,51 +26,89 @@ export function useNotebookDesk(notebookId?: string) {
     startChar?: number;
   } | null>(null);
 
-  const setLayout = (mode: LayoutMode) => {
+  const setLayout = useCallback((mode: LayoutMode) => {
     setLayoutState(mode);
     saveLayout(mode);
-  };
+  }, []);
 
   /** Citation jumps always need the sources spine visible. */
-  const openSource = (sourceId: string, startChar?: number) => {
+  const openSource = useCallback((sourceId: string, startChar?: number) => {
     if (!notebookId) return;
     setPendingView({ sourceId, startChar });
     setLayout(applyCitationOpen(layout));
-  };
+  }, [layout, notebookId, setLayout]);
 
   const rename = async (name: string) => {
     const trimmed = name.trim();
     if (!trimmed || !notebook || !notebookId || notebook.id !== notebookId) return;
-    await db.notebooks.update(notebookId, { name: trimmed });
-    setNotebook({ ...notebook, name: trimmed });
+    const renamedId = notebookId;
+    await db.notebooks.update(renamedId, { name: trimmed });
+    setNotebook((current) =>
+      current?.id === renamedId ? { ...current, name: trimmed } : current,
+    );
   };
 
   useEffect(() => {
+    let current = true;
+    setNotebook(null);
+    setLoadError("");
+    setSourcesVersion(0);
+    setDropping(0);
+    setDropFiles(null);
+    setPendingView(null);
     if (!notebookId) {
-      setNotebook(null);
-      return;
+      setLoadState("idle");
+      return () => {
+        current = false;
+      };
     }
-    db.notebooks.get(notebookId).then((nb) => {
-      if (nb) setNotebook(nb);
-      else window.location.href = "/studio";
-    });
-  }, [notebookId]);
+    setLoadState("loading");
+    void db.notebooks
+      .get(notebookId)
+      .then((nb) => {
+        if (!current) return;
+        if (nb) {
+          setNotebook(nb);
+          setLoadState("ready");
+        } else {
+          navigate("/studio", { replace: true });
+        }
+      })
+      .catch((error: unknown) => {
+        if (!current) return;
+        setLoadError(error instanceof Error ? error.message : "The notebook could not be opened.");
+        setLoadState("error");
+      });
+    return () => {
+      current = false;
+    };
+  }, [loadAttempt, navigate, notebookId]);
+
+  const bumpSources = useCallback(() => setSourcesVersion((value) => value + 1), []);
+  const requestImport = useCallback(() => setImportTick((value) => value + 1), []);
+  const consumeImport = useCallback(() => setImportTick(0), []);
+  const clearPendingView = useCallback(() => setPendingView(null), []);
+  const retryLoad = useCallback(() => setLoadAttempt((attempt) => attempt + 1), []);
 
   return {
     notebook,
+    loadState,
+    loadError,
+    retryLoad,
     sourcesVersion,
-    bumpSources: () => setSourcesVersion((v) => v + 1),
+    bumpSources,
     layout,
     setLayout,
     importTick,
-    requestImport: () => setImportTick((n) => n + 1),
+    requestImport,
+    consumeImport,
     dropping,
     setDropping,
     dropFiles,
     setDropFiles,
     pendingView,
     openSource,
-    clearPendingView: () => setPendingView(null),
+    clearPendingView,
     rename,
   };
 }

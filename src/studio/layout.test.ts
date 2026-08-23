@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { applyCitationOpen, cycleLayout, loadLayout, panesFor, saveLayout } from "./layout";
+import {
+  applyCitationOpen,
+  cycleLayout,
+  loadLayout,
+  panesFor,
+  saveLayout,
+  togglePane,
+} from "./layout";
 
 afterEach(() => {
   localStorage.clear();
@@ -47,5 +54,28 @@ describe("cycleLayout", () => {
     expect(cycleLayout("standard", 1)).toBe("reading");
     expect(cycleLayout("focus", 1)).toBe("standard");
     expect(cycleLayout("standard", -1)).toBe("focus");
+  });
+});
+
+describe("togglePane", () => {
+  it("changes only the requested pane", () => {
+    expect(togglePane("standard", "sources")).toBe("writing");
+    expect(togglePane("reading", "sources")).toBe("focus");
+    expect(togglePane("writing", "sources")).toBe("standard");
+    expect(togglePane("focus", "sources")).toBe("reading");
+
+    expect(togglePane("standard", "studio")).toBe("reading");
+    expect(togglePane("reading", "studio")).toBe("standard");
+    expect(togglePane("writing", "studio")).toBe("focus");
+    expect(togglePane("focus", "studio")).toBe("writing");
+  });
+
+  it("switches the exclusive companion pane at compact widths", () => {
+    expect(togglePane("standard", "studio", true)).toBe("writing");
+    expect(togglePane("standard", "sources", true)).toBe("focus");
+    expect(togglePane("reading", "studio", true)).toBe("writing");
+    expect(togglePane("writing", "sources", true)).toBe("reading");
+    expect(togglePane("writing", "studio", true)).toBe("focus");
+    expect(togglePane("reading", "sources", true)).toBe("focus");
   });
 });

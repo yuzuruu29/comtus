@@ -37,7 +37,19 @@ export function cycleLayout(mode: LayoutMode, dir: 1 | -1): LayoutMode {
   return LAYOUT_MODES[next] ?? "standard";
 }
 
-export function panesFor(mode: LayoutMode): { sources: boolean; studio: boolean } {
+export function panesFor(
+  mode: LayoutMode,
+  compact = false,
+): { sources: boolean; studio: boolean } {
+  const panes = basePanesFor(mode);
+  if (!compact) return panes;
+  return {
+    sources: panes.sources,
+    studio: panes.studio && !panes.sources,
+  };
+}
+
+function basePanesFor(mode: LayoutMode): { sources: boolean; studio: boolean } {
   switch (mode) {
     case "reading":
       return { sources: true, studio: false };
@@ -48,6 +60,27 @@ export function panesFor(mode: LayoutMode): { sources: boolean; studio: boolean 
     default:
       return { sources: true, studio: true };
   }
+}
+
+/** Toggle exactly one companion pane while preserving the other pane. */
+export function togglePane(
+  mode: LayoutMode,
+  pane: "sources" | "studio",
+  compact = false,
+): LayoutMode {
+  const current = panesFor(mode, compact);
+  if (compact) {
+    if (current[pane]) return "focus";
+    return pane === "sources" ? "reading" : "writing";
+  }
+  const next = {
+    ...current,
+    [pane]: !current[pane],
+  };
+  if (next.sources && next.studio) return "standard";
+  if (next.sources) return "reading";
+  if (next.studio) return "writing";
+  return "focus";
 }
 
 function migratePanes(): LayoutMode {

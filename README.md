@@ -18,14 +18,16 @@ See `BRAND.md` for the design system.
 
 ```bash
 pnpm install
-pnpm dev          # http://localhost:5173
+pnpm dev          # http://127.0.0.1:5199
+pnpm dev:desktop  # browser-based preview of the desktop shell
 ```
 
 ## Desktop
 
 ```bash
-pnpm tauri dev            # dev shell
-pnpm tauri build          # NSIS installer in src-tauri/target/release/bundle
+pnpm desktop:dev                         # isolated dev app/profile
+pnpm exec tauri build --no-bundle        # unsigned local release executable
+pnpm desktop:build                       # signed installers; requires Tauri signing env vars
 ```
 
 ## Structure

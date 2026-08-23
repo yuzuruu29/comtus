@@ -177,7 +177,7 @@ async function bootStudio(withTauriFlag) {
         })()`,
     });
   }
-  await send("Page.navigate", { url: "http://localhost:5199/studio" });
+  await send("Page.navigate", { url: "http://127.0.0.1:5199/studio" });
   // Cold vite dev transform can take a while — poll for real app chrome.
   const booted = await until(
     `document.querySelector('button') && document.body.innerText.length > 40`,
@@ -380,6 +380,53 @@ const collapsed = await until(
   10000,
 );
 check("desk: rail collapse toggles", !!collapsed);
+
+/* The native window supports 800×560. At that size the library must stay
+   compact and only one companion pane may compete with Chat. */
+await send("Emulation.setDeviceMetricsOverride", {
+  width: 800,
+  height: 560,
+  deviceScaleFactor: 1,
+  mobile: false,
+});
+await new Promise((r) => setTimeout(r, 700));
+const compactLayout = JSON.parse(
+  (await evalJs(`JSON.stringify((() => {
+    const box = (selector) => document.querySelector(selector)?.getBoundingClientRect().width ?? 0;
+    const sources = box('aside[aria-label="Sources"]');
+    const studio = box('aside[aria-label="Studio"]');
+    return {
+      library: box('aside[aria-label="Library"]'),
+      chat: box('main'),
+      expandedCompanions: [sources, studio].filter((width) => width > 100).length,
+    };
+  })())`)) || "{}",
+);
+check("desk: compact window keeps library slim", compactLayout.library <= 60, JSON.stringify(compactLayout));
+check("desk: compact window preserves usable chat", compactLayout.chat >= 350, JSON.stringify(compactLayout));
+check("desk: compact window shows at most one companion pane", compactLayout.expandedCompanions <= 1, JSON.stringify(compactLayout));
+
+const returnedHome = await evalJs(`
+  (() => {
+    const button = document.querySelector('button[aria-label="Comtus home"]');
+    if (!button) return false;
+    button.click();
+    return true;
+  })()
+`);
+const homeReady = await until(
+  `!!document.querySelector('main[aria-labelledby="desk-home-title"]')`,
+  10000,
+);
+check("desk: Home remains reachable from Studio", !!(returnedHome && homeReady));
+const homeScroll = await evalJs(`
+  (() => {
+    const home = document.querySelector('main[aria-labelledby="desk-home-title"]');
+    if (!home) return false;
+    return getComputedStyle(home).overflowY === "auto" && home.scrollHeight > home.clientHeight;
+  })()
+`);
+check("desk: Home scrolls at minimum height", !!homeScroll);
 
 const newDeskErrors = consoleErrors.slice(preDeskErrors).length;
 check("desk pass adds no runtime exceptions", newDeskErrors === 0, consoleErrors.slice(preDeskErrors).join(" | ").slice(0, 200));

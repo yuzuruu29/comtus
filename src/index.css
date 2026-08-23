@@ -115,12 +115,12 @@ html[data-theme="light"] {
   --surface: #fcfaf4;
   --raised: #eae4d6;
   --ink: #1b2334;
-  --muted: #5a6274;
+  --muted: #465064;
   --hairline: rgba(27, 35, 52, 0.12);
   --hairline-strong: rgba(27, 35, 52, 0.22);
-  --brass: #a5731c;
-  --brassdeep: #8a5e16;
-  --brasspale: #c4923a;
+  --brass: #79510f;
+  --brassdeep: #664109;
+  --brasspale: #765018;
   --moon: #3d6e9e;
   --moondeep: #2a4a6e;
   --sage: #4f8a5a;
@@ -332,6 +332,14 @@ html[data-shell] body {
 html[data-shell] :focus-visible {
   outline: 2px solid color-mix(in srgb, var(--brass) 75%, transparent);
   outline-offset: 2px;
+}
+
+html[data-theme="light"] .grad-lamp {
+  background: linear-gradient(92deg, #c18b2e, #e0b85e);
+}
+
+html[data-theme="light"][data-shell] :focus-visible {
+  outline-color: #765018;
 }
 
 /* Pencil underline for text links / nav */

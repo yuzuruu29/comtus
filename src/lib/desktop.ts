@@ -14,8 +14,14 @@ export function isStandalone(): boolean {
 
 export function isTauri(): boolean {
   if (typeof window === "undefined") return false;
-  const w = window as unknown as Record<string, unknown>;
-  return "__TAURI__" in w || "__TAURI_INTERNALS__" in w;
+  const w = globalThis as unknown as Record<string, unknown>;
+  return Boolean(w.isTauri || w.__TAURI__ || w.__TAURI_INTERNALS__);
+}
+
+/** The native desk surface, plus an opt-in browser preview used for
+ * desktop QA without weakening the checks around native-only APIs. */
+export function isDeskShell(): boolean {
+  return isTauri() || import.meta.env.VITE_DESKTOP_SHELL === "1";
 }
 
 /** True when the user installed Comtus (PWA or native desktop build). */

@@ -1,13 +1,18 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { createNotebook } from "../lib/db";
-import { detectPlatform, isTauri } from "../lib/desktop";
+import { detectPlatform, isDeskShell, isTauri } from "../lib/desktop";
 import { useThemeEffect } from "../lib/theme";
+import { useMediaQuery } from "../lib/useMediaQuery";
 import { DeskContext, defaultDeskActions, type DeskActions } from "./DeskContext";
 import CommandPalette from "./CommandPalette";
 import UpdateToast from "./UpdateToast";
-import { cycleLayout, loadLayout, saveLayout, type LayoutMode } from "./layout";
+import { cycleLayout, loadLayout, saveLayout, togglePane, type LayoutMode } from "./layout";
 import { matchesShortcut } from "./shortcuts";
+
+function hasOpenModal(): boolean {
+  return Boolean(document.querySelector('[role="dialog"][aria-modal="true"]'));
+}
 
 export default function DeskShell({
   children,
@@ -16,6 +21,7 @@ export default function DeskShell({
   onSettings,
   onImport,
   onNewNotebook,
+  onHome,
 }: {
   children: ReactNode;
   layout?: LayoutMode;
@@ -23,14 +29,17 @@ export default function DeskShell({
   onSettings?: () => void;
   onImport?: () => void;
   onNewNotebook?: () => void;
+  onHome?: () => void;
 }) {
   const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const platform = detectPlatform();
+  const compactViewport = useMediaQuery("(max-width: 1199px)");
+  const compact = isDeskShell() && compactViewport;
   useThemeEffect();
 
   useEffect(() => {
-    document.documentElement.dataset.shell = isTauri() ? "desktop" : "browser";
+    document.documentElement.dataset.shell = isDeskShell() ? "desktop" : "browser";
     document.body.classList.remove("has-custom-cursor");
     return () => {
       delete document.documentElement.dataset.shell;
@@ -49,6 +58,10 @@ export default function DeskShell({
     const current = layout ?? loadLayout();
     return {
       ...defaultDeskActions,
+      goHome: () => {
+        if (onHome) onHome();
+        else navigate("/studio");
+      },
       openSettings: () => onSettings?.(),
       newNotebook: () => {
         if (onNewNotebook) onNewNotebook();
@@ -59,13 +72,18 @@ export default function DeskShell({
       openNotebook: (id) => navigate(`/studio/${id}`, { flushSync: true }),
       setLayout,
       cycleLayout: (dir) => setLayout(cycleLayout(current, dir)),
-      toggleSources: () => setLayout(current === "writing" || current === "focus" ? "reading" : "writing"),
-      toggleStudio: () => setLayout(current === "reading" || current === "focus" ? "writing" : "reading"),
+      toggleSources: () => setLayout(togglePane(current, "sources", compact)),
+      toggleStudio: () => setLayout(togglePane(current, "studio", compact)),
       focusChat: () => setLayout("focus"),
       importFiles: () => onImport?.(),
       openPalette: () => setPaletteOpen(true),
     };
-  }, [layout, navigate, onImport, onNewNotebook, onSettings, setLayout]);
+  }, [compact, layout, navigate, onHome, onImport, onNewNotebook, onSettings, setLayout]);
+  const actionsRef = useRef(actions);
+
+  useEffect(() => {
+    actionsRef.current = actions;
+  }, [actions]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -75,57 +93,76 @@ export default function DeskShell({
         (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
       if (matchesShortcut(e, platform, { key: "k" })) {
         e.preventDefault();
+        if (!paletteOpen && hasOpenModal()) return;
         setPaletteOpen((v) => !v);
         return;
       }
+      if (hasOpenModal()) return;
+      const currentActions = actionsRef.current;
       if (matchesShortcut(e, platform, { key: "," })) {
         e.preventDefault();
-        onSettings?.();
+        currentActions.openSettings();
+        return;
+      }
+      if (matchesShortcut(e, platform, { key: "h", shift: true })) {
+        e.preventDefault();
+        currentActions.goHome();
         return;
       }
       if (typing) return;
       if (matchesShortcut(e, platform, { key: "n" })) {
         e.preventDefault();
-        actions.newNotebook();
+        currentActions.newNotebook();
       } else if (matchesShortcut(e, platform, { key: "1" })) {
         e.preventDefault();
-        actions.toggleSources();
+        currentActions.toggleSources();
       } else if (matchesShortcut(e, platform, { key: "2" })) {
         e.preventDefault();
-        actions.focusChat();
+        currentActions.focusChat();
       } else if (matchesShortcut(e, platform, { key: "3" })) {
         e.preventDefault();
-        actions.toggleStudio();
+        currentActions.toggleStudio();
       } else if (matchesShortcut(e, platform, { key: "[" })) {
         e.preventDefault();
-        actions.cycleLayout(-1);
+        currentActions.cycleLayout(-1);
       } else if (matchesShortcut(e, platform, { key: "]" })) {
         e.preventDefault();
-        actions.cycleLayout(1);
+        currentActions.cycleLayout(1);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [actions, onSettings, platform]);
+  }, [paletteOpen, platform]);
 
   useEffect(() => {
     if (!isTauri()) return;
     let unlisten: (() => void) | undefined;
+    let cancelled = false;
     void import("@tauri-apps/api/event").then(({ listen }) => {
+      const run = (action: (actions: DeskActions) => void) => () => {
+        if (!hasOpenModal()) action(actionsRef.current);
+      };
       const subs = [
-        listen("new-notebook", () => actions.newNotebook()),
-        listen("settings", () => actions.openSettings()),
-        listen("layout-standard", () => actions.setLayout("standard")),
-        listen("layout-reading", () => actions.setLayout("reading")),
-        listen("layout-writing", () => actions.setLayout("writing")),
-        listen("layout-focus", () => actions.setLayout("focus")),
+        listen("home", run((current) => current.goHome())),
+        listen("new-notebook", run((current) => current.newNotebook())),
+        listen("import-sources", run((current) => current.importFiles())),
+        listen("settings", run((current) => current.openSettings())),
+        listen("layout-standard", run((current) => current.setLayout("standard"))),
+        listen("layout-reading", run((current) => current.setLayout("reading"))),
+        listen("layout-writing", run((current) => current.setLayout("writing"))),
+        listen("layout-focus", run((current) => current.setLayout("focus"))),
       ];
       void Promise.all(subs).then((fns) => {
-        unlisten = () => fns.forEach((fn) => fn());
+        const dispose = () => fns.forEach((fn) => fn());
+        if (cancelled) dispose();
+        else unlisten = dispose;
       });
     });
-    return () => unlisten?.();
-  }, [actions]);
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, []);
 
   return (
     <DeskContext.Provider value={actions}>

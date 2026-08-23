@@ -34,6 +34,7 @@ const ALLOWED_ORIGINS = new Set([
   "tauri://localhost",
   "http://localhost:5173",
   "http://localhost:5199",
+  "http://127.0.0.1:5199",
   "http://localhost:4173",
 ]);
 

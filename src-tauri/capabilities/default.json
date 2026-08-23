@@ -16,16 +16,15 @@
     "process:allow-restart",
     "process:allow-exit",
     "dialog:default",
-    "fs:allow-read-text-file",
-    "fs:allow-write-text-file",
     {
-      "identifier": "fs:scope",
+      "identifier": "opener:allow-open-url",
       "allow": [
-        { "path": "$HOME/**" },
-        { "path": "$DOCUMENT/**" },
-        { "path": "$DOWNLOAD/**" },
-        { "path": "$DESKTOP/**" }
+        { "url": "https://*" },
+        { "url": "http://*" }
       ]
-    }
+    },
+    "fs:allow-read-file",
+    "fs:allow-read-text-file",
+    "fs:allow-write-text-file"
   ]
 }

@@ -1,13 +1,15 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { X } from "@phosphor-icons/react";
 import { SOFT } from "./fx";
 
 /** Shared studio primitives — quiet, warm, in-palette. */
 
+const modalStack: symbol[] = [];
+
 export function LampPulse({ label }: { label?: string }) {
   return (
-    <div className="flex items-center gap-3 text-muted">
+    <div role="status" aria-live="polite" className="flex items-center gap-3 text-muted">
       <span className="relative flex h-3 w-3">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brass/50 [animation-duration:1.6s]" />
         <span className="relative inline-flex h-3 w-3 rounded-full bg-brass" />
@@ -30,13 +32,61 @@ export function Modal({
   children: ReactNode;
   wide?: boolean;
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const instanceRef = useRef(Symbol("comtus-modal"));
+  const titleId = useId();
+
   useEffect(() => {
     if (!open) return;
+    const instance = instanceRef.current;
+    modalStack.push(instance);
+    restoreFocusRef.current = document.activeElement as HTMLElement | null;
+
+    const focusTimer = window.setTimeout(() => {
+      const first = panelRef.current?.querySelector<HTMLElement>(
+        '[autofocus], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      );
+      (first ?? panelRef.current)?.focus();
+    }, 30);
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (modalStack.at(-1) !== instance) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusable = [...(panelRef.current?.querySelectorAll<HTMLElement>(
+        'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      ) ?? [])].filter((element) => element.offsetParent !== null);
+      if (focusable.length === 0) {
+        e.preventDefault();
+        panelRef.current?.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener("keydown", onKey, true);
+      const index = modalStack.lastIndexOf(instance);
+      if (index !== -1) modalStack.splice(index, 1);
+      const previous = restoreFocusRef.current;
+      if (previous?.isConnected) previous.focus();
+      restoreFocusRef.current = null;
+    };
   }, [open, onClose]);
 
   // The overlay container stays mounted so AnimatePresence can play the
@@ -53,13 +103,20 @@ export function Modal({
             transition={{ duration: 0.22 }}
             className="pointer-events-auto absolute inset-0"
           >
-            <div className="absolute inset-0 bg-ground/80 backdrop-blur-sm" onClick={onClose} />
+            <button
+              type="button"
+              tabIndex={-1}
+              aria-label={`Close ${title}`}
+              className="absolute inset-0 border-0 bg-ground/80 backdrop-blur-sm"
+              onClick={onClose}
+            />
           </motion.div>
         )}
       </AnimatePresence>
       <AnimatePresence>
         {open && (
           <motion.div
+            ref={panelRef}
             key="panel"
             initial={{ opacity: 0, y: 28, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -69,10 +126,12 @@ export function Modal({
               wide ? "sm:max-w-3xl" : "sm:max-w-xl"
             }`}
             role="dialog"
-            aria-modal
+            aria-modal="true"
+            aria-labelledby={titleId}
+            tabIndex={-1}
           >
             <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
-              <div className="font-display text-heading font-[450] text-ink">{title}</div>
+              <h2 id={titleId} className="font-display text-heading font-[450] text-ink">{title}</h2>
               <button
                 onClick={onClose}
                 className="flex h-10 w-10 items-center justify-center rounded-full text-muted transition-all duration-med hover:rotate-90 hover:bg-ink/5 hover:text-ink active:scale-95"
@@ -118,7 +177,7 @@ export const btnLamp =
 
 export function ErrorNote({ children }: { children: ReactNode }) {
   return (
-    <div className="anim-shake rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-body leading-relaxed text-rust">
+    <div role="alert" className="anim-shake rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-body leading-relaxed text-rust">
       {children}
     </div>
   );

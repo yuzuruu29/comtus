@@ -1,14 +1,15 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
-import { detectPlatform, isTauri } from "./lib/desktop";
+import { detectPlatform, isDeskShell } from "./lib/desktop";
 import { useThemeEffect } from "./lib/theme";
 
 const LandingPage = lazy(() => import("./landing/LandingPage"));
 const StudioApp = lazy(() => import("./studio/StudioApp"));
+const HostedCheckout = lazy(() => import("./checkout/HostedCheckout"));
 
 export default function App() {
-  const tauri = isTauri();
+  const deskShell = isDeskShell();
   useThemeEffect();
 
   useEffect(() => {
@@ -26,11 +27,15 @@ export default function App() {
       <Routes>
         <Route
           path="/"
-          element={tauri ? <Navigate to="/studio" replace /> : <LandingPage />}
+          element={deskShell ? <Navigate to="/studio" replace /> : <LandingPage />}
         />
         <Route path="/studio/:notebookId?" element={<StudioApp />} />
+        <Route
+          path="/checkout"
+          element={deskShell ? <Navigate to="/studio" replace /> : <HostedCheckout />}
+        />
       </Routes>
-      {!tauri && <Analytics />}
+      {!deskShell && <Analytics />}
     </Suspense>
   );
 }

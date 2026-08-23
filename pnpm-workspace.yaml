@@ -1,3 +1,14 @@
 allowBuilds:
   core-js: true
   esbuild: true
+
+# PptxGenJS 4.0.1 depends on image-size 1.2.1, while no patched image-size
+# release currently satisfies its range. Comtus' PPTX exporter only creates
+# text and vector shapes and never invokes image-size, so the affected
+# ICNS/JXL/HEIF parsers are unreachable. Keep this allowlist exact so every
+# other high-severity production advisory still fails release builds.
+audit:
+  level: high
+  ignore:
+    - GHSA-w3rx-r6r6-pgpr
+    - GHSA-5p2g-fcmc-qvqq

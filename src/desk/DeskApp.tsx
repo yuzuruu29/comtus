@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Flame, GearSix, MagnifyingGlass } from "@phosphor-icons/react";
 import { createNotebook, db } from "../lib/db";
 import type { Notebook as NotebookRow } from "../lib/types";
@@ -26,6 +26,7 @@ import NotebookDesk from "./NotebookDesk";
 export default function DeskApp() {
   const { notebookId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const tauri = isTauri();
 
   const desk = useNotebookDesk(notebookId);
@@ -34,8 +35,17 @@ export default function DeskApp() {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [freshId, setFreshId] = useState<string | null>(null);
-  const [importSignal, setImportSignal] = useState(0);
+  const [importRequest, setImportRequest] = useState<{
+    notebookId: string;
+    id: number;
+  } | null>(null);
+  const [dropRequest, setDropRequest] = useState<{
+    notebookId: string;
+    id: number;
+    files: FileList;
+  } | null>(null);
   const [resume, setResume] = useState<NotebookRow | null>(null);
+  const nextRequestId = useRef(0);
   const nameRef = useRef<HTMLInputElement>(null);
 
   // Resume pointer: remember the last notebook opened on this device.
@@ -49,9 +59,12 @@ export default function DeskApp() {
   }, [notebookId]);
 
   useEffect(() => {
+    let current = true;
     if (notebookId) {
       setResume(null);
-      return;
+      return () => {
+        current = false;
+      };
     }
     const last = (() => {
       try {
@@ -62,9 +75,21 @@ export default function DeskApp() {
     })();
     if (!last) {
       setResume(null);
-      return;
+      return () => {
+        current = false;
+      };
     }
-    void db.notebooks.get(last).then((nb) => setResume(nb ?? null));
+    void db.notebooks
+      .get(last)
+      .then((notebook) => {
+        if (current) setResume(notebook ?? null);
+      })
+      .catch(() => {
+        if (current) setResume(null);
+      });
+    return () => {
+      current = false;
+    };
   }, [notebookId]);
 
   // Freshly created notebooks land ready to rename.
@@ -75,22 +100,48 @@ export default function DeskApp() {
     }
   }, [freshId, notebookId]);
 
-  const newNotebook = useCallback(async () => {
+  const newNotebook = useCallback(async (): Promise<string> => {
     const nb = await createNotebook("Untitled");
     setFreshId(nb.id);
     navigate(`/studio/${nb.id}`, { flushSync: true });
+    return nb.id;
   }, [navigate]);
+
+  const goHome = useCallback(() => navigate("/studio", { flushSync: true }), [navigate]);
 
   // File ▸ Import / palette "Add sources": always lands somewhere useful.
   const requestImport = useCallback(async () => {
-    if (!notebookId) await newNotebook();
-    setImportSignal((n) => n + 1);
-  }, [notebookId, newNotebook]);
+    const targetId = notebookId ?? (await newNotebook());
+    desk.setLayout("reading");
+    setImportRequest({ notebookId: targetId, id: ++nextRequestId.current });
+  }, [desk, notebookId, newNotebook]);
+
+  const importDrop = useCallback(
+    async (files: FileList) => {
+      const targetId = notebookId ?? (await newNotebook());
+      desk.setLayout("reading");
+      setDropRequest({ notebookId: targetId, id: ++nextRequestId.current, files });
+    },
+    [desk, notebookId, newNotebook],
+  );
 
   const openNotebook = useCallback(
     (id: string) => navigate(`/studio/${id}`, { flushSync: true }),
     [navigate],
   );
+  const pendingWorkId = new URLSearchParams(location.search).get("work");
+  const openWork = useCallback(
+    (targetNotebookId: string, generationId: string) => {
+      desk.setLayout("writing");
+      navigate(`/studio/${targetNotebookId}?work=${encodeURIComponent(generationId)}`, {
+        flushSync: true,
+      });
+    },
+    [desk, navigate],
+  );
+  const clearPendingWork = useCallback(() => {
+    if (notebookId) navigate(`/studio/${notebookId}`, { replace: true });
+  }, [navigate, notebookId]);
 
   const modelLabel =
     cs.provider === "anthropic"
@@ -106,6 +157,7 @@ export default function DeskApp() {
       onSettings={() => setSettingsOpen(true)}
       onNewNotebook={() => void newNotebook()}
       onImport={() => void requestImport()}
+      onHome={goHome}
     >
       <div
         className="relative flex h-[100svh] flex-col overflow-hidden bg-ground text-ink"
@@ -118,12 +170,12 @@ export default function DeskApp() {
         onDrop={(e) => {
           e.preventDefault();
           desk.setDropping(0);
-          if (e.dataTransfer.files.length) desk.setDropFiles(e.dataTransfer.files);
+          if (e.dataTransfer.files.length) void importDrop(e.dataTransfer.files);
         }}
       >
         {desk.dropping > 0 && (
           <div className="pointer-events-none absolute inset-0 z-[50] flex items-center justify-center bg-ground/70 text-[15px] text-ink">
-            Drop onto this notebook
+            {notebookId ? "Add files to this notebook" : "Create a notebook with these files"}
           </div>
         )}
 
@@ -135,6 +187,7 @@ export default function DeskApp() {
           onRename={(name) => void desk.rename(name)}
           modelLabel={modelLabel}
           effortLabel={effortLabel}
+          onHome={goHome}
           onSettings={() => setSettingsOpen(true)}
         />
 
@@ -142,6 +195,7 @@ export default function DeskApp() {
         <div className="relative z-10 flex min-h-0 flex-1">
           <LibraryRail
             activeId={notebookId ?? null}
+            onHome={goHome}
             onSelect={openNotebook}
             onNew={() => void newNotebook()}
             onDeleted={(id) => {
@@ -158,7 +212,7 @@ export default function DeskApp() {
                 transition={{ duration: 0.22, ease: HOUSE }}
                 className="flex min-h-0 flex-1"
               >
-                {desk.notebook ? (
+                {desk.notebook?.id === notebookId ? (
                   <NotebookDesk
                     notebookId={notebookId}
                     notebook={desk.notebook}
@@ -166,16 +220,59 @@ export default function DeskApp() {
                     bumpSources={desk.bumpSources}
                     layout={desk.layout}
                     setLayout={desk.setLayout}
-                    importSignal={importSignal}
-                    dropFiles={desk.dropFiles}
-                    clearDropFiles={() => desk.setDropFiles(null)}
+                    importRequestId={
+                      importRequest?.notebookId === notebookId ? importRequest.id : null
+                    }
+                    onImportConsumed={(requestId) =>
+                      setImportRequest((request) =>
+                        request?.id === requestId ? null : request,
+                      )
+                    }
+                    dropRequest={
+                      dropRequest?.notebookId === notebookId
+                        ? { id: dropRequest.id, files: dropRequest.files }
+                        : null
+                    }
+                    onDropConsumed={(requestId) =>
+                      setDropRequest((request) =>
+                        request?.id === requestId ? null : request,
+                      )
+                    }
                     pendingView={desk.pendingView}
                     openSource={desk.openSource}
                     clearPendingView={desk.clearPendingView}
+                    pendingGenerationId={pendingWorkId}
+                    onGenerationConsumed={clearPendingWork}
                   />
+                ) : desk.loadState === "error" ? (
+                  <div
+                    role="alert"
+                    className="flex min-h-0 flex-1 items-center justify-center px-8 text-center"
+                  >
+                    <div className="max-w-sm rounded-[var(--radius-dialog)] border border-rust/30 bg-surface p-6 shadow-modal">
+                      <h2 className="font-display text-heading text-ink">This notebook did not open.</h2>
+                      <p className="mt-2 text-body text-muted">
+                        {desk.loadError || "Local storage could not be read. Your notebook remains on this device."}
+                      </p>
+                      <div className="mt-5 flex justify-center gap-2">
+                        <button
+                          onClick={desk.retryLoad}
+                          className="rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 text-[12px] font-medium text-brasspale hover:bg-brass/10"
+                        >
+                          Retry
+                        </button>
+                        <button
+                          onClick={goHome}
+                          className="rounded-[var(--radius-control)] border border-hairline px-4 py-2 text-[12px] text-muted hover:text-ink"
+                        >
+                          Desk home
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <div className="flex min-h-0 flex-1 items-center justify-center">
-                    <LampPulse />
+                    <LampPulse label="Opening notebook…" />
                   </div>
                 )}
               </motion.div>
@@ -191,7 +288,10 @@ export default function DeskApp() {
                 <DeskHome
                   hasKey={hasKey}
                   resume={resume}
+                  modelLabel={modelLabel}
+                  effortLabel={effortLabel}
                   onOpenResume={openNotebook}
+                  onOpenWork={openWork}
                   onNew={() => void newNotebook()}
                   onImport={() => void requestImport()}
                   onSettings={() => setSettingsOpen(true)}
@@ -216,6 +316,7 @@ function AppHeader({
   onRename,
   modelLabel,
   effortLabel,
+  onHome,
   onSettings,
 }: {
   tauriDrag: boolean;
@@ -224,6 +325,7 @@ function AppHeader({
   onRename: (name: string) => void;
   modelLabel: string;
   effortLabel: string;
+  onHome: () => void;
   onSettings: () => void;
 }) {
   const desk = useDesk();
@@ -234,12 +336,17 @@ function AppHeader({
       data-tauri-drag-region={tauriDrag ? true : undefined}
       className="desk-header relative z-[40] flex h-[calc(var(--desk-header)+var(--sat))] shrink-0 items-center gap-3 border-b border-hairline bg-ground px-3 pt-[var(--sat)]"
     >
-      <div className="flex shrink-0 select-none items-center gap-2">
+      <button
+        type="button"
+        onClick={onHome}
+        className="no-drag flex shrink-0 select-none items-center gap-2 rounded-[var(--radius-control)] px-1.5 py-1 hover:bg-ink/5"
+        aria-label="Comtus home"
+      >
         <Flame size={14} weight="light" className="text-brass" />
         <span className="font-display text-[12px] font-[480] tracking-[0.24em] text-ink">
           COMTUS
         </span>
-      </div>
+      </button>
       {notebook && (
         <>
           <span className="h-4 w-px shrink-0 bg-white/[0.09]" />

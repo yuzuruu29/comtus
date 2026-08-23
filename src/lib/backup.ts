@@ -52,7 +52,7 @@ function downloadBlob(json: string, filename: string): void {
 }
 
 /** Full local store → native save dialog on Tauri, browser download otherwise. */
-export async function exportBackup(): Promise<void> {
+export async function exportBackup(): Promise<boolean> {
   const json = JSON.stringify(await buildPayload());
   const filename = backupFilename();
 
@@ -63,12 +63,13 @@ export async function exportBackup(): Promise<void> {
       defaultPath: filename,
       filters: [{ name: "JSON", extensions: ["json"] }],
     });
-    if (!path) return;
+    if (!path) return false;
     await writeTextFile(path, json);
   } else {
     downloadBlob(json, filename);
   }
   markBackedUp();
+  return true;
 }
 
 export function parseBackupPayload(text: string): BackupPayload {

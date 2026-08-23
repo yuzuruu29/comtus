@@ -7,7 +7,7 @@
  * legacy flat thread. Exits non-zero on any failure or console error. */
 const { chromium } = require("playwright");
 
-const BASE = "http://localhost:5199";
+const BASE = "http://127.0.0.1:5199";
 // The workspace mounts a desktop and a mobile ChatPane (one CSS-hidden),
 // so every session-bar locator must target the visible instance only.
 const TRIGGER = 'button[aria-haspopup="listbox"] >> visible=true';

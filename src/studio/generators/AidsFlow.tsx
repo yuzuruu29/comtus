@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { externalMarkdownComponents } from "../ExternalLink";
 import { motion } from "motion/react";
 import {
   Copy,
@@ -164,7 +165,9 @@ export function DocViewer({ payload }: { payload: DocPayload }) {
         {copied ? "copied" : "copy"}
       </button>
       <div className="md pt-10">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{payload.markdown}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={externalMarkdownComponents}>
+          {payload.markdown}
+        </ReactMarkdown>
       </div>
     </div>
   );

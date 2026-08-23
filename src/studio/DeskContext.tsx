@@ -2,6 +2,7 @@ import { createContext, useContext } from "react";
 import type { LayoutMode } from "./layout";
 
 export type DeskActions = {
+  goHome: () => void;
   openSettings: () => void;
   newNotebook: () => void;
   openNotebook: (id: string) => void;
@@ -17,6 +18,7 @@ export type DeskActions = {
 const noop = () => {};
 
 export const defaultDeskActions: DeskActions = {
+  goHome: noop,
   openSettings: noop,
   newNotebook: noop,
   openNotebook: noop,

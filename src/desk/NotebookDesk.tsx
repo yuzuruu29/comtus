@@ -7,6 +7,7 @@ import SourcesPane from "../studio/SourcesPane";
 import ChatPane from "../studio/ChatPane";
 import StudioPane from "../studio/StudioPane";
 import { panesFor, type LayoutMode } from "../studio/layout";
+import { useMediaQuery } from "../lib/useMediaQuery";
 
 const SOURCES_W = 260;
 const STUDIO_W = 280;
@@ -22,12 +23,15 @@ export default function NotebookDesk({
   bumpSources,
   layout,
   setLayout,
-  importSignal,
-  dropFiles,
-  clearDropFiles,
+  importRequestId,
+  onImportConsumed,
+  dropRequest,
+  onDropConsumed,
   pendingView,
   openSource,
   clearPendingView,
+  pendingGenerationId,
+  onGenerationConsumed,
 }: {
   notebookId: string;
   notebook: NotebookRow | null;
@@ -35,30 +39,38 @@ export default function NotebookDesk({
   bumpSources: () => void;
   layout: LayoutMode;
   setLayout: (mode: LayoutMode) => void;
-  /** Monotonic counter bumped whenever a desk-level import is requested. */
-  importSignal: number;
-  dropFiles: FileList | null;
-  clearDropFiles: () => void;
+  /** Notebook-targeted, one-shot shell request. */
+  importRequestId: number | null;
+  onImportConsumed: (requestId: number) => void;
+  dropRequest: { id: number; files: FileList } | null;
+  onDropConsumed: (requestId: number) => void;
   pendingView: { sourceId: string; startChar?: number } | null;
   openSource: (sourceId: string, startChar?: number) => void;
   clearPendingView: () => void;
+  pendingGenerationId?: string | null;
+  onGenerationConsumed?: () => void;
 }) {
-  const panes = panesFor(layout);
+  const compact = useMediaQuery("(max-width: 1199px)");
+  // On compact windows keep Chat usable by showing at most one companion
+  // pane. Standard favors Sources; Studio remains one click away.
+  const panes = panesFor(layout, compact);
 
   // Translate desk-level import requests into pane ticks. The seen-ref
   // keeps a stale signal from re-firing when switching between notebooks.
   const [importTick, setImportTick] = useState(0);
-  const seenSignal = useRef(0);
+  const seenSignal = useRef<number | null>(null);
   useEffect(() => {
-    if (importSignal > seenSignal.current) {
-      seenSignal.current = importSignal;
+    if (importRequestId !== null && importRequestId !== seenSignal.current) {
+      seenSignal.current = importRequestId;
       setImportTick((t) => t + 1);
+      onImportConsumed(importRequestId);
     }
-  }, [importSignal]);
+  }, [importRequestId, onImportConsumed]);
 
   return (
     <div className="flex min-h-0 flex-1">
       <motion.aside
+        aria-label="Sources"
         initial={false}
         animate={{ width: panes.sources ? SOURCES_W : RAIL_W }}
         transition={SPRING}
@@ -74,8 +86,12 @@ export default function NotebookDesk({
               pendingView={pendingView}
               onPendingConsumed={clearPendingView}
               importTick={importTick}
-              dropFiles={dropFiles}
-              onDropConsumed={clearDropFiles}
+              onImportTriggered={() => setImportTick(0)}
+              dropFiles={dropRequest?.files ?? null}
+              dropRequestId={dropRequest?.id}
+              onDropConsumed={() => {
+                if (dropRequest) onDropConsumed(dropRequest.id);
+              }}
             />
           </div>
         ) : (
@@ -83,7 +99,7 @@ export default function NotebookDesk({
             <RailButton
               icon={Notebook}
               label="Sources"
-              onClick={() => setLayout(panes.studio ? "standard" : "reading")}
+              onClick={() => setLayout(compact ? "reading" : panes.studio ? "standard" : "reading")}
             />
           </div>
         )}
@@ -102,6 +118,7 @@ export default function NotebookDesk({
       </main>
 
       <motion.aside
+        aria-label="Studio"
         initial={false}
         animate={{ width: panes.studio ? STUDIO_W : RAIL_W }}
         transition={SPRING}
@@ -112,6 +129,8 @@ export default function NotebookDesk({
             <StudioPane
               notebookId={notebookId}
               onCollapse={() => setLayout(panes.sources ? "reading" : "focus")}
+              pendingGenerationId={pendingGenerationId}
+              onPendingGenerationConsumed={onGenerationConsumed}
             />
           </div>
         ) : (
@@ -119,7 +138,7 @@ export default function NotebookDesk({
             <RailButton
               icon={Books}
               label="Studio"
-              onClick={() => setLayout(panes.sources ? "standard" : "writing")}
+              onClick={() => setLayout(compact ? "writing" : panes.sources ? "standard" : "writing")}
             />
           </div>
         )}

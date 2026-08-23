@@ -33,9 +33,10 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
   const handleExport = async () => {
     setBusy(true);
     setErr(false);
+    setMsg("");
     try {
-      await exportBackup();
-      setMsg(isTauri() ? "Backup saved." : "Backup saved to your downloads.");
+      const saved = await exportBackup();
+      if (saved) setMsg(isTauri() ? "Backup saved." : "Backup saved to your downloads.");
     } catch {
       setErr(true);
       setMsg("Export failed. Please retry.");
@@ -97,8 +98,9 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
         Your data
       </div>
       <p className="mt-1.5 text-label leading-relaxed text-muted">
-        Stored only on this device. Notebooks, sources, and history never leave
-        this computer unless you export a backup.
+        Notebooks, sources, and history are stored on this device. Relevant source
+        text is sent only when you ask the model you selected; backups leave the
+        app only when you export them.
       </p>
       {quota && (
         <p className="mt-2 font-mono text-[10.5px] uppercase tracking-[0.12em] text-muted">
@@ -175,7 +177,13 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
           </label>
         )}
         {msg && (
-          <span className={`text-label ${err ? "text-rust" : "text-sage"}`}>{msg}</span>
+          <span
+            role={err ? "alert" : "status"}
+            aria-live={err ? "assertive" : "polite"}
+            className={`text-label ${err ? "text-rust" : "text-sage"}`}
+          >
+            {msg}
+          </span>
         )}
       </div>
       <p className="mt-2 font-mono text-[10.5px] text-muted">{formatBackupAt(lastBackupAt)}</p>

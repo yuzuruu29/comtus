@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Comtus",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "identifier": "studio.comtus.app",
   "build": {
-    "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://localhost:5199",
-    "beforeBuildCommand": "npx vite build --mode tauri",
+    "beforeDevCommand": "pnpm dev:tauri",
+    "devUrl": "http://127.0.0.1:5199",
+    "beforeBuildCommand": "pnpm build:tauri",
     "frontendDist": "../dist"
   },
   "app": {
@@ -25,14 +25,14 @@
     ],
     "security": {
       "csp": {
-        "defaultSrc": "'self'",
-        "scriptSrc": "'self' https://www.paypal.com https://www.paypalobjects.com",
-        "styleSrc": "'self' 'unsafe-inline'",
-        "fontSrc": "'self' data:",
-        "imgSrc": "'self' data: blob: https://www.paypal.com https://www.paypalobjects.com",
-        "connectSrc": "'self' https://comtus-ai.vercel.app https://api.anthropic.com https://openrouter.ai https://api.groq.com https://api.deepseek.com https://api.together.xyz https://opencode.ai https://api.cerebras.ai https://generativelanguage.googleapis.com https://api.mistral.ai https://www.paypal.com https://r.jina.ai https://api.github.com",
-        "frameSrc": "https://www.paypal.com https://www.sandbox.paypal.com",
-        "objectSrc": "'none'"
+        "default-src": "'self'",
+        "script-src": "'self'",
+        "style-src": "'self' 'unsafe-inline'",
+        "font-src": "'self' data:",
+        "img-src": "'self' data: blob:",
+        "connect-src": "'self' ipc: http://ipc.localhost https: http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*",
+        "frame-src": "'none'",
+        "object-src": "'none'"
       }
     }
   },

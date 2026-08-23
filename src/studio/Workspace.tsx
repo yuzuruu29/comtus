@@ -17,6 +17,7 @@ import { useDesk } from "./DeskContext";
 import { useNotebookDesk } from "./useNotebookDesk";
 import { panesFor } from "./layout";
 import { modLabel } from "./shortcuts";
+import { LampPulse } from "./ui";
 
 type MobilePane = "sources" | "chat" | "studio";
 
@@ -65,6 +66,33 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           if (e.dataTransfer.files.length) desk.setDropFiles(e.dataTransfer.files);
         }}
       >
+        {desk.loadState === "loading" && (
+          <div className="absolute inset-0 z-[70] flex items-center justify-center bg-ground/90">
+            <LampPulse label="Opening notebook…" />
+          </div>
+        )}
+        {desk.loadState === "error" && (
+          <div role="alert" className="absolute inset-0 z-[70] flex items-center justify-center bg-ground/95 px-6 text-center">
+            <div className="max-w-sm rounded-[var(--radius-dialog)] border border-rust/30 bg-surface p-6 shadow-modal">
+              <h1 className="font-display text-heading text-ink">This notebook did not open.</h1>
+              <p className="mt-2 text-body text-muted">{desk.loadError}</p>
+              <div className="mt-5 flex justify-center gap-2">
+                <button
+                  onClick={desk.retryLoad}
+                  className="rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 text-[12px] text-brasspale"
+                >
+                  Retry
+                </button>
+                <Link
+                  to="/studio"
+                  className="rounded-[var(--radius-control)] border border-hairline px-4 py-2 text-[12px] text-muted hover:text-ink"
+                >
+                  Notebook shelf
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
         {desk.dropping > 0 && (
           <div className="pointer-events-none absolute inset-0 z-[50] flex items-center justify-center bg-ground/70 text-[15px] text-ink">
             Drop onto this notebook
@@ -97,6 +125,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   pendingView={desk.pendingView}
                   onPendingConsumed={desk.clearPendingView}
                   importTick={desk.importTick}
+                  onImportTriggered={desk.consumeImport}
                   dropFiles={desk.dropFiles}
                   onDropConsumed={() => desk.setDropFiles(null)}
                 />
@@ -145,6 +174,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 pendingView={desk.pendingView}
                 onPendingConsumed={desk.clearPendingView}
                 importTick={desk.importTick}
+                onImportTriggered={desk.consumeImport}
                 dropFiles={desk.dropFiles}
                 onDropConsumed={() => desk.setDropFiles(null)}
               />

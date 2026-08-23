@@ -112,6 +112,15 @@ function copyDesktopReleases(): Plugin {
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), compatRelay(), stampSwVersion(), copyDesktopReleases()],
+  server: {
+    // Tauri's devUrl and the browser smoke suite both depend on this exact port.
+    host: "127.0.0.1",
+    port: 5199,
+    strictPort: true,
+    watch: {
+      ignored: ["**/src-tauri/**"],
+    },
+  },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },

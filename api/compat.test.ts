@@ -21,6 +21,17 @@ describe("compat relay", () => {
     expect(res.headers.get("access-control-allow-origin")).toBe(ORIGIN);
   });
 
+  it("allows the isolated Tauri development origin", async () => {
+    const origin = "http://127.0.0.1:5199";
+    const res = await handler(
+      new Request("http://localhost:3000/api/compat/zen/v1/models", {
+        method: "OPTIONS",
+        headers: { origin },
+      }),
+    );
+    expect(res.headers.get("access-control-allow-origin")).toBe(origin);
+  });
+
   it("404s unknown providers", async () => {
     const res = await handler(req("/api/compat/nope/v1/models"));
     expect(res.status).toBe(404);

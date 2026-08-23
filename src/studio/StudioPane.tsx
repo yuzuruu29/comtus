@@ -30,6 +30,7 @@ import {
   SlideshowView,
 } from "./generators/AidsFlow";
 import type { QuizPayload, ExamPayload, EssayReviewPayload, DocPayload } from "../lib/types";
+import { useDesk } from "./DeskContext";
 
 type Flow = "quiz" | "exam" | "essay" | "flashcards" | "presentation" | "aids" | null;
 
@@ -72,10 +73,15 @@ const FLOW_TITLES: Record<string, string> = {
 export default function StudioPane({
   notebookId,
   onCollapse,
+  pendingGenerationId,
+  onPendingGenerationConsumed,
 }: {
   notebookId: string;
   onCollapse?: () => void;
+  pendingGenerationId?: string | null;
+  onPendingGenerationConsumed?: () => void;
 }) {
+  const desk = useDesk();
   const [gens, setGens] = useState<Generation[]>([]);
   const [flow, setFlow] = useState<Flow>(null);
   const [aidKind, setAidKind] = useState<GenerationKind | undefined>(undefined);
@@ -91,6 +97,23 @@ export default function StudioPane({
   }, [notebookId]);
 
   useEffect(refresh, [refresh]);
+
+  useEffect(() => {
+    if (!pendingGenerationId) return;
+    let current = true;
+    void db.generations
+      .get(pendingGenerationId)
+      .then((generation) => {
+        if (current && generation?.notebookId === notebookId) setViewing(generation);
+        if (current) onPendingGenerationConsumed?.();
+      })
+      .catch(() => {
+        if (current) onPendingGenerationConsumed?.();
+      });
+    return () => {
+      current = false;
+    };
+  }, [notebookId, onPendingGenerationConsumed, pendingGenerationId]);
 
   const openAid = (kind: GenerationKind) => {
     setAidKind(kind);
@@ -231,6 +254,7 @@ export default function StudioPane({
             notebookId={notebookId}
             onDone={done}
             onCancel={() => setFlow(null)}
+            onOpenSettings={desk.openSettings}
           />
         )}
         {flow === "aids" && (

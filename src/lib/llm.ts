@@ -53,6 +53,12 @@ export const COMPAT_PRESETS: { id: string; label: string; baseUrl: string; note:
     note: "hundreds of open & closed models, one key",
   },
   {
+    id: "nous",
+    label: "Nous",
+    baseUrl: "https://inference-api.nousresearch.com/v1",
+    note: "Nous-hosted inference, including ox-alpha",
+  },
+  {
     id: "groq",
     label: "Groq",
     baseUrl: "https://api.groq.com/openai/v1",

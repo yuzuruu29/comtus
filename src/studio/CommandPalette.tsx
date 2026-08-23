@@ -4,6 +4,7 @@ import {
   Books,
   ChatCircle,
   GearSix,
+  House,
   MagnifyingGlass,
   Notebook,
   Plus,
@@ -58,16 +59,23 @@ export default function CommandPalette({
   const [notebooks, setNotebooks] = useState<NotebookRow[]>([]);
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
   const platform = detectPlatform();
   const mod = modLabel(platform);
 
   useEffect(() => {
     if (!open) return;
+    restoreFocusRef.current = document.activeElement as HTMLElement | null;
     setQuery("");
     setActive(0);
     void db.notebooks.orderBy("updatedAt").reverse().toArray().then(setNotebooks);
     const t = window.setTimeout(() => inputRef.current?.focus(), 30);
-    return () => window.clearTimeout(t);
+    return () => {
+      window.clearTimeout(t);
+      restoreFocusRef.current?.focus();
+      restoreFocusRef.current = null;
+    };
   }, [open]);
 
   const items = useMemo<Item[]>(() => {
@@ -80,6 +88,7 @@ export default function CommandPalette({
       run: () => desk.setLayout(mode),
     });
     const actions: Item[] = [
+      { id: "home", group: "Actions", label: "Home", hint: `${mod}+Shift+H`, icon: House, run: desk.goHome },
       { id: "new", group: "Actions", label: "New notebook", hint: `${mod}+N`, icon: Plus, run: desk.newNotebook },
       { id: "settings", group: "Actions", label: "Settings", hint: `${mod}+,`, icon: GearSix, run: desk.openSettings },
       { id: "import", group: "Actions", label: "Add sources", icon: Notebook, run: desk.importFiles },
@@ -112,6 +121,12 @@ export default function CommandPalette({
     setActive(0);
   }, [query]);
 
+  useEffect(() => {
+    document
+      .getElementById(items[active] ? `command-${items[active].id}` : "")
+      ?.scrollIntoView?.({ block: "nearest" });
+  }, [active, items]);
+
   const run = (item: Item) => {
     item.run();
     onClose();
@@ -134,7 +149,27 @@ export default function CommandPalette({
     }
   };
 
-  let lastGroup = "";
+  const containFocus = (e: React.KeyboardEvent) => {
+    if (e.key !== "Tab") return;
+    const focusable = [...(panelRef.current?.querySelectorAll<HTMLElement>(
+      'input, button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+    ) ?? [])];
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
+  const onPanelKey = (e: React.KeyboardEvent) => {
+    onKey(e);
+    if (!e.defaultPrevented) containFocus(e);
+  };
 
   return (
     <AnimatePresence>
@@ -145,35 +180,57 @@ export default function CommandPalette({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, transition: { duration: 0.16 } }}
         >
-          <div className="absolute inset-0 bg-ground/70" onClick={onClose} />
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-label="Close command palette"
+            className="absolute inset-0 border-0 bg-ground/70"
+            onClick={onClose}
+          />
           <motion.div
+            ref={panelRef}
             role="dialog"
-            aria-label="Command palette"
+            aria-modal="true"
+            aria-labelledby="command-palette-title"
+            onKeyDownCapture={onPanelKey}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8, transition: { duration: 0.14 } }}
             transition={SOFT}
             className="relative w-full max-w-lg overflow-hidden rounded-[var(--radius-field)] border border-hairline bg-surface shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"
           >
+            <h2 id="command-palette-title" className="sr-only">
+              Command palette
+            </h2>
             <div className="flex items-center gap-2.5 border-b border-hairline px-3.5 py-2.5">
               <MagnifyingGlass size={16} weight="light" className="text-muted" />
               <input
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={onKey}
                 placeholder="Open a notebook, change layout, or jump to settings"
+                role="combobox"
+                aria-label="Search commands and notebooks"
+                aria-autocomplete="list"
+                aria-expanded="true"
+                aria-controls="command-palette-results"
+                aria-activedescendant={items[active] ? `command-${items[active].id}` : undefined}
+                autoComplete="off"
                 className="min-w-0 flex-1 bg-transparent text-[14px] text-ink outline-none placeholder:text-muted/55"
               />
               <kbd className="font-mono text-[10px] text-muted/70">esc</kbd>
             </div>
-            <div className="max-h-[min(52vh,22rem)] overflow-y-auto py-1.5">
+            <div
+              id="command-palette-results"
+              role="listbox"
+              aria-label="Commands and notebooks"
+              className="max-h-[min(52vh,22rem)] overflow-y-auto py-1.5"
+            >
               {items.length === 0 && (
                 <div className="px-4 py-8 text-center text-[13px] text-muted">Nothing matches.</div>
               )}
               {items.map((item, i) => {
-                const showGroup = item.group !== lastGroup;
-                lastGroup = item.group;
+                const showGroup = i === 0 || item.group !== items[i - 1]?.group;
                 return (
                   <div key={item.id}>
                     {showGroup && (
@@ -182,6 +239,10 @@ export default function CommandPalette({
                       </div>
                     )}
                     <button
+                      id={`command-${item.id}`}
+                      role="option"
+                      tabIndex={-1}
+                      aria-selected={i === active}
                       type="button"
                       onMouseEnter={() => setActive(i)}
                       onClick={() => run(item)}

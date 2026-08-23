@@ -18,6 +18,8 @@ export default function UpdateToast() {
     <AnimatePresence>
       {visible && (
         <motion.div
+          role={state.phase === "error" ? "alert" : "status"}
+          aria-live={state.phase === "error" ? "assertive" : "polite"}
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 12, transition: { duration: 0.15 } }}
@@ -55,6 +57,11 @@ export default function UpdateToast() {
                 <div className="text-[13px] font-medium text-ink">Downloading update…</div>
                 <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-white/[0.08]">
                   <div
+                    role="progressbar"
+                    aria-label="Update download"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={state.progress >= 0 ? Math.round(state.progress * 100) : undefined}
                     className="h-full rounded-full bg-brass transition-[width] duration-300"
                     style={{ width: state.progress >= 0 ? `${Math.round(state.progress * 100)}%` : "40%" }}
                   />

@@ -42,6 +42,7 @@ import PayPalCheckout from "./PayPalCheckout";
 import DataTrustPanel from "./DataTrustPanel";
 import { isTauri } from "../lib/desktop";
 import { requestUpdateCheck } from "./useUpdater";
+import ExternalLink from "./ExternalLink";
 
 /* Free-tier providers highlighted in the picker — one click fills the
    endpoint + a sensible default model; the key link sits beside them. */
@@ -470,21 +471,21 @@ export default function SettingsModal({
                         <Sparkle size={14} className="text-brass" />
                         <span>Recommended: OpenRouter BYOK (with Free AI Models)</span>
                       </div>
-                      <a
+                      <ExternalLink
                         href="https://openrouter.ai/keys"
                         target="_blank"
                         rel="noreferrer"
                         className="text-moon text-[11.5px] hover:underline flex items-center gap-1 font-mono"
                       >
                         openrouter.ai/keys <ArrowSquareOut size={11} />
-                      </a>
+                      </ExternalLink>
                     </div>
                     <ol className="list-decimal pl-5 space-y-1.5 text-muted text-[12px]">
                       <li>
-                        Create an account at <a href="https://openrouter.ai" target="_blank" rel="noreferrer" className="text-moon hover:underline">openrouter.ai</a>.
+                        Create an account at <ExternalLink href="https://openrouter.ai" className="text-moon hover:underline">openrouter.ai</ExternalLink>.
                       </li>
                       <li>
-                        Go to <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-moon hover:underline">Keys</a>, click <strong>Create Key</strong>, and copy your <code className="text-brasspale">sk-or-v1-...</code> token.
+                        Go to <ExternalLink href="https://openrouter.ai/keys" className="text-moon hover:underline">Keys</ExternalLink>, click <strong>Create Key</strong>, and copy your <code className="text-brasspale">sk-or-v1-...</code> token.
                       </li>
                       <li>
                         Paste the key below with Base URL <code className="text-brasspale">https://openrouter.ai/api/v1</code>.
@@ -508,9 +509,9 @@ export default function SettingsModal({
                     <div className="rounded-lg border border-hairline bg-ink/[0.02] p-3">
                       <div className="font-medium text-ink flex items-center justify-between">
                         <span>1. OpenRouter (Multi-Model & Free)</span>
-                        <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
+                        <ExternalLink href="https://openrouter.ai/keys" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
                           openrouter.ai <ArrowSquareOut size={10} />
-                        </a>
+                        </ExternalLink>
                       </div>
                       <p className="mt-1 text-[11.5px] text-muted">
                         One key connects DeepSeek R1, Llama 3.3, Claude 3.5, Gemini 2.0, and free models.
@@ -519,9 +520,9 @@ export default function SettingsModal({
                     <div className="rounded-lg border border-hairline bg-ink/[0.02] p-3">
                       <div className="font-medium text-ink flex items-center justify-between">
                         <span>2. Groq (Ultra-Fast Free Tier)</span>
-                        <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
+                        <ExternalLink href="https://console.groq.com/keys" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
                           groq.com <ArrowSquareOut size={10} />
-                        </a>
+                        </ExternalLink>
                       </div>
                       <p className="mt-1 text-[11.5px] text-muted">
                         Instant, ultra-low latency inference for Llama 3.3 70B and Mixtral.
@@ -530,9 +531,9 @@ export default function SettingsModal({
                     <div className="rounded-lg border border-hairline bg-ink/[0.02] p-3">
                       <div className="font-medium text-ink flex items-center justify-between">
                         <span>3. DeepSeek (Direct)</span>
-                        <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noreferrer" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
+                        <ExternalLink href="https://platform.deepseek.com/api_keys" className="text-moon text-[11px] hover:underline flex items-center gap-0.5">
                           deepseek.com <ArrowSquareOut size={10} />
-                        </a>
+                        </ExternalLink>
                       </div>
                       <p className="mt-1 text-[11.5px] text-muted">
                         Ultra-capable direct reasoning models (<code className="text-brasspale">deepseek-reasoner</code>).
@@ -550,15 +551,15 @@ export default function SettingsModal({
                   </div>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 font-mono text-[10.5px]">
                     <span className="uppercase tracking-[0.14em] text-muted/60">More free tiers:</span>
-                    <a href="https://opencode.ai/zen" target="_blank" rel="noreferrer" className="flex items-center gap-0.5 text-moon hover:underline">
+                    <ExternalLink href="https://opencode.ai/zen" className="flex items-center gap-0.5 text-moon hover:underline">
                       OpenCode Zen <ArrowSquareOut size={9} />
-                    </a>
-                    <a href="https://cloud.cerebras.ai" target="_blank" rel="noreferrer" className="flex items-center gap-0.5 text-moon hover:underline">
+                    </ExternalLink>
+                    <ExternalLink href="https://cloud.cerebras.ai" className="flex items-center gap-0.5 text-moon hover:underline">
                       Cerebras <ArrowSquareOut size={9} />
-                    </a>
-                    <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="flex items-center gap-0.5 text-moon hover:underline">
+                    </ExternalLink>
+                    <ExternalLink href="https://aistudio.google.com/apikey" className="flex items-center gap-0.5 text-moon hover:underline">
                       Google AI Studio <ArrowSquareOut size={9} />
-                    </a>
+                    </ExternalLink>
                   </div>
                 </div>
               )}
@@ -683,7 +684,6 @@ export default function SettingsModal({
                     onClick={() => setShowAnthropicKey((v) => !v)}
                     className="flex h-9 w-9 items-center justify-center absolute right-1.5 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
                     aria-label={showAnthropicKey ? "Hide key" : "Show key"}
-                    tabIndex={-1}
                   >
                     {showAnthropicKey ? <EyeSlash size={15} /> : <Eye size={15} />}
                   </button>
@@ -831,14 +831,14 @@ export default function SettingsModal({
                           ))}
                         </div>
                       </button>
-                      <a
+                      <ExternalLink
                         href={p.keyUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="mt-3 inline-flex items-center gap-1 font-mono text-[10px] text-moon transition-colors hover:text-brasspale"
                       >
                         Get key · {p.keyLabel} <ArrowSquareOut size={9} />
-                      </a>
+                      </ExternalLink>
                     </div>
                   );
                 })}
@@ -1008,7 +1008,6 @@ export default function SettingsModal({
                     onClick={() => setShowCompatKey((v) => !v)}
                     className="flex h-9 w-9 items-center justify-center absolute right-1.5 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
                     aria-label={showCompatKey ? "Hide key" : "Show key"}
-                    tabIndex={-1}
                   >
                     {showCompatKey ? <EyeSlash size={15} /> : <Eye size={15} />}
                   </button>
