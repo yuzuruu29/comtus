@@ -291,6 +291,12 @@
     var(--glow-cool) 45%,
     transparent 70%
   );
+  /* The radial paint is cut hard where it meets this layer's rectangular
+     bounds — near an edge that reads as a stray straight border outside
+     the card's rounded frame. Blurring the layer turns any boundary cut
+     into an imperceptible falloff and lets the light breathe past the
+     card edge like real lamplight. */
+  filter: blur(10px);
 }
 
 /* ── Dot grid — quiet texture for pane interiors ──────────── */
