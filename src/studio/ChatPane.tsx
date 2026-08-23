@@ -9,15 +9,18 @@ import remarkGfm from "remark-gfm";
 import { externalMarkdownComponents } from "./ExternalLink";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  ArrowUp,
+  ArrowRight,
+  BookmarkSimple,
   Brain,
   CaretDown,
-  Chats,
+  Check,
+  Copy,
   Flame,
   PaperPlaneRight,
   PencilSimple,
   Plus,
   Quotes,
+  SlidersHorizontal,
   Stop,
   Trash,
 } from "@phosphor-icons/react";
@@ -30,12 +33,14 @@ import {
   createChatSession,
   renameChatSession,
   deleteChatSession,
+  createCustomNote,
 } from "../lib/db";
 import type { ChatMessage, ChatSession, Notebook, Citation } from "../lib/types";
 import { deriveSessionTitle } from "../lib/sessionText";
 import { streamChat, friendlyError, isAbort } from "../lib/llm";
 import { useSettings, useCallSettings } from "../lib/settings";
-import { Collapse, SOFT, SPRING, HOUSE, Spotlight, BorderBeam } from "./fx";
+import { getNotebookCoverEmoji } from "../lib/emoji";
+import { Collapse, SOFT, SPRING, Spotlight } from "./fx";
 import { timeAgo } from "./ui";
 
 const STARTERS = [
@@ -45,7 +50,12 @@ const STARTERS = [
   "Make me a 10-item quiz on the hardest part",
 ];
 
-/** Remembered thread per notebook — survives reloads and desk restarts. */
+const FOLLOW_UPS = [
+  "What are the main key takeaways and practical implications?",
+  "Compare and contrast the primary themes across sources",
+  "Generate a detailed study outline based on these materials",
+];
+
 const lastSessionKey = (notebookId: string) => `comtus:lastChat:${notebookId}`;
 
 export default function ChatPane({
@@ -68,24 +78,24 @@ export default function ChatPane({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sourceCount, setSourceCount] = useState(0);
   const [input, setInput] = useState("");
-  const [streaming, setStreaming] = useState<{ text: string; thinking: string; phase?: "reading" | "thinking" | "answering" } | null>(null);
+  const [streaming, setStreaming] = useState<{
+    text: string;
+    thinking: string;
+    phase?: "reading" | "thinking" | "answering";
+  } | null>(null);
   const [thinkingOpen, setThinkingOpen] = useState(true);
   const [error, setError] = useState("");
+  const [toastNoteSaved, setToastNoteSaved] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickBottom = useRef(true);
-  /** Guards async loads against out-of-order resolution when switching fast. */
   const loadToken = useRef(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(false);
-  /** Composer textarea — measured imperatively for auto-grow. */
   const taRef = useRef<HTMLTextAreaElement>(null);
 
   const activeSession = sessions.find((s) => s.id === activeId) ?? null;
 
-  // Notebook changed: load its threads, restore the remembered one.
-  // Keyed on identity, not the object — renaming a notebook shouldn't
-  // reset an open thread.
   useEffect(() => {
     abortRef.current?.abort();
     const nbId = notebook?.id;
@@ -115,7 +125,6 @@ export default function ChatPane({
       .then(setSourceCount);
   }, [notebook, sourcesVersion]);
 
-  // Close the switcher on outside click or Escape; disarm pending delete.
   useEffect(() => {
     if (!menuOpen) return;
     const onDown = (e: PointerEvent) => {
@@ -132,13 +141,11 @@ export default function ChatPane({
     };
   }, [menuOpen]);
 
-  // Keep pinned to the bottom while content arrives, unless the user scrolled up.
   useEffect(() => {
     const el = scrollRef.current;
     if (el && stickBottom.current) el.scrollTop = el.scrollHeight;
   }, [streaming, messages]);
 
-  // Adjust scroll when virtual keyboard opens/closes on mobile
   useEffect(() => {
     if (typeof window === "undefined" || !window.visualViewport) return;
     const vp = window.visualViewport;
@@ -154,7 +161,6 @@ export default function ChatPane({
     return () => vp.removeEventListener("resize", handleResize);
   }, []);
 
-  // Leaving the notebook mid-stream shouldn't keep spending tokens.
   useEffect(() => {
     return () => abortRef.current?.abort();
   }, []);
@@ -173,7 +179,6 @@ export default function ChatPane({
     }
   };
 
-  /** Mirror a db-side updatedAt bump into the local, sorted list. */
   const bumpSession = (id: string) => {
     setSessions((prev) =>
       [...prev.map((s) => (s.id === id ? { ...s, updatedAt: Date.now() } : s))].sort(
@@ -208,7 +213,7 @@ export default function ChatPane({
     abortRef.current?.abort();
     const token = ++loadToken.current;
     const session = await createChatSession(notebook.id);
-    if (token !== loadToken.current) return; // notebook switched meanwhile
+    if (token !== loadToken.current) return;
     setSessions((prev) => [session, ...prev]);
     setActiveId(session.id);
     rememberActive(notebook.id, session.id);
@@ -239,7 +244,6 @@ export default function ChatPane({
 
   const removeSession = async (id: string) => {
     if (!notebook) return;
-    // Two-click confirm — first click arms, second click deletes.
     if (armedDeleteId !== id) {
       setArmedDeleteId(id);
       return;
@@ -254,7 +258,6 @@ export default function ChatPane({
     const token = ++loadToken.current;
     const next = rest[0];
     if (!next) {
-      // Last thread deleted — hand back a clean one.
       const fresh = await createChatSession(notebook.id);
       if (token !== loadToken.current) return;
       setSessions([fresh]);
@@ -274,6 +277,13 @@ export default function ChatPane({
     stickBottom.current = true;
   };
 
+  const handleSaveToNote = async (title: string, text: string) => {
+    if (!notebook) return;
+    await createCustomNote(notebook.id, title, text);
+    setToastNoteSaved(true);
+    setTimeout(() => setToastNoteSaved(false), 2400);
+  };
+
   const send = useCallback(
     async (raw?: string) => {
       const question = (raw ?? input).trim();
@@ -285,7 +295,6 @@ export default function ChatPane({
       setError("");
       setInput("");
 
-      // A thread to type into is guaranteed on load; this is belt-and-braces.
       let sessionId = activeId;
       let untitled = activeSession ? !activeSession.title : true;
       if (!sessionId) {
@@ -312,7 +321,6 @@ export default function ChatPane({
       };
       await saveMessage(userMsg);
 
-      // First question names the chat.
       if (untitled) {
         const title = deriveSessionTitle(question);
         if (title) {
@@ -334,14 +342,14 @@ export default function ChatPane({
       const controller = new AbortController();
       abortRef.current = controller;
       try {
-        const focused = loadFocus(notebook.id);
+        const focusedSources = loadFocus(notebook.id);
         const reply = await streamChat({
           ...cs,
           notebookId: notebook.id,
           notebookName: notebook.name,
           history: history.slice(0, -1),
           question,
-          sourceIds: focused && focused.length > 0 ? focused : undefined,
+          sourceIds: focusedSources && focusedSources.length > 0 ? focusedSources : undefined,
           signal: controller.signal,
           onThinking: (_d, full) =>
             setStreaming((s) => (s ? { ...s, thinking: full, phase: "thinking" } : s)),
@@ -376,150 +384,121 @@ export default function ChatPane({
   );
 
   const hasText = !!input.trim();
+  const coverEmoji = getNotebookCoverEmoji(notebook?.name ?? "");
 
-  // Auto-grow — the field stretches with its content, up to the cap.
-  // Floor of 36px keeps a single-line field exactly as tall as the send
-  // button so their centers align.
   useEffect(() => {
     const el = taRef.current;
     if (!el) return;
     el.style.height = "0px";
-    el.style.height = `${Math.min(Math.max(el.scrollHeight, 36), 160)}px`;
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, 38), 160)}px`;
   }, [input]);
 
   if (!notebook) return <div className="flex-1" />;
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      {/* Session bar — the ref spans bar + dropdown so interacting with
-          either never counts as an outside click. */}
+    <div className="flex h-full min-h-0 flex-col bg-ground">
+      {/* Top Chat Bar matching Screenshot 2 */}
       <div
         ref={menuRef}
-        className="relative z-30 flex h-11 shrink-0 items-center gap-1 border-b border-hairline bg-ground px-2 sm:px-3"
+        className="relative z-30 flex h-11 shrink-0 items-center justify-between border-b border-hairline bg-ground px-4"
       >
-        <button
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-haspopup="listbox"
-          aria-expanded={menuOpen}
-          className="no-drag flex min-w-0 items-center gap-2 rounded-[var(--radius-control)] px-2 py-1.5 transition-colors duration-fast hover:bg-ink/5"
-        >
-          <Chats size={14} weight="light" className="shrink-0 text-brass" />
-          <span className="label-mono hidden !text-[10px] sm:inline">Chats</span>
-          <span className="min-w-0 max-w-[36vw] truncate text-[13px] font-[450] text-ink sm:max-w-[22rem]">
-            {activeSession?.title || "New chat"}
-          </span>
-          <CaretDown
-            size={12}
-            weight="light"
-            className={`shrink-0 text-muted transition-transform duration-300 ${menuOpen ? "rotate-180" : ""}`}
-          />
-        </button>
-        <div className="flex-1" />
-        <button
-          onClick={() => void newSession()}
-          className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted transition-colors duration-fast hover:bg-brass/[0.1] hover:text-brasspale"
-          aria-label="New chat"
-          title="New chat"
-        >
-          <Plus size={15} weight="light" />
-        </button>
+        <div className="flex items-center gap-2">
+          <h2 className="font-display text-[15.5px] font-[450] text-ink">Chat</h2>
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-haspopup="listbox"
+            aria-expanded={menuOpen}
+            className="flex items-center gap-1.5 rounded-full border border-hairline bg-surface/60 px-2.5 py-0.5 text-[11.5px] text-muted hover:border-hairline-strong hover:text-ink transition-colors"
+          >
+            <span className="truncate max-w-[14rem]">{activeSession?.title || "New chat"}</span>
+            <CaretDown size={11} className={`transition-transform ${menuOpen ? "rotate-180" : ""}`} />
+          </button>
+        </div>
 
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => void newSession()}
+            className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink transition-colors"
+            aria-label="New chat thread"
+            title="New chat"
+          >
+            <Plus size={14} weight="light" />
+          </button>
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink transition-colors"
+            title="Chat settings & sessions"
+          >
+            <SlidersHorizontal size={14} weight="light" />
+          </button>
+        </div>
+
+        {/* Sessions Dropdown */}
         <AnimatePresence>
           {menuOpen && (
             <motion.div
               initial={{ opacity: 0, y: -6, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -4, scale: 0.98, transition: { duration: 0.14 } }}
+              exit={{ opacity: 0, y: -4, scale: 0.98, transition: { duration: 0.12 } }}
               transition={SOFT}
               role="listbox"
-              aria-label="Chat sessions"
-              className="absolute left-2 top-[calc(100%+6px)] w-[min(21rem,calc(100vw-1.5rem))] overflow-hidden rounded-[var(--radius-field)] border border-hairline bg-surface shadow-modal sm:left-3"
+              className="absolute left-4 top-[calc(100%+6px)] z-50 w-72 overflow-hidden rounded-[var(--radius-dialog)] border border-hairline bg-surface p-1 shadow-modal"
             >
-              <div className="max-h-[min(20rem,52vh)] overflow-y-auto py-1">
-                {sessions.length === 0 && (
-                  <div className="px-4 py-6 text-center text-[12.5px] text-muted">
-                    No chats yet.
-                  </div>
-                )}
+              <div className="max-h-60 overflow-y-auto py-1">
                 {sessions.map((session) => {
                   const isActive = session.id === activeId;
                   const isRenaming = renamingId === session.id;
                   return (
-                    <div key={session.id} className="group/row relative">
+                    <div key={session.id} className="group relative">
                       {isRenaming ? (
-                        <div className="px-3 py-1.5">
+                        <div className="p-1">
                           <input
                             autoFocus
                             value={renameDraft}
                             onChange={(e) => setRenameDraft(e.target.value)}
                             onBlur={() => void commitRename()}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                void commitRename();
-                              } else if (e.key === "Escape") {
-                                e.preventDefault();
-                                setRenamingId(null);
-                              }
+                              if (e.key === "Enter") void commitRename();
+                              if (e.key === "Escape") setRenamingId(null);
                             }}
-                            className="w-full rounded-[var(--radius-field)] border border-brass/50 bg-ground/60 px-2.5 py-1.5 text-[13px] text-ink outline-none"
-                            aria-label="Chat name"
+                            className="w-full rounded-[var(--radius-control)] border border-brass/50 bg-ground px-2 py-1 text-[12.5px] text-ink outline-none"
                           />
                         </div>
                       ) : (
                         <button
-                          role="option"
-                          aria-selected={isActive}
                           onClick={() => selectSession(session.id)}
-                          className={`flex w-full items-center gap-2.5 px-3 py-2 pr-[4.6rem] text-left transition-colors duration-fast ${
-                            isActive ? "bg-brass/[0.07]" : "hover:bg-ink/[0.04]"
+                          className={`flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12.5px] transition-colors ${
+                            isActive ? "bg-brass/10 text-brasspale font-medium" : "text-muted hover:bg-ink/[0.04] hover:text-ink"
                           }`}
                         >
-                          <span
-                            aria-hidden
-                            className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                              isActive ? "bg-brass" : "border border-hairline-strong"
-                            }`}
-                          />
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[13px] leading-tight text-ink">
-                              {session.title || "New chat"}
-                            </span>
-                            <span className="mt-0.5 block font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted/60">
-                              {timeAgo(session.updatedAt)}
-                            </span>
-                          </span>
+                          <span className="truncate flex-1">{session.title || "New chat"}</span>
+                          <span className="font-mono text-[9px] opacity-60">{timeAgo(session.updatedAt)}</span>
                         </button>
                       )}
+
                       {!isRenaming && (
-                        <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 opacity-0 transition-opacity duration-fast focus-within:opacity-100 group-hover/row:opacity-100">
+                        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               startRename(session);
                             }}
-                            className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/[0.06] hover:text-ink"
-                            aria-label={`Rename ${session.title || "chat"}`}
+                            className="flex h-6 w-6 items-center justify-center rounded text-muted hover:text-ink"
+                            title="Rename"
                           >
-                            <PencilSimple size={13} weight="light" />
+                            <PencilSimple size={12} />
                           </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               void removeSession(session.id);
                             }}
-                            className={`flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] ${
-                              armedDeleteId === session.id
-                                ? "bg-rust/[0.12] text-rust"
-                                : "text-muted hover:bg-rust/[0.08] hover:text-rust"
+                            className={`flex h-6 w-6 items-center justify-center rounded ${
+                              armedDeleteId === session.id ? "text-rust bg-rust/15" : "text-muted hover:text-rust"
                             }`}
-                            aria-label={
-                              armedDeleteId === session.id
-                                ? `Click again to delete ${session.title || "chat"}`
-                                : `Delete ${session.title || "chat"}`
-                            }
+                            title="Delete"
                           >
-                            <Trash size={13} weight="light" />
+                            <Trash size={12} />
                           </button>
                         </div>
                       )}
@@ -529,9 +508,9 @@ export default function ChatPane({
               </div>
               <button
                 onClick={() => void newSession()}
-                className="flex w-full items-center gap-2 border-t border-hairline px-3.5 py-2.5 text-left text-[12.5px] text-muted transition-colors duration-fast hover:bg-brass/[0.06] hover:text-brasspale"
+                className="flex w-full items-center gap-2 border-t border-hairline px-3 py-2 text-[12px] font-medium text-brasspale hover:bg-brass/[0.06] transition-colors"
               >
-                <Plus size={13} weight="light" />
+                <Plus size={13} />
                 New chat
               </button>
             </motion.div>
@@ -539,63 +518,65 @@ export default function ChatPane({
         </AnimatePresence>
       </div>
 
+      {/* Chat Messages Scroll View */}
       <div
         ref={scrollRef}
         onScroll={onScroll}
         role="log"
-        aria-label="Chat messages"
-        aria-busy={!!streaming}
+        aria-label="Chat history"
         className="chat-scroll min-h-0 flex-1 overflow-y-auto"
       >
-        <div className="mx-auto w-full max-w-3xl px-5 pb-8 pt-8">
-          {messages.length === 0 && !streaming && (
-            <div className="mt-[10vh]">
-              <div className="anim-rise label-mono flex items-center gap-3">
-                <span className="h-px w-8 grad-lamp" />
-                {sourceCount > 0
-                  ? `${sourceCount} source${sourceCount === 1 ? "" : "s"} on the desk`
-                  : "An empty desk"}
+        <div className="mx-auto w-full max-w-3xl px-6 pb-8 pt-6">
+          {/* Initial Overview Card matching Screenshot 2 */}
+          <div className="mb-8 rounded-2xl border border-hairline/80 bg-surface/50 p-6 shadow-sm">
+            {/* Top Row: Mascot Emoji & Title */}
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-[28px] select-none">{coverEmoji}</span>
+              <div>
+                <h1 className="font-display text-[22px] font-[500] leading-snug text-ink">
+                  {notebook.name}
+                </h1>
+                <div className="font-mono text-[11px] text-muted tracking-[0.06em]">
+                  {sourceCount} {sourceCount === 1 ? "source" : "sources"}
+                </div>
               </div>
-              <h2 className="anim-rise mt-5 font-display text-[clamp(1.7rem,3.5vw,2.4rem)] font-[400] leading-snug text-ink" style={{ "--d": "60ms" } as React.CSSProperties}>
-                Ask about what you've read —{" "}
-                <em className="font-[420] text-lamp">the sources answer.</em>
-              </h2>
-              {sourceCount === 0 && (
-                <p className="anim-rise mt-4 max-w-md text-body leading-relaxed text-muted" style={{ "--d": "120ms" } as React.CSSProperties}>
-                  Add a source or two on the left, then come back. Comtus answers
-                  from your material, not from thin air. Files stay local; relevant
-                  source text is sent only when you ask your selected model.
-                </p>
-              )}
-              <motion.div
-                initial="hidden"
-                animate="show"
-                variants={{ show: { transition: { staggerChildren: 0.06, delayChildren: 0.25 } } }}
-                className="mt-8 grid grid-cols-1 gap-2.5 sm:grid-cols-2"
-              >
-                {STARTERS.map((s) => (
-                  <motion.button
-                    key={s}
-                    variants={{
-                      hidden: { opacity: 0, y: 14 },
-                      show: { opacity: 1, y: 0, transition: SOFT },
-                    }}
-                    whileHover={{ y: -3 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => void send(s)}
-                    className="rounded-xl border border-hairline bg-ink/[0.02] px-4 py-3 text-left text-[13px] leading-snug text-ink/80 transition-colors duration-200 hover:border-brass/30 hover:bg-brass/[0.04]"
-                  >
-                    {s}
-                  </motion.button>
-                ))}
-              </motion.div>
             </div>
-          )}
 
-          <div className="space-y-7">
+            {/* Grounded Synthesis Intro Text */}
+            <p className="mt-3 text-[13.5px] leading-relaxed text-ink/80">
+              {sourceCount > 0
+                ? "Your sources are analyzed and indexed. Ask questions, explore comparisons, extract key concepts, or create study aids grounded in your material."
+                : "No sources added yet. Add documents or links on the left to ground your discussions."}
+            </p>
+
+            {/* Quick Starters Grid */}
+            {messages.length === 0 && (
+              <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {STARTERS.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => void send(s)}
+                    className="flex items-center justify-between rounded-xl border border-hairline bg-surface px-3.5 py-2.5 text-left text-[12.5px] text-ink/90 transition-all hover:border-brass/40 hover:bg-raised hover:text-brasspale active:scale-[0.98]"
+                  >
+                    <span>{s}</span>
+                    <ArrowRight size={13} className="text-muted/60 shrink-0 ml-2" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Message List */}
+          <div className="space-y-6">
             {messages.map((m) => (
-              <MessageBubble key={m.id} msg={m} onCite={onNavigateSources} />
+              <MessageBubble
+                key={m.id}
+                msg={m}
+                onCite={onNavigateSources}
+                onSaveToNote={(title, content) => void handleSaveToNote(title, content)}
+              />
             ))}
+
             {streaming && (
               <MessageBubble
                 msg={{
@@ -612,56 +593,30 @@ export default function ChatPane({
                 thinkingOpen={thinkingOpen}
                 onToggleThinking={() => setThinkingOpen((v) => !v)}
                 onCite={onNavigateSources}
+                onSaveToNote={(title, content) => void handleSaveToNote(title, content)}
               />
             )}
           </div>
 
           {error && (
-            <div role="alert" className="anim-shake mt-6 flex items-start gap-3 rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] leading-relaxed text-rust">
-              <Flame size={15} weight="light" className="mt-0.5 shrink-0" />
-              {error}
+            <div role="alert" className="mt-6 flex items-start gap-3 rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] text-rust">
+              <Flame size={16} className="mt-0.5 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Composer — the lamp-lit writing instrument. Wakes on focus:
-          brass hairline, lamplight lift shadow, an orbiting border
-          beam, and a warm pool of light gathering beneath it. */}
-      <div className="relative shrink-0 px-4 pb-[calc(0.9rem+var(--sab))] pt-2 sm:px-5 sm:pb-[0.95rem]">
-        <div role="status" aria-live="polite" className="sr-only">
-          {streaming
-            ? streaming.phase === "thinking"
-              ? "Comtus is thinking"
-              : streaming.phase === "answering"
-                ? "Comtus is answering"
-                : "Comtus is reading your sources"
-            : ""}
-        </div>
-        {/* Fade trailing messages into the desk as they pass under */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 -top-7 h-7 bg-gradient-to-b from-transparent to-ground"
-        />
-        {/* Ambient lamplight pooling beneath the composer */}
-        <div
-          aria-hidden
-          className={`composer-ambience pointer-events-none absolute inset-x-6 -top-12 bottom-0 ${
-            focused || streaming ? "is-lit" : ""
-          }`}
-        />
-        <Spotlight radius={230} className="mx-auto w-full max-w-3xl px-5">
-          <motion.div
-            data-focused={focused ? "" : undefined}
-            data-streaming={streaming ? "" : undefined}
-            animate={{ y: focused || streaming ? -2 : 0 }}
-            transition={{ duration: 0.34, ease: HOUSE }}
-            className="composer-shell relative"
+      {/* Bottom Sticky Composer matching Screenshot 2 */}
+      <div className="relative shrink-0 px-4 pb-4 pt-2 sm:px-6">
+        {/* Floating Capsule Composer */}
+        <Spotlight radius={230} className="mx-auto w-full max-w-3xl">
+          <div
+            className={`relative rounded-2xl border transition-all duration-200 bg-surface/90 shadow-sm ${
+              focused ? "border-brass/50 shadow-md ring-1 ring-brass/20" : "border-hairline hover:border-hairline-strong"
+            }`}
           >
-            {(focused || streaming) && (
-              <BorderBeam size={84} duration={streaming ? 3.4 : 5} />
-            )}
-            <div className="relative z-[2] flex items-end gap-2 px-3.5 pb-2.5 pt-3">
+            <div className="flex items-end gap-2.5 px-4 pb-2.5 pt-3">
               <textarea
                 ref={taRef}
                 aria-label="Ask Comtus"
@@ -676,95 +631,71 @@ export default function ChatPane({
                   }
                 }}
                 rows={1}
-                placeholder="Ask, or say what to drill…"
-                className="min-h-9 flex-1 resize-none bg-transparent text-[16px] leading-relaxed text-ink caret-brass outline-none placeholder:text-muted/55 sm:text-[14px]"
+                placeholder="Start typing…"
+                className="min-h-9 flex-1 resize-none bg-transparent text-[14.5px] leading-relaxed text-ink caret-brass outline-none placeholder:text-muted/60"
               />
-              <AnimatePresence mode="popLayout" initial={false}>
+
+              {/* Source count badge inside composer on right */}
+              <div className="mb-1 flex items-center gap-2">
+                <span className="font-mono text-[11px] text-muted/70 whitespace-nowrap select-none">
+                  {sourceCount} {sourceCount === 1 ? "source" : "sources"}
+                </span>
+
+                {/* Circular Send Button */}
                 {streaming ? (
-                  <motion.button
-                    key="stop"
-                    initial={{ opacity: 0, scale: 0.55, rotate: -90 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                    exit={{ opacity: 0, scale: 0.55, rotate: 90 }}
-                    transition={SPRING}
-                    whileHover={{ scale: 1.07 }}
-                    whileTap={{ scale: 0.88 }}
+                  <button
                     onClick={() => abortRef.current?.abort()}
-                    className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hairline-strong text-ink transition-colors duration-fast hover:border-rust/60 hover:bg-rust/[0.09] hover:text-rust"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rust/20 text-rust hover:bg-rust/30 transition-all active:scale-95"
+                    title="Stop generating"
                     aria-label="Stop generating"
-                    title="Stop"
                   >
-                    <Stop size={13} weight="fill" />
-                  </motion.button>
+                    <Stop size={14} weight="fill" />
+                  </button>
                 ) : (
-                  <motion.button
-                    key="send"
-                    data-armed={hasText}
-                    initial={{ opacity: 0, scale: 0.55, rotate: 90 }}
-                    animate={{ opacity: hasText ? 1 : 0.45, scale: 1, rotate: 0 }}
-                    whileHover={hasText ? { scale: 1.08 } : undefined}
-                    whileTap={{ scale: 0.88 }}
-                    transition={SPRING}
+                  <button
                     onClick={() => void send()}
                     disabled={!hasText}
-                    className="relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full grad-lamp text-night disabled:cursor-not-allowed"
-                    aria-label="Send"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm hover:bg-blue-500 active:scale-95 disabled:opacity-40 disabled:hover:bg-blue-600 transition-all"
+                    aria-label="Send message"
                   >
-                    <span aria-hidden className="send-halo" />
-                    <AnimatePresence mode="wait" initial={false}>
-                      {hasText ? (
-                        <motion.span
-                          key="plane"
-                          initial={{ opacity: 0, y: 9, scale: 0.5 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -9, scale: 0.5 }}
-                          transition={{ duration: 0.17, ease: HOUSE }}
-                          className="relative z-[1] flex"
-                        >
-                          <PaperPlaneRight size={15} weight="bold" />
-                        </motion.span>
-                      ) : (
-                        <motion.span
-                          key="up"
-                          initial={{ opacity: 0, y: -9, scale: 0.5 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 9, scale: 0.5 }}
-                          transition={{ duration: 0.17, ease: HOUSE }}
-                          className="relative z-[1] flex"
-                        >
-                          <ArrowUp size={16} weight="bold" />
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </motion.button>
+                    <PaperPlaneRight size={15} weight="bold" />
+                  </button>
                 )}
-              </AnimatePresence>
+              </div>
             </div>
-          </motion.div>
-        </Spotlight>
 
-        {/* Footer rail — quiet affordances that brighten with focus */}
-        <div className="relative mx-auto mt-2 flex w-full max-w-3xl flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5">
-          <span
-            className={`hidden items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.16em] transition-colors duration-300 sm:flex ${
-              focused ? "text-muted" : "text-muted/45"
-            }`}
-          >
-            <kbd className="kbd-chip">↵</kbd> send
-            <kbd className="kbd-chip ml-1">⇧↵</kbd> newline
-          </span>
-          <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted/45 transition-colors duration-300">
-            {streaming ? (
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-1 w-1 animate-pulse rounded-full bg-brass" />
-                Answering from your sources…
-              </span>
-            ) : (
-              "Answers cite your sources · key stays local"
-            )}
-          </span>
-        </div>
+            {/* Follow-up Prompt Chips Carousel matching Screenshot 2 */}
+            <div className="border-t border-hairline/60 px-3.5 py-2 flex items-center gap-2 overflow-x-auto scroll-thin">
+              {FOLLOW_UPS.map((prompt) => (
+                <button
+                  key={prompt}
+                  onClick={() => void send(prompt)}
+                  className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-ink/[0.04] px-3 py-1 text-[11.5px] text-muted hover:bg-brass/10 hover:text-brasspale transition-colors"
+                >
+                  <span className="truncate max-w-[20rem]">{prompt}</span>
+                  <ArrowRight size={11} className="shrink-0 opacity-60" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </Spotlight>
       </div>
+
+      {/* Note Saved Toast Notification */}
+      <AnimatePresence>
+        {toastNoteSaved && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={SOFT}
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-sage/40 bg-surface px-4 py-2.5 text-[13px] text-sage shadow-modal"
+          >
+            <Check size={16} weight="bold" />
+            <span>Saved to Studio Notes</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -776,27 +707,35 @@ function MessageBubble({
   thinkingOpen = false,
   onToggleThinking,
   onCite,
+  onSaveToNote,
 }: {
   msg: ChatMessage;
   streaming?: boolean;
-  /** Present only while live-streaming: what the model is doing right now. */
   phase?: "reading" | "thinking" | "answering";
   thinkingOpen?: boolean;
   onToggleThinking?: () => void;
   onCite: (sourceId: string, startChar?: number) => void;
+  onSaveToNote?: (title: string, content: string) => void;
 }) {
   const [open, setOpen] = useState(thinkingOpen);
+  const [copied, setCopied] = useState(false);
   useEffect(() => setOpen(thinkingOpen), [thinkingOpen]);
+
+  const copyText = () => {
+    void navigator.clipboard.writeText(msg.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   if (msg.role === "user") {
     return (
       <motion.div
-        initial={{ opacity: 0, x: 22, scale: 0.98 }}
+        initial={{ opacity: 0, x: 16, scale: 0.98 }}
         animate={{ opacity: 1, x: 0, scale: 1 }}
         transition={SPRING}
         className="flex justify-end"
       >
-        <div className="max-w-[78%] text-right text-[14px] leading-relaxed text-ink/80">
+        <div className="max-w-[82%] rounded-2xl bg-brass/[0.12] border border-brass/25 px-4 py-3 text-[14px] leading-relaxed text-ink shadow-sm">
           {msg.content}
         </div>
       </motion.div>
@@ -809,86 +748,96 @@ function MessageBubble({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={SOFT}
-      className="space-y-2.5"
+      className="space-y-3 rounded-2xl border border-hairline/80 bg-surface/70 p-4 shadow-sm"
     >
+      {/* Reasoning Process Drawer */}
       {hasThinking && (
-        <div className="think-rule overflow-hidden">
-          {isThinking && <div aria-hidden className="think-gloss" />}
+        <div className="think-rule overflow-hidden rounded-xl border border-moon/25 bg-moon/[0.04]">
           <button
             onClick={() => (onToggleThinking ? onToggleThinking() : setOpen((v) => !v))}
-            className="relative z-[2] flex w-full items-center gap-2 px-3 py-2 text-left"
+            className="flex w-full items-center gap-2 px-3.5 py-2 text-left transition-colors hover:bg-moon/[0.06]"
           >
-            <Brain size={14} weight="light" className="text-moon" />
-            <span className="text-[12.5px] text-moon/90">
-              {isThinking ? <span className="thinking-live">Thinking</span> : "Reasoning"}
+            <Brain size={15} weight="light" className="text-moon" />
+            <span className="text-[12px] font-medium text-moon/90">
+              {isThinking ? "Thinking…" : "Reasoning process"}
             </span>
             <CaretDown
               size={13}
-              weight="light"
-              className={`ml-auto shrink-0 text-muted transition-transform duration-300 ${open ? "" : "-rotate-90"}`}
+              className={`ml-auto text-muted transition-transform duration-200 ${open ? "" : "-rotate-90"}`}
             />
           </button>
           <Collapse open={open}>
-            <div className="relative z-[2] max-h-72 overflow-y-auto px-3 pb-3 text-[12.5px] leading-[1.75] text-moon/75">
-              <p className="whitespace-pre-wrap">{msg.thinking}</p>
+            <div className="max-h-60 overflow-y-auto px-3.5 pb-3 text-[12.5px] leading-relaxed text-moon/80 whitespace-pre-wrap">
+              {msg.thinking}
             </div>
           </Collapse>
         </div>
       )}
 
+      {/* Formatted Markdown Content */}
       {msg.content ? (
-        <div className="md">
+        <div className="md text-[14.5px] leading-relaxed text-ink/90">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={externalMarkdownComponents}>
             {msg.content}
           </ReactMarkdown>
-          {streaming && <span className="stream-caret" />}
+          {streaming && <span className="stream-caret ml-1 inline-block h-3.5 w-1.5 bg-brass" />}
         </div>
       ) : (
         streaming && (
-          <div className="flex items-center gap-2 text-[13px] text-muted">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brass" />
-            {phase === "thinking" ? "Thinking…" : phase === "answering" ? "Answering…" : "Reading the sources…"}
+          <div className="flex items-center gap-2 text-[13px] text-muted py-2">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-brass" />
+            {phase === "thinking" ? "Thinking…" : phase === "answering" ? "Composing answer…" : "Reading sources…"}
           </div>
         )
       )}
 
-      {msg.error && (
-        <div className="rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] text-rust">
-          {msg.error}
+      {/* Citations list */}
+      {citations.length > 0 && !streaming && (
+        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-hairline/60">
+          <Quotes size={13} weight="light" className="text-muted/60 mr-1" />
+          {citations.map((c, i) => (
+            <button
+              key={i}
+              onClick={() => c.sourceId && onCite(c.sourceId, c.startChar)}
+              title={c.citedText.slice(0, 160)}
+              className="rounded-md border border-hairline bg-surface px-2 py-0.5 font-mono text-[10.5px] text-brasspale hover:border-brass/40 hover:bg-brass/10 transition-colors"
+            >
+              [{i + 1}] {c.sourceTitle.length > 24 ? `${c.sourceTitle.slice(0, 24)}…` : c.sourceTitle}
+            </button>
+          ))}
         </div>
       )}
 
-      {citations.length > 0 && !streaming && (
-        <motion.div
-          initial="hidden"
-          animate="show"
-          variants={{ show: { transition: { staggerChildren: 0.05 } } }}
-          className="flex flex-wrap items-center gap-1.5 pt-0.5"
-        >
-          <Quotes size={12} weight="light" className="text-muted/70" />
-          {citations.map((c, i) => (
-            <motion.button
-              key={i}
-              variants={{
-                hidden: { opacity: 0, y: 4 },
-                show: { opacity: 1, y: 0, transition: SPRING },
+      {/* Action Footer (Save to Note & Copy) */}
+      {!streaming && msg.content && (
+        <div className="flex items-center justify-between pt-1 text-[11.5px] text-muted">
+          <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] opacity-60">
+            {timeAgo(msg.createdAt)}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => {
+                const title = deriveSessionTitle(msg.content) || "Saved note";
+                onSaveToNote?.(title, msg.content);
               }}
-              onClick={() => c.sourceId && onCite(c.sourceId, c.startChar)}
-              title={c.citedText.slice(0, 160)}
-              className="cite-mark rounded-[var(--radius-control)] px-1.5 py-0.5 text-brasspale hover:bg-brass/[0.1]"
+              className="flex items-center gap-1 rounded-md px-2.5 py-1 text-muted hover:bg-ink/[0.06] hover:text-ink transition-colors"
+              title="Save to Studio Notes"
             >
-              {i + 1} {c.sourceTitle.length > 28 ? `${c.sourceTitle.slice(0, 28)}…` : c.sourceTitle}
-            </motion.button>
-          ))}
-        </motion.div>
-      )}
-
-      {!streaming && (
-        <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted/40">
-          {timeAgo(msg.createdAt)}
+              <BookmarkSimple size={13} />
+              <span>Save to note</span>
+            </button>
+            <button
+              onClick={copyText}
+              className="flex items-center gap-1 rounded-md px-2.5 py-1 text-muted hover:bg-ink/[0.06] hover:text-ink transition-colors"
+              title="Copy answer"
+            >
+              {copied ? <Check size={13} className="text-sage" /> : <Copy size={13} />}
+              <span>{copied ? "Copied" : "Copy"}</span>
+            </button>
+          </div>
         </div>
       )}
     </motion.div>
@@ -904,5 +853,5 @@ function dedupeCitations(list: Citation[]): Citation[] {
     seen.add(key);
     out.push(c);
   }
-  return out.slice(0, 12);
+  return out.slice(0, 10);
 }

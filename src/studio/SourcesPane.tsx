@@ -1,6 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ClipboardText, FilePdf, FileJs, FileText, Flame, Globe, Image as ImageIcon, Plus, SidebarSimple, Trash, X } from "@phosphor-icons/react";
+import {
+  CheckSquare,
+  ClipboardText,
+  FileJs,
+  FilePdf,
+  FileText,
+  Flame,
+  Globe,
+  Image as ImageIcon,
+  Plus,
+  SidebarSimple,
+  Square,
+  Trash,
+  VideoCamera,
+  X,
+  YoutubeLogo,
+} from "@phosphor-icons/react";
 import { loadFocus, saveFocus } from "./focus";
 import { db, deleteSource } from "../lib/db";
 import type { Source } from "../lib/types";
@@ -9,11 +25,11 @@ import { estTokens } from "../lib/retrieval";
 import { uid } from "../lib/db";
 import { addSourceWithChunks } from "../lib/db";
 import { SOFT, Spotlight } from "./fx";
-import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, timeAgo } from "./ui";
+import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote } from "./ui";
 import ExternalLink from "./ExternalLink";
 import { isTauri } from "../lib/desktop";
 
-const KIND_ICON = {
+const KIND_ICON: Record<string, typeof FileText> = {
   pdf: FilePdf,
   docx: FileText,
   txt: FileText,
@@ -22,7 +38,9 @@ const KIND_ICON = {
   url: Globe,
   paste: ClipboardText,
   img: ImageIcon,
-} as const;
+  youtube: YoutubeLogo,
+  video: VideoCamera,
+};
 
 async function chooseNativeFiles(): Promise<File[] | null> {
   const [{ open }, { readFile }] = await Promise.all([
@@ -90,7 +108,9 @@ export default function SourcesPane({
   onDropConsumed?: () => void;
 }) {
   const [sources, setSources] = useState<Source[]>([]);
-  const [importing, setImporting] = useState<{ done: number; total: number; current: string } | null>(null);
+  const [importing, setImporting] = useState<{ done: number; total: number; current: string } | null>(
+    null,
+  );
   const [failed, setFailed] = useState<string[]>([]);
   const [urlOpen, setUrlOpen] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -101,26 +121,27 @@ export default function SourcesPane({
   const seenDropSignal = useRef<number | FileList | null>(null);
 
   const refresh = useCallback(async () => {
-    setSources(
-      await db.sources.where("notebookId").equals(notebookId).sortBy("addedAt"),
-    );
+    setSources(await db.sources.where("notebookId").equals(notebookId).sortBy("addedAt"));
   }, [notebookId]);
 
-  const handleFiles = useCallback(async (files: FileList | File[] | null) => {
-    if (!files || files.length === 0) return;
-    const selected = Array.from(files);
-    setFailed([]);
-    setImporting({ done: 0, total: selected.length, current: selected[0].name });
-    const outcome = await importFiles(selected, notebookId, (done, total, current) =>
-      setImporting({ done, total, current }),
-    );
-    setImporting(null);
-    if (outcome.failed.length) {
-      setFailed(outcome.failed.map((failure) => `${failure.name}: ${failure.reason}`));
-    }
-    onChanged();
-    void refresh();
-  }, [notebookId, onChanged, refresh]);
+  const handleFiles = useCallback(
+    async (files: FileList | File[] | null) => {
+      if (!files || files.length === 0) return;
+      const selected = Array.from(files);
+      setFailed([]);
+      setImporting({ done: 0, total: selected.length, current: selected[0].name });
+      const outcome = await importFiles(selected, notebookId, (done, total, current) =>
+        setImporting({ done, total, current }),
+      );
+      setImporting(null);
+      if (outcome.failed.length) {
+        setFailed(outcome.failed.map((failure) => `${failure.name}: ${failure.reason}`));
+      }
+      onChanged();
+      void refresh();
+    },
+    [notebookId, onChanged, refresh],
+  );
 
   const handleFilesRef = useRef(handleFiles);
   const onImportTriggeredRef = useRef(onImportTriggered);
@@ -175,8 +196,6 @@ export default function SourcesPane({
     void refresh();
   }, [refresh, version]);
 
-  // Citation chips elsewhere in the app queue a request through the
-  // Workspace (this pane may mount *after* the click); consume it here.
   useEffect(() => {
     if (!pendingView) return;
     let cancelled = false;
@@ -191,22 +210,49 @@ export default function SourcesPane({
 
   const totalTokens = sources.reduce((s, x) => s + x.tokens, 0);
 
+  // All sources selected by default (focused === null or all included)
+  const isAllSelected = focused === null || (sources.length > 0 && focused.length === sources.length);
+  const selectedCount = focused === null ? sources.length : focused.length;
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setFocused([]);
+      saveFocus(notebookId, []);
+    } else {
+      setFocused(null);
+      saveFocus(notebookId, null);
+    }
+  };
+
+  const toggleSourceSelection = (id: string) => {
+    const selected = focused ?? sources.map((x) => x.id);
+    const next = selected.includes(id)
+      ? selected.filter((sId) => sId !== id)
+      : [...selected, id];
+    const value = next.length === sources.length ? null : next;
+    setFocused(value);
+    saveFocus(notebookId, value);
+  };
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center justify-between px-[var(--desk-pad)] pb-2 pt-3">
-        <div className="text-[12px] text-muted">Sources · {sources.length}</div>
+    <div className="flex min-h-0 flex-1 flex-col bg-surface/40">
+      {/* Header matching Screenshot 2 */}
+      <div className="flex items-center justify-between border-b border-hairline px-4 py-3.5">
+        <h2 className="font-display text-[15.5px] font-[450] text-ink">Sources</h2>
         {onCollapse && (
           <button
             onClick={onCollapse}
-            className="rounded p-1 text-muted transition-colors hover:text-ink lg:block"
-            aria-label="Collapse sources"
+            className="rounded-[var(--radius-control)] p-1 text-muted transition-colors hover:bg-ink/5 hover:text-ink"
+            aria-label="Collapse sources pane"
+            title="Collapse sources"
           >
-            <SidebarSimple size={16} weight="light" />
+            <SidebarSimple size={17} weight="light" />
           </button>
         )}
       </div>
 
-      <div className="px-[var(--desk-pad)]">
+      {/* Action Buttons */}
+      <div className="p-3.5 pb-2">
         <input
           ref={fileRef}
           type="file"
@@ -218,47 +264,52 @@ export default function SourcesPane({
             e.target.value = "";
           }}
         />
+
+        {/* + Add Source Button (Screenshot 2 primary style) */}
         <button
           onClick={() => fileRef.current?.click()}
           disabled={!!importing}
-          className="group flex w-full items-center justify-center gap-2 rounded-[var(--radius-control)] border border-hairline-strong px-3 py-2 text-[12.5px] font-medium text-muted hover:border-brass/40 hover:text-brasspale disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-full border border-hairline-strong bg-surface px-4 py-2.5 text-[13px] font-medium text-ink shadow-sm transition-all hover:border-brass/40 hover:bg-raised active:scale-[0.99] disabled:opacity-50"
         >
-          <Plus size={15} weight="light" />
-          {importing ? "Importing…" : "Add sources"}
+          <Plus size={15} weight="bold" className="text-brass" />
+          <span>{importing ? "Importing…" : "Add source"}</span>
         </button>
-        <div className="mt-2.5 flex gap-2">
+
+        {/* Quick import pills */}
+        <div className="mt-2 grid grid-cols-2 gap-1.5">
           <button
             onClick={() => setUrlOpen(true)}
-            className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3 py-2 text-[12px] text-muted hover:text-ink sm:min-h-0 sm:py-1.5"
+            className="flex items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/50 py-1.5 text-[11.5px] font-medium text-muted transition-colors hover:bg-surface hover:text-ink"
           >
-            <Globe size={13} weight="light" /> Web
+            <Globe size={13} weight="light" /> Web / URL
           </button>
           <button
             onClick={() => setPasteOpen(true)}
-            className="flex min-h-[40px] flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3 py-2 text-[12px] text-muted hover:text-ink sm:min-h-0 sm:py-1.5"
+            className="flex items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/50 py-1.5 text-[11.5px] font-medium text-muted transition-colors hover:bg-surface hover:text-ink"
           >
-            <ClipboardText size={13} weight="light" /> Paste
+            <ClipboardText size={13} weight="light" /> Paste text
           </button>
         </div>
+
         {importing && (
           <div role="status" aria-live="polite" className="mt-3 rounded-xl border border-hairline bg-ink/[0.02] px-3.5 py-3">
             <div className="text-[11.5px] text-muted">
-              {importing.current || "Finishing…"} ({importing.done}/{importing.total})
+              {importing.current || "Processing…"} ({importing.done}/{importing.total})
             </div>
             <div className="relative mt-2 h-1 overflow-hidden rounded bg-ink/[0.07]">
               <div
                 role="progressbar"
-                aria-label="Import sources"
+                aria-label="Import progress"
                 aria-valuemin={0}
                 aria-valuemax={importing.total}
                 aria-valuenow={importing.done}
                 className="h-full grad-lamp transition-all duration-300"
                 style={{ width: `${(importing.done / Math.max(1, importing.total)) * 100}%` }}
               />
-              <span className="bar-sheen" />
             </div>
           </div>
         )}
+
         {failed.length > 0 && (
           <div className="mt-3 space-y-1.5">
             {failed.map((f) => (
@@ -268,81 +319,121 @@ export default function SourcesPane({
         )}
       </div>
 
-      <div className="mt-4 min-h-0 flex-1 space-y-1 overflow-y-auto px-3 pb-6">
+      {/* "Select all sources" subheader matching Screenshot 2 */}
+      {sources.length > 0 && (
+        <div className="flex items-center justify-between border-b border-hairline px-4 py-2 text-[12px] text-muted">
+          <button
+            onClick={toggleSelectAll}
+            className="flex items-center gap-2 hover:text-ink transition-colors"
+          >
+            <span>Select all sources</span>
+            <span className="font-mono text-[10px] text-muted/70">({selectedCount}/{sources.length})</span>
+          </button>
+          <button
+            onClick={toggleSelectAll}
+            className="flex h-6 w-6 items-center justify-center text-brass hover:text-brasspale transition-colors"
+            aria-label={isAllSelected ? "Deselect all sources" : "Select all sources"}
+          >
+            {isAllSelected ? (
+              <CheckSquare size={16} weight="fill" />
+            ) : (
+              <Square size={16} weight="light" />
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Sources List */}
+      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2.5 py-2">
         <AnimatePresence initial={false}>
           {sources.map((s, i) => {
-            const Icon = KIND_ICON[s.kind] ?? FileText;
+            const isUrl = s.kind === "url";
+            const isYoutube = isUrl && (s.meta?.url?.includes("youtube.com") || s.meta?.url?.includes("youtu.be"));
+            const Icon = isYoutube ? YoutubeLogo : (KIND_ICON[s.kind] ?? FileText);
+            const isSelected = focused === null || focused.includes(s.id);
+
             return (
               <Spotlight key={s.id} className="rounded-xl" radius={180}>
-              <motion.div
-                layout
-                initial={{ opacity: 0, y: -12, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, x: -14, scale: 0.96, transition: { duration: 0.18 } }}
-                transition={i < 10 ? { ...SOFT, delay: i * 0.045 } : SOFT}
-                className="group flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 transition-colors hover:bg-ink/[0.04] sm:py-2"
-              >
-              <label className="flex h-8 w-8 shrink-0 items-center justify-center">
-                <input
-                  type="checkbox"
-                  checked={focused === null || focused.includes(s.id)}
-                  onChange={() => {
-                    const selected = focused ?? sources.map((x) => x.id);
-                    const next = selected.includes(s.id)
-                      ? selected.filter((id) => id !== s.id)
-                      : [...selected, s.id];
-                    const value = next.length === sources.length ? null : next;
-                    setFocused(value);
-                    saveFocus(notebookId, value);
-                  }}
-                  className="h-3.5 w-3.5 accent-[var(--color-brass)]"
-                  aria-label={`Include ${s.title} in chat`}
-                />
-              </label>
-              <button
-                onClick={() => setViewing({ source: s })}
-                className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
-              >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center text-muted group-hover:text-brasspale">
-                  <Icon size={14} weight="light" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-[13px] text-ink/90">{s.title}</span>
-                  <span className="block font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted/70">
-                    {(s.tokens / 1000).toFixed(1)}k tok · {timeAgo(s.addedAt)}
-                  </span>
-                </span>
-              </button>
-              <button
-                onClick={async () => {
-                  await deleteSource(s.id);
-                  onChanged();
-                  void refresh();
-                }}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted/60 transition-all duration-200 hover:!bg-rust/10 hover:!text-rust active:scale-90 sm:h-auto sm:w-auto sm:p-1.5 sm:text-muted/0 sm:group-hover:text-muted"
-                aria-label={`Delete ${s.title}`}
-              >
-                <Trash size={14} weight="light" />
-              </button>
-              </motion.div>
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: -12, scale: 0.96, transition: { duration: 0.16 } }}
+                  transition={i < 10 ? { ...SOFT, delay: i * 0.03 } : SOFT}
+                  className={`group flex items-center gap-2 rounded-xl px-2.5 py-2 transition-all ${
+                    isSelected ? "bg-surface/80 hover:bg-surface border border-hairline/60" : "opacity-60 hover:opacity-100 hover:bg-surface/50 border border-transparent"
+                  }`}
+                >
+                  {/* Source Kind Icon */}
+                  <button
+                    onClick={() => setViewing({ source: s })}
+                    className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+                  >
+                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                      isYoutube ? "bg-red-500/10 text-red-400" : "bg-ink/[0.04] text-muted group-hover:text-brasspale"
+                    }`}>
+                      <Icon size={15} weight={isYoutube ? "fill" : "light"} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] font-[450] text-ink/90 group-hover:text-ink">
+                        {s.title}
+                      </span>
+                      <span className="block font-mono text-[9.5px] uppercase tracking-[0.1em] text-muted/60">
+                        {(s.tokens / 1000).toFixed(1)}k tok
+                      </span>
+                    </span>
+                  </button>
+
+                  {/* Actions & Checkbox on the Right */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        await deleteSource(s.id);
+                        onChanged();
+                        void refresh();
+                      }}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-muted/0 transition-all hover:bg-rust/15 hover:text-rust group-hover:text-muted/60"
+                      aria-label={`Delete ${s.title}`}
+                      title="Delete source"
+                    >
+                      <Trash size={13} weight="light" />
+                    </button>
+
+                    {/* Right-aligned Checkbox matching Screenshot 2 */}
+                    <button
+                      onClick={() => toggleSourceSelection(s.id)}
+                      className="flex h-7 w-7 items-center justify-center text-brass hover:text-brasspale transition-colors"
+                      aria-label={`Toggle inclusion of ${s.title}`}
+                    >
+                      {isSelected ? (
+                        <CheckSquare size={16} weight="fill" />
+                      ) : (
+                        <Square size={16} weight="light" className="text-muted/60" />
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
               </Spotlight>
             );
           })}
         </AnimatePresence>
+
         {sources.length === 0 && !importing && (
-          <div className="anim-fade px-3 py-10 text-center" style={{ "--d": "200ms" } as React.CSSProperties}>
-            <Flame size={18} weight="light" className="breathe mx-auto mb-3 text-brass/60" />
-            <p className="text-body leading-relaxed text-muted">
-              No sources yet. Every answer traces back to material you added.
-              Files stay local; relevant text is sent only when you ask your selected model.
+          <div className="px-4 py-12 text-center">
+            <Flame size={20} weight="light" className="breathe mx-auto mb-3 text-brass/60" />
+            <h3 className="font-display text-[14.5px] font-[450] text-ink">No sources added yet</h3>
+            <p className="mt-2 text-[12px] leading-relaxed text-muted">
+              Add PDFs, notes, documents, or links. Your questions and study aids ground directly in your materials.
             </p>
           </div>
         )}
       </div>
 
       {sources.length > 0 && (
-        <div className="border-t border-hairline px-5 py-3 font-mono text-[10px] uppercase tracking-[0.16em] text-muted/70">
-          {totalTokens.toLocaleString()} tokens grounded
+        <div className="border-t border-hairline px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted/70 flex items-center justify-between">
+          <span>{totalTokens.toLocaleString()} tokens</span>
+          <span>{sources.length} sources</span>
         </div>
       )}
 
@@ -435,7 +526,7 @@ function UrlModal({
   return (
     <Modal open={open} onClose={onClose} title="Add a web page">
       <div className="space-y-5">
-        <Field label="URL" hint="Fetched in reader mode; only the text is kept.">
+        <Field label="URL" hint="Article or web document URL">
           <input
             autoFocus
             value={url}
@@ -470,22 +561,22 @@ function PasteModal({
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   return (
-    <Modal open={open} onClose={onClose} title="Paste a source">
+    <Modal open={open} onClose={onClose} title="Paste source text">
       <div className="space-y-5">
         <Field label="Title">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Lecture notes — Feb 12"
+            placeholder="Lecture notes or chapter"
             className={inputCls}
           />
         </Field>
-        <Field label="Text">
+        <Field label="Content">
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            rows={9}
-            placeholder="Paste notes, transcripts, or chapters here…"
+            rows={8}
+            placeholder="Paste text or notes here…"
             className={inputCls + " resize-none leading-relaxed"}
           />
         </Field>
@@ -496,12 +587,12 @@ function PasteModal({
           <button
             className={btnLamp}
             onClick={async () => {
-              await onAdd(title.trim() || "Pasted note", text);
+              await onAdd(title.trim() || "Pasted text", text);
               setText("");
               setTitle("");
               onClose();
             }}
-            disabled={text.trim().length < 20}
+            disabled={text.trim().length < 10}
           >
             Add source
           </button>
@@ -511,7 +602,6 @@ function PasteModal({
   );
 }
 
-/** Read-only source text; jumps to a char offset when opened from a citation. */
 function SourceViewer({
   source,
   startChar,
@@ -529,7 +619,6 @@ function SourceViewer({
     el?.scrollIntoView({ block: "center" });
   }, [startChar]);
 
-  // Slice the text into 500-char blocks so citations can be scrolled to.
   const blocks: { at: number; text: string }[] = [];
   for (let i = 0; i < source.content.length; i += 500)
     blocks.push({ at: i, text: source.content.slice(i, i + 500) });
@@ -542,12 +631,12 @@ function SourceViewer({
           <>
             {" · "}
             <ExternalLink href={source.meta.url} className="text-moon underline-offset-2 hover:underline">
-              original
+              Original link
             </ExternalLink>
           </>
         )}
       </div>
-      <div ref={bodyRef} className="space-y-2 font-[15px] leading-[1.75] text-ink/85">
+      <div ref={bodyRef} className="space-y-2 text-[14px] leading-[1.75] text-ink/85 max-h-[60vh] overflow-y-auto pr-2">
         {blocks.map((b) => (
           <p
             key={b.at}
@@ -564,8 +653,8 @@ function SourceViewer({
           </p>
         ))}
       </div>
-      <div className="pointer-events-none sticky bottom-0 -mx-6 mt-4 flex justify-end bg-gradient-to-t from-surface via-study/90 to-transparent px-6 pb-1 pt-8">
-        <button onClick={onClose} className={`pointer-events-auto ${btnGhost} !bg-surface`}>
+      <div className="mt-5 flex justify-end">
+        <button onClick={onClose} className={btnGhost}>
           <X size={13} weight="light" className="mr-1.5 inline" />
           Close
         </button>

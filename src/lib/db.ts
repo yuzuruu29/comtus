@@ -232,3 +232,47 @@ export async function saveGeneration(gen: Generation) {
   await db.generations.put(gen);
   await touchNotebook(gen.notebookId);
 }
+
+export async function createCustomNote(
+  notebookId: string,
+  title: string,
+  content: string,
+  tags: string[] = [],
+): Promise<Generation> {
+  const note: Generation = {
+    id: uid(),
+    notebookId,
+    kind: "note",
+    title: title.trim() || "Untitled note",
+    payload: { content, tags },
+    createdAt: Date.now(),
+  };
+  await db.generations.put(note);
+  await touchNotebook(notebookId);
+  return note;
+}
+
+export async function updateCustomNote(
+  id: string,
+  title: string,
+  content: string,
+  tags: string[] = [],
+): Promise<void> {
+  const existing = await db.generations.get(id);
+  if (!existing) return;
+  const updated: Generation = {
+    ...existing,
+    title: title.trim() || existing.title,
+    payload: { content, tags },
+  };
+  await db.generations.put(updated);
+  await touchNotebook(existing.notebookId);
+}
+
+export async function deleteGeneration(id: string): Promise<void> {
+  const existing = await db.generations.get(id);
+  if (!existing) return;
+  await db.generations.delete(id);
+  await touchNotebook(existing.notebookId);
+}
+

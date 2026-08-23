@@ -83,7 +83,9 @@ export type GenerationKind =
   | "timeline"
   | "flashcards"
   | "presentation"
-  | "slideshow";
+  | "slideshow"
+  | "note"
+  | "audio-overview";
 
 export interface Generation {
   id: string;
@@ -249,6 +251,25 @@ export interface PresentationPayload {
   deckTitle: string;
   deckSubtitle?: string;
   slides: Slide[];
+}
+
+/* ── Note & Audio Overview payloads ──────────────────────── */
+
+export interface NotePayload {
+  content: string;
+  tags?: string[];
+}
+
+export interface AudioOverviewSpeakerTurn {
+  speaker: "Alex" | "Sam" | string;
+  text: string;
+}
+
+export interface AudioOverviewPayload {
+  title: string;
+  summary: string;
+  script: AudioOverviewSpeakerTurn[];
+  duration?: number;
 }
 
 /* ── Settings ─────────────────────────────────────────────── */

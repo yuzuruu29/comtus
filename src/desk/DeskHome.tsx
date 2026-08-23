@@ -1,45 +1,39 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import {
-  ArrowRight,
-  Books,
-  Database,
-  FileText,
+  Crown,
+  DotsThreeVertical,
+  DownloadSimple,
   Flame,
   GearSix,
+  ListDashes,
+  MagnifyingGlass,
+  PencilSimple,
   Plus,
-  ShieldCheck,
+  Sparkle,
+  SquaresFour,
+  Trash,
   WarningCircle,
+  X,
 } from "@phosphor-icons/react";
 import { liveQuery } from "dexie";
-import { db } from "../lib/db";
-import type { Generation, Notebook } from "../lib/types";
-import { detectPlatform, greeting, todayLine } from "../lib/desktop";
+import { db, createNotebook, deleteNotebook, touchNotebook } from "../lib/db";
+import type { Notebook, Source } from "../lib/types";
+import { getNotebookCoverEmoji } from "../lib/emoji";
+import { SOFT, Spotlight } from "../studio/fx";
+import { Modal, Field, inputCls, btnLamp, btnGhost, timeAgo } from "../studio/ui";
+import { AnimatePresence, motion } from "motion/react";
 import { useSettings } from "../lib/settings";
-import { BorderBeam } from "../studio/fx";
-import { btnGhost, btnLamp, timeAgo } from "../studio/ui";
-import { modLabel } from "../studio/shortcuts";
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+type SortOption = "recent" | "az" | "oldest" | "sources";
 
-type DeskSnapshot = {
-  notebookCount: number;
+interface NotebookWithCount extends Notebook {
   sourceCount: number;
-  workCount: number;
-  recentNotebooks: Notebook[];
-  recentWork: Array<Generation & { notebookName: string }>;
-};
+}
 
-/** The desktop's working home: a returnable dashboard for resuming,
- * starting, and understanding the local desk—not a marketing landing page. */
 export default function DeskHome({
-  hasKey,
-  resume,
-  modelLabel,
-  effortLabel,
+  hasKey: _hasKey,
   onOpenResume,
-  onOpenWork,
-  onNew,
-  onImport,
+  onNew: _onNew,
   onSettings,
 }: {
   hasKey: boolean;
@@ -52,300 +46,640 @@ export default function DeskHome({
   onImport: () => void;
   onSettings: () => void;
 }) {
-  const g = greeting();
-  const mod = modLabel(detectPlatform());
-  const lastBackupAt = useSettings((s) => s.lastBackupAt) ?? 0;
-  const [snapshot, setSnapshot] = useState<DeskSnapshot | null>(null);
-  const [loadError, setLoadError] = useState(false);
+  const isPro = useSettings((s) => Boolean(s.isPro && s.planTier !== "free"));
+  const planTier = useSettings((s) => s.planTier);
+  const tokenBalance = useSettings((s) => s.tokenBalance || 0);
+  const tokensUsed = useSettings((s) => s.tokensUsed || 0);
+  const remainingTokens = Math.max(0, tokenBalance - tokensUsed);
 
+  const formatTokens = (n: number) => {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k`;
+    return n.toLocaleString();
+  };
+
+  const [notebooks, setNotebooks] = useState<NotebookWithCount[]>([]);
+  const [loadError, setLoadError] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [activeTab, setActiveTab] = useState<"all" | "my">("all");
+  const [sortOption, setSortOption] = useState<SortOption>("recent");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+
+  // Dialog states
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [newNotebookName, setNewNotebookName] = useState("");
+  const [renamingNotebook, setRenamingNotebook] = useState<Notebook | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const sortMenuRef = useRef<HTMLDivElement>(null);
+
+  // Live query for notebooks and their source counts
   useEffect(() => {
-    const sub = liveQuery(async (): Promise<DeskSnapshot> => {
-      const [notebookCount, sourceCount, workCount, recentNotebooks, generations] =
-        await Promise.all([
-          db.notebooks.count(),
-          db.sources.count(),
-          db.generations.count(),
-          db.notebooks.orderBy("updatedAt").reverse().limit(5).toArray(),
-          db.generations.orderBy("createdAt").reverse().limit(4).toArray(),
-        ]);
-      const notebookIds = [...new Set(generations.map((work) => work.notebookId))];
-      const workNotebooks = await db.notebooks.bulkGet(notebookIds);
-      const names = new Map(
-        notebookIds.map((id, index) => [id, workNotebooks[index]?.name ?? "Notebook"]),
-      );
-      return {
-        notebookCount,
-        sourceCount,
-        workCount,
-        recentNotebooks,
-        recentWork: generations.map((work) => ({
-          ...work,
-          notebookName: names.get(work.notebookId) ?? "Notebook",
-        })),
-      };
+    const sub = liveQuery(async () => {
+      const allNotebooks = await db.notebooks.toArray();
+      const allSources = await db.sources.toArray();
+
+      const sourceCountMap = new Map<string, number>();
+      for (const s of allSources) {
+        sourceCountMap.set(s.notebookId, (sourceCountMap.get(s.notebookId) ?? 0) + 1);
+      }
+
+      return allNotebooks.map((nb) => ({
+        ...nb,
+        sourceCount: sourceCountMap.get(nb.id) ?? 0,
+      }));
     }).subscribe({
-      next: (value) => {
-        setSnapshot(value);
+      next: (items) => {
+        setNotebooks(items);
         setLoadError(false);
       },
       error: () => setLoadError(true),
     });
+
     return () => sub.unsubscribe();
   }, []);
 
-  const backupDue =
-    snapshot !== null && snapshot.notebookCount > 0 && Date.now() - lastBackupAt > WEEK_MS;
+  // Close sort menu or card menus on click outside
+  useEffect(() => {
+    const onDown = (e: PointerEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) {
+        setSortMenuOpen(false);
+      }
+      if (!(e.target as HTMLElement).closest("[data-notebook-menu]")) {
+        setMenuOpenId(null);
+      }
+    };
+    window.addEventListener("pointerdown", onDown);
+    return () => window.removeEventListener("pointerdown", onDown);
+  }, []);
+
+  // Filtered & sorted notebooks
+  const processedNotebooks = useMemo(() => {
+    let list = [...notebooks];
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter((nb) => nb.name.toLowerCase().includes(q));
+    }
+
+    switch (sortOption) {
+      case "recent":
+        list.sort((a, b) => b.updatedAt - a.updatedAt);
+        break;
+      case "az":
+        list.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "oldest":
+        list.sort((a, b) => a.updatedAt - b.updatedAt);
+        break;
+      case "sources":
+        list.sort((a, b) => b.sourceCount - a.sourceCount);
+        break;
+    }
+
+    return list;
+  }, [notebooks, searchQuery, sortOption]);
+
+  const handleCreate = async () => {
+    const trimmed = newNotebookName.trim();
+    if (!trimmed) return;
+    const nb = await createNotebook(trimmed);
+    setCreateModalOpen(false);
+    setNewNotebookName("");
+    onOpenResume(nb.id);
+  };
+
+  const handleRename = async () => {
+    if (!renamingNotebook) return;
+    const trimmed = renameDraft.trim();
+    if (!trimmed) return;
+    await db.notebooks.update(renamingNotebook.id, { name: trimmed });
+    await touchNotebook(renamingNotebook.id);
+    setRenamingNotebook(null);
+    setRenameDraft("");
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteNotebook(id);
+    setDeletingId(null);
+    setMenuOpenId(null);
+  };
+
+  const handleExport = async (nb: Notebook) => {
+    setMenuOpenId(null);
+    const sources = await db.sources.where("notebookId").equals(nb.id).toArray();
+    const generations = await db.generations.where("notebookId").equals(nb.id).toArray();
+    const payload = {
+      notebook: nb,
+      exportedAt: new Date().toISOString(),
+      sources: sources.map((s: Source) => ({ title: s.title, kind: s.kind, content: s.content })),
+      generations,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${nb.name.replace(/[^a-z0-9_-]/gi, "_")}_backup.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const formatDate = (ts: number) => {
+    const d = new Date(ts);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
 
   return (
-    <main
-      aria-labelledby="desk-home-title"
-      className="relative min-h-0 flex-1 overflow-y-auto bg-ground"
-    >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] bg-[radial-gradient(62%_90%_at_28%_0%,rgba(227,176,75,0.075),transparent_74%)]" />
+    <main aria-label="Comtus Desktop Home" className="relative min-h-0 flex-1 overflow-y-auto bg-ground">
+      {/* Background ambient lighting */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-[45vh] bg-[radial-gradient(75%_100%_at_50%_0%,rgba(227,176,75,0.06),transparent_80%)]" />
 
-      <div className="relative z-10 mx-auto w-full max-w-5xl px-6 py-8 sm:px-9 sm:py-10 xl:px-12">
-        <section className="grid items-end gap-8 border-b border-hairline pb-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-muted">
-              {todayLine()} · Your desk
-            </p>
-            <h1
-              id="desk-home-title"
-              className="mt-4 max-w-2xl font-display text-[clamp(2rem,4vw,3.35rem)] font-[390] leading-[1.02] tracking-[-0.025em] text-ink"
-            >
-              {g.hello}. <em className="font-[420] text-lamp">The lamp is lit.</em>
-            </h1>
-            <p className="mt-4 max-w-xl text-[13.5px] leading-6 text-muted">
-              Return to a subject, gather new material, or begin a clean notebook. Your library and study history stay on this device.
-            </p>
-            <div className="mt-6 flex flex-wrap items-center gap-2.5">
-              <button onClick={onNew} className={`${btnLamp} !min-h-[36px]`}>
-                <BorderBeam size={48} duration={8} />
-                <Plus size={14} weight="light" /> New notebook
-              </button>
-              <button onClick={onImport} className={btnGhost}>
-                Add sources
-              </button>
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-6 sm:px-10 sm:py-8 lg:px-12">
+        {/* Top Header Row matching Screenshot 1 */}
+        <div className="flex items-center justify-between border-b border-hairline pb-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brass/10 text-brass">
+              <Flame size={20} weight="light" />
             </div>
+            <span className="font-display text-[21px] font-[500] tracking-[-0.01em] text-ink">
+              COMTUS
+            </span>
           </div>
 
-          <div className="border-l border-hairline pl-5">
-            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted">
-              Continue
-            </div>
-            {resume && snapshot?.notebookCount !== 0 ? (
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={onSettings}
+              className="flex items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/60 px-3.5 py-1.5 text-[12.5px] font-medium text-muted hover:border-hairline-strong hover:bg-surface hover:text-ink transition-colors"
+            >
+              <GearSix size={15} weight="light" />
+              Settings
+            </button>
+            {isPro ? (
               <button
-                onClick={() => onOpenResume(resume.id)}
-                className="group mt-3 w-full text-left"
+                onClick={onSettings}
+                className="flex items-center gap-1.5 rounded-full border border-brass/40 bg-brass/[0.12] px-3 py-1 font-mono text-[10.5px] font-medium text-brasspale hover:bg-brass/20 transition-all shadow-[0_0_12px_rgba(227,176,75,0.15)]"
+                title={`Anthropic Pro Plan Active (${planTier.toUpperCase()}) · ${remainingTokens.toLocaleString()} tokens available`}
               >
-                <span className="block truncate font-display text-[1.35rem] font-[430] text-ink">
-                  {resume.name}
-                </span>
-                <span className="mt-1 flex items-center gap-2 text-[12px] text-muted">
-                  Last opened {timeAgo(resume.updatedAt)}
-                  <ArrowRight
-                    size={14}
-                    weight="light"
-                    className="transition-transform duration-med group-hover:translate-x-0.5 group-hover:text-brasspale"
-                  />
-                </span>
+                <Crown size={12} weight="fill" className="text-brass" />
+                <span>PRO</span>
+                {tokenBalance > 0 && (
+                  <span className="border-l border-brass/30 pl-1.5 text-[9.5px] text-brasspale/80 font-normal">
+                    {formatTokens(remainingTokens)} tok
+                  </span>
+                )}
               </button>
             ) : (
-              <p className="mt-3 text-[12.5px] leading-5 text-muted">
-                Your most recent notebook will wait here.
-              </p>
+              <button
+                onClick={onSettings}
+                className="flex items-center gap-1.5 rounded-full border border-hairline bg-ink/[0.04] px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.08em] text-muted hover:border-brass/40 hover:text-brasspale transition-colors"
+                title="BYOK Mode (Bring Your Own Key) — Click to view Anthropic Pro Plans"
+              >
+                <span>BYOK</span>
+                <Sparkle size={11} className="text-muted/60" />
+              </button>
             )}
           </div>
-        </section>
+        </div>
 
-        {!hasKey && (
-          <section className="mt-6 flex flex-col gap-4 border-y border-brass/25 bg-brass/[0.045] px-4 py-4 sm:flex-row sm:items-center">
-            <Flame className="h-5 w-5 shrink-0 text-brass" weight="light" />
-            <div className="min-w-0 flex-1">
-              <h2 className="text-[13.5px] font-medium text-ink">Connect a model to begin</h2>
-              <p className="mt-0.5 text-[12px] leading-5 text-muted">
-                Use OpenRouter, Claude access, a custom endpoint, or a local Ollama / LM Studio model.
-              </p>
-            </div>
-            <button onClick={onSettings} className={`${btnGhost} shrink-0`}>
-              <GearSix size={14} weight="light" /> Configure
+        {/* Filter & View Controls Toolbar */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+          {/* Left: Tab Pills */}
+          <div className="flex items-center gap-1.5 rounded-[var(--radius-control)] bg-surface/80 p-1 border border-hairline">
+            <button
+              onClick={() => setActiveTab("all")}
+              className={`rounded-[var(--radius-control)] px-3.5 py-1 text-[13px] font-medium transition-all ${
+                activeTab === "all"
+                  ? "bg-brass/15 text-brasspale shadow-sm"
+                  : "text-muted hover:text-ink"
+              }`}
+            >
+              All
             </button>
-          </section>
-        )}
+            <button
+              onClick={() => setActiveTab("my")}
+              className={`rounded-[var(--radius-control)] px-3.5 py-1 text-[13px] font-medium transition-all ${
+                activeTab === "my"
+                  ? "bg-brass/15 text-brasspale shadow-sm"
+                  : "text-muted hover:text-ink"
+              }`}
+            >
+              My notebooks
+            </button>
+          </div>
+
+          {/* Right: Controls & Actions */}
+          <div className="flex items-center gap-3">
+            {/* Search Input */}
+            <div className="relative hidden sm:block">
+              <MagnifyingGlass
+                size={14}
+                weight="light"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search notebooks…"
+                className="h-9 w-44 rounded-[var(--radius-control)] border border-hairline bg-surface/50 pl-8 pr-3 text-[12.5px] text-ink placeholder:text-muted/60 outline-none transition-all focus:w-60 focus:border-brass/40 focus:bg-surface"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            {/* View Mode Toggle */}
+            <div className="flex items-center rounded-[var(--radius-control)] border border-hairline bg-surface/60 p-0.5">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] transition-colors ${
+                  viewMode === "grid"
+                    ? "bg-ink/[0.08] text-brasspale"
+                    : "text-muted hover:text-ink"
+                }`}
+                title="Grid view"
+                aria-label="Grid view"
+              >
+                <SquaresFour size={16} weight={viewMode === "grid" ? "fill" : "light"} />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] transition-colors ${
+                  viewMode === "list"
+                    ? "bg-ink/[0.08] text-brasspale"
+                    : "text-muted hover:text-ink"
+                }`}
+                title="List view"
+                aria-label="List view"
+              >
+                <ListDashes size={16} weight={viewMode === "list" ? "bold" : "light"} />
+              </button>
+            </div>
+
+            {/* Sort Dropdown */}
+            <div ref={sortMenuRef} className="relative">
+              <button
+                onClick={() => setSortMenuOpen((v) => !v)}
+                className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/60 px-3 text-[12.5px] font-medium text-muted hover:text-ink transition-colors"
+              >
+                <span>
+                  {sortOption === "recent"
+                    ? "Most recent"
+                    : sortOption === "az"
+                      ? "Alphabetical"
+                      : sortOption === "oldest"
+                        ? "Oldest"
+                        : "Most sources"}
+                </span>
+                <span className="text-[10px] text-muted">▾</span>
+              </button>
+
+              <AnimatePresence>
+                {sortMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.98, transition: { duration: 0.12 } }}
+                    transition={SOFT}
+                    className="absolute right-0 top-[calc(100%+6px)] z-50 w-40 overflow-hidden rounded-[var(--radius-control)] border border-hairline bg-surface p-1 shadow-modal"
+                  >
+                    {[
+                      { id: "recent", label: "Most recent" },
+                      { id: "az", label: "Alphabetical" },
+                      { id: "oldest", label: "Oldest" },
+                      { id: "sources", label: "Most sources" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => {
+                          setSortOption(opt.id as SortOption);
+                          setSortMenuOpen(false);
+                        }}
+                        className={`flex w-full items-center px-3 py-2 text-left text-[12.5px] rounded-[var(--radius-control)] transition-colors ${
+                          sortOption === opt.id
+                            ? "bg-brass/10 text-brasspale font-medium"
+                            : "text-muted hover:bg-ink/[0.04] hover:text-ink"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* + Create New Button */}
+            <button
+              onClick={() => setCreateModalOpen(true)}
+              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] grad-lamp px-4 text-[13px] font-semibold text-night shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
+            >
+              <Plus size={15} weight="bold" />
+              <span>Create new</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Section Heading */}
+        <div className="mt-8 mb-5 flex items-baseline justify-between">
+          <h2 className="font-display text-[1.45rem] font-[450] text-ink">
+            Recent notebooks
+          </h2>
+          <span className="font-mono text-[11px] text-muted">
+            {processedNotebooks.length} {processedNotebooks.length === 1 ? "notebook" : "notebooks"}
+          </span>
+        </div>
 
         {loadError && (
-          <div role="alert" className="mt-6 flex items-center gap-2 border border-rust/30 bg-rust/[0.06] px-4 py-3 text-[12.5px] text-rust">
+          <div role="alert" className="mb-6 flex items-center gap-2.5 rounded-xl border border-rust/30 bg-rust/[0.06] px-4 py-3 text-[13px] text-rust">
             <WarningCircle size={16} weight="light" />
-            The desk could not read your library. No data was removed; reopen the app and try again.
+            The desk could not read your library. No data was removed.
           </div>
         )}
 
-        <section aria-labelledby="recent-heading" className="mt-8 grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-          <div>
-            <div className="flex items-end justify-between gap-4 border-b border-hairline pb-2.5">
-              <div>
-                <p className="font-mono text-[9.5px] uppercase tracking-[0.22em] text-muted">Library</p>
-                <h2 id="recent-heading" className="mt-1 font-display text-[1.2rem] font-[430] text-ink">
-                  Recent notebooks
-                </h2>
+        {/* Grid View Mode */}
+        {viewMode === "grid" ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* 1st Card: + Create new notebook (matches Screenshot 1) */}
+            <button
+              onClick={() => setCreateModalOpen(true)}
+              className="group flex min-h-[175px] flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed border-hairline-strong bg-surface/30 p-5 text-center transition-all duration-200 hover:border-brass/50 hover:bg-surface/60 hover-lift"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brass/10 text-brass transition-transform duration-200 group-hover:scale-110 group-hover:bg-brass/20">
+                <Plus size={22} weight="light" />
               </div>
-              <span className="font-mono text-[10px] text-muted">
-                {snapshot ? `${snapshot.notebookCount} total` : "Reading…"}
+              <span className="font-display text-[15px] font-[450] text-ink/90 group-hover:text-brasspale">
+                Create new notebook
               </span>
-            </div>
+            </button>
 
-            <div className="divide-y divide-hairline">
-              {snapshot?.recentNotebooks.map((notebook, index) => (
-                <button
-                  key={notebook.id}
-                  onClick={() => onOpenResume(notebook.id)}
-                  className="group grid w-full grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 py-3 text-left hover:text-brasspale"
+            {/* Notebook Cards */}
+            <AnimatePresence initial={false}>
+              {processedNotebooks.map((nb) => {
+                const coverEmoji = getNotebookCoverEmoji(nb.name);
+                const isMenuOpen = menuOpenId === nb.id;
+
+                return (
+                  <Spotlight
+                    key={nb.id}
+                    className="hover-lift rounded-[var(--radius-dialog)]"
+                    radius={200}
+                  >
+                    <motion.div
+                      layout
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={SOFT}
+                      className="group relative flex min-h-[175px] flex-col justify-between rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-5 transition-colors hover:border-brass/35 hover:bg-surface"
+                    >
+                      {/* Top Row: Cover Emoji & 3-Dot Menu */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink/[0.04] text-[20px] shadow-sm select-none">
+                          {coverEmoji}
+                        </div>
+
+                        {/* 3-Dot Context Menu */}
+                        <div className="relative" data-notebook-menu>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMenuOpenId(isMenuOpen ? null : nb.id);
+                            }}
+                            className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink transition-colors"
+                            aria-label="Notebook options"
+                          >
+                            <DotsThreeVertical size={18} weight="bold" />
+                          </button>
+
+                          <AnimatePresence>
+                            {isMenuOpen && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.1 } }}
+                                transition={SOFT}
+                                className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-[var(--radius-control)] border border-hairline bg-surface p-1 shadow-modal"
+                              >
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMenuOpenId(null);
+                                    setRenamingNotebook(nb);
+                                    setRenameDraft(nb.name);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
+                                >
+                                  <PencilSimple size={13} />
+                                  Rename
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void handleExport(nb);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
+                                >
+                                  <DownloadSimple size={13} />
+                                  Export
+                                </button>
+                                <div className="my-1 border-t border-hairline" />
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeletingId(nb.id);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-rust hover:bg-rust/10"
+                                >
+                                  <Trash size={13} />
+                                  Delete
+                                </button>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </div>
+
+                      {/* Main Title & Open Action */}
+                      <button
+                        onClick={() => onOpenResume(nb.id)}
+                        className="my-3 text-left outline-none"
+                      >
+                        <h3 className="line-clamp-2 font-display text-[16px] font-[450] leading-snug text-ink transition-colors group-hover:text-brasspale">
+                          {nb.name}
+                        </h3>
+                      </button>
+
+                      {/* Footer Meta Row (Screenshot 1 format: "Oct 6, 2025 · 1 source") */}
+                      <div className="flex items-center text-[11.5px] text-muted">
+                        <span>{formatDate(nb.updatedAt)}</span>
+                        <span className="mx-1.5 text-muted/60">·</span>
+                        <span>
+                          {nb.sourceCount} {nb.sourceCount === 1 ? "source" : "sources"}
+                        </span>
+                      </div>
+                    </motion.div>
+                  </Spotlight>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        ) : (
+          /* List View Mode */
+          <div className="divide-y divide-hairline rounded-[var(--radius-dialog)] border border-hairline bg-surface/50 overflow-hidden">
+            {processedNotebooks.map((nb) => {
+              const coverEmoji = getNotebookCoverEmoji(nb.name);
+              return (
+                <div
+                  key={nb.id}
+                  className="group flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-ink/[0.025] transition-colors"
                 >
-                  <span className="font-mono text-[10px] text-muted/70">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-[13.5px] text-ink/90 group-hover:text-ink">
-                      {notebook.name}
+                  <button
+                    onClick={() => onOpenResume(nb.id)}
+                    className="flex min-w-0 flex-1 items-center gap-3.5 text-left"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ink/[0.04] text-[17px]">
+                      {coverEmoji}
                     </span>
-                    <span className="block text-[10.5px] text-muted">Updated {timeAgo(notebook.updatedAt)}</span>
-                  </span>
-                  <ArrowRight size={14} weight="light" className="text-muted transition-transform group-hover:translate-x-0.5" />
-                </button>
-              ))}
-              {snapshot && snapshot.recentNotebooks.length === 0 && (
-                <div className="py-6 text-[12.5px] leading-5 text-muted">
-                  Start with one notebook per subject. Add sources, then ask grounded questions or make study material in Studio.
+                    <div className="min-w-0">
+                      <span className="block truncate font-display text-[15px] font-[450] text-ink group-hover:text-brasspale">
+                        {nb.name}
+                      </span>
+                    </div>
+                  </button>
+
+                  <div className="flex items-center gap-6 text-[12px] text-muted">
+                    <span className="rounded-full bg-ink/[0.04] px-2.5 py-0.5 font-mono text-[11px]">
+                      {nb.sourceCount} {nb.sourceCount === 1 ? "source" : "sources"}
+                    </span>
+                    <span className="w-28 text-right">{timeAgo(nb.updatedAt)}</span>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => {
+                          setRenamingNotebook(nb);
+                          setRenameDraft(nb.name);
+                        }}
+                        className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
+                        title="Rename"
+                      >
+                        <PencilSimple size={14} />
+                      </button>
+                      <button
+                        onClick={() => setDeletingId(nb.id)}
+                        className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-rust/10 hover:text-rust"
+                        title="Delete"
+                      >
+                        <Trash size={14} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
+              );
+            })}
+            {processedNotebooks.length === 0 && (
+              <div className="px-6 py-10 text-center text-muted text-[13px]">
+                No notebooks match your search.
+              </div>
+            )}
           </div>
-
-          <div>
-            <div className="border-b border-hairline pb-2.5">
-              <p className="font-mono text-[9.5px] uppercase tracking-[0.22em] text-muted">Studio bench</p>
-              <h2 className="mt-1 font-display text-[1.2rem] font-[430] text-ink">Recent saved work</h2>
-            </div>
-            <div className="divide-y divide-hairline">
-              {snapshot?.recentWork.map((work) => (
-                <button
-                  key={work.id}
-                  onClick={() => onOpenWork(work.notebookId, work.id)}
-                  className="group flex w-full items-center gap-3 py-3 text-left"
-                >
-                  <FileText size={15} weight="light" className="shrink-0 text-brasspale/80" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[12.75px] text-ink/90 group-hover:text-ink">{work.title}</span>
-                    <span className="block truncate font-mono text-[9.5px] uppercase tracking-[0.1em] text-muted">
-                      {kindLabel(work.kind)} · {work.notebookName}
-                    </span>
-                  </span>
-                  <span className="text-[10px] text-muted">{timeAgo(work.createdAt)}</span>
-                </button>
-              ))}
-              {snapshot && snapshot.recentWork.length === 0 && (
-                <p className="py-5 text-[12px] leading-5 text-muted">
-                  Quizzes, mock exams, essay feedback, flashcards, study guides, briefs, FAQs, timelines, and slide decks collect here.
-                </p>
-              )}
-            </div>
-          </div>
-        </section>
-
-        <section aria-label="Desk health" className="mt-8 grid border-y border-hairline sm:grid-cols-3 sm:divide-x sm:divide-hairline">
-          <DeskMetric
-            icon={<Database size={15} weight="light" />}
-            label="Local library"
-            value={snapshot ? `${snapshot.sourceCount} sources` : "Reading…"}
-            note={snapshot ? `${snapshot.workCount} saved pieces` : "On this device"}
-          />
-          <DeskMetric
-            icon={<Books size={15} weight="light" />}
-            label="Active model"
-            value={hasKey ? modelLabel : "Not connected"}
-            note={hasKey ? `${effortLabel} reasoning` : "Open Settings to connect"}
-            onClick={onSettings}
-          />
-          <DeskMetric
-            icon={<ShieldCheck size={15} weight="light" />}
-            label="Backup"
-            value={lastBackupAt ? timeAgo(lastBackupAt) : "Not yet backed up"}
-            note={backupDue ? "A fresh copy is recommended" : "Your desk copy is current"}
-            onClick={onSettings}
-          />
-        </section>
-
-        {snapshot?.notebookCount === 0 && (
-          <section className="mt-8 grid gap-5 border-l border-hairline pl-5 sm:grid-cols-3">
-            <FirstStep number="01" title="Create a notebook">One subject or exam per notebook.</FirstStep>
-            <FirstStep number="02" title="Add your sources">PDFs, documents, notes, links, and images.</FirstStep>
-            <FirstStep number="03" title="Ask, drill, make">Cited chat and the full Studio share the same material.</FirstStep>
-          </section>
         )}
-
-        <footer className="mt-9 flex flex-col gap-3 pb-2 text-[11px] text-muted sm:flex-row sm:items-center sm:justify-between">
-          <span>
-            Your content is sent only when you ask the model you selected. Local endpoints can keep inference on-device.
-          </span>
-          <span className="shrink-0 font-mono">
-            <Kbd>{mod}K</Kbd> commands · <Kbd>{mod}N</Kbd> new · <Kbd>{mod}1–3</Kbd> panes
-          </span>
-        </footer>
       </div>
+
+      {/* Create Notebook Modal */}
+      <Modal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        title="Create new notebook"
+      >
+        <div className="space-y-5">
+          <Field label="Notebook name" hint="e.g. Comparison of Android 15 and iOS 18, Cellular Biology, etc.">
+            <input
+              autoFocus
+              value={newNotebookName}
+              onChange={(e) => setNewNotebookName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && void handleCreate()}
+              placeholder="Enter notebook title"
+              className={inputCls}
+            />
+          </Field>
+          <div className="flex justify-end gap-3">
+            <button className={btnGhost} onClick={() => setCreateModalOpen(false)}>
+              Cancel
+            </button>
+            <button
+              className={btnLamp}
+              onClick={() => void handleCreate()}
+              disabled={!newNotebookName.trim()}
+            >
+              Create notebook
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Rename Notebook Modal */}
+      <Modal
+        open={renamingNotebook !== null}
+        onClose={() => setRenamingNotebook(null)}
+        title="Rename notebook"
+      >
+        <div className="space-y-5">
+          <Field label="Notebook name">
+            <input
+              autoFocus
+              value={renameDraft}
+              onChange={(e) => setRenameDraft(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && void handleRename()}
+              className={inputCls}
+            />
+          </Field>
+          <div className="flex justify-end gap-3">
+            <button className={btnGhost} onClick={() => setRenamingNotebook(null)}>
+              Cancel
+            </button>
+            <button
+              className={btnLamp}
+              onClick={() => void handleRename()}
+              disabled={!renameDraft.trim()}
+            >
+              Save changes
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        open={deletingId !== null}
+        onClose={() => setDeletingId(null)}
+        title="Delete notebook"
+      >
+        <div className="space-y-4">
+          <p className="text-[13.5px] leading-relaxed text-muted">
+            Are you sure you want to delete this notebook? All sources, notes, and study history inside it will be permanently deleted from this device.
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <button className={btnGhost} onClick={() => setDeletingId(null)}>
+              Cancel
+            </button>
+            <button
+              onClick={() => deletingId && void handleDelete(deletingId)}
+              className="rounded-[var(--radius-control)] bg-rust px-4 py-2 text-[13px] font-medium text-white hover:brightness-110 active:scale-95 transition-all"
+            >
+              Delete permanently
+            </button>
+          </div>
+        </div>
+      </Modal>
     </main>
   );
-}
-
-function DeskMetric({
-  icon,
-  label,
-  value,
-  note,
-  onClick,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-  note: string;
-  onClick?: () => void;
-}) {
-  const content = (
-    <>
-      <span className="flex items-center gap-2 font-mono text-[9.5px] uppercase tracking-[0.16em] text-muted">
-        {icon} {label}
-      </span>
-      <span className="mt-2 block truncate text-[13px] text-ink">{value}</span>
-      <span className="mt-0.5 block text-[10.5px] text-muted">{note}</span>
-    </>
-  );
-  const cls = "block min-w-0 px-4 py-4 text-left first:pl-0 last:pr-0";
-  return onClick ? (
-    <button type="button" onClick={onClick} className={`${cls} w-full hover:bg-ink/[0.025]`}>
-      {content}
-    </button>
-  ) : (
-    <div className={cls}>{content}</div>
-  );
-}
-
-function FirstStep({ number, title, children }: { number: string; title: string; children: ReactNode }) {
-  return (
-    <div>
-      <span className="font-mono text-[10px] tracking-[0.12em] text-brass/80">{number}</span>
-      <h2 className="mt-1 text-[13px] font-medium text-ink">{title}</h2>
-      <p className="mt-1 text-[11.5px] leading-5 text-muted">{children}</p>
-    </div>
-  );
-}
-
-function Kbd({ children }: { children: ReactNode }) {
-  return (
-    <kbd className="rounded border border-hairline-strong bg-ink/[0.04] px-1.5 py-px text-[9.5px] text-ink/85">
-      {children}
-    </kbd>
-  );
-}
-
-function kindLabel(kind: Generation["kind"]): string {
-  return kind.replace("essay-review", "essay feedback").replace("study-guide", "study guide");
 }

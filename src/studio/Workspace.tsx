@@ -1,9 +1,9 @@
 import { useState, type ComponentType } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Books, CaretLeft, ChatCircle, Flame, GearSix, MagnifyingGlass, Notebook } from "@phosphor-icons/react";
+import { Books, CaretLeft, ChatCircle, Crown, Flame, GearSix, Notebook } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
-import { useCallSettings } from "../lib/settings";
+import { useCallSettings, useSettings } from "../lib/settings";
 import { MODELS } from "../lib/llm";
 import { detectPlatform, isTauri } from "../lib/desktop";
 import { SPRING, SOFT, deskPane } from "./fx";
@@ -13,11 +13,10 @@ import StudioPane from "./StudioPane";
 import SettingsModal from "./SettingsModal";
 import DeskShell from "./DeskShell";
 import CaptionButtons from "./Titlebar";
-import { useDesk } from "./DeskContext";
 import { useNotebookDesk } from "./useNotebookDesk";
 import { panesFor } from "./layout";
-import { modLabel } from "./shortcuts";
-import { LampPulse } from "./ui";
+import { db } from "../lib/db";
+import { LampPulse, Modal, btnGhost } from "./ui";
 
 type MobilePane = "sources" | "chat" | "studio";
 
@@ -232,58 +231,167 @@ function WorkspaceHeader({
   onRename: (name: string) => void;
   onSettings: () => void;
 }) {
-  const desk = useDesk();
   const platform = detectPlatform();
   const tauri = isTauri();
   const macPad = tauri && platform === "mac";
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [stats, setStats] = useState<{ sources: number; tokens: number; gens: number } | null>(null);
+
+  const isPro = useSettings((s) => Boolean(s.isPro && s.planTier !== "free"));
+  const tokenBalance = useSettings((s) => s.tokenBalance || 0);
+  const tokensUsed = useSettings((s) => s.tokensUsed || 0);
+  const remainingTokens = Math.max(0, tokenBalance - tokensUsed);
+
+  const formatTokens = (n: number) => {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k`;
+    return n.toLocaleString();
+  };
+
+  const openAnalytics = async () => {
+    if (!notebook) return;
+    const sources = await db.sources.where("notebookId").equals(notebook.id).toArray();
+    const gens = await db.generations.where("notebookId").equals(notebook.id).count();
+    const tokens = sources.reduce((sum, s) => sum + s.tokens, 0);
+    setStats({ sources: sources.length, tokens, gens });
+    setAnalyticsOpen(true);
+  };
+
+  const handleShare = async () => {
+    if (!notebook) return;
+    const sources = await db.sources.where("notebookId").equals(notebook.id).toArray();
+    const generations = await db.generations.where("notebookId").equals(notebook.id).toArray();
+    const payload = {
+      notebook,
+      exportedAt: new Date().toISOString(),
+      sources: sources.map((s) => ({ title: s.title, kind: s.kind, content: s.content })),
+      generations,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${notebook.name.replace(/[^a-z0-9_-]/gi, "_")}_backup.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <header
-      data-tauri-drag-region={tauri ? true : undefined}
-      className={`desk-header relative z-[40] flex h-[calc(var(--desk-header)+var(--sat))] shrink-0 items-center gap-2 border-b border-hairline bg-ground px-2 pt-[var(--sat)] sm:gap-3 sm:px-3 ${macPad ? "pl-[78px]" : ""}`}
-    >
-      <Link
-        to="/studio"
-        className="no-drag flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
-        aria-label="All notebooks"
+    <>
+      <header
+        data-tauri-drag-region={tauri ? true : undefined}
+        className={`desk-header relative z-[40] flex h-[calc(var(--desk-header)+var(--sat))] shrink-0 items-center gap-2 border-b border-hairline bg-ground px-2 pt-[var(--sat)] sm:gap-3 sm:px-3 ${macPad ? "pl-[78px]" : ""}`}
       >
-        <CaretLeft size={18} weight="light" />
-      </Link>
-      <Flame size={15} weight="light" className="shrink-0 text-brass" />
-      <input
-        defaultValue={notebook?.name}
-        key={notebook?.name}
-        onBlur={(e) => onRename(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-        className="no-drag min-w-0 max-w-[42vw] flex-none truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-1 font-display text-[15px] font-[450] outline-none hover:border-hairline focus:border-brass/40 sm:max-w-xs sm:text-[16px]"
-        aria-label="Notebook name"
-      />
-      <div className="no-drag ml-auto flex items-center gap-1">
-        <button
-          type="button"
-          onClick={desk.openPalette}
-          className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2 py-1.5 font-mono text-[10.5px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
-          aria-label="Command palette"
+        <Link
+          to="/studio"
+          className="no-drag flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
+          aria-label="All notebooks"
         >
-          <MagnifyingGlass size={14} weight="light" />
-          {modLabel(platform)}K
-        </button>
-        <button
-          onClick={onSettings}
-          className="hidden items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-[12px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
-        >
-          {modelLabel} · {effortLabel}
-        </button>
-        <button
-          onClick={onSettings}
-          className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
-          aria-label="Settings"
-        >
-          <GearSix size={17} weight="light" />
-        </button>
-      </div>
-      <CaptionButtons />
-    </header>
+          <CaretLeft size={18} weight="light" />
+        </Link>
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brass/10 text-brass shrink-0">
+          <Flame size={15} weight="light" />
+        </div>
+        <input
+          defaultValue={notebook?.name}
+          key={notebook?.name}
+          onBlur={(e) => onRename(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+          className="no-drag min-w-0 max-w-[38vw] flex-none truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-1 font-display text-[15px] font-[450] outline-none hover:border-hairline focus:border-brass/40 sm:max-w-xs sm:text-[16px]"
+          aria-label="Notebook name"
+        />
+        <div className="no-drag ml-auto flex items-center gap-1.5">
+          {notebook && (
+            <>
+              <button
+                onClick={() => void openAnalytics()}
+                className="hidden items-center gap-1 rounded-[var(--radius-control)] px-2.5 py-1.5 text-[12px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
+              >
+                Analytics
+              </button>
+              <button
+                onClick={() => void handleShare()}
+                className="hidden items-center gap-1 rounded-[var(--radius-control)] px-2.5 py-1.5 text-[12px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
+              >
+                Share
+              </button>
+            </>
+          )}
+          <button
+            onClick={onSettings}
+            className="hidden items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-[12px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
+          >
+            {modelLabel} · {effortLabel}
+          </button>
+          <button
+            onClick={onSettings}
+            className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
+            aria-label="Settings"
+          >
+            <GearSix size={17} weight="light" />
+          </button>
+
+          {/* Plan Tier Status Badge (PRO only if Anthropic plan availed, else BYOK) */}
+          {isPro && (
+            <button
+              onClick={onSettings}
+              className="hidden sm:flex items-center gap-1 rounded-full border border-brass/40 bg-brass/[0.12] px-2 py-0.5 font-mono text-[10px] font-medium text-brasspale hover:bg-brass/20 transition-all shadow-[0_0_10px_rgba(227,176,75,0.12)]"
+              title={`Anthropic Pro Plan Active · ${remainingTokens.toLocaleString()} tokens remaining`}
+            >
+              <Crown size={10} weight="fill" className="text-brass" />
+              <span>PRO</span>
+              {tokenBalance > 0 && (
+                <span className="border-l border-brass/30 pl-1 text-[9px] text-brasspale/70 font-normal">
+                  {formatTokens(remainingTokens)}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* User Avatar Badge matching Screenshot 2 */}
+          <button
+            onClick={onSettings}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-brass/20 text-brass text-[11px] font-bold font-mono hover:brightness-110 transition-all select-none"
+            title="User Profile & Settings"
+          >
+            N
+          </button>
+        </div>
+        <CaptionButtons />
+      </header>
+
+      {/* Analytics Modal */}
+      {notebook && (
+        <Modal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} title="Notebook Analytics">
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+                <div className="font-mono text-[18px] font-semibold text-brasspale">{stats?.sources ?? 0}</div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted mt-1">Sources</div>
+              </div>
+              <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+                <div className="font-mono text-[18px] font-semibold text-brasspale">{((stats?.tokens ?? 0) / 1000).toFixed(1)}k</div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted mt-1">Tokens Grounded</div>
+              </div>
+              <div className="rounded-xl border border-hairline bg-surface/70 p-3">
+                <div className="font-mono text-[18px] font-semibold text-brasspale">{stats?.gens ?? 0}</div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted mt-1">Saved Artifacts</div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-hairline/80 bg-ink/[0.02] p-3 text-[12.5px] leading-relaxed text-muted">
+              🔒 <strong>Local-First Storage:</strong> All documents, question history, and generated notes for <em>{notebook.name}</em> live exclusively in IndexedDB on this device.
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button className={btnGhost} onClick={() => setAnalyticsOpen(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </>
   );
 }
 

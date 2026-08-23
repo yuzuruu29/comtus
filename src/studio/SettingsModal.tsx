@@ -231,6 +231,9 @@ export default function SettingsModal({
       compatModel: draft.compatModel.trim(),
       effort: draft.effort,
     });
+    if (cs.provider === "anthropic" && cs.apiKey) {
+      useSettings.getState().activateProPass(cs.apiKey, selectedPlan.id);
+    }
     if (cs.provider === "openai-compatible" && cs.model) {
       useSettings.getState().addRecentModel(cs.model);
     }
@@ -569,102 +572,178 @@ export default function SettingsModal({
 
         {draft.provider === "anthropic" ? (
           <>
-            {/* Smarter Models / PayPal Managed Tier Banner */}
-            <div className="overflow-hidden rounded-xl border border-brass/30 bg-brass/[0.05] p-4 space-y-3.5">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-brass/15 pb-3">
-                <div className="flex items-center gap-2">
-                  <Crown size={17} className="text-brass shrink-0" />
-                  <span className="font-display text-[15px] font-[450] text-ink">
-                    Smarter Models (Claude Opus 5 & Sonnet 5)
-                  </span>
-                </div>
-                <span className="self-start sm:self-auto rounded-full border border-brass/30 bg-brass/15 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-brasspale">
-                  BYOK Disabled · Hosted Key
-                </span>
-              </div>
+            {/* Smarter Models / PayPal Managed Tier Banner & Live Status */}
+            {(() => {
+              const isPro = s.hasProPlan();
+              const planTier = s.planTier;
+              const tokenBalance = s.tokenBalance || 0;
+              const tokensUsed = s.tokensUsed || 0;
+              const remaining = Math.max(0, tokenBalance - tokensUsed);
+              const percentRemaining = tokenBalance > 0 ? Math.round((remaining / tokenBalance) * 100) : 0;
+              const formatTokens = (n: number) => {
+                if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+                if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k`;
+                return n.toLocaleString();
+              };
 
-              <p className="text-[12.5px] leading-relaxed text-muted">
-                Anthropic BYOK is disabled. Access to Claude Opus 5 & Sonnet 5 is powered directly by our managed key. Pay based on your usage via PayPal to unlock your personal access pass.
-              </p>
-
-              {/* Realistic Pricing Grid */}
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brasspale mb-2 font-medium">
-                  Select Study Pass & Pay via PayPal:
-                </div>
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-                  {STUDY_PLANS.map((plan) => {
-                    const isPlanSelected = selectedPlan.id === plan.id;
-                    return (
-                      <button
-                        key={plan.id}
-                        type="button"
-                        onClick={() => setSelectedPlan(plan)}
-                        className={`text-left rounded-xl border p-3 flex flex-col justify-between transition-all active:scale-[0.98] ${
-                          isPlanSelected
-                            ? "border-brass/70 bg-brass/[0.12] shadow-[0_0_20px_rgba(227,176,75,0.15)] ring-1 ring-brass/40"
-                            : "border-hairline bg-ink/[0.03] hover:border-hairline-strong"
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-ink text-[13px] flex items-center gap-1">
-                              {plan.name}
-                              {plan.popular && (
-                                <span className="rounded bg-brass/25 px-1 py-0.2 font-mono text-[8.5px] text-brasspale uppercase">
-                                  Popular
-                                </span>
-                              )}
-                            </span>
-                            <span className="flex items-baseline gap-1.5">
-                              <span className="font-mono text-[10.5px] text-muted/60 line-through">
-                                ${plan.compareAt}
-                              </span>
-                              <span className="font-mono text-brass font-bold text-[13px]">${plan.price}</span>
-                              <span className="rounded-full border border-sage/25 bg-sage/15 px-1.5 font-mono text-[8.5px] font-medium text-sage">
-                                −{Math.round((1 - plan.amount / parseFloat(plan.compareAt)) * 100)}%
-                              </span>
-                            </span>
-                          </div>
-                          <div className="mt-1 font-mono text-[10px] text-muted/70">{plan.tokens}</div>
-                          <p className="mt-1.5 text-[11.5px] leading-snug text-muted">{plan.desc}</p>
+              if (isPro) {
+                return (
+                  <div className="overflow-hidden rounded-2xl border border-brass/40 bg-brass/[0.08] p-4 space-y-3.5 shadow-[0_0_20px_rgba(227,176,75,0.08)]">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-brass/20 pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brass/20 text-brass">
+                          <Crown size={18} weight="fill" />
                         </div>
-                        {isPlanSelected && (
-                          <div className="mt-2 text-right font-mono text-[10px] text-brasspale font-medium">
-                            ✓ Selected
+                        <div>
+                          <div className="font-display text-[15.5px] font-[500] text-ink flex items-center gap-2">
+                            <span>Anthropic Pro Plan Active</span>
+                            <span className="rounded bg-brass/25 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-brasspale font-semibold">
+                              {planTier.toUpperCase()}
+                            </span>
                           </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                          <div className="text-[11.5px] text-muted">
+                            Powered by Claude Opus 5 & Sonnet 5 reasoning models
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 font-mono text-[11px] text-brasspale font-medium">
+                        <Gauge size={14} />
+                        <span>{formatTokens(remaining)} / {formatTokens(tokenBalance)} Tokens</span>
+                      </div>
+                    </div>
 
-              {/* PayPal Smart Checkout Section */}
-              <div className="rounded-xl border border-hairline bg-ground/80 p-3.5 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[12.5px] text-ink font-medium">
-                    <CreditCard size={15} className="text-brass shrink-0" />
-                    <span>
-                      Pay with PayPal: {selectedPlan.name} (${selectedPlan.price} USD ·{" "}
-                      <span className="text-sage">
-                        save ${(parseFloat(selectedPlan.compareAt) - selectedPlan.amount).toFixed(2)}
+                    {/* Token Progress Bar */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-[11px] font-mono text-muted">
+                        <span>Usage: {formatTokens(tokensUsed)} tokens spent</span>
+                        <span className="text-brasspale">{percentRemaining}% available</span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-surface border border-hairline">
+                        <div
+                          className="h-full bg-gradient-to-r from-brass to-brasspale transition-all duration-500"
+                          style={{ width: `${Math.min(100, Math.max(2, percentRemaining))}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                      <span className="text-[11.5px] text-muted">
+                        Pass Code: <code className="font-mono text-brasspale">{s.activePassCode ? `${s.activePassCode.slice(0, 10)}…` : "Active"}</code>
                       </span>
-                      )
+                      <button
+                        type="button"
+                        onClick={() => {
+                          s.update({ isPro: false, planTier: "free", provider: "openai-compatible" });
+                          set({ provider: "openai-compatible" });
+                        }}
+                        className="text-[11px] font-mono text-muted hover:text-rust transition-colors underline underline-offset-2"
+                      >
+                        Switch to BYOK Free Tier
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="overflow-hidden rounded-xl border border-brass/30 bg-brass/[0.05] p-4 space-y-3.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-brass/15 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Crown size={17} className="text-brass shrink-0" />
+                      <span className="font-display text-[15px] font-[450] text-ink">
+                        Smarter Models (Claude Opus 5 & Sonnet 5)
+                      </span>
+                    </div>
+                    <span className="self-start sm:self-auto rounded-full border border-hairline bg-ink/[0.04] px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted">
+                      Current Tier: Free BYOK
                     </span>
                   </div>
-                  <span className="font-mono text-[10px] text-brasspale">{selectedPlan.tokens}</span>
+
+                  <p className="text-[12.5px] leading-relaxed text-muted">
+                    Unlock Claude Opus 5 & Sonnet 5 with managed reasoning tokens. Pay based on your usage via PayPal to instantly receive and activate your personal access pass.
+                  </p>
+
+                  {/* Realistic Pricing Grid */}
+                  <div>
+                    <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brasspale mb-2 font-medium">
+                      Select Study Pass & Pay via PayPal:
+                    </div>
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+                      {STUDY_PLANS.map((plan) => {
+                        const isPlanSelected = selectedPlan.id === plan.id;
+                        return (
+                          <button
+                            key={plan.id}
+                            type="button"
+                            onClick={() => setSelectedPlan(plan)}
+                            className={`text-left rounded-xl border p-3 flex flex-col justify-between transition-all active:scale-[0.98] ${
+                              isPlanSelected
+                                ? "border-brass/70 bg-brass/[0.12] shadow-[0_0_20px_rgba(227,176,75,0.15)] ring-1 ring-brass/40"
+                                : "border-hairline bg-ink/[0.03] hover:border-hairline-strong"
+                            }`}
+                          >
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium text-ink text-[13px] flex items-center gap-1">
+                                  {plan.name}
+                                  {plan.popular && (
+                                    <span className="rounded bg-brass/25 px-1 py-0.2 font-mono text-[8.5px] text-brasspale uppercase">
+                                      Popular
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="flex items-baseline gap-1.5">
+                                  <span className="font-mono text-[10.5px] text-muted/60 line-through">
+                                    ${plan.compareAt}
+                                  </span>
+                                  <span className="font-mono text-brass font-bold text-[13px]">${plan.price}</span>
+                                  <span className="rounded-full border border-sage/25 bg-sage/15 px-1.5 font-mono text-[8.5px] font-medium text-sage">
+                                    −{Math.round((1 - plan.amount / parseFloat(plan.compareAt)) * 100)}%
+                                  </span>
+                                </span>
+                              </div>
+                              <div className="mt-1 font-mono text-[10px] text-muted/70">{plan.tokens}</div>
+                              <p className="mt-1.5 text-[11.5px] leading-snug text-muted">{plan.desc}</p>
+                            </div>
+                            {isPlanSelected && (
+                              <div className="mt-2 text-right font-mono text-[10px] text-brasspale font-medium">
+                                ✓ Selected
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* PayPal Smart Checkout Section */}
+                  <div className="rounded-xl border border-hairline bg-ground/80 p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-[12.5px] text-ink font-medium">
+                        <CreditCard size={15} className="text-brass shrink-0" />
+                        <span>
+                          Pay with PayPal: {selectedPlan.name} (${selectedPlan.price} USD ·{" "}
+                          <span className="text-sage">
+                            save ${(parseFloat(selectedPlan.compareAt) - selectedPlan.amount).toFixed(2)}
+                          </span>
+                          )
+                        </span>
+                      </div>
+                      <span className="font-mono text-[10px] text-brasspale">{selectedPlan.tokens}</span>
+                    </div>
+                    <PayPalCheckout
+                      plan={selectedPlan}
+                      onSuccess={(passToken, orderId) => {
+                        const tokenStr = passToken || `comtus-pass-${orderId.slice(-8)}`;
+                        const tokens = selectedPlan.id === "sprint" ? 500000 : selectedPlan.id === "scholar" ? 1500000 : 3500000;
+                        s.activateProPass(tokenStr, selectedPlan.id, tokens);
+                        set({ anthropicKey: tokenStr });
+                      }}
+                    />
+                  </div>
                 </div>
-                <PayPalCheckout
-                  plan={selectedPlan}
-                  onSuccess={() => {
-                    // Passes are signed server-side after payment
-                    // verification and emailed to the buyer — nothing to
-                    // activate in the browser at capture time.
-                  }}
-                />
-              </div>
-            </div>
+              );
+            })()}
 
             <Field
               label="PayPal Access Pass / Token Code"
@@ -688,6 +767,18 @@ export default function SettingsModal({
                     {showAnthropicKey ? <EyeSlash size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
+                {draft.anthropicKey.trim().length > 5 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      s.activateProPass(draft.anthropicKey.trim(), selectedPlan.id);
+                      setOkProvider("anthropic");
+                    }}
+                    className={btnLamp + " shrink-0 text-[12px] px-3.5"}
+                  >
+                    Activate Pass
+                  </button>
+                )}
               </div>
             </Field>
 

@@ -4,6 +4,8 @@ import { useShallow } from "zustand/react/shallow";
 import type { AnthropicModelId, Effort, ProviderId, StoredKey } from "./types";
 import type { CallSettings } from "./llm";
 
+export type PlanTier = "free" | "sprint" | "scholar" | "mastery";
+
 interface SettingsState {
   provider: ProviderId;
   /* Anthropic — official API by default, or any Anthropic-shaped gateway. */
@@ -17,6 +19,12 @@ interface SettingsState {
   recentModels: string[];
   /* Multiple BYOK Keys Vault */
   storedKeys: StoredKey[];
+  /* Plan & Token Balance Management */
+  isPro: boolean;
+  planTier: PlanTier;
+  tokenBalance: number;
+  tokensUsed: number;
+  activePassCode: string;
   /* Shared */
   effort: Effort;
   theme: "system" | "dark" | "light";
@@ -28,6 +36,9 @@ interface SettingsState {
   removeStoredKey: (id: string) => void;
   updateStoredKey: (id: string, patch: Partial<StoredKey>) => void;
   applyStoredKey: (id: string) => void;
+  activateProPass: (passCode: string, planTier?: PlanTier, tokenAmount?: number) => void;
+  consumeTokens: (amount: number) => void;
+  hasProPlan: () => boolean;
   hasKey: () => boolean;
 }
 
@@ -50,6 +61,11 @@ export const useSettings = create<SettingsState>()(
         "google/gemini-2.0-flash-exp:free",
       ],
       storedKeys: [],
+      isPro: false,
+      planTier: "free",
+      tokenBalance: 0,
+      tokensUsed: 0,
+      activePassCode: "",
       effort: "high",
       theme: "system",
       lastBackupAt: 0,
@@ -91,6 +107,33 @@ export const useSettings = create<SettingsState>()(
           compatModel: key.defaultModel || get().compatModel || "deepseek/deepseek-r1:free",
         });
       },
+      activateProPass: (passCode: string, planTier: PlanTier = "scholar", tokenAmount?: number) => {
+        const defaultTokensByPlan: Record<PlanTier, number> = {
+          free: 0,
+          sprint: 500000,
+          scholar: 1500000,
+          mastery: 3500000,
+        };
+        const tokensToAdd = tokenAmount ?? defaultTokensByPlan[planTier] ?? 1000000;
+        set((prev) => ({
+          isPro: true,
+          planTier,
+          tokenBalance: (prev.tokenBalance || 0) + tokensToAdd,
+          activePassCode: passCode.trim(),
+          provider: "anthropic",
+          anthropicKey: passCode.trim(),
+        }));
+      },
+      consumeTokens: (amount: number) => {
+        if (amount <= 0) return;
+        set((prev) => ({
+          tokensUsed: (prev.tokensUsed || 0) + amount,
+        }));
+      },
+      hasProPlan: () => {
+        const s = get();
+        return Boolean(s.isPro && s.planTier && s.planTier !== "free");
+      },
       hasKey: () => {
         const s = get();
         if (s.provider === "anthropic") return s.anthropicKey.trim().length > 10;
@@ -99,7 +142,7 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: "comtus-settings",
-      version: 5,
+      version: 6,
       migrate: (persisted, version) => {
         const old = persisted as Partial<SettingsState> & {
           apiKey?: string;
@@ -109,6 +152,11 @@ export const useSettings = create<SettingsState>()(
           recentModels: ["deepseek/deepseek-r1", "meta-llama/llama-3.3-70b-instruct", "qwen/qwen-2.5-72b-instruct"],
           ...old,
           storedKeys: old.storedKeys || [],
+          isPro: old.isPro ?? false,
+          planTier: old.planTier ?? "free",
+          tokenBalance: old.tokenBalance ?? 0,
+          tokensUsed: old.tokensUsed ?? 0,
+          activePassCode: old.activePassCode ?? "",
           theme: old.theme ?? "system",
           lastBackupAt: old.lastBackupAt ?? 0,
         };
@@ -120,9 +168,14 @@ export const useSettings = create<SettingsState>()(
               old.model === "claude-sonnet-5" ? "claude-sonnet-5" : "claude-opus-5",
           };
         }
-        if (version < 5) {
+        if (version < 6) {
           return {
             ...base,
+            isPro: old.isPro ?? false,
+            planTier: old.planTier ?? "free",
+            tokenBalance: old.tokenBalance ?? 0,
+            tokensUsed: old.tokensUsed ?? 0,
+            activePassCode: old.activePassCode ?? "",
             theme: old.theme ?? "system",
             lastBackupAt: old.lastBackupAt ?? 0,
           };
