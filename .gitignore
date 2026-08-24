@@ -13,3 +13,4 @@ src-tauri/gen
 .playwright-mcp/
 .commandcode/
 .graphify/
+.zcode/

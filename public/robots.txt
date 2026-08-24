@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
+Allow: /about
+Allow: /privacy
+Allow: /terms
+Allow: /responsible-ai
+Allow: /contact
+Allow: /study-companion
+Disallow: /api/
 
 Sitemap: https://comtus-ai.vercel.app/sitemap.xml

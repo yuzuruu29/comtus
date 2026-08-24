@@ -71,6 +71,7 @@ export default function BringStack() {
     <section
       ref={rootRef}
       id="stack"
+      data-torch
       className="relative border-y border-white/[0.06] bg-study/25 py-[clamp(5.5rem,12vh,9rem)]"
     >
       <div className="mx-auto w-full max-w-6xl px-6">

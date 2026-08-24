@@ -269,7 +269,7 @@ export default function SourcesPane({
         <button
           onClick={() => fileRef.current?.click()}
           disabled={!!importing}
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-hairline-strong bg-surface px-4 py-2.5 text-[13px] font-medium text-ink shadow-sm transition-all hover:border-brass/40 hover:bg-raised active:scale-[0.99] disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-full border border-hairline-strong bg-surface px-4 py-2.5 text-[13px] font-medium text-ink shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brass/50 hover:bg-raised hover:shadow-[0_4px_16px_-2px_rgba(227,176,75,0.18)] active:scale-[0.98] disabled:opacity-50"
         >
           <Plus size={15} weight="bold" className="text-brass" />
           <span>{importing ? "Importing…" : "Add source"}</span>
@@ -279,13 +279,13 @@ export default function SourcesPane({
         <div className="mt-2 grid grid-cols-2 gap-1.5">
           <button
             onClick={() => setUrlOpen(true)}
-            className="flex items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/50 py-1.5 text-[11.5px] font-medium text-muted transition-colors hover:bg-surface hover:text-ink"
+            className="flex items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/50 py-1.5 text-[11.5px] font-medium text-muted transition-all duration-200 hover:border-brass/35 hover:bg-surface hover:text-ink active:scale-[0.98]"
           >
             <Globe size={13} weight="light" /> Web / URL
           </button>
           <button
             onClick={() => setPasteOpen(true)}
-            className="flex items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/50 py-1.5 text-[11.5px] font-medium text-muted transition-colors hover:bg-surface hover:text-ink"
+            className="flex items-center justify-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/50 py-1.5 text-[11.5px] font-medium text-muted transition-all duration-200 hover:border-brass/35 hover:bg-surface hover:text-ink active:scale-[0.98]"
           >
             <ClipboardText size={13} weight="light" /> Paste text
           </button>
@@ -344,7 +344,7 @@ export default function SourcesPane({
       )}
 
       {/* Sources List */}
-      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2.5 py-2">
+      <div className="min-h-0 flex-1 overflow-y-auto px-3.5 py-2 space-y-1.5">
         <AnimatePresence initial={false}>
           {sources.map((s, i) => {
             const isUrl = s.kind === "url";
@@ -360,8 +360,8 @@ export default function SourcesPane({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, x: -12, scale: 0.96, transition: { duration: 0.16 } }}
                   transition={i < 10 ? { ...SOFT, delay: i * 0.03 } : SOFT}
-                  className={`group flex items-center gap-2 rounded-xl px-2.5 py-2 transition-all ${
-                    isSelected ? "bg-surface/80 hover:bg-surface border border-hairline/60" : "opacity-60 hover:opacity-100 hover:bg-surface/50 border border-transparent"
+                  className={`group flex items-center gap-2 rounded-xl px-2.5 py-2 transition-all duration-200 hover:-translate-y-0.5 hover:border-brass/40 hover:bg-surface hover:shadow-[0_4px_16px_-2px_rgba(0,0,0,0.35),0_0_12px_-3px_rgba(227,176,75,0.12)] ${
+                    isSelected ? "bg-surface/80 border border-hairline/60" : "opacity-60 hover:opacity-100 bg-surface/40 border border-transparent"
                   }`}
                 >
                   {/* Source Kind Icon */}

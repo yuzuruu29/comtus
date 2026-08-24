@@ -11,9 +11,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Comtus" />
+    <title>Comtus — AI Study Companion for Students</title>
     <meta
       name="description"
-      content="Comtus — a thinking study companion. Grounded answers from your own sources, mock exams, essay grading, and reasoning you can watch. Rough thought, polished."
+      content="Comtus is an AI study companion that helps students understand difficult lessons, organize notes, practice concepts, and master what they are learning. Rough thought, polished."
+    />
+    <meta
+      name="keywords"
+      content="AI study companion, study assistant, student AI, quiz generator, mock exams, flashcards, note summarizer, exam preparation, grounded learning, study tools"
     />
     <meta name="theme-color" content="#0B0F1A" />
     <meta name="color-scheme" content="dark" />
@@ -40,30 +45,162 @@
       })();
     </script>
     <link rel="canonical" href="https://comtus-ai.vercel.app/" />
+
     <!-- Social preview cards -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Comtus" />
     <meta property="og:url" content="https://comtus-ai.vercel.app/" />
-    <meta property="og:title" content="Comtus — Rough thought, polished." />
+    <meta property="og:title" content="Comtus — AI Study Companion for Students" />
     <meta
       property="og:description"
-      content="A thinking study companion: grounded answers from your own sources, mock exams, essay grading, and reasoning you can watch."
+      content="Comtus is an AI study companion that helps students understand difficult lessons, organize notes, practice concepts, and master what they are learning. Rough thought, polished."
     />
     <meta property="og:image" content="https://comtus-ai.vercel.app/images/og-card.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Comtus — a thinking study companion" />
+    <meta property="og:image:alt" content="Comtus — Your AI Study Companion" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Comtus — Rough thought, polished." />
+    <meta name="twitter:title" content="Comtus — AI Study Companion for Students" />
     <meta
       name="twitter:description"
-      content="A thinking study companion: grounded answers from your own sources, mock exams, essay grading, and reasoning you can watch."
+      content="Comtus is an AI study companion that helps students understand difficult lessons, organize notes, practice concepts, and master what they are learning. Rough thought, polished."
     />
     <meta name="twitter:image" content="https://comtus-ai.vercel.app/images/og-card.png" />
-    <title>Comtus — Rough thought, polished.</title>
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebApplication",
+            "@id": "https://comtus-ai.vercel.app/#webapp",
+            "name": "Comtus",
+            "url": "https://comtus-ai.vercel.app/",
+            "applicationCategory": "EducationalApplication",
+            "operatingSystem": "Web, macOS, Windows, iOS, Android",
+            "description": "An AI study companion designed to help students understand difficult lessons, organize study materials, practice with mock exams, and master academic subjects.",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://comtus-ai.vercel.app/#website",
+            "url": "https://comtus-ai.vercel.app/",
+            "name": "Comtus — AI Study Companion",
+            "description": "Turn difficult lessons, scattered notes, and rough ideas into knowledge you can actually understand.",
+            "publisher": {
+              "@type": "Organization",
+              "name": "Comtus",
+              "url": "https://comtus-ai.vercel.app/"
+            }
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://comtus-ai.vercel.app/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is Comtus?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Comtus is an AI study companion that helps students understand difficult lessons, organize scattered notes and lecture slides, practice with quizzes and mock exams, and master their subjects over time."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How is Comtus different from generic AI chatbots like ChatGPT?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Unlike generic chatbots that provide one-off answers in temporary chat threads, Comtus provides a persistent, organized study workspace. It cites your actual uploaded sources, uses Socratic hints to guide your learning rather than giving away direct answers, and offers dedicated study modes like mock exams and flashcards."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does Comtus just give homework answers?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. Comtus is built on strict academic integrity principles. It provides step-by-step reasoning, concept analogies, and hints first to help students understand and solve problems independently."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How does Comtus protect my private study materials?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Comtus is local-first. Your uploaded PDFs, notes, and study sessions are stored in your browser's IndexedDB on your device. Your API keys stay on your machine and are never used to train public AI models."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Crawlable semantic fallback for search engine bots, web scrapers, and accessibility readers prior to client hydration -->
+      <header style="padding: 20px; text-align: center;">
+        <nav aria-label="Primary Navigation">
+          <strong>Comtus — Your AI Study Companion</strong>
+          <ul style="list-style: none; display: flex; justify-content: center; gap: 15px; padding: 0; margin: 10px 0;">
+            <li><a href="#learning-loop">The Learning Loop</a></li>
+            <li><a href="#demo">See in Action</a></li>
+            <li><a href="#use-cases">Use Cases</a></li>
+            <li><a href="#why-comtus">Why Comtus</a></li>
+            <li><a href="#studio">Study Tools</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="/studio">Start Studying</a></li>
+          </ul>
+        </nav>
+      </header>
+      <main style="max-width: 900px; margin: 0 auto; padding: 20px; font-family: sans-serif; line-height: 1.6;">
+        <section aria-labelledby="hero-title">
+          <p><strong>AI STUDY COMPANION</strong></p>
+          <h1 id="hero-title">Study smarter with Comtus. Rough thought, polished.</h1>
+          <p>Comtus helps you understand difficult lessons, organize your study materials, practice what you've learned, and prepare with confidence.</p>
+          <p><a href="/studio"><strong>Start Studying</strong></a> | <a href="#learning-loop">See How Comtus Works</a></p>
+        </section>
+
+        <section id="learning-loop" aria-labelledby="loop-title" style="margin-top: 40px;">
+          <h2 id="loop-title">The Comtus Learning Loop: Understand, Organize, Practice, Master</h2>
+          <ol>
+            <li><strong>1. Understand</strong> — Clear explanations, step-by-step logic, intuitive analogies, and concept breakdowns suited to your current level.</li>
+            <li><strong>2. Organize</strong> — Transform messy lecture slides, textbook PDFs, and typed notes into structured summaries, outlines, and topic study guides.</li>
+            <li><strong>3. Practice</strong> — Active recall testing with customizable quizzes, flashcards, and full-length simulated mock exams with detailed answer rationales.</li>
+            <li><strong>4. Master</strong> — Identify knowledge gaps, target weak topics, and build long-term retention before your exams.</li>
+          </ol>
+        </section>
+
+        <section id="why-comtus" aria-labelledby="why-title" style="margin-top: 40px;">
+          <h2 id="why-title">Why Comtus Instead of a Generic Chatbot?</h2>
+          <p>Generic chatbots give one-off answers in temporary chat logs. Comtus is a purposeful study workspace built for active learning. Every answer cites your source pages, thinking is shown openly, and study materials stay organized per subject.</p>
+        </section>
+
+        <section id="integrity" aria-labelledby="integrity-title" style="margin-top: 40px;">
+          <h2 id="integrity-title">Academic Integrity & Responsible AI</h2>
+          <p>Comtus is built to support learning — not replace it. We emphasize guided questioning, worked examples, hint progression, and transparent citations so students master concepts on their own.</p>
+        </section>
+
+        <section id="privacy" aria-labelledby="privacy-title" style="margin-top: 40px;">
+          <h2 id="privacy-title">Local-First Privacy & Data Ownership</h2>
+          <p>Your notes, PDFs, and study sessions remain on your device in local browser storage. Your study materials are never sold or used for model training.</p>
+        </section>
+      </main>
+      <footer style="text-align: center; padding: 30px 20px; border-top: 1px solid #ccc; margin-top: 50px;">
+        <p>&copy; 2026 Comtus — Your AI Study Companion. Rough thought, polished.</p>
+        <p>
+          <a href="/about">About</a> |
+          <a href="/privacy">Privacy Policy</a> |
+          <a href="/terms">Terms of Service</a> |
+          <a href="/responsible-ai">Responsible AI</a> |
+          <a href="/contact">Contact</a>
+        </p>
+      </footer>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

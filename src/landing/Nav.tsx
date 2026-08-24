@@ -5,16 +5,25 @@ import { scrollToSection } from "../lib/scroll";
 import { ComtusEmblem } from "../components/brand/ComtusLogo";
 
 const LINKS = [
-  { label: "The Method", hash: "#method" },
-  { label: "The Studio", hash: "#studio" },
-  { label: "Your Stack", hash: "#stack" },
-  { label: "Boards", hash: "#boards" },
+  { label: "Learning Loop", hash: "#learning-loop" },
+  { label: "Demo", hash: "#demo" },
+  { label: "Use Cases", hash: "#use-cases" },
+  { label: "Why Comtus", hash: "#why-comtus" },
+  { label: "Features", hash: "#studio" },
+  { label: "BYOK Guide", hash: "#byok-guide" },
+  { label: "FAQ", hash: "#faq" },
 ];
 
 /** Floating glass island nav — hides on scroll down, returns on scroll up.
  *  Mobile: hamburger morphs to an X; menu expands as a full glass overlay
  *  with staggered link reveals. */
-export default function Nav({ ready }: { ready: boolean }) {
+export default function Nav({
+  ready,
+  onStartStudying,
+}: {
+  ready: boolean;
+  onStartStudying?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const desktopRef = useRef<HTMLElement>(null);
   const mobileRef = useRef<HTMLElement>(null);
@@ -59,11 +68,11 @@ export default function Nav({ ready }: { ready: boolean }) {
     <>
       <header
         ref={desktopRef}
-        className="fixed inset-x-0 top-5 z-[100] mx-auto hidden w-max items-center gap-1 rounded-full border border-white/10 bg-night/55 py-2 pl-7 pr-2 backdrop-blur-xl opacity-0 md:flex"
+        className="fixed inset-x-0 top-5 z-[100] mx-auto hidden w-max items-center gap-1 rounded-full border border-white/10 bg-night/70 py-2 pl-6 pr-2 backdrop-blur-xl opacity-0 md:flex"
       >
         <Link
           to="/"
-          className="mr-5 flex items-center gap-2.5"
+          className="mr-4 flex items-center gap-2.5"
           data-cursor
           aria-label="Comtus home"
         >
@@ -76,32 +85,57 @@ export default function Nav({ ready }: { ready: boolean }) {
             COMTUS
           </span>
         </Link>
+
         {LINKS.map((l) => (
           <button
             key={l.hash}
+            type="button"
             onClick={() => go(l.hash)}
-            className="group relative rounded-full px-4 py-2 text-[13px] font-medium text-faded transition-colors duration-300 hover:text-parchment"
+            className="group relative rounded-full px-3 py-1.5 text-[12.5px] font-medium text-faded transition-colors duration-300 hover:text-parchment cursor-pointer"
           >
             {l.label}
-            <span className="absolute inset-x-4 -bottom-px h-px origin-left scale-x-0 grad-lamp transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100" />
+            <span className="absolute inset-x-3 -bottom-px h-px origin-left scale-x-0 grad-lamp transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100" />
           </button>
         ))}
-        <Link
-          to="/studio"
-          className="group ml-3 flex items-center gap-2 rounded-full grad-lamp py-2 pl-5 pr-2 text-[13px] font-semibold text-night shadow-[0_0_0_0_rgba(227,176,75,0)] transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(227,176,75,0.28)] active:scale-[0.97]"
-        >
-          Open the studio
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-night/15 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px">
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-              <path
-                d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
-                stroke="#0B0F1A"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-              />
-            </svg>
-          </span>
-        </Link>
+
+        <div className="ml-2 flex items-center gap-2">
+          {onStartStudying ? (
+            <button
+              type="button"
+              onClick={onStartStudying}
+              className="group flex items-center gap-1.5 rounded-full grad-lamp py-1.5 pl-4 pr-2 text-[12.5px] font-semibold text-night shadow-sm transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(227,176,75,0.28)] active:scale-[0.97] cursor-pointer"
+            >
+              <span>Start Studying</span>
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-night/15 transition-transform duration-500 group-hover:translate-x-0.5">
+                <svg width="10" height="10" viewBox="0 0 11 11" fill="none">
+                  <path
+                    d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
+                    stroke="#0B0F1A"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+            </button>
+          ) : (
+            <Link
+              to="/studio"
+              className="group flex items-center gap-1.5 rounded-full grad-lamp py-1.5 pl-4 pr-2 text-[12.5px] font-semibold text-night shadow-sm transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(227,176,75,0.28)] active:scale-[0.97]"
+            >
+              <span>Start Studying</span>
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-night/15 transition-transform duration-500 group-hover:translate-x-0.5">
+                <svg width="10" height="10" viewBox="0 0 11 11" fill="none">
+                  <path
+                    d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
+                    stroke="#0B0F1A"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+            </Link>
+          )}
+        </div>
       </header>
 
       {/* Mobile bar */}
@@ -138,32 +172,32 @@ export default function Nav({ ready }: { ready: boolean }) {
 
       {/* Mobile overlay */}
       <div
-        className={`fixed inset-0 z-[90] flex flex-col justify-center bg-night/90 px-8 pb-[calc(2rem+var(--sab))] pt-[calc(4rem+var(--sat))] backdrop-blur-2xl transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] md:hidden ${
+        className={`fixed inset-0 z-[90] flex flex-col justify-center bg-night/95 px-8 pb-[calc(2rem+var(--sab))] pt-[calc(4rem+var(--sat))] backdrop-blur-2xl transition-all duration-700 ease-[cubic-bezier(0.76,0,0.24,1)] md:hidden ${
           open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
-        {[...LINKS, { label: "Open the studio", hash: "/studio" }].map((l, i) => (
+        {[...LINKS, { label: "Start Studying", hash: "/studio" }].map((l, i) => (
           <div key={l.label} className="overflow-hidden py-1">
             <button
               onClick={() =>
                 l.hash.startsWith("/") ? (window.location.href = l.hash) : go(l.hash)
               }
-              className={`font-display text-[2.4rem] font-[380] text-parchment transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95 ${
+              className={`font-display text-[2rem] font-[380] text-parchment transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95 text-left ${
                 open ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
               }`}
-              style={{ transitionDelay: open ? `${120 + i * 70}ms` : "0ms" }}
+              style={{ transitionDelay: open ? `${100 + i * 50}ms` : "0ms" }}
             >
               {l.label}
             </button>
           </div>
         ))}
         <div
-          className={`label-mono mt-10 transition-opacity duration-700 ${
+          className={`label-mono mt-8 transition-opacity duration-700 text-brasspale/90 ${
             open ? "opacity-70" : "opacity-0"
           }`}
           style={{ transitionDelay: open ? "420ms" : "0ms" }}
         >
-          Rough thought, polished.
+          Your AI Study Companion · Rough thought, polished.
         </div>
       </div>
     </>

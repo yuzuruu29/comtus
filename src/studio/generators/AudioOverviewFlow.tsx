@@ -142,11 +142,12 @@ export function AudioOverviewViewer({
   };
 
   useEffect(() => {
+    const timer = turnTimerRef.current;
     return () => {
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
-      if (turnTimerRef.current) window.clearTimeout(turnTimerRef.current);
+      if (timer) window.clearTimeout(timer);
     };
   }, []);
 
@@ -232,14 +233,15 @@ export function AudioOverviewViewer({
             const isActive = i === currentTurn;
 
             return (
-              <div
+              <button
+                type="button"
                 key={i}
                 data-turn={i}
                 onClick={() => {
                   setCurrentTurn(i);
                   if (playing) speakCurrent(i);
                 }}
-                className={`cursor-pointer rounded-xl p-3.5 transition-all ${
+                className={`block w-full text-left cursor-pointer rounded-xl p-3.5 transition-all ${
                   isActive
                     ? "bg-brass/[0.09] border border-brass/35 shadow-sm"
                     : "hover:bg-ink/[0.03] border border-transparent opacity-75 hover:opacity-100"
@@ -260,7 +262,7 @@ export function AudioOverviewViewer({
                   )}
                 </div>
                 <p className="text-[13.5px] leading-relaxed text-ink/90">{turn.text}</p>
-              </div>
+              </button>
             );
           })}
         </div>

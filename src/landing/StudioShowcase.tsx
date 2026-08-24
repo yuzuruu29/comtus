@@ -64,6 +64,7 @@ export default function StudioShowcase() {
     <section
       ref={rootRef}
       id="studio"
+      data-torch
       className="relative mx-auto w-full max-w-6xl px-6 py-[clamp(6rem,14vh,10rem)]"
     >
       <div className="grid grid-cols-1 gap-14 lg:grid-cols-12">

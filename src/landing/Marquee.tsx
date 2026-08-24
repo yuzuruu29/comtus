@@ -70,6 +70,7 @@ export default function Marquee() {
   return (
     <div
       ref={rootRef}
+      data-torch
       className="relative overflow-hidden border-y border-white/[0.07] bg-study/40 py-5"
       aria-hidden
     >

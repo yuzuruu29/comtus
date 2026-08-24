@@ -8,7 +8,13 @@ import "./landing.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function Hero({ ready }: { ready: boolean }) {
+export default function Hero({
+  ready,
+  onStartStudying,
+}: {
+  ready: boolean;
+  onStartStudying?: () => void;
+}) {
   const rootRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -91,54 +97,90 @@ export default function Hero({ ready }: { ready: boolean }) {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,transparent,rgba(242,237,227,0.14),transparent)]" />
 
       <div className="hero-content relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-6 pt-28 text-center">
-        <div className="hero-kicker label-mono flex items-center gap-4 opacity-0">
+        <div className="hero-kicker label-mono flex items-center gap-3 sm:gap-4 opacity-0">
           <span className="hidden h-px w-10 grad-lamp sm:block" />
-          A study companion that shows its work
+          <span className="rounded-full border border-brass/35 bg-brass/10 px-3 py-1 text-[11px] font-semibold tracking-[0.22em] text-brasspale">
+            AI STUDY COMPANION
+          </span>
           <span className="hidden h-px w-10 grad-lamp sm:block" />
         </div>
 
-        <h1 className="mt-8 font-display text-[clamp(3.1rem,9vw,7.4rem)] font-[380] leading-[0.99] tracking-[-0.015em] text-parchment">
+        <h1 className="mt-8 font-display text-[clamp(2.9rem,8vw,6.8rem)] font-[380] leading-[1.02] tracking-[-0.015em] text-parchment">
           <span className="hero-line block overflow-hidden pb-1">
             <span className="hero-line-inner hero-anim block will-change-transform">
-              Rough thought,
+              Study smarter with Comtus.
             </span>
           </span>
           <span className="hero-line block overflow-hidden pb-3">
-            <span className="hero-line-inner hero-anim block font-[420] italic will-change-transform">
-              <span className="text-lamp">polished.</span>
+            <span className="hero-line-inner hero-anim block font-[420] italic text-[clamp(2.1rem,5.5vw,4.5rem)] text-faded will-change-transform">
+              Rough thought, <span className="text-lamp">polished.</span>
             </span>
           </span>
         </h1>
 
-        <p className="hero-sub hero-anim mt-7 max-w-xl text-balance text-[15.5px] leading-relaxed text-faded opacity-0 sm:text-base">
-          Comtus reads your sources, reasons in the open, and turns them into mock
-          exams, graded essays, and answers that cite their pages.
+        <p className="hero-sub hero-anim mt-6 max-w-2xl text-balance text-[15.5px] leading-relaxed text-faded opacity-0 sm:text-[17px]">
+          Comtus helps you understand difficult lessons, organize your study materials, practice what you've learned, and prepare with confidence.
         </p>
 
-        <div className="mt-10 flex w-full max-w-xs flex-col items-stretch gap-3 sm:max-w-none sm:w-auto sm:flex-row sm:items-center sm:gap-4">
-          <Link
-            to="/studio"
-            className="hero-cta hero-anim group flex min-h-[48px] items-center justify-center gap-2.5 rounded-full grad-lamp py-3.5 pl-7 pr-2.5 text-[14px] font-semibold text-night shadow-[0_10px_44px_rgba(227,176,75,0.22)] transition-all duration-500 motion-safe:hover:-translate-y-px hover:shadow-[0_14px_60px_rgba(227,176,75,0.34)] active:scale-[0.98] opacity-0"
-          >
-            Open the studio
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-night/15 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px">
-              <svg width="12" height="12" viewBox="0 0 11 11" fill="none">
-                <path
-                  d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
-                  stroke="#0B0F1A"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </span>
-          </Link>
+        {/* Learning Loop Pill Badges */}
+        <div className="hero-sub hero-anim mt-5 flex flex-wrap items-center justify-center gap-2 font-mono text-[11px] text-faded/90 opacity-0">
+          <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-brass" /> Understand
+          </span>
+          <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-moon" /> Organize
+          </span>
+          <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-sage" /> Practice
+          </span>
+          <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-brasspale" /> Master
+          </span>
+        </div>
+
+        <div className="mt-9 flex w-full max-w-xs flex-col items-stretch gap-3 sm:max-w-none sm:w-auto sm:flex-row sm:items-center sm:gap-4">
+          {onStartStudying ? (
+            <button
+              onClick={onStartStudying}
+              className="hero-cta hero-anim group flex min-h-[50px] items-center justify-center gap-2.5 rounded-full grad-lamp py-3.5 pl-7 pr-3 text-[14.5px] font-semibold text-night shadow-[0_10px_44px_rgba(227,176,75,0.24)] transition-all duration-500 motion-safe:hover:-translate-y-px hover:shadow-[0_14px_60px_rgba(227,176,75,0.36)] active:scale-[0.98] opacity-0"
+            >
+              <span>Start Studying</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-night/15 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px">
+                <svg width="12" height="12" viewBox="0 0 11 11" fill="none">
+                  <path
+                    d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
+                    stroke="#0B0F1A"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+            </button>
+          ) : (
+            <Link
+              to="/studio"
+              className="hero-cta hero-anim group flex min-h-[50px] items-center justify-center gap-2.5 rounded-full grad-lamp py-3.5 pl-7 pr-3 text-[14.5px] font-semibold text-night shadow-[0_10px_44px_rgba(227,176,75,0.24)] transition-all duration-500 motion-safe:hover:-translate-y-px hover:shadow-[0_14px_60px_rgba(227,176,75,0.36)] active:scale-[0.98] opacity-0"
+            >
+              <span>Start Studying</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-night/15 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px">
+                <svg width="12" height="12" viewBox="0 0 11 11" fill="none">
+                  <path
+                    d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
+                    stroke="#0B0F1A"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+            </Link>
+          )}
           <button
-            onClick={() => scrollToSection("#method")}
-            className="hero-cta hero-anim ghost-tint group flex min-h-[48px] items-center justify-center rounded-full border border-white/10 bg-white/[0.03] px-7 py-3.5 text-[14px] font-medium text-parchment/90 backdrop-blur-sm transition-all duration-300 active:scale-[0.98] opacity-0"
+            onClick={() => scrollToSection("#learning-loop")}
+            className="hero-cta hero-anim ghost-tint group flex min-h-[50px] items-center justify-center rounded-full border border-white/12 bg-white/[0.03] px-7 py-3.5 text-[14.5px] font-medium text-parchment/90 backdrop-blur-sm transition-all duration-300 active:scale-[0.98] opacity-0"
           >
             <span className="roll">
-              <span>See how it thinks</span>
-              <span aria-hidden>See how it thinks</span>
+              <span>See How Comtus Works</span>
+              <span aria-hidden>See How Comtus Works</span>
             </span>
           </button>
         </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   ArrowClockwise,
   ArrowSquareOut,
@@ -146,6 +146,7 @@ export default function SettingsModal({
   const [newKeyBaseUrl, setNewKeyBaseUrl] = useState("https://openrouter.ai/api/v1");
   const [newKeyModel, setNewKeyModel] = useState("deepseek/deepseek-r1:free");
   const [quickSaveName, setQuickSaveName] = useState("");
+  const closeAddKeyModal = useCallback(() => setShowAddKeyModal(false), []);
 
   const theme = useSettings((st) => st.theme) ?? "system";
   const recentModels = useSettings((st) => st.recentModels) ?? [];
@@ -683,26 +684,35 @@ export default function SettingsModal({
                             }`}
                           >
                             <div>
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium text-ink text-[13px] flex items-center gap-1">
+                              {/* Row 1: Plan Title + Popular Badge */}
+                              <div className="flex items-center justify-between gap-1.5">
+                                <span className="font-medium text-ink text-[13.5px]">
                                   {plan.name}
-                                  {plan.popular && (
-                                    <span className="rounded bg-brass/25 px-1 py-0.2 font-mono text-[8.5px] text-brasspale uppercase">
-                                      Popular
-                                    </span>
-                                  )}
                                 </span>
-                                <span className="flex items-baseline gap-1.5">
-                                  <span className="font-mono text-[10.5px] text-muted/60 line-through">
+                                {plan.popular && (
+                                  <span className="rounded bg-brass/25 border border-brass/35 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider text-brasspale font-semibold shrink-0">
+                                    Popular
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Row 2: Price Comparison & Discount */}
+                              <div className="mt-1 flex items-baseline justify-between gap-1.5">
+                                <div className="flex items-baseline gap-1.5">
+                                  <span className="font-mono text-[11px] text-muted/60 line-through">
                                     ${plan.compareAt}
                                   </span>
-                                  <span className="font-mono text-brass font-bold text-[13px]">${plan.price}</span>
-                                  <span className="rounded-full border border-sage/25 bg-sage/15 px-1.5 font-mono text-[8.5px] font-medium text-sage">
-                                    −{Math.round((1 - plan.amount / parseFloat(plan.compareAt)) * 100)}%
+                                  <span className="font-mono text-brass font-bold text-[14px]">
+                                    ${plan.price}
                                   </span>
+                                </div>
+                                <span className="rounded-full border border-sage/30 bg-sage/15 px-1.5 py-0.5 font-mono text-[8.5px] font-medium text-sage shrink-0">
+                                  −{Math.round((1 - plan.amount / parseFloat(plan.compareAt)) * 100)}%
                                 </span>
                               </div>
-                              <div className="mt-1 font-mono text-[10px] text-muted/70">{plan.tokens}</div>
+
+                              {/* Row 3: Token capacity & Description */}
+                              <div className="mt-1.5 font-mono text-[10px] text-muted/70">{plan.tokens}</div>
                               <p className="mt-1.5 text-[11.5px] leading-snug text-muted">{plan.desc}</p>
                             </div>
                             {isPlanSelected && (
@@ -1333,7 +1343,7 @@ export default function SettingsModal({
     {/* Add New Stored Key Modal */}
     <Modal
       open={showAddKeyModal}
-      onClose={() => setShowAddKeyModal(false)}
+      onClose={closeAddKeyModal}
       title="Add Stored Key to BYOK Vault"
     >
       <div className="space-y-4">

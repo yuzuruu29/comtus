@@ -35,7 +35,12 @@ export function Modal({
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const instanceRef = useRef(Symbol("comtus-modal"));
+  const onCloseRef = useRef(onClose);
   const titleId = useId();
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -45,7 +50,7 @@ export function Modal({
 
     const focusTimer = window.setTimeout(() => {
       if (!panelRef.current) return;
-      // If focus is already inside the panel (e.g. React autofocus on input), do not steal it
+      // If focus is already inside the panel (e.g. React autofocus on input, or user already typed), do not steal it
       if (document.activeElement && panelRef.current.contains(document.activeElement)) {
         return;
       }
@@ -73,7 +78,7 @@ export function Modal({
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== "Tab") return;
@@ -105,7 +110,7 @@ export function Modal({
       if (previous?.isConnected) previous.focus();
       restoreFocusRef.current = null;
     };
-  }, [open, onClose]);
+  }, [open]);
 
   // The overlay container stays mounted so AnimatePresence can play the
   // exit; it's click-transparent when empty (pointer-events-none).
@@ -176,16 +181,16 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <label className="block">
-      <div className="label-mono !text-[10px] mb-2">{label}</div>
+    <div className="block">
+      <div className="label-mono !text-[10px] mb-2 select-none">{label}</div>
       {children}
       {hint && <div className="mt-1.5 text-label text-muted">{hint}</div>}
-    </label>
+    </div>
   );
 }
 
 export const inputCls =
-  "w-full rounded-[var(--radius-field)] border border-hairline bg-ground/60 px-3.5 py-2.5 text-[16px] text-ink placeholder:text-muted/60 outline-none transition-[border-color,box-shadow] duration-fast focus:border-brass/50 focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brass)_9%,transparent)] sm:text-body";
+  "w-full rounded-[var(--radius-field)] border border-hairline bg-ground/60 px-3.5 py-2.5 text-[16px] text-ink placeholder:text-muted/60 outline-none transition-[border-color,box-shadow,background-color] duration-200 hover:border-brass/35 focus:border-brass/70 focus:shadow-[0_0_0_1px_rgba(227,176,75,0.4),0_0_18px_-2px_rgba(227,176,75,0.28)] sm:text-body";
 
 export const btnGhost =
   "inline-flex min-h-[44px] items-center justify-center rounded-[var(--radius-control)] border border-hairline bg-ink/[0.03] px-5 py-2.5 text-body font-medium text-ink/90 transition-all duration-fast hover:border-hairline-strong hover:bg-ink/[0.07] active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100 sm:min-h-[38px]";

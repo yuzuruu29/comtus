@@ -289,26 +289,31 @@ html[data-shell] body {
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 300;
+  z-index: 99999;
   pointer-events: none;
   border-radius: 999px;
-  transform: translate(-50%, -50%);
 }
 .cursor-dot {
   width: 6px;
   height: 6px;
+  margin-left: -3px;
+  margin-top: -3px;
   background: var(--brasspale);
 }
 .cursor-ring {
   width: 38px;
   height: 38px;
+  margin-left: -19px;
+  margin-top: -19px;
   border: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
   transition: width 0.3s var(--ease-house), height 0.3s var(--ease-house),
-    border-color 0.3s;
+    border-color 0.3s, margin 0.3s var(--ease-house);
 }
 .cursor-ring.is-active {
   width: 58px;
   height: 58px;
+  margin-left: -29px;
+  margin-top: -29px;
   border-color: color-mix(in srgb, var(--brasspale) 80%, transparent);
 }
 
@@ -323,22 +328,424 @@ html[data-shell] body {
 @media (hover: hover) and (pointer: fine) {
   body.has-custom-cursor,
   body.has-custom-cursor a,
-  body.has-custom-cursor button {
+  body.has-custom-cursor button,
+  body.has-custom-cursor [role="button"] {
     cursor: none;
+  }
+  body.has-custom-cursor input,
+  body.has-custom-cursor textarea,
+  body.has-custom-cursor [contenteditable="true"] {
+    cursor: text;
   }
 }
 
-/* Focus — brass ring on app surfaces */
-html[data-shell] :focus-visible {
+/* ── Universal Input Glow & Studio Hover Animations ── */
+input,
+textarea,
+select {
+  outline: none !important;
+}
+
+input:hover,
+textarea:hover,
+select:hover {
+  border-color: rgba(227, 176, 75, 0.35);
+}
+
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+  border-color: rgba(227, 176, 75, 0.7) !important;
+  box-shadow: 0 0 0 1px rgba(227, 176, 75, 0.4),
+              0 0 18px -2px rgba(227, 176, 75, 0.28) !important;
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.studio-card-hover {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.25s ease;
+}
+
+.studio-card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(227, 176, 75, 0.42);
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5),
+              0 0 22px -4px rgba(227, 176, 75, 0.16);
+}
+
+.studio-card-hover:active {
+  transform: translateY(0) scale(0.985);
+}
+
+.studio-btn-hover {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.studio-btn-hover:hover {
+  transform: translateY(-1px);
+  border-color: rgba(227, 176, 75, 0.4);
+  box-shadow: 0 4px 14px -2px rgba(227, 176, 75, 0.2);
+}
+
+.studio-btn-hover:active {
+  transform: scale(0.97);
+}
+
+/* ── Torch mode — the cursor is a flame; showcases light under it ──
+   Rendered only for fine pointers with motion allowed (TorchLayer).
+   The halo layers are fixed and pointer-driven via transforms; the
+   showcase veil derives entirely from each section's --lit variable. */
+.torch-halo,
+.torch-halo-core {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 250;
+  pointer-events: none;
+  border-radius: 999px;
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+.torch-halo {
+  width: 560px;
+  height: 560px;
+  margin-left: -280px;
+  margin-top: -280px;
+  background: radial-gradient(
+    circle,
+    rgba(227, 176, 75, 0.16) 0%,
+    rgba(201, 146, 54, 0.08) 38%,
+    rgba(227, 176, 75, 0) 70%
+  );
+}
+.torch-halo-core {
+  width: 220px;
+  height: 220px;
+  margin-left: -110px;
+  margin-top: -110px;
+  background: radial-gradient(
+    circle,
+    rgba(240, 206, 140, 0.22) 0%,
+    rgba(227, 176, 75, 0.1) 45%,
+    rgba(227, 176, 75, 0) 72%
+  );
+}
+
+/* ── Pixel Torch Cursor & Rekindling Animations ── */
+.cursor-torch {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 99999;
+  pointer-events: none;
+  display: none;
+  will-change: transform;
+  margin-left: -25px;
+  margin-top: -8px;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+  filter: drop-shadow(0 0 10px rgba(255, 152, 0, 0.5));
+}
+
+body.torch-on .cursor-torch {
+  display: block;
+}
+
+body.torch-on .cursor-dot {
+  display: none;
+}
+
+body.torch-on .cursor-ring {
+  display: none;
+}
+
+.cursor-torch.is-active {
+  transform: scale(1.18);
+  filter: drop-shadow(0 0 18px rgba(255, 193, 7, 0.9));
+}
+
+/* Pixel flame flicker animation */
+@keyframes pixel-flicker {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.06, 0.95) rotate(-2deg);
+  }
+  50% {
+    transform: scale(0.96, 1.05) rotate(1.5deg);
+  }
+  75% {
+    transform: scale(1.04, 1.02) rotate(-1deg);
+  }
+}
+
+.animate-pixel-flicker {
+  animation: pixel-flicker 0.22s steps(4, jump-none) infinite;
+}
+
+/* Sparks drifting */
+@keyframes spark-drift-1 {
+  0% { transform: translate(0, 0); opacity: 1; }
+  100% { transform: translate(3px, -7px); opacity: 0; }
+}
+
+@keyframes spark-drift-2 {
+  0% { transform: translate(0, 0); opacity: 1; }
+  100% { transform: translate(-2px, -9px); opacity: 0; }
+}
+
+@keyframes spark-drift-3 {
+  0% { transform: translate(0, 0); opacity: 0.9; }
+  100% { transform: translate(1px, -6px); opacity: 0; }
+}
+
+.animate-spark-drift-1 {
+  animation: spark-drift-1 0.45s steps(3, end) infinite;
+}
+
+.animate-spark-drift-2 {
+  animation: spark-drift-2 0.55s steps(4, end) infinite 0.15s;
+}
+
+.animate-spark-drift-3 {
+  animation: spark-drift-3 0.38s steps(3, end) infinite 0.08s;
+}
+
+/* Torch ignition flare */
+@keyframes torch-ignite {
+  0% {
+    transform: scale(0.8);
+    filter: brightness(1);
+  }
+  40% {
+    transform: scale(1.45);
+    filter: brightness(2.2) drop-shadow(0 0 24px rgba(255, 179, 0, 1));
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1) drop-shadow(0 0 10px rgba(255, 152, 0, 0.5));
+  }
+}
+
+.animate-torch-ignite {
+  animation: torch-ignite 0.85s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.animate-pulse-gentle {
+  animation: pulse-gentle 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-gentle {
+  0% { transform: scale(0.92); opacity: 0.7; }
+  100% { transform: scale(1.15); opacity: 1; }
+}
+
+/* Floating Pixel Embers */
+.pixel-ember {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: #FFD54F;
+  border-radius: 0;
+  box-shadow: 0 0 4px #FF6F00;
+  pointer-events: none;
+}
+
+.ember-1 {
+  top: 10%;
+  right: 25%;
+  animation: ember-float-1 1.4s steps(5, end) infinite;
+}
+
+.ember-2 {
+  top: 5%;
+  right: 35%;
+  animation: ember-float-2 1.8s steps(6, end) infinite 0.4s;
+}
+
+.ember-3 {
+  top: 15%;
+  right: 20%;
+  animation: ember-float-3 1.2s steps(4, end) infinite 0.8s;
+}
+
+@keyframes ember-float-1 {
+  0% { transform: translate(0, 0); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translate(5px, -18px); opacity: 0; }
+}
+
+@keyframes ember-float-2 {
+  0% { transform: translate(0, 0); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translate(-6px, -22px); opacity: 0; }
+}
+
+@keyframes ember-float-3 {
+  0% { transform: translate(0, 0); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translate(2px, -14px); opacity: 0; }
+}
+
+body.torch-on .cursor-dot {
+  width: 9px;
+  height: 9px;
+  background: radial-gradient(circle at 40% 35%, #fff7e0, var(--brasspale) 55%, var(--brass) 100%);
+  animation: torch-flicker 2.6s ease-in-out infinite;
+}
+@keyframes torch-flicker {
+  0%, 100% { box-shadow: 0 0 10px 2px rgba(240, 206, 140, 0.85), 0 0 26px 8px rgba(227, 176, 75, 0.4); }
+  22% { box-shadow: 0 0 12px 3px rgba(240, 206, 140, 0.95), 0 0 30px 10px rgba(227, 176, 75, 0.48); }
+  47% { box-shadow: 0 0 8px 2px rgba(240, 206, 140, 0.75), 0 0 22px 7px rgba(227, 176, 75, 0.36); }
+  71% { box-shadow: 0 0 11px 2px rgba(240, 206, 140, 0.9), 0 0 28px 9px rgba(227, 176, 75, 0.44); }
+}
+
+/* Night veil over the showcase sections — lifts as --lit rises. */
+body.torch-on [data-torch]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 40%, rgba(11, 15, 26, 0.34), rgba(11, 15, 26, 0.7));
+  opacity: calc(0.6 * (1 - var(--lit, 1)));
+}
+
+.torch-pill {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(1rem + var(--sab));
+  z-index: 260;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(242, 237, 227, 0.14);
+  background: rgba(11, 15, 26, 0.82);
+  backdrop-filter: blur(8px);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faded);
+  transition: border-color var(--dur-med) var(--ease-house), color var(--dur-med) var(--ease-house);
+}
+.torch-pill:hover {
+  border-color: rgba(227, 176, 75, 0.4);
+  color: var(--parchment);
+}
+.torch-pill[aria-pressed="true"] {
+  color: var(--brasspale);
+  border-color: rgba(227, 176, 75, 0.32);
+}
+
+.torch-hint-zone {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(3.4rem + var(--sab));
+  z-index: 260;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+.torch-hint {
+  max-width: 260px;
+  padding: 0.7rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(227, 176, 75, 0.18);
+  background: rgba(11, 15, 26, 0.88);
+  backdrop-filter: blur(10px);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--faded);
+  text-align: right;
+  animation: torch-hint-in 0.5s var(--ease-house) both;
+}
+.torch-hint-off {
+  border-color: rgba(242, 237, 227, 0.1);
+  animation: torch-hint-in 0.5s var(--ease-house) both,
+    torch-hint-out 0.4s var(--ease-house) 3.5s forwards;
+}
+.torch-hint-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brasspale);
+  margin-bottom: 0.35rem;
+}
+.torch-hint-body {
+  color: var(--faded);
+  margin-bottom: 0.3rem;
+}
+.torch-hint-keys {
+  font-size: 10.5px;
+  color: rgba(142, 150, 171, 0.7);
+}
+.torch-hint-key {
+  color: var(--brasspale);
+  border: 1px solid rgba(227, 176, 75, 0.3);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-size: 10px;
+}
+.torch-pill-label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.torch-pill-mode {
+  color: inherit;
+}
+.torch-pill-sep {
+  color: rgba(227, 176, 75, 0.4);
+}
+@keyframes torch-hint-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes torch-hint-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(4px); }
+}
+
+/* Focus — brass ring on keyboard-navigated interactive elements, never inputs */
+html[data-shell] button:focus-visible,
+html[data-shell] a:focus-visible,
+html[data-shell] [tabindex]:not(input):not(textarea):not(select):focus-visible {
   outline: 2px solid color-mix(in srgb, var(--brass) 75%, transparent);
   outline-offset: 2px;
+}
+
+html[data-shell] input:focus,
+html[data-shell] input:focus-visible,
+html[data-shell] textarea:focus,
+html[data-shell] textarea:focus-visible,
+html[data-shell] select:focus,
+html[data-shell] select:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
 }
 
 html[data-theme="light"] .grad-lamp {
   background: linear-gradient(92deg, #c18b2e, #e0b85e);
 }
 
-html[data-theme="light"][data-shell] :focus-visible {
+html[data-theme="light"][data-shell] button:focus-visible,
+html[data-theme="light"][data-shell] a:focus-visible,
+html[data-theme="light"][data-shell] [tabindex]:not(input):not(textarea):not(select):focus-visible {
   outline-color: #765018;
 }
 

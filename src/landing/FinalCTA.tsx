@@ -9,7 +9,7 @@ const FOOTNOTES = [
 
 export default function FinalCTA() {
   return (
-    <section className="relative overflow-hidden py-[clamp(7rem,16vh,11rem)]">
+    <section data-torch className="relative overflow-hidden py-[clamp(7rem,16vh,11rem)]">
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[70vmin] w-[110vmin] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(227,176,75,0.10),rgba(42,54,84,0.14)_55%,transparent_75%)]" />
       <div className="relative mx-auto max-w-3xl px-6 text-center">
         <div className="label-mono justify-center opacity-70">

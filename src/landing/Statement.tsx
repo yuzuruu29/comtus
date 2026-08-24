@@ -56,6 +56,7 @@ export default function Statement() {
   return (
     <section
       ref={rootRef}
+      data-torch
       className="relative flex min-h-[92svh] items-center overflow-hidden border-y border-white/[0.06]"
       aria-label="Manifesto"
     >

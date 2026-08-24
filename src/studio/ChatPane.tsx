@@ -513,20 +513,22 @@ export default function ChatPane({
                   return (
                     <div
                       key={session.id}
-                      onClick={() => selectSession(session.id)}
-                      className={`group relative flex w-full items-center justify-between gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12.5px] cursor-pointer transition-colors ${
+                      className={`group relative flex w-full items-center justify-between gap-2 rounded-[var(--radius-control)] px-2.5 py-1 text-left text-[12.5px] transition-colors ${
                         isActive
                           ? "bg-brass/10 text-brasspale font-medium"
                           : "text-muted hover:bg-ink/[0.04] hover:text-ink"
                       }`}
                     >
-                      <span className="truncate min-w-0 flex-1">{session.title || "New chat"}</span>
+                      <button
+                        type="button"
+                        onClick={() => selectSession(session.id)}
+                        className="truncate min-w-0 flex-1 py-0.5 text-left outline-none cursor-pointer focus-visible:underline"
+                      >
+                        {session.title || "New chat"}
+                      </button>
 
                       {/* Right-hand slot: timestamp at rest, swaps smoothly to edit/delete buttons on hover */}
-                      <div
-                        className="relative flex items-center justify-end shrink-0 pl-2"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <div className="relative flex items-center justify-end shrink-0 pl-2">
                         {/* Timestamp — visible at rest, fades out on hover */}
                         <span
                           className={`font-mono text-[9px] text-muted/60 transition-all duration-200 ${

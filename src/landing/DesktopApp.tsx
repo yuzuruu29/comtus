@@ -106,6 +106,7 @@ export default function DesktopApp() {
     <section
       ref={rootRef}
       id="desktop"
+      data-torch
       className="relative overflow-hidden border-y border-white/[0.06] bg-night py-[clamp(6rem,14vh,10rem)]"
     >
       {/* Lamplight well behind the panel */}

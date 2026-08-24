@@ -47,6 +47,7 @@ export default function Boards() {
     <section
       ref={rootRef}
       id="boards"
+      data-torch
       className="relative mx-auto w-full max-w-6xl px-6 py-[clamp(6rem,14vh,10rem)]"
     >
       <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-12">

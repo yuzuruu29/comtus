@@ -99,6 +99,7 @@ export default function OpenRouterByokSection() {
     <section
       ref={rootRef}
       id="byok-guide"
+      data-torch
       className="relative border-y border-white/[0.07] bg-night/80 py-[clamp(5.5rem,13vh,9.5rem)]"
     >
       {/* Subtle backdrop glow */}

@@ -233,7 +233,7 @@ export default function StudioPane({
               setNoteContent("");
               setNoteModalOpen(true);
             }}
-            className="flex w-full items-center justify-center gap-2 rounded-full border border-hairline-strong bg-surface px-4 py-2.5 text-[13px] font-medium text-ink shadow-sm transition-all hover:border-brass/40 hover:bg-raised active:scale-[0.99]"
+            className="flex w-full items-center justify-center gap-2 rounded-full border border-hairline-strong bg-surface px-4 py-2.5 text-[13px] font-medium text-ink shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brass/50 hover:bg-raised hover:shadow-[0_4px_16px_-2px_rgba(227,176,75,0.18)] active:scale-[0.98]"
           >
             <Plus size={15} weight="bold" className="text-brass" />
             <span>Add note</span>
@@ -245,7 +245,7 @@ export default function StudioPane({
               <button
                 key={t.kind}
                 onClick={() => openAid(t.kind)}
-                className="flex items-center justify-center gap-2 rounded-xl border border-hairline bg-surface/70 px-3 py-2 text-[12px] font-medium text-ink/90 transition-all hover:border-brass/35 hover:bg-raised hover:text-brasspale active:scale-[0.98]"
+                className="flex items-center justify-center gap-2 rounded-xl border border-hairline bg-surface/70 px-3 py-2 text-[12px] font-medium text-ink/90 transition-all duration-200 hover:-translate-y-0.5 hover:border-brass/40 hover:bg-raised hover:text-brasspale hover:shadow-[0_4px_14px_-2px_rgba(227,176,75,0.18)] active:scale-[0.98]"
               >
                 <t.icon size={14} weight="light" className="text-muted shrink-0" />
                 <span className="truncate">{t.name}</span>
@@ -258,22 +258,22 @@ export default function StudioPane({
             <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brasspale mb-1 px-1 font-semibold">
               More Study Generators
             </div>
-                {MORE_TOOLS.map((t) => (
-                  <button
-                    key={t.flow}
-                    onClick={() => {
-                      setFlow(t.flow);
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover:bg-ink/[0.04] transition-colors"
-                  >
-                    <t.icon size={15} weight="light" className="text-brass shrink-0" />
-                    <div className="min-w-0">
-                      <span className="block text-[12.5px] font-medium text-ink">{t.name}</span>
-                      <span className="block text-[10.5px] text-muted">{t.line}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
+            {MORE_TOOLS.map((t) => (
+              <button
+                key={t.flow}
+                onClick={() => {
+                  setFlow(t.flow);
+                }}
+                className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-all duration-200 hover:bg-brass/[0.08] hover:translate-x-1 hover:border-brass/30 active:scale-[0.99]"
+              >
+                <t.icon size={15} weight="light" className="text-brass shrink-0" />
+                <div className="min-w-0">
+                  <span className="block text-[12.5px] font-medium text-ink">{t.name}</span>
+                  <span className="block text-[10.5px] text-muted">{t.line}</span>
+                </div>
+              </button>
+            ))}
+          </div>
 
           {/* Saved Notes & Artifacts List matching Screenshot 2 */}
           <div className="mt-5 space-y-2">
@@ -286,14 +286,14 @@ export default function StudioPane({
                 const isNote = g.kind === "note";
 
                 return (
-                  <Spotlight key={g.id} className="hover-lift rounded-xl" radius={180}>
+                  <Spotlight key={g.id} className="rounded-xl" radius={180}>
                     <motion.div
                       layout
                       initial={{ opacity: 0, y: -6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -10, transition: { duration: 0.15 } }}
                       transition={SOFT}
-                      className="group flex items-start gap-3 rounded-xl border border-hairline bg-surface/70 p-3 hover:border-brass/30 hover:bg-surface transition-colors"
+                      className="group flex items-start gap-3 rounded-xl border border-hairline bg-surface/70 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-brass/40 hover:bg-surface hover:shadow-[0_6px_20px_-4px_rgba(0,0,0,0.4),0_0_14px_-3px_rgba(227,176,75,0.14)]"
                     >
                       {/* Note Icon (Yellow/Gold Notebook icon matching Screenshot 2) */}
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 mt-0.5">

@@ -75,18 +75,23 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
       onDone();
     }
 
+    const el = rootRef.current;
     const skip = () => {
       if (doneRef.current) return;
       doneRef.current = true;
-      gsap
-        .to(rootRef.current, { yPercent: -100, duration: 0.5, ease: "power4.inOut" })
-        .then(onDone);
+      if (el) {
+        gsap
+          .to(el, { yPercent: -100, duration: 0.5, ease: "power4.inOut" })
+          .then(onDone);
+      } else {
+        onDone();
+      }
     };
-    rootRef.current?.addEventListener("click", skip);
+    el?.addEventListener("click", skip);
 
     return () => {
       ctx.revert();
-      rootRef.current?.removeEventListener("click", skip);
+      el?.removeEventListener("click", skip);
     };
   }, [onDone]);
 

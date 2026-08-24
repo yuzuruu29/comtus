@@ -73,8 +73,24 @@ export default function NotebookList({
   };
 
   useEffect(() => {
-    void refresh();
-  }, []);
+    const handleKickstart = async () => {
+      try {
+        const raw = sessionStorage.getItem("comtus_kickstart");
+        if (raw) {
+          sessionStorage.removeItem("comtus_kickstart");
+          const parsed = JSON.parse(raw);
+          const title = parsed.prompt
+            ? `${parsed.subject} · ${parsed.prompt.slice(0, 30)}`
+            : `${parsed.subject} (${parsed.goal})`;
+          const nb = await createNotebook(title);
+          onOpen(nb.id);
+          return;
+        }
+      } catch {}
+      void refresh();
+    };
+    void handleKickstart();
+  }, [onOpen]);
 
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
@@ -234,7 +250,7 @@ export default function NotebookList({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search notebooks…"
-                  className="h-9 w-44 rounded-[var(--radius-control)] border border-hairline bg-surface/50 pl-8 pr-3 text-[12.5px] text-ink placeholder:text-muted/60 outline-none transition-all focus:w-60 focus:border-brass/40 focus:bg-surface"
+                  className="h-9 w-44 rounded-[var(--radius-control)] border border-hairline bg-surface/50 pl-8 pr-3 text-[12.5px] text-ink placeholder:text-muted/60 outline-none transition-all duration-200 hover:border-brass/35 focus:w-60 focus:border-brass/70 focus:bg-surface focus:shadow-[0_0_0_1px_rgba(227,176,75,0.4),0_0_16px_-2px_rgba(227,176,75,0.25)]"
                 />
                 {searchQuery && (
                   <button
@@ -274,7 +290,7 @@ export default function NotebookList({
               <div ref={sortMenuRef} className="relative">
                 <button
                   onClick={() => setSortMenuOpen((v) => !v)}
-                  className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/60 px-3 text-[12.5px] font-medium text-muted hover:text-ink transition-colors"
+                  className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/60 px-3 text-[12.5px] font-medium text-muted hover:text-ink hover:border-brass/35 transition-all"
                 >
                   <span>
                     {sortOption === "recent"
@@ -348,7 +364,7 @@ export default function NotebookList({
               {/* 1st Card: + Create new notebook */}
               <button
                 onClick={openCreateModal}
-                className="group flex min-h-[175px] flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed border-hairline-strong bg-surface/30 p-5 text-center transition-all duration-200 hover:border-brass/50 hover:bg-surface/60 hover-lift"
+                className="group flex min-h-[175px] flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed border-hairline-strong bg-surface/30 p-5 text-center transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-brass/60 hover:bg-brass/[0.04] hover:shadow-[0_14px_30px_-6px_rgba(227,176,75,0.16)] active:scale-[0.98]"
               >
                 <CreateNotebookEmblem />
                 <span className="font-display text-[15px] font-[450] text-ink/90 group-hover:text-brasspale">
@@ -364,7 +380,7 @@ export default function NotebookList({
                   return (
                     <Spotlight
                       key={nb.id}
-                      className="hover-lift rounded-[var(--radius-dialog)]"
+                      className="rounded-[var(--radius-dialog)]"
                       radius={200}
                     >
                       <motion.div
@@ -373,7 +389,7 @@ export default function NotebookList({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={SOFT}
-                        className="group relative flex min-h-[175px] flex-col justify-between rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-5 transition-colors hover:border-brass/35 hover:bg-surface"
+                        className="group relative flex min-h-[175px] flex-col justify-between rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-5 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-brass/50 hover:bg-surface hover:shadow-[0_16px_36px_-8px_rgba(0,0,0,0.5),0_0_24px_-4px_rgba(227,176,75,0.18)] active:scale-[0.985]"
                       >
                         {/* Top Row: Study Glyph & 3-Dot Menu */}
                         <div className="flex items-start justify-between">

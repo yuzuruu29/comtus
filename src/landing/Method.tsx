@@ -41,6 +41,7 @@ export default function Method() {
     <section
       ref={rootRef}
       id="method"
+      data-torch
       className="relative mx-auto w-full max-w-6xl px-6 py-[clamp(6rem,14vh,10rem)]"
     >
       <div className="reveal">
