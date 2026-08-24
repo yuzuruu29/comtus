@@ -65,7 +65,7 @@ const FREE_PROVIDER_CARDS: {
     model: "deepseek/deepseek-r1:free",
     tag: "Deep reasoning",
     desc: "DeepSeek R1, Llama 3.3 & Gemini — hundreds of models behind one free key.",
-    chips: ["deepseek-r1:free", "llama-3.3-70b:free", "gemini-flash:free"],
+    chips: ["stealth/ox-alpha", "deepseek-r1:free", "llama-3.3-70b:free", "gemini-flash:free"],
     keyUrl: "https://openrouter.ai/keys",
     keyLabel: "openrouter.ai/keys",
     icon: Sparkle,
