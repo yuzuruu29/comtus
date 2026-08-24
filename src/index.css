@@ -339,31 +339,11 @@ html[data-shell] body {
   }
 }
 
-/* ── Universal Input Glow & Studio Hover Animations ── */
+/* ── Clean Input & Studio Reset ── */
 input,
 textarea,
 select {
   outline: none !important;
-}
-
-input:hover,
-textarea:hover,
-select:hover {
-  border-color: rgba(227, 176, 75, 0.35);
-}
-
-input:focus,
-input:focus-visible,
-textarea:focus,
-textarea:focus-visible,
-select:focus,
-select:focus-visible {
-  outline: none !important;
-  border-color: rgba(227, 176, 75, 0.7) !important;
-  box-shadow: 0 0 0 1px rgba(227, 176, 75, 0.4),
-              0 0 18px -2px rgba(227, 176, 75, 0.28) !important;
-  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .studio-card-hover {
