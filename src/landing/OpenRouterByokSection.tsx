@@ -42,74 +42,116 @@ interface BenchmarkModel {
 const BENCHMARK_MODELS: BenchmarkModel[] = [
   {
     id: "stealth/ox-alpha",
-    name: "Stealth OX Alpha",
-    badge: "🔥 Trending on X · Frontier Preview",
-    badgeColor: "text-amber-300 border-amber-500/40 bg-amber-500/15 shadow-[0_0_12px_rgba(245,158,11,0.2)]",
+    name: "Ox Alpha (Stealth)",
+    badge: "🔥 SOTA Frontier · Expiring Soon",
+    badgeColor: "text-amber-300 border-amber-500/40 bg-amber-500/15 shadow-[0_0_14px_rgba(245,158,11,0.25)]",
     category: "frontier",
-    modality: "text",
-    modalityNote: "Text-Only · Ultra-High ELO Reasoning",
+    modality: "multimodal",
+    modalityNote: "🖼️ Multimodal (Vision + Video + Text)",
     speed: "Fast · ~70 tok/s",
-    context: "128k tokens",
+    context: "1,048,576 tokens (1M)",
     benchmarkScore: "Top 1% LMSYS Arena / X Hype",
-    bestFor: "SOTA reasoning, Olympiad-tier math derivations, PhD exam synthesis, complex coding logic",
-    why: "Frontier stealth reasoning preview currently surging across AI research feeds. Active before general rollout.",
+    bestFor: "SOTA reasoning, complex math proofs, sustained study sessions, frontier coding logic",
+    why: "Top stealth model trending on X research feeds with 1M context. Active now before trial closes.",
     isExpiringSoon: true,
   },
   {
-    id: "deepseek/deepseek-r1:free",
-    name: "DeepSeek R1",
-    badge: "Deep Reasoning",
-    badgeColor: "text-brasspale border-brass/30 bg-brass/10",
-    category: "reasoning",
-    modality: "text",
-    modalityNote: "Text-Only · Visible Chain-of-Thought",
-    speed: "Standard · ~45 tok/s",
-    context: "64k–128k tokens",
-    benchmarkScore: "97.3% MATH-500 · SOTA CoT",
-    bestFor: "Complex multi-step math proofs, clinical diagnostic reasoning, legal bar exam logic",
-    why: "Generates full visible chain-of-thought reasoning before outputting structured answers.",
-  },
-  {
-    id: "google/gemini-2.0-flash-exp:free",
-    name: "Gemini 2.0 Flash",
-    badge: "Massive Context + Vision",
-    badgeColor: "text-sky-300 border-sky-400/40 bg-sky-500/15",
+    id: "dots-studio/dots-3-note-preview:free",
+    name: "Dots3-Note Preview",
+    badge: "Top Study & Note Synthesizer",
+    badgeColor: "text-emerald-300 border-emerald-500/40 bg-emerald-500/15",
     category: "vision",
     modality: "multimodal",
-    modalityNote: "🖼️ Native Multimodal (Vision + Text)",
-    speed: "Very Fast · ~95 tok/s",
-    context: "1,048,576 tokens",
-    benchmarkScore: "1M Context Champion",
-    bestFor: "Massive multi-chapter textbooks, slide decks with anatomical diagrams, handwritten notes",
-    why: "Directly ingests images, charts, and entire libraries without truncating source text.",
+    modalityNote: "🖼️ Multimodal (Vision + Text)",
+    speed: "Fast · ~85 tok/s",
+    context: "512,000 tokens (512k)",
+    benchmarkScore: "Academic Note-Taking SOTA",
+    bestFor: "Lecture slide extraction, textbook synthesis, structured study guides, visual diagrams",
+    why: "Open 16B active MoE from Dots Studio built specifically for structured notes and study extraction.",
   },
   {
-    id: "meta-llama/llama-3.3-70b-instruct:free",
-    name: "Llama 3.3 70B",
-    badge: "Most Balanced",
-    badgeColor: "text-sage border-sage/30 bg-sage/10",
-    category: "balanced",
-    modality: "text",
-    modalityNote: "Text-Only · High Factual Grounding",
-    speed: "Fast · ~65 tok/s",
-    context: "128k tokens",
-    benchmarkScore: "88.6% MMLU Open Weights",
-    bestFor: "100-item mock exams, comprehensive study guides, essay scoring, cross-discipline notes",
-    why: "State-of-the-art open weights with strong factual grounding and reliable structured generation.",
-  },
-  {
-    id: "llama-3.3-70b-versatile (Groq)",
-    name: "Groq LPU (Llama 3.3)",
-    badge: "Ultra-Instant",
+    id: "nvidia/nemotron-3.5-lightning:free",
+    name: "Nemotron 3.5 Lightning",
+    badge: "1M Context + Blazing Speed",
     badgeColor: "text-brass border-brass/40 bg-brass/15",
     category: "instant",
     modality: "text",
-    modalityNote: "Text-Only · Zero Latency LPU",
+    modalityNote: "📄 Text-Only · NVIDIA Hybrid Engine",
     speed: "500+ tok/s · Hardware LPU",
-    context: "128k tokens",
-    benchmarkScore: "Fastest Free Inference",
-    bestFor: "Rapid-fire flashcards, instantaneous chat tutoring, zero-latency active recall drills",
-    why: "Dedicated Groq tensor hardware with near-zero queue latency for fluid live study.",
+    context: "1,000,000 tokens (1M)",
+    benchmarkScore: "Fastest 1M Context Engine",
+    bestFor: "Massive textbook indexing, rapid-fire drills, zero-latency flashcard generation",
+    why: "NVIDIA hybrid MoE serving 1M tokens with ultra-high throughput and zero queue lag.",
+  },
+  {
+    id: "google/gemma-4-31b-it:free",
+    name: "Google Gemma 4 31B",
+    badge: "Configurable Thinking Mode",
+    badgeColor: "text-sky-300 border-sky-400/40 bg-sky-500/15",
+    category: "vision",
+    modality: "multimodal",
+    modalityNote: "🖼️ Multimodal (Vision + Video + Text)",
+    speed: "Fast · ~65 tok/s",
+    context: "262,144 tokens (256k)",
+    benchmarkScore: "DeepMind Open Weights Leader",
+    bestFor: "Handwritten test papers, anatomical illustrations, multi-step math and physics breakdown",
+    why: "Google DeepMind's flagship 30.7B dense multimodal model with native reasoning mode.",
+  },
+  {
+    id: "z-ai/glm-5.2:free",
+    name: "Z.ai GLM 5.2",
+    badge: "Deep Logic & Exam Agent",
+    badgeColor: "text-brasspale border-brass/30 bg-brass/10",
+    category: "reasoning",
+    modality: "text",
+    modalityNote: "📄 Text-Only · Deep Reasoning",
+    speed: "Fast · ~60 tok/s",
+    context: "256,000 tokens (256k)",
+    benchmarkScore: "Leader in Long-Horizon Tasks",
+    bestFor: "100-item practice exams, clinical case reasoning, comprehensive review outlines",
+    why: "Large-scale frontier reasoning model from Z.ai designed for deep academic problem solving.",
+  },
+  {
+    id: "thinkingmachines/inkling:free",
+    name: "Inkling Omni",
+    badge: "Omni-Modal Vision",
+    badgeColor: "text-purple-300 border-purple-500/40 bg-purple-500/15",
+    category: "vision",
+    modality: "multimodal",
+    modalityNote: "🖼️ Omni-Modal (Vision + Audio + Text)",
+    speed: "Very Fast · ~90 tok/s",
+    context: "262,144 tokens (256k)",
+    benchmarkScore: "Thinking Machines Lab SOTA",
+    bestFor: "Diagram analysis, slide screenshots, audio study companion lectures",
+    why: "41B active MoE with unified perception across text, image, and speech modalities.",
+  },
+  {
+    id: "poolside/laguna-s-2.1:free",
+    name: "Poolside Laguna S 2.1",
+    badge: "Coding & Math Proofs",
+    badgeColor: "text-indigo-300 border-indigo-500/40 bg-indigo-500/15",
+    category: "reasoning",
+    modality: "text",
+    modalityNote: "📄 Text-Only · Coding & Proofs",
+    speed: "Fast · ~75 tok/s",
+    context: "262,144 tokens (256k)",
+    benchmarkScore: "Top Code & Algorithm ELO",
+    bestFor: "Computer science coursework, algorithm derivation, LaTeX syntax, programming homework",
+    why: "Specialized high-accuracy reasoning model from Poolside for precise syntax and proofs.",
+  },
+  {
+    id: "liquid/lfm-2.5-2.6b:free",
+    name: "LiquidAI LFM 2.5",
+    badge: "Ultra-Lightweight & Agile",
+    badgeColor: "text-teal-300 border-teal-500/40 bg-teal-500/15",
+    category: "instant",
+    modality: "text",
+    modalityNote: "📄 Text-Only · Liquid Neural Net",
+    speed: "300+ tok/s",
+    context: "65,536 tokens",
+    benchmarkScore: "Liquid State-Space Engine",
+    bestFor: "Quick concept definitions, flashcard reviews, rapid grammar and syntax checks",
+    why: "Liquid AI dynamic neural network delivering instantaneous answers with minimal compute footprint.",
   },
 ];
 
@@ -204,7 +246,7 @@ export default function OpenRouterByokSection() {
                 How to use <em className="font-[420] text-lamp">Free AI Models</em> in 60 seconds.
               </>
             }
-            sub="Never used Bring-Your-Own-Key (BYOK) before? This 3-step guide gets you free access to DeepSeek R1, Llama 3.3 70B, and Gemini — no credit card required."
+            sub="Never used Bring-Your-Own-Key (BYOK) before? This 3-step guide gets you free access to Ox Alpha, Dots3-Note, and Nemotron 3.5 — no credit card required."
           />
         </div>
 
@@ -281,7 +323,7 @@ export default function OpenRouterByokSection() {
                 Pick a Free Model & Save
               </h3>
               <p className="mt-2 text-[13px] leading-relaxed text-faded">
-                Click the <span className="text-brasspale font-medium">✨ :free</span> filter chip, pick <strong>DeepSeek R1</strong> or <strong>Llama 3.3</strong>, and click <em>Save & test</em>. The lamp is lit.
+                Click the <span className="text-brasspale font-medium">✨ :free</span> filter chip, pick <strong>Ox Alpha</strong> or <strong>Dots3-Note</strong>, and click <em>Save & test</em>. The lamp is lit.
               </p>
             </div>
 
@@ -363,7 +405,7 @@ export default function OpenRouterByokSection() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {displayedModels.map((m) => (
               <TiltCard key={m.id} innerClassName="p-5 sm:p-5 flex flex-col justify-between h-full">
                 <div className="flex h-full flex-col">
@@ -421,8 +463,8 @@ export default function OpenRouterByokSection() {
               </div>
               <div className="text-[12.5px] leading-relaxed text-faded">
                 <strong className="font-medium text-parchment">Understanding Model Modality:</strong>{" "}
-                <span className="text-sky-300 font-medium">Multimodal models (like Gemini 2.0 Flash)</span> directly parse raw image attachments, anatomical diagrams, and handwritten math.{" "}
-                <span className="text-amber-300 font-medium">Text-only models (like Stealth OX Alpha, DeepSeek R1, Llama 3.3)</span> excel at pure logic and reasoning proofs. When you upload PDFs or slides in Comtus, Comtus extracts the text locally on your device before sending so you get clean answers on any model.
+                <span className="text-sky-300 font-medium">Multimodal models (like Ox Alpha, Dots3-Note, Gemma 4, Inkling)</span> directly parse raw image attachments, anatomical diagrams, handwritten formulas, and lecture slides.{" "}
+                <span className="text-amber-300 font-medium">Text-only models (like Nemotron 3.5 Lightning, GLM 5.2, Laguna S 2.1)</span> excel at pure logic, coding, and reasoning proofs. When you upload PDFs or slides in Comtus, Comtus automatically extracts the text locally on your device before sending so you get clean answers on any model.
               </div>
             </div>
           </div>
@@ -439,7 +481,7 @@ export default function OpenRouterByokSection() {
                 What if a free model is slow or unresponsive?
               </h3>
               <p className="mt-2.5 text-[13.5px] leading-relaxed text-faded">
-                Free community models (like DeepSeek R1) occasionally queue requests during worldwide traffic peaks.{" "}
+                Free community models occasionally queue requests during worldwide traffic peaks.{" "}
                 <strong className="font-[560] text-parchment/90">Don't panic — your study data is 100% safe.</strong>{" "}
                 If an endpoint stalls, two quick fixes:
               </p>
@@ -452,7 +494,7 @@ export default function OpenRouterByokSection() {
                 <RefreshCw size={13} className="shrink-0 text-brass" /> Switch free model
               </div>
               <p className="mt-1.5 text-[12.5px] leading-relaxed text-faded">
-                Open Settings and pick Llama 3.3 70B or Gemini Flash — switching takes two seconds.
+                Open Settings and pick Dots3-Note or Nemotron 3.5 Lightning — switching takes two seconds.
               </p>
             </div>
 
