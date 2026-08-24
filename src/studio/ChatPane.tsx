@@ -19,6 +19,7 @@ import {
   Check,
   Copy,
   Flame,
+  Microphone,
   PaperPlaneRight,
   PencilSimple,
   Plus,
@@ -48,6 +49,8 @@ import { useSettings, useCallSettings } from "../lib/settings";
 import StudyGlyph from "../components/icons/StudyGlyph";
 import { Collapse, SOFT, SPRING, HOUSE, Spotlight, BorderBeam } from "./fx";
 import { timeAgo } from "./ui";
+import { appendTranscript } from "../lib/voice";
+import { useVoiceInput } from "./useVoiceInput";
 
 const STARTERS = [
   "Summarize the key ideas across my sources",
@@ -99,6 +102,8 @@ export default function ChatPane({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sourceCount, setSourceCount] = useState(0);
   const [input, setInput] = useState("");
+  // Voice input lands in the composer for review — never auto-sent.
+  const voice = useVoiceInput((text) => setInput((prev) => appendTranscript(prev, text)));
   const [streaming, setStreaming] = useState<{
     text: string;
     thinking: string;
@@ -794,6 +799,41 @@ export default function ChatPane({
                   placeholder="Ask, or say what to drill…"
                   className="min-h-9 w-full resize-none bg-transparent text-[16px] leading-relaxed text-ink caret-brass outline-none placeholder:text-muted/55 sm:text-[14px]"
                 />
+                {voice.state !== "idle" && (
+                  <div className="flex min-h-5 items-center gap-2 text-[12px] leading-snug" role="status">
+                    {(voice.state === "listening" || voice.state === "recording") && (
+                      <span className="relative flex h-2 w-2 shrink-0">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brass/50 [animation-duration:1.4s]" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-brass" />
+                      </span>
+                    )}
+                    {voice.state === "listening" && (
+                      <span className="truncate italic text-muted">
+                        {voice.interim || "Listening…"}
+                      </span>
+                    )}
+                    {voice.state === "recording" && (
+                      <span className="font-mono text-[11px] text-muted">
+                        Recording {Math.floor(voice.elapsed / 60)}:
+                        {String(voice.elapsed % 60).padStart(2, "0")} — tap the mic to transcribe
+                      </span>
+                    )}
+                    {voice.state === "transcribing" && (
+                      <span className="flex items-center gap-2 text-muted">
+                        <span className="relative flex h-2 w-2">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brass/50 [animation-duration:1.6s]" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-brass" />
+                        </span>
+                        Transcribing…
+                      </span>
+                    )}
+                  </div>
+                )}
+                {voice.error && (
+                  <p role="alert" className="pt-1 text-[12px] leading-relaxed text-rust">
+                    {voice.error}
+                  </p>
+                )}
               </div>
 
               {/* Action rail */}
@@ -831,6 +871,34 @@ export default function ChatPane({
                   <span className="mr-1 hidden font-mono text-[9.5px] tracking-[0.06em] text-muted/60 sm:inline">
                     ~{tkEstimate.toLocaleString()} tk
                   </span>
+                )}
+                {!streaming && (
+                  <motion.button
+                    whileTap={{ scale: 0.88 }}
+                    onClick={voice.toggle}
+                    disabled={voice.state === "transcribing"}
+                    data-armed={voice.state !== "idle"}
+                    title="Voice input — your browser's speech engine, or your own key for clip transcription"
+                    aria-label="Voice input"
+                    aria-pressed={voice.state !== "idle"}
+                    className={`relative mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-colors duration-fast disabled:opacity-50 ${
+                      voice.state === "idle"
+                        ? "border-transparent text-muted hover:bg-ink/[0.06] hover:text-ink"
+                        : "border-brass/50 bg-brass/[0.09] text-brasspale"
+                    }`}
+                  >
+                    {voice.state === "listening" && (
+                      <span
+                        aria-hidden
+                        className="absolute inset-0 animate-ping rounded-full bg-brass/25 [animation-duration:1.6s]"
+                      />
+                    )}
+                    <Microphone
+                      size={14}
+                      weight={voice.state === "idle" ? "light" : "fill"}
+                      className="relative z-10"
+                    />
+                  </motion.button>
                 )}
                 <AnimatePresence mode="popLayout" initial={false}>
                   {streaming ? (
