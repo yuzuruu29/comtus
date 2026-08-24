@@ -33,9 +33,12 @@ interface BenchmarkModel {
   modalityNote: string;
   speed: string;
   context: string;
+  contextNum: number;
+  architecture: string;
   benchmarkScore: string;
   bestFor: string;
   why: string;
+  tags: string[];
   isExpiringSoon?: boolean;
 }
 
@@ -50,9 +53,12 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     modalityNote: "🖼️ Multimodal (Vision + Video + Text)",
     speed: "Fast · ~70 tok/s",
     context: "1,048,576 tokens (1M)",
+    contextNum: 1048576,
+    architecture: "Frontier Stealth Reasoning",
     benchmarkScore: "Top 1% LMSYS Arena / X Hype",
     bestFor: "SOTA reasoning, complex math proofs, sustained study sessions, frontier coding logic",
     why: "Top stealth model trending on X research feeds with 1M context. Active now before trial closes.",
+    tags: ["#FrontierReasoning", "#MathProofs", "#1MContext", "#Vision"],
     isExpiringSoon: true,
   },
   {
@@ -65,23 +71,12 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     modalityNote: "🖼️ Multimodal (Vision + Text)",
     speed: "Fast · ~85 tok/s",
     context: "512,000 tokens (512k)",
+    contextNum: 512000,
+    architecture: "16B Active MoE (Dots Studio)",
     benchmarkScore: "Academic Note-Taking SOTA",
     bestFor: "Lecture slide extraction, textbook synthesis, structured study guides, visual diagrams",
     why: "Open 16B active MoE from Dots Studio built specifically for structured notes and study extraction.",
-  },
-  {
-    id: "nvidia/nemotron-3.5-lightning:free",
-    name: "Nemotron 3.5 Lightning",
-    badge: "1M Context + Blazing Speed",
-    badgeColor: "text-brass border-brass/40 bg-brass/15",
-    category: "instant",
-    modality: "text",
-    modalityNote: "📄 Text-Only · NVIDIA Hybrid Engine",
-    speed: "500+ tok/s · Hardware LPU",
-    context: "1,000,000 tokens (1M)",
-    benchmarkScore: "Fastest 1M Context Engine",
-    bestFor: "Massive textbook indexing, rapid-fire drills, zero-latency flashcard generation",
-    why: "NVIDIA hybrid MoE serving 1M tokens with ultra-high throughput and zero queue lag.",
+    tags: ["#LectureNotes", "#SlideDecks", "#VisualDiagrams", "#StudyGuides"],
   },
   {
     id: "google/gemma-4-31b-it:free",
@@ -93,23 +88,12 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     modalityNote: "🖼️ Multimodal (Vision + Video + Text)",
     speed: "Fast · ~65 tok/s",
     context: "262,144 tokens (256k)",
+    contextNum: 262144,
+    architecture: "30.7B Dense Multimodal (DeepMind)",
     benchmarkScore: "DeepMind Open Weights Leader",
     bestFor: "Handwritten test papers, anatomical illustrations, multi-step math and physics breakdown",
     why: "Google DeepMind's flagship 30.7B dense multimodal model with native reasoning mode.",
-  },
-  {
-    id: "z-ai/glm-5.2:free",
-    name: "Z.ai GLM 5.2",
-    badge: "Deep Logic & Exam Agent",
-    badgeColor: "text-brasspale border-brass/30 bg-brass/10",
-    category: "reasoning",
-    modality: "text",
-    modalityNote: "📄 Text-Only · Deep Reasoning",
-    speed: "Fast · ~60 tok/s",
-    context: "256,000 tokens (256k)",
-    benchmarkScore: "Leader in Long-Horizon Tasks",
-    bestFor: "100-item practice exams, clinical case reasoning, comprehensive review outlines",
-    why: "Large-scale frontier reasoning model from Z.ai designed for deep academic problem solving.",
+    tags: ["#HandwrittenNotes", "#Physics", "#BiologyDiagrams", "#ThinkingMode"],
   },
   {
     id: "thinkingmachines/inkling:free",
@@ -121,9 +105,46 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     modalityNote: "🖼️ Omni-Modal (Vision + Audio + Text)",
     speed: "Very Fast · ~90 tok/s",
     context: "262,144 tokens (256k)",
+    contextNum: 262144,
+    architecture: "41B Active Omni-MoE (Thinking Machines)",
     benchmarkScore: "Thinking Machines Lab SOTA",
     bestFor: "Diagram analysis, slide screenshots, audio study companion lectures",
     why: "41B active MoE with unified perception across text, image, and speech modalities.",
+    tags: ["#OmniModal", "#AudioCompanion", "#DiagramQA", "#MultiSensory"],
+  },
+  {
+    id: "nvidia/nemotron-3.5-lightning:free",
+    name: "Nemotron 3.5 Lightning",
+    badge: "1M Context + Blazing Speed",
+    badgeColor: "text-brass border-brass/40 bg-brass/15",
+    category: "instant",
+    modality: "text",
+    modalityNote: "📄 Text-Only · NVIDIA Hybrid Engine",
+    speed: "500+ tok/s · Hardware LPU",
+    context: "1,000,000 tokens (1M)",
+    contextNum: 1000000,
+    architecture: "3B Active / Hybrid MoE (NVIDIA)",
+    benchmarkScore: "Fastest 1M Context Engine",
+    bestFor: "Massive textbook indexing, rapid-fire drills, zero-latency flashcard generation",
+    why: "NVIDIA hybrid MoE serving 1M tokens with ultra-high throughput and zero queue lag.",
+    tags: ["#500TokPerSec", "#MassiveSyllabus", "#RapidFlashcards", "#ZeroLatency"],
+  },
+  {
+    id: "z-ai/glm-5.2:free",
+    name: "Z.ai GLM 5.2",
+    badge: "Deep Logic & Exam Agent",
+    badgeColor: "text-brasspale border-brass/30 bg-brass/10",
+    category: "reasoning",
+    modality: "text",
+    modalityNote: "📄 Text-Only · Deep Reasoning",
+    speed: "Fast · ~60 tok/s",
+    context: "256,000 tokens (256k)",
+    contextNum: 256000,
+    architecture: "Long-Horizon Reasoning Engine (Z.ai)",
+    benchmarkScore: "Leader in Long-Horizon Tasks",
+    bestFor: "100-item practice exams, clinical case reasoning, comprehensive review outlines",
+    why: "Large-scale frontier reasoning model from Z.ai designed for deep academic problem solving.",
+    tags: ["#100ItemExam", "#ClinicalReasoning", "#CaseStudies", "#ReviewOutlines"],
   },
   {
     id: "poolside/laguna-s-2.1:free",
@@ -135,9 +156,12 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     modalityNote: "📄 Text-Only · Coding & Proofs",
     speed: "Fast · ~75 tok/s",
     context: "262,144 tokens (256k)",
+    contextNum: 262144,
+    architecture: "Precision Reasoning Model (Poolside)",
     benchmarkScore: "Top Code & Algorithm ELO",
     bestFor: "Computer science coursework, algorithm derivation, LaTeX syntax, programming homework",
     why: "Specialized high-accuracy reasoning model from Poolside for precise syntax and proofs.",
+    tags: ["#CodingHomework", "#Algorithms", "#LaTeXDerivations", "#CSCourses"],
   },
   {
     id: "liquid/lfm-2.5-2.6b:free",
@@ -149,20 +173,33 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     modalityNote: "📄 Text-Only · Liquid Neural Net",
     speed: "300+ tok/s",
     context: "65,536 tokens",
+    contextNum: 65536,
+    architecture: "Liquid State-Space Neural Net (Liquid AI)",
     benchmarkScore: "Liquid State-Space Engine",
     bestFor: "Quick concept definitions, flashcard reviews, rapid grammar and syntax checks",
     why: "Liquid AI dynamic neural network delivering instantaneous answers with minimal compute footprint.",
+    tags: ["#QuickDefinitions", "#FlashcardRecall", "#GrammarCheck", "#MinimalLatency"],
   },
 ];
 
 export default function OpenRouterByokSection() {
   const rootRef = useRef<HTMLElement>(null);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showMatrix, setShowMatrix] = useState<boolean>(false);
   const [liveStatus, setLiveStatus] = useState<{ count: number; lastChecked: string; liveOxActive: boolean }>({
     count: BENCHMARK_MODELS.length,
     lastChecked: "Just now",
     liveOxActive: true,
   });
+
+  const handleCopyModelId = (id: string) => {
+    void navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    window.setTimeout(() => {
+      setCopiedId((curr) => (curr === id ? null : curr));
+    }, 2000);
+  };
 
   // Background real-time verification of OpenRouter public models
   useEffect(() => {
@@ -405,55 +442,152 @@ export default function OpenRouterByokSection() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {displayedModels.map((m) => (
-              <TiltCard key={m.id} innerClassName="p-5 sm:p-5 flex flex-col justify-between h-full">
-                <div className="flex h-full flex-col">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span
-                      className={`self-start rounded-full border px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-wider font-semibold ${m.badgeColor}`}
-                    >
-                      {m.badge}
-                    </span>
-                    {m.isExpiringSoon && (
-                      <span className="rounded-full border border-amber-500/40 bg-amber-500/20 px-2 py-0.5 font-mono text-[8.5px] text-amber-300 font-semibold animate-pulse">
-                        ⚡ Limited Preview
+          {/* Free Models Symmetrical 4-Column Grid */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {displayedModels.map((m) => {
+              const isCopied = copiedId === m.id;
+              return (
+                <TiltCard key={m.id} innerClassName="p-5 flex flex-col justify-between h-full group">
+                  <div className="flex h-full flex-col">
+                    {/* Top Row: Category Badge + Limited Preview Pill */}
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
+                      <span
+                        className={`rounded-full border px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-wider font-semibold ${m.badgeColor}`}
+                      >
+                        {m.badge}
                       </span>
-                    )}
-                  </div>
+                      {m.isExpiringSoon && (
+                        <span className="rounded-full border border-amber-500/40 bg-amber-500/20 px-2 py-0.5 font-mono text-[8.5px] text-amber-300 font-semibold animate-pulse">
+                          ⚡ Limited Preview
+                        </span>
+                      )}
+                    </div>
 
-                  <h4 className="mt-3 font-display text-[1.15rem] font-[440] leading-snug text-parchment">
-                    {m.name}
-                  </h4>
+                    {/* Model Name & Architecture */}
+                    <h4 className="mt-3 font-display text-[1.2rem] font-[440] leading-snug text-parchment group-hover:text-brasspale transition-colors">
+                      {m.name}
+                    </h4>
+                    <div className="font-mono text-[10px] text-faded/70">
+                      {m.architecture}
+                    </div>
 
-                  <div className="mt-1 font-mono text-[10px] text-brasspale/85">
-                    {m.modalityNote}
-                  </div>
+                    {/* Modality Tag */}
+                    <div className="mt-2 inline-flex items-center gap-1 self-start rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 font-mono text-[10px] text-brasspale/90">
+                      {m.modalityNote}
+                    </div>
 
-                  <div className="mt-2 flex flex-wrap items-center gap-x-2 font-mono text-[10px] leading-relaxed text-faded">
-                    <span>{m.speed}</span>
-                    <span aria-hidden className="text-white/20">·</span>
-                    <span>{m.context}</span>
-                  </div>
+                    {/* Speed, Context & Benchmark */}
+                    <div className="mt-2.5 flex flex-wrap items-center gap-x-2 font-mono text-[10px] leading-relaxed text-faded">
+                      <span className="text-parchment/90 font-medium">{m.speed}</span>
+                      <span aria-hidden className="text-white/20">·</span>
+                      <span>{m.context}</span>
+                    </div>
 
-                  <div className="mt-2 rounded bg-white/[0.03] border border-white/[0.06] px-2 py-1 font-mono text-[9.5px] text-faded/90">
-                    🏆 {m.benchmarkScore}
-                  </div>
+                    <div className="mt-2 rounded-lg bg-white/[0.03] border border-white/[0.06] px-2.5 py-1.5 font-mono text-[9.5px] text-faded/90 flex items-center gap-1.5">
+                      <span>🏆</span>
+                      <span className="text-parchment/85 font-medium">{m.benchmarkScore}</span>
+                    </div>
 
-                  <p className="mt-3 text-[12px] leading-relaxed text-faded">
-                    <strong className="font-medium text-parchment/85">Best for:</strong>{" "}
-                    {m.bestFor}
-                  </p>
+                    {/* Best For */}
+                    <p className="mt-3 text-[12px] leading-relaxed text-faded">
+                      <strong className="font-medium text-parchment/90">Best for:</strong>{" "}
+                      {m.bestFor}
+                    </p>
 
-                  <div className="mt-auto pt-4">
-                    <div className="border-t border-white/[0.06] pt-3 text-[11px] leading-snug text-parchment/75">
-                      {m.why}
+                    {/* Tags */}
+                    <div className="mt-2.5 flex flex-wrap gap-1">
+                      {m.tags.map((t) => (
+                        <span key={t} className="rounded bg-white/[0.02] border border-white/[0.05] px-1.5 py-0.2 font-mono text-[9px] text-faded/80">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Grounded Why */}
+                    <div className="mt-auto pt-4">
+                      <div className="border-t border-white/[0.06] pt-3 text-[11px] leading-snug text-parchment/75">
+                        {m.why}
+                      </div>
+
+                      {/* Copy Endpoint ID Action */}
+                      <button
+                        type="button"
+                        onClick={() => handleCopyModelId(m.id)}
+                        className={`mt-3 w-full flex items-center justify-between rounded-lg border px-2.5 py-1.5 font-mono text-[10.5px] transition-all duration-200 ${
+                          isCopied
+                            ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300"
+                            : "border-white/10 bg-white/[0.02] text-faded hover:border-brass/40 hover:bg-brass/[0.06] hover:text-brasspale"
+                        }`}
+                      >
+                        <span className="truncate max-w-[170px] text-[10px] text-left opacity-80">{m.id}</span>
+                        <span className="font-medium shrink-0 ml-1">
+                          {isCopied ? "✓ Copied" : "Copy ID"}
+                        </span>
+                      </button>
                     </div>
                   </div>
-                </div>
-              </TiltCard>
-            ))}
+                </TiltCard>
+              );
+            })}
           </div>
+
+          {/* Toggle Full Comparison Matrix */}
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setShowMatrix((prev) => !prev)}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-2 font-mono text-[11.5px] text-parchment transition-colors hover:border-brass/50 hover:bg-brass/10 hover:text-brasspale"
+            >
+              <span>{showMatrix ? "▲ Hide Benchmark Matrix" : "📊 View Full Model Comparison & Spec Matrix"}</span>
+            </button>
+          </div>
+
+          {/* Collapsible Full Spec Matrix Table */}
+          {showMatrix && (
+            <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10 bg-night/90 p-4 shadow-xl">
+              <table className="w-full text-left font-mono text-[11.5px]">
+                <thead>
+                  <tr className="border-b border-white/10 text-faded text-[10px] uppercase tracking-wider">
+                    <th className="pb-3 pr-4 font-semibold">Model Name & ID</th>
+                    <th className="pb-3 px-3 font-semibold">Modality</th>
+                    <th className="pb-3 px-3 font-semibold">Context</th>
+                    <th className="pb-3 px-3 font-semibold">Speed</th>
+                    <th className="pb-3 px-3 font-semibold">Key Academic Strength</th>
+                    <th className="pb-3 pl-3 font-semibold text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.06] text-parchment/90">
+                  {BENCHMARK_MODELS.map((m) => (
+                    <tr key={m.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3 pr-4">
+                        <div className="font-medium text-parchment">{m.name}</div>
+                        <div className="text-[10px] text-faded truncate max-w-[220px]">{m.id}</div>
+                      </td>
+                      <td className="py-3 px-3 whitespace-nowrap">
+                        <span className={`inline-block px-2 py-0.5 rounded text-[9.5px] ${
+                          m.modality === "multimodal" ? "bg-sky-500/15 text-sky-300 border border-sky-500/30" : "bg-white/5 text-faded border border-white/10"
+                        }`}>
+                          {m.modality === "multimodal" ? "🖼️ Multimodal (Vision)" : "📄 Text-Only"}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 whitespace-nowrap text-brasspale font-medium">{m.context}</td>
+                      <td className="py-3 px-3 whitespace-nowrap text-faded">{m.speed}</td>
+                      <td className="py-3 px-3 max-w-xs text-faded text-[11px] leading-snug">{m.bestFor}</td>
+                      <td className="py-3 pl-3 text-right whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleCopyModelId(m.id)}
+                          className="rounded border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] text-parchment hover:border-brass/50 hover:text-brasspale transition-colors"
+                        >
+                          {copiedId === m.id ? "✓ Copied" : "Copy ID"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Modality Advisory & Image Input Guidance */}
           <div className="mt-6 rounded-2xl border border-sky-500/25 bg-gradient-to-r from-sky-950/20 via-night/60 to-night/80 p-4 sm:p-5">

@@ -139,6 +139,7 @@ export default function SettingsModal({
   const [lastFetchedAt, setLastFetchedAt] = useState<number | null>(null);
   const [filterQuery, setFilterQuery] = useState("");
   const [byokGuideOpen, setByokGuideOpen] = useState(false);
+  const [showModelGuide, setShowModelGuide] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<StudyPlan>(STUDY_PLANS[1]);
 
   // Multiple Stored Keys state
@@ -1132,28 +1133,153 @@ export default function SettingsModal({
             </div>
 
             <div>
-              <Field
-                label="Model ID"
-                hint="Any model id the endpoint serves. Type one directly or fetch available models."
-              >
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <input
-                    value={draft.compatModel}
-                    onChange={(e) => set({ compatModel: e.target.value })}
-                    placeholder="e.g. deepseek/deepseek-r1"
-                    className={inputCls + " flex-1 font-mono text-[13px]"}
-                    spellCheck={false}
-                  />
-                  <button
-                    className={btnGhost + " shrink-0"}
-                    onClick={fetchModels}
-                    disabled={fetchingModels || !draft.compatBaseUrl.trim()}
-                  >
-                    <ArrowClockwise size={14} className="mr-1.5 inline" />
-                    {fetchingModels ? "Fetching…" : "Fetch list"}
-                  </button>
+              {/* Header with Model Guide Toggle */}
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="label-mono !text-[10px]">Model ID</div>
+                <button
+                  type="button"
+                  onClick={() => setShowModelGuide((v) => !v)}
+                  className="inline-flex items-center gap-1.5 font-mono text-[11px] text-brasspale hover:underline"
+                >
+                  <Sparkle size={12} className="text-brass" />
+                  <span>{showModelGuide ? "Hide decision guide" : "💡 Model Decision Guide (Free & Working)"}</span>
+                </button>
+              </div>
+
+              {/* Embedded Model Decision Guide Panel */}
+              {showModelGuide && (
+                <div className="mb-3.5 overflow-hidden rounded-xl border border-brass/35 bg-brass/[0.04] p-3.5 space-y-3 shadow-lg">
+                  <div className="flex items-center justify-between border-b border-brass/15 pb-2">
+                    <span className="font-display text-[13.5px] font-[450] text-ink flex items-center gap-1.5">
+                      <span>🎯</span> Pick the best free model for your study workflow:
+                    </span>
+                    <span className="font-mono text-[10px] text-brasspale">1-click select</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                    {[
+                      {
+                        id: "stealth/ox-alpha",
+                        name: "Ox Alpha (Stealth)",
+                        badge: "🔥 Frontier Preview",
+                        badgeCls: "text-amber-300 border-amber-500/40 bg-amber-500/20",
+                        modality: "🖼️ Multimodal (Vision)",
+                        ctx: "1M Ctx · ~70 tok/s",
+                        desc: "SOTA reasoning, math proofs & lecture slides (Expiring soon).",
+                      },
+                      {
+                        id: "dots-studio/dots-3-note-preview:free",
+                        name: "Dots3-Note Preview",
+                        badge: "Top Note Synthesizer",
+                        badgeCls: "text-emerald-300 border-emerald-500/40 bg-emerald-500/20",
+                        modality: "🖼️ Multimodal (Vision)",
+                        ctx: "512k Ctx · ~85 tok/s",
+                        desc: "Lecture notes, textbook breakdown & visual diagram QA.",
+                      },
+                      {
+                        id: "nvidia/nemotron-3.5-lightning:free",
+                        name: "Nemotron 3.5 Lightning",
+                        badge: "1M Ctx + 500 tok/s",
+                        badgeCls: "text-brasspale border-brass/40 bg-brass/20",
+                        modality: "📄 Text-Only",
+                        ctx: "1M Ctx · 500+ tok/s",
+                        desc: "Massive textbook indexing & zero-latency flashcards.",
+                      },
+                      {
+                        id: "google/gemma-4-31b-it:free",
+                        name: "Google Gemma 4 31B",
+                        badge: "Thinking Mode",
+                        badgeCls: "text-sky-300 border-sky-400/40 bg-sky-500/20",
+                        modality: "🖼️ Multimodal (Vision)",
+                        ctx: "256k Ctx · ~65 tok/s",
+                        desc: "Handwritten test papers & multi-step physics reasoning.",
+                      },
+                      {
+                        id: "z-ai/glm-5.2:free",
+                        name: "Z.ai GLM 5.2",
+                        badge: "Deep Exam Logic",
+                        badgeCls: "text-purple-300 border-purple-400/40 bg-purple-500/20",
+                        modality: "📄 Text-Only",
+                        ctx: "256k Ctx · ~60 tok/s",
+                        desc: "100-item practice exams & clinical case synthesis.",
+                      },
+                      {
+                        id: "poolside/laguna-s-2.1:free",
+                        name: "Poolside Laguna S 2.1",
+                        badge: "Coding & Proofs",
+                        badgeCls: "text-indigo-300 border-indigo-400/40 bg-indigo-500/20",
+                        modality: "📄 Text-Only",
+                        ctx: "262k Ctx · ~75 tok/s",
+                        desc: "Computer science, LaTeX derivations & math homework.",
+                      },
+                    ].map((item) => {
+                      const active = draft.compatModel === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            set({ compatModel: item.id });
+                            setShowModelGuide(false);
+                          }}
+                          className={`rounded-lg border p-2.5 text-left transition-all active:scale-[0.98] ${
+                            active
+                              ? "border-brass/70 bg-brass/20 text-brasspale shadow-[0_0_12px_rgba(227,176,75,0.15)] ring-1 ring-brass/40"
+                              : "border-hairline bg-surface/70 hover:border-hairline-strong hover:bg-surface"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="font-medium text-[12px] text-ink truncate">{item.name}</span>
+                            <span className={`rounded border px-1.5 py-0.2 font-mono text-[8px] uppercase tracking-wider shrink-0 ${item.badgeCls}`}>
+                              {item.badge}
+                            </span>
+                          </div>
+                          <div className="mt-1 flex items-center justify-between text-[9.5px] font-mono text-muted">
+                            <span className="text-brasspale/90">{item.modality}</span>
+                            <span>{item.ctx}</span>
+                          </div>
+                          <p className="mt-1 text-[10.5px] leading-snug text-muted line-clamp-2">
+                            {item.desc}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </Field>
+              )}
+
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  value={draft.compatModel}
+                  onChange={(e) => set({ compatModel: e.target.value })}
+                  placeholder="e.g. stealth/ox-alpha or dots-studio/dots-3-note-preview:free"
+                  className={inputCls + " flex-1 font-mono text-[13px]"}
+                  spellCheck={false}
+                />
+                <button
+                  className={btnGhost + " shrink-0"}
+                  onClick={fetchModels}
+                  disabled={fetchingModels || !draft.compatBaseUrl.trim()}
+                >
+                  <ArrowClockwise size={14} className="mr-1.5 inline" />
+                  {fetchingModels ? "Fetching…" : "Fetch list"}
+                </button>
+              </div>
+
+              {/* Real-time Modality Status Badge */}
+              {draft.compatModel.trim() && (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 font-mono text-[10.5px]">
+                  {/ox-alpha|dots-3|gemma-4|inkling|gemini|vision/i.test(draft.compatModel) ? (
+                    <span className="inline-flex items-center gap-1 rounded bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 text-sky-300">
+                      🖼️ Multimodal Vision Active — directly reads diagram & slide uploads
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded bg-white/5 border border-white/10 px-2 py-0.5 text-faded">
+                      📄 Text-Only Active — Comtus extracts text locally from uploaded documents
+                    </span>
+                  )}
+                </div>
+              )}
 
               {/* Recent quick chips */}
               {recentModels.length > 0 && (

@@ -799,7 +799,7 @@ export default function ChatPane({
                   }}
                   rows={1}
                   placeholder="Ask, or say what to drill…"
-                  className="min-h-9 w-full resize-none bg-transparent text-[16px] leading-relaxed text-ink caret-brass outline-none placeholder:text-muted/55 sm:text-[14px]"
+                  className="min-h-9 w-full resize-none border-0 bg-transparent text-[16px] leading-relaxed text-ink caret-brass outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0 placeholder:text-muted/55 sm:text-[14px]"
                 />
                 {voice.state !== "idle" && (
                   <div className="flex min-h-5 items-center gap-2 text-[12px] leading-snug" role="status">

@@ -438,14 +438,18 @@ button[data-armed="true"] .send-halo {
   );
 }
 
-/* Beat html[data-shell] :focus-visible — that global brass ring
-   drew a stray yellow rectangle inside the composer. The shell
-   itself carries focus (border, lift, orbiting beam). */
-html[data-shell] .composer-shell textarea:focus,
-html[data-shell] .composer-shell textarea:focus-visible,
-html[data-shell] .composer-shell button:focus-visible {
-  outline: none;
-  outline-offset: 0;
+/* Unconditionally eradicate yellow outline rectangles on composer textarea and all typing elements */
+.composer-shell textarea,
+.composer-shell textarea:focus,
+.composer-shell textarea:focus-visible,
+.composer-shell button:focus-visible,
+.composer-shell *,
+textarea:focus,
+textarea:focus-visible,
+input:focus,
+input:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
 }
 
 /* Keycap chips in the composer footer */
