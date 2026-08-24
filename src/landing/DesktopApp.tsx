@@ -11,12 +11,14 @@ interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
 }
 
-/* Hosted installers — one click, ready for setup. */
-const RELEASE_BASE = `https://github.com/yuzuruu29/comtus/releases/download/v${__APP_VERSION__}`;
+/* Hosted installers — one click, ready for setup. Served from this site
+   (vite's copy-desktop-releases plugin ships desktop-releases/ to
+   /desktop); GitHub release URLs 404 because the repo is private. */
+const DESKTOP_BASE = "/desktop";
 const DESKTOP_BUILDS = {
-  mac: `${RELEASE_BASE}/Comtus_${__APP_VERSION__}_aarch64.dmg`,
-  macIntel: `${RELEASE_BASE}/Comtus_${__APP_VERSION__}_x64.dmg`,
-  win: `${RELEASE_BASE}/Comtus_${__APP_VERSION__}_x64-setup.exe`,
+  mac: `${DESKTOP_BASE}/Comtus_${__APP_VERSION__}_aarch64.dmg`,
+  macIntel: `${DESKTOP_BASE}/Comtus_${__APP_VERSION__}_x64.dmg`,
+  win: `${DESKTOP_BASE}/Comtus_${__APP_VERSION__}_x64-setup.exe`,
 };
 
 /** Per-browser install pointers when the one-click PWA prompt isn't available. */
