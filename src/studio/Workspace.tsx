@@ -179,7 +179,10 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
         </div>
 
         <div className="relative z-10 flex min-h-0 flex-1 flex-col lg:hidden">
-          <div className="min-h-0 flex-1">
+          {/* Flex column, not block: the panes size themselves with flex-1,
+              which is ignored under a plain block parent — the studio and
+              sources panes silently lost all scrolling on mobile. */}
+          <div className="flex min-h-0 flex-1 flex-col">
             {mobilePane === "sources" && (
               <SourcesPane
                 notebookId={notebookId}

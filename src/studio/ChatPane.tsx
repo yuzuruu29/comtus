@@ -615,7 +615,7 @@ export default function ChatPane({
             <p className="mt-3 text-[13.5px] leading-relaxed text-ink/80">
               {sourceCount > 0
                 ? "Your sources are analyzed and indexed. Ask questions, explore comparisons, extract key concepts, or create study aids grounded in your material."
-                : "No sources added yet. Add documents or links on the left to ground your discussions."}
+                : "No sources added yet. Add documents or links in Sources to ground your discussions."}
             </p>
 
             {/* Quick Starters Grid */}
@@ -1193,7 +1193,7 @@ function FocusMenu({
             <div className="max-h-60 overflow-y-auto py-1">
               {sources.length === 0 && (
                 <div className="px-3 py-2 text-[12px] text-muted">
-                  Add sources on the left to ground your answers.
+                  Add sources in the Sources tab to ground your answers.
                 </div>
               )}
               {sources.map((s) => {
