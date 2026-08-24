@@ -1,12 +1,18 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, X, RotateCcw, Sparkles } from "lucide-react";
-import type { QuizConfig, QuizPayload, QuizQuestion, QuizFormat, Generation } from "../../lib/types";
-import { generateJSON, friendlyError } from "../../lib/llm";
+import type { QuizConfig, QuizPayload, QuizQuestion, QuizFormat, Generation, SolutionCheck } from "../../lib/types";
+import { generateJSON, checkSolution, friendlyError } from "../../lib/llm";
 import { useCallSettings } from "../../lib/settings";
 import { saveGeneration } from "../../lib/db";
 import { SOFT, SPRING, useCountUp } from "../fx";
-import { GENERATOR_SYSTEM, buildSourceBlock, sanitizeQuestions } from "./common";
+import { GENERATOR_SYSTEM, buildSourceBlock, sanitizeQuestions, solutionCredit, fmtScore } from "./common";
+import {
+  SolutionBin,
+  SolutionVerdictCard,
+  AiCheckNote,
+  type SolutionSubmission,
+} from "./SolutionBin";
 import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote } from "../ui";
 
 /* ── Configuration ────────────────────────────────────────── */
@@ -26,7 +32,12 @@ export function QuizConfigForm({
   const [count, setCount] = useState(10);
   const [difficulty, setDifficulty] = useState<QuizConfig["difficulty"]>("mixed");
   const [scope, setScope] = useState(defaultScope);
-  const [formats, setFormats] = useState<QuizFormat[]>(["mcq", "truefalse", "identification"]);
+  const [formats, setFormats] = useState<QuizFormat[]>([
+    "mcq",
+    "truefalse",
+    "identification",
+    "solution",
+  ]);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -57,9 +68,9 @@ Quiz spec:
 - Topic scope: ${scope || "the entire notebook, spread across its main topics"}
 
 JSON shape:
-{"questions":[{"format":"mcq"|"truefalse"|"identification","topic":"string","difficulty":"easy"|"moderate"|"hard","stem":"question text","options":["..."],"answerIndex":0,"answer":"exact short answer","rationale":"why, teaching the concept","sourceHint":"source title it came from"}]}
+{"questions":[{"format":"mcq"|"truefalse"|"identification"|"solution","topic":"string","difficulty":"easy"|"moderate"|"hard","stem":"question text","options":["..."],"answerIndex":0,"answer":"exact short answer","rationale":"why, teaching the concept","sourceHint":"source title it came from"}]}
 
-Constraints: MCQ always has exactly 4 options; truefalse has options ["True","False"] and answerIndex 0 or 1; identification has options: [] and a concise answer in "answer". Every item must be answerable from the sources alone.`,
+Constraints: MCQ always has exactly 4 options; truefalse has options ["True","False"] and answerIndex 0 or 1; identification has options: [] and a concise answer in "answer"; solution items are problem-solving questions the student answers ON PAPER and submits as a photo — give them options: [], the precise final answer (with units) in "answer", the concise worked method in "rationale", and a stem that asks for the working to be shown. Include solution items ONLY where the sources genuinely support computation or quantitative reasoning. Every item must be answerable from the sources alone.`,
         onStatus: setStatus,
       });
       const payload: QuizPayload = { questions: sanitizeQuestions(raw.questions), config: raw.config };
@@ -106,7 +117,7 @@ Constraints: MCQ always has exactly 4 options; truefalse has options ["True","Fa
       </div>
       <Field label="Formats">
         <div className="flex flex-wrap gap-2">
-          {(["mcq", "truefalse", "identification"] as const).map((f) => (
+          {(["mcq", "truefalse", "identification", "solution"] as const).map((f) => (
             <button
               key={f}
               onClick={() => toggleFormat(f)}
@@ -116,7 +127,13 @@ Constraints: MCQ always has exactly 4 options; truefalse has options ["True","Fa
                   : "border-hairline text-muted hover:text-ink"
               }`}
             >
-              {f === "mcq" ? "multiple choice" : f === "truefalse" ? "true / false" : "identification"}
+              {f === "mcq"
+                ? "multiple choice"
+                : f === "truefalse"
+                  ? "true / false"
+                  : f === "identification"
+                    ? "identification"
+                    : "problem solving"}
             </button>
           ))}
         </div>
@@ -153,23 +170,68 @@ export function QuizTaker({
   onRetake: () => void;
   onRegenerate?: () => void;
 }) {
+  const cs = useCallSettings();
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<(number | null)[]>(() => payload.questions.map(() => null));
   const [typed, setTyped] = useState<string[]>(() => payload.questions.map(() => ""));
   const [checked, setChecked] = useState<boolean[]>(() => payload.questions.map(() => false));
+  const [subs, setSubs] = useState<(SolutionSubmission | null)[]>(() =>
+    payload.questions.map(() => null),
+  );
+  const [checks, setChecks] = useState<(SolutionCheck | null)[]>(() =>
+    payload.questions.map(() => null),
+  );
+  const [checkingIdx, setCheckingIdx] = useState<number | null>(null);
+  const [checkErrors, setCheckErrors] = useState<string[]>(() => payload.questions.map(() => ""));
   const [finished, setFinished] = useState(false);
 
+  /** Grade one submitted photo with the active model and record the verdict. */
+  const runSolutionCheck = async (i: number) => {
+    const q = payload.questions[i];
+    if (!subs[i]) return;
+    setCheckingIdx(i);
+    setCheckErrors((errs) => errs.map((v, j) => (j === i ? "" : v)));
+    try {
+      const result = await checkSolution({
+        ...cs,
+        stem: q.stem,
+        expectedAnswer: q.answer,
+        expectedApproach: q.rationale,
+        studentFinalAnswer: typed[i].trim() || undefined,
+        image: subs[i]!,
+      });
+      setChecks((c) => c.map((v, j) => (j === i ? result : v)));
+      setChecked((c) => c.map((v, j) => (j === i ? true : v)));
+    } catch (e) {
+      setCheckErrors((errs) => errs.map((v, j) => (j === i ? friendlyError(e) : v)));
+    } finally {
+      setCheckingIdx(null);
+    }
+  };
+
   // Only checked items count — an unchecked pick must not leak correctness.
+  // Drawn solutions earn full/half/none from the AI verdict.
   const score = useMemo(() => {
-    let correct = 0;
+    let total = 0;
     payload.questions.forEach((qq, i) => {
-      if (checked[i] && isCorrect(qq, picked[i], typed[i])) correct++;
+      if (!checked[i]) return;
+      total += qq.format === "solution" ? solutionCredit(checks[i]) : isCorrect(qq, picked[i], typed[i]) ? 1 : 0;
     });
-    return correct;
-  }, [payload.questions, picked, typed, checked]);
+    return total;
+  }, [payload.questions, picked, typed, checked, checks]);
 
   if (finished) {
-    return <QuizResults payload={payload} score={score} picked={picked} typed={typed} onRetake={onRetake} onRegenerate={onRegenerate} />;
+    return (
+      <QuizResults
+        payload={payload}
+        score={score}
+        picked={picked}
+        typed={typed}
+        checks={checks}
+        onRetake={onRetake}
+        onRegenerate={onRegenerate}
+      />
+    );
   }
 
   return (
@@ -183,6 +245,12 @@ export function QuizTaker({
       setTyped={setTyped}
       checked={checked}
       setChecked={setChecked}
+      subs={subs}
+      setSubs={setSubs}
+      checks={checks}
+      checkingIdx={checkingIdx}
+      checkErrors={checkErrors}
+      onRunCheck={runSolutionCheck}
       score={score}
       onFinish={() => setFinished(true)}
     />
@@ -196,6 +264,7 @@ function QuizResults({
   score,
   picked,
   typed,
+  checks,
   onRetake,
   onRegenerate,
 }: {
@@ -203,6 +272,7 @@ function QuizResults({
   score: number;
   picked: (number | null)[];
   typed: string[];
+  checks: (SolutionCheck | null)[];
   onRetake: () => void;
   onRegenerate?: () => void;
 }) {
@@ -212,7 +282,9 @@ function QuizResults({
   payload.questions.forEach((qq, i) => {
     const t = byTopic.get(qq.topic) ?? { c: 0, t: 0 };
     t.t++;
-    if (isCorrect(qq, picked[i], typed[i])) t.c++;
+    if (qq.format === "solution") {
+      if (checks[i]) t.c += solutionCredit(checks[i]);
+    } else if (isCorrect(qq, picked[i], typed[i])) t.c++;
     byTopic.set(qq.topic, t);
   });
   return (
@@ -233,7 +305,7 @@ function QuizResults({
           {shownPct}%
         </div>
         <div className="mt-2 text-[13px] text-muted">
-          {score} of {payload.questions.length} correct
+          {fmtScore(score)} of {payload.questions.length} correct · partially-correct solutions earn half credit
         </div>
       </motion.div>
       <div>
@@ -251,7 +323,7 @@ function QuizResults({
                   style={{ width: `${(c / t) * 100}%` }}
                 />
               </div>
-              <span className="font-mono text-[10.5px] text-muted">{c}/{t}</span>
+                  <span className="font-mono text-[10.5px] text-muted">{fmtScore(c)}/{t}</span>
             </div>
           ))}
         </div>
@@ -280,6 +352,12 @@ function QuizQuestionView({
   setTyped,
   checked,
   setChecked,
+  subs,
+  setSubs,
+  checks,
+  checkingIdx,
+  checkErrors,
+  onRunCheck,
   score,
   onFinish,
 }: {
@@ -292,12 +370,20 @@ function QuizQuestionView({
   setTyped: (fn: (t: string[]) => string[]) => void;
   checked: boolean[];
   setChecked: (fn: (c: boolean[]) => boolean[]) => void;
+  subs: (SolutionSubmission | null)[];
+  setSubs: (fn: (s: (SolutionSubmission | null)[]) => (SolutionSubmission | null)[]) => void;
+  checks: (SolutionCheck | null)[];
+  checkingIdx: number | null;
+  checkErrors: string[];
+  onRunCheck: (i: number) => Promise<void>;
   score: number;
   onFinish: () => void;
 }) {
   const q = payload.questions[idx];
   const isLast = idx === payload.questions.length - 1;
   const isChecked = checked[idx];
+  const isSolution = q.format === "solution";
+  const checking = checkingIdx === idx;
   const correct = isCorrect(q, picked[idx], typed[idx]);
   const check = () => setChecked((c) => c.map((v, i) => (i === idx ? true : v)));
   const next = () => (isLast ? onFinish() : setIdx((i) => i + 1));
@@ -308,7 +394,7 @@ function QuizQuestionView({
         <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
           Item {idx + 1} / {payload.questions.length} · {q.topic} · {q.difficulty}
         </div>
-        <div className="font-mono text-[11px] text-brasspale">{score} correct</div>
+        <div className="whitespace-nowrap font-mono text-[11px] text-brasspale">{fmtScore(score)} correct</div>
       </div>
       <div className="h-1 overflow-hidden rounded bg-ink/[0.06]">
         <motion.div
@@ -330,7 +416,41 @@ function QuizQuestionView({
         >
           <p className="text-[15px] font-medium leading-relaxed text-ink">{q.stem}</p>
 
-          {q.format === "identification" ? (
+          {isSolution ? (
+            <div className="space-y-3">
+              <SolutionBin
+                submission={subs[idx]}
+                readOnly={isChecked || checking}
+                onChange={(s) => setSubs((ss) => ss.map((v, i) => (i === idx ? s : v)))}
+              />
+              <input
+                value={typed[idx]}
+                disabled={isChecked}
+                onChange={(e) => setTyped((t) => t.map((v, i) => (i === idx ? e.target.value : v)))}
+                placeholder="Final answer (optional)"
+                className={inputCls}
+              />
+              <AiCheckNote />
+              {checkErrors[idx] && <ErrorNote>{checkErrors[idx]}</ErrorNote>}
+              {checking && (
+                <div className="space-y-2">
+                  <LampPulse label="Reading your working…" />
+                  <div className="h-1 overflow-hidden rounded bg-ink/[0.06]">
+                    <motion.div
+                      className="h-full w-1/3 grad-lamp"
+                      animate={{ x: ["-100%", "300%"] }}
+                      transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut" }}
+                    />
+                  </div>
+                </div>
+              )}
+              <AnimatePresence>
+                {isChecked && checks[idx] && (
+                  <SolutionVerdictCard check={checks[idx]!} />
+                )}
+              </AnimatePresence>
+            </div>
+          ) : q.format === "identification" ? (
             <div className="space-y-3">
               <input
                 value={typed[idx]}
@@ -442,13 +562,23 @@ function QuizQuestionView({
               Back
             </button>
             {!isChecked ? (
-              <button
-                className={btnLamp}
-                onClick={check}
-                disabled={q.format === "identification" ? !typed[idx].trim() : picked[idx] === null}
-              >
-                Check answer
-              </button>
+              isSolution ? (
+                <button
+                  className={btnLamp}
+                  onClick={() => void onRunCheck(idx)}
+                  disabled={checking || (!subs[idx] && !typed[idx].trim())}
+                >
+                  {checking ? "Checking…" : "Check my solution"}
+                </button>
+              ) : (
+                <button
+                  className={btnLamp}
+                  onClick={check}
+                  disabled={q.format === "identification" ? !typed[idx].trim() : picked[idx] === null}
+                >
+                  Check answer
+                </button>
+              )
             ) : (
               <button className={btnLamp} onClick={next}>
                 {isLast ? "See results" : "Next item"}

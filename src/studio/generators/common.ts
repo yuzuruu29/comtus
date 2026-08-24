@@ -1,5 +1,5 @@
 import { groundContext } from "../../lib/retrieval";
-import type { QuizQuestion, EssayReviewPayload, Flashcard } from "../../lib/types";
+import type { QuizQuestion, EssayReviewPayload, Flashcard, SolutionCheck } from "../../lib/types";
 
 /**
  * Shared plumbing for studio generators: pull grounded source text,
@@ -52,6 +52,19 @@ Rules:
 const isStrArr = (v: unknown): v is string[] =>
   Array.isArray(v) && v.every((x) => typeof x === "string");
 
+/* ── Drawn-solution scoring, shared by quiz & exam takers ── */
+
+/** Half credit — a partially-correct solution earns its keep. */
+export function solutionCredit(check: SolutionCheck | null | undefined): number {
+  if (!check) return 0;
+  return check.verdict === "correct" ? 1 : check.verdict === "partial" ? 0.5 : 0;
+}
+
+/** "7.5" keeps its half; whole numbers stay clean. */
+export function fmtScore(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
 export function sanitizeQuestions(raw: unknown): QuizQuestion[] {
   if (!Array.isArray(raw)) return [];
   const out: QuizQuestion[] = [];
@@ -59,10 +72,18 @@ export function sanitizeQuestions(raw: unknown): QuizQuestion[] {
     const o = q as Record<string, unknown>;
     if (typeof o.stem !== "string" || o.stem.trim().length < 4) return;
     const format =
-      o.format === "truefalse" || o.format === "identification" ? o.format : "mcq";
+      o.format === "truefalse" || o.format === "identification" || o.format === "solution"
+        ? o.format
+        : "mcq";
     let options = isStrArr(o.options) ? o.options : [];
     let answerIndex = typeof o.answerIndex === "number" ? Math.floor(o.answerIndex) : 0;
-    if (format === "truefalse") {
+    if (format === "solution") {
+      // A drawn-solution item carries its expected final answer in `answer`
+      // and the worked method in `rationale` — no options, nothing to pick.
+      if (typeof o.answer !== "string" || !o.answer.trim()) return;
+      options = [];
+      answerIndex = 0;
+    } else if (format === "truefalse") {
       options = ["True", "False"];
       answerIndex = answerIndex === 1 ? 1 : 0;
     } else if (format === "identification") {

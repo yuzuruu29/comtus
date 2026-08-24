@@ -1,18 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, X, RotateCcw, Timer, GraduationCap, PencilLine } from "lucide-react";
+import { Check, X, RotateCcw, Timer, GraduationCap, PencilLine, PenLine, Minus } from "lucide-react";
 import type {
   ExamBlueprint,
   ExamMode,
   ExamPayload,
   Generation,
   QuizQuestion,
+  SolutionCheck,
 } from "../../lib/types";
-import { generateJSON, friendlyError } from "../../lib/llm";
+import { generateJSON, checkSolution, friendlyError } from "../../lib/llm";
 import { useCallSettings } from "../../lib/settings";
 import { saveGeneration } from "../../lib/db";
 import { SOFT, SPRING, useCountUp } from "../fx";
-import { GENERATOR_SYSTEM, buildSourceBlock, sanitizeQuestions } from "./common";
+import {
+  GENERATOR_SYSTEM,
+  buildSourceBlock,
+  sanitizeQuestions,
+  solutionCredit,
+  fmtScore,
+} from "./common";
+import {
+  SolutionBin,
+  SolutionVerdictCard,
+  AiCheckNote,
+  type SolutionSubmission,
+} from "./SolutionBin";
 import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote } from "../ui";
 
 /* ── PH PRC presets ───────────────────────────────────────── */
@@ -121,6 +134,7 @@ export function ExamConfigForm({
   const cs = useCallSettings();
   const [presetId, setPresetId] = useState("pnle");
   const [blueprint, setBlueprint] = useState<ExamBlueprint>(EXAM_PRESETS[0].blueprint);
+  const [withSolutions, setWithSolutions] = useState(true);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -131,6 +145,7 @@ export function ExamConfigForm({
   };
 
   const total = blueprint.sections.reduce((s, x) => s + (x.items || 0), 0);
+  const solCount = Math.min(8, Math.max(1, Math.round(total * 0.2)));
 
   const generate = async () => {
     setError("");
@@ -152,12 +167,18 @@ ${src.block}
 
 Exam blueprint — follow the section/item distribution EXACTLY:
 ${blueprint.sections.map((s) => `- ${s.topic}: ${s.items} items`).join("\n")}
-Total: ${total} items, all multiple choice (4 options each).
+Total: ${total} items.${
+          withSolutions
+            ? ` Of these, exactly ${solCount} are problem-solving items ("solution" format), placed in the sections whose sources support computation — mathematics, surveying calculations, dosage math, financial figures. The student solves these on paper and submits a photo of their handwritten working. The remaining ${total - solCount} items are multiple choice (4 options each).`
+            : " All items are multiple choice (4 options each)."
+        }
 Difficulty: ${blueprint.difficulty}${blueprint.difficulty === "mixed" ? " (30% easy, 50% moderate, 20% hard)" : ""}.
 Style: board-exam voice — clinical vignettes or scenario stems where the subject allows; otherwise precise recall items. Every item answerable from the sources.
 
 JSON shape: an array of
-{"format":"mcq","topic":"<section topic exactly as above>","difficulty":"easy"|"moderate"|"hard","stem":"...","options":["A","B","C","D"],"answerIndex":0,"answer":"<option text>","rationale":"why, teaching the concept","sourceHint":"source title"}`,
+{"format":"mcq"|"solution","topic":"<section topic exactly as above>","difficulty":"easy"|"moderate"|"hard","stem":"...","options":["A","B","C","D"],"answerIndex":0,"answer":"<option text>","rationale":"why, teaching the concept","sourceHint":"source title"}
+
+Constraints: MCQ items have exactly 4 options with answerIndex pointing at the key. Solution items have options: [] and answerIndex 0, carry the precise final answer WITH UNITS in "answer", and numbered worked steps in "rationale"; their stems should ask the student to show their working on paper. Solution items may exist ONLY if the sources genuinely support computation${withSolutions ? "" : " — for this exam, write none: every item must be mcq"}.`,
         onStatus: setStatus,
       });
       if (!Array.isArray(questions) || questions.length === 0)
@@ -275,6 +296,37 @@ JSON shape: an array of
         </div>
       </Field>
 
+      <Field label="Problem-solving items">
+        <button
+          onClick={() => setWithSolutions((v) => !v)}
+          role="switch"
+          aria-checked={withSolutions}
+          className={`flex w-full items-center justify-between gap-4 rounded-xl border px-4 py-3.5 text-left transition-colors ${
+            withSolutions ? "border-brass/40 bg-brass/[0.05]" : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
+          }`}
+        >
+          <span className="min-w-0">
+            <span className="block text-[13px] font-medium text-ink">
+              Handwritten solutions{withSolutions && <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.12em] text-brasspale">{solCount} items</span>}
+            </span>
+            <span className="mt-0.5 block text-[11.5px] leading-snug text-muted">
+              A fifth of the exam becomes computation problems you solve on paper — submit a photo of your working and AI grades it.
+            </span>
+          </span>
+          <span
+            className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${
+              withSolutions ? "bg-brass/70" : "bg-ink/15"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface shadow transition-all ${
+                withSolutions ? "left-[18px]" : "left-0.5"
+              }`}
+            />
+          </span>
+        </button>
+      </Field>
+
       {status && <LampPulse label={status} />}
       {error && <ErrorNote>{error}</ErrorNote>}
       <div className="flex justify-end gap-3">
@@ -297,19 +349,51 @@ export function ExamRunner({
   payload: ExamPayload;
   onExit?: () => void;
 }) {
+  const cs = useCallSettings();
   const [mode, setMode] = useState<ExamMode | null>(null);
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>(() => payload.questions.map(() => null));
+  const [typed, setTyped] = useState<string[]>(() => payload.questions.map(() => ""));
+  const [subs, setSubs] = useState<(SolutionSubmission | null)[]>(() =>
+    payload.questions.map(() => null),
+  );
+  const [checks, setChecks] = useState<(SolutionCheck | null)[]>(() => payload.questions.map(() => null));
+  const [checkErrors, setCheckErrors] = useState<string[]>(() => payload.questions.map(() => ""));
+  const [checkingIdx, setCheckingIdx] = useState<number | null>(null);
   const [revealed, setRevealed] = useState<boolean[]>(() => payload.questions.map(() => false));
   const [finished, setFinished] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(payload.blueprint.minutes * 60);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const qs = payload.questions;
-  const correctCount = useMemo(
-    () => qs.reduce((n, q, i) => n + (answers[i] === q.answerIndex ? 1 : 0), 0),
-    [qs, answers],
-  );
+
+  const isWorked = (i: number) =>
+    qs[i].format === "solution" ? !!subs[i] || !!checks[i] : answers[i] !== null;
+
+  /** Grade one submitted photo — drill mode checks inline; simulated mode
+   *  defers everything to the results screen so nothing leaks mid-exam. */
+  const runSolutionCheck = async (i: number) => {
+    const q = qs[i];
+    if (!subs[i]) return;
+    setCheckingIdx(i);
+    setCheckErrors((errs) => errs.map((v, j) => (j === i ? "" : v)));
+    try {
+      const result = await checkSolution({
+        ...cs,
+        stem: q.stem,
+        expectedAnswer: q.answer,
+        expectedApproach: q.rationale,
+        studentFinalAnswer: typed[i].trim() || undefined,
+        image: subs[i]!,
+      });
+      setChecks((c) => c.map((v, j) => (j === i ? result : v)));
+      setRevealed((r) => r.map((v, j) => (j === i ? true : v)));
+    } catch (e) {
+      setCheckErrors((errs) => errs.map((v, j) => (j === i ? friendlyError(e) : v)));
+    } finally {
+      setCheckingIdx(null);
+    }
+  };
 
   useEffect(() => {
     if (mode !== "simulated" || finished) return;
@@ -369,11 +453,20 @@ export function ExamRunner({
         title={payload.blueprint.title}
         questions={qs}
         answers={answers}
-        correctCount={correctCount}
+        subs={subs}
+        checks={checks}
+        setChecks={setChecks}
+        callSettings={cs}
+        typed={typed}
         onExit={onExit}
         onRetake={() => {
           setMode(null);
           setAnswers(qs.map(() => null));
+          setTyped(qs.map(() => ""));
+          setSubs(qs.map(() => null));
+          setChecks(qs.map(() => null));
+          setCheckErrors(qs.map(() => ""));
+          setCheckingIdx(null);
           setRevealed(qs.map(() => false));
           setFinished(false);
           setIdx(0);
@@ -384,7 +477,9 @@ export function ExamRunner({
   }
 
   const q = qs[idx];
-  const answeredCount = answers.filter((a) => a !== null).length;
+  const isSolution = q.format === "solution";
+  const checking = checkingIdx === idx;
+  const answeredCount = qs.reduce((n, _, i) => n + (isWorked(i) ? 1 : 0), 0);
   const showRationale = mode === "drill" && revealed[idx];
 
   return (
@@ -392,6 +487,7 @@ export function ExamRunner({
       <div className="flex items-center justify-between">
         <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
           Item {idx + 1} / {qs.length} · {q.topic}
+          {isSolution && " · problem solving"}
         </div>
         {mode === "simulated" ? (
           <div className="font-mono text-[11.5px] tabular-nums text-brasspale">
@@ -421,8 +517,37 @@ export function ExamRunner({
           className="space-y-5"
         >
           <p className="text-[15px] font-medium leading-relaxed text-ink">{q.stem}</p>
-          <div className="space-y-2">
-            {q.options.map((opt, oi) => {
+
+          {isSolution ? (
+            <div className="space-y-3">
+              <SolutionBin
+                submission={subs[idx]}
+                readOnly={revealed[idx] || checking}
+                onChange={(s) => setSubs((ss) => ss.map((v, i) => (i === idx ? s : v)))}
+              />
+              <input
+                value={typed[idx]}
+                disabled={revealed[idx]}
+                onChange={(e) => setTyped((t) => t.map((v, i) => (i === idx ? e.target.value : v)))}
+                placeholder="Final answer (optional)"
+                className={inputCls}
+              />
+              {mode === "drill" && (
+                <>
+                  <AiCheckNote />
+                  {checkErrors[idx] && <ErrorNote>{checkErrors[idx]}</ErrorNote>}
+                  {checking && <LampPulse label="Reading your working…" />}
+                  <AnimatePresence>
+                    {revealed[idx] && checks[idx] && (
+                      <SolutionVerdictCard check={checks[idx]!} />
+                    )}
+                  </AnimatePresence>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {q.options.map((opt, oi) => {
               const isPicked = answers[idx] === oi;
               const isAnswer = q.answerIndex === oi;
               const state = !showRationale
@@ -473,8 +598,9 @@ export function ExamRunner({
                   </AnimatePresence>
                 </motion.button>
               );
-            })}
-          </div>
+              })}
+            </div>
+          )}
 
           <AnimatePresence>
             {showRationale && (
@@ -497,13 +623,23 @@ export function ExamRunner({
             </button>
             <div className="flex gap-2">
               {mode === "drill" && !revealed[idx] && (
-                <button
-                  className={btnGhost}
-                  onClick={() => setRevealed((r) => r.map((v, i) => (i === idx ? true : v)))}
-                  disabled={answers[idx] === null}
-                >
-                  Check
-                </button>
+                isSolution ? (
+                  <button
+                    className={btnGhost}
+                    onClick={() => void runSolutionCheck(idx)}
+                    disabled={checking || (!subs[idx] && !typed[idx].trim())}
+                  >
+                    {checking ? "Checking…" : "Check solution"}
+                  </button>
+                ) : (
+                  <button
+                    className={btnGhost}
+                    onClick={() => setRevealed((r) => r.map((v, i) => (i === idx ? true : v)))}
+                    disabled={answers[idx] === null}
+                  >
+                    Check
+                  </button>
+                )
               )}
               {idx === qs.length - 1 ? (
                 <button className={btnLamp} onClick={() => setFinished(true)}>
@@ -521,19 +657,20 @@ export function ExamRunner({
 
       {mode === "simulated" && (
         <div className="flex flex-wrap justify-center gap-2 border-t border-hairline pt-4 sm:gap-1.5">
-          {qs.map((_, i) => (
+          {qs.map((qq, i) => (
             <button
               key={i}
               onClick={() => setIdx(i)}
+              title={`Item ${i + 1}${qq.format === "solution" ? " · photo submission" : ""}`}
               className={`flex h-8 w-8 items-center justify-center rounded-lg font-mono text-[10.5px] transition-all active:scale-90 sm:h-7 sm:w-7 sm:text-[9.5px] ${
                 i === idx
                   ? "bg-brass/25 text-brasspale ring-1 ring-brass/40"
-                  : answers[i] !== null
+                  : isWorked(i)
                     ? "bg-white/[0.09] text-ink/80"
                     : "bg-ink/[0.03] text-muted/60"
               }`}
             >
-              {i + 1}
+              {qq.format === "solution" ? <PenLine size={11} /> : i + 1}
             </button>
           ))}
         </div>
@@ -548,24 +685,92 @@ function ExamResults({
   title,
   questions,
   answers,
-  correctCount,
+  subs,
+  checks,
+  setChecks,
+  callSettings,
+  typed,
   onExit,
   onRetake,
 }: {
   title: string;
   questions: QuizQuestion[];
   answers: (number | null)[];
-  correctCount: number;
+  subs: (SolutionSubmission | null)[];
+  checks: (SolutionCheck | null)[];
+  setChecks: (fn: (c: (SolutionCheck | null)[]) => (SolutionCheck | null)[]) => void;
+  callSettings: ReturnType<typeof useCallSettings>;
+  typed: string[];
   onExit?: () => void;
   onRetake: () => void;
 }) {
-  const pct = Math.round((correctCount / questions.length) * 100);
+  // Simulated runs defer AI grading until now — grade each submitted
+  // photo sequentially so the pass token spends gently and progress is
+  // visible.
+  const [grading, setGrading] = useState(false);
+  const [progress, setProgress] = useState("");
+
+  useEffect(() => {
+    const pending = questions
+      .map((q, i) => ({ q, i }))
+      .filter(({ q, i }) => q.format === "solution" && subs[i] && !checks[i]);
+    if (!pending.length) return;
+    let cancelled = false;
+    void (async () => {
+      setGrading(true);
+      for (let k = 0; k < pending.length; k++) {
+        if (cancelled) return;
+        const { q, i } = pending[k];
+        setProgress(`Checking solution ${k + 1} of ${pending.length}…`);
+        try {
+          const result = await checkSolution({
+            ...callSettings,
+            stem: q.stem,
+            expectedAnswer: q.answer,
+            expectedApproach: q.rationale,
+            studentFinalAnswer: typed[i]?.trim() || undefined,
+            image: subs[i]!,
+          });
+          if (cancelled) return;
+          setChecks((c) => c.map((v, j) => (j === i ? result : v)));
+        } catch {
+          if (cancelled) return;
+          // Left unchecked — its review row explains what to do.
+        }
+      }
+      if (!cancelled) {
+        setGrading(false);
+        setProgress("");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Grade once per submission; re-runs come from an explicit Retake.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const hasSolutions = questions.some((q) => q.format === "solution");
+  const earned = useMemo(
+    () =>
+      questions.reduce(
+        (n, q, i) =>
+          q.format === "solution"
+            ? n + solutionCredit(checks[i])
+            : n + (answers[i] === q.answerIndex ? 1 : 0),
+        0,
+      ),
+    [questions, answers, checks],
+  );
+  const pct = Math.round((earned / questions.length) * 100);
   const shownPct = useCountUp(pct, 1100);
   const byTopic = new Map<string, { c: number; t: number }>();
   questions.forEach((q, i) => {
     const t = byTopic.get(q.topic) ?? { c: 0, t: 0 };
     t.t++;
-    if (answers[i] === q.answerIndex) t.c++;
+    if (q.format === "solution") {
+      if (checks[i]) t.c += solutionCredit(checks[i]);
+    } else if (answers[i] === q.answerIndex) t.c++;
     byTopic.set(q.topic, t);
   });
   const verdict =
@@ -588,9 +793,12 @@ function ExamResults({
           {shownPct}%
         </div>
         <div className="mt-2 text-[13px] text-muted">
-          {correctCount} of {questions.length} correct · {verdict}
+          {fmtScore(earned)} of {questions.length}
+          {hasSolutions ? " · partially-correct solutions earn half credit" : " correct"} · {verdict}
         </div>
+        {hasSolutions && <AiCheckNote className="mx-auto mt-3 max-w-sm" />}
       </motion.div>
+      {(grading || progress) && <LampPulse label={progress || "Checking your solutions…"} />}
       <div>
         <div className="label-mono mb-3">By section</div>
         <div className="space-y-2.5">
@@ -606,7 +814,7 @@ function ExamResults({
                   style={{ width: `${(c / t) * 100}%` }}
                 />
               </div>
-              <span className="w-10 text-right font-mono text-[10.5px] text-muted">{c}/{t}</span>
+              <span className="w-10 text-right font-mono text-[10.5px] text-muted">{fmtScore(c)}/{t}</span>
             </div>
           ))}
         </div>
@@ -615,20 +823,55 @@ function ExamResults({
         <div className="label-mono mb-3">Review — every item, with its rationale</div>
         <div className="space-y-3">
           {questions.map((q, i) => {
-            const ok = answers[i] === q.answerIndex;
+            const isSol = q.format === "solution";
+            const chk = isSol ? checks[i] : null;
+            const credit = isSol ? solutionCredit(chk) : answers[i] === q.answerIndex ? 1 : 0;
             return (
               <div key={i} className="rounded-xl border border-hairline bg-ink/[0.02] p-4">
                 <div className="flex items-start gap-3">
-                  <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${ok ? "bg-sage/15 text-sage" : "bg-rust/15 text-rust"}`}>
-                    {ok ? <Check size={11} /> : <X size={11} />}
+                  <span
+                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                      credit >= 1
+                        ? "bg-sage/15 text-sage"
+                        : credit > 0
+                          ? "bg-brass/15 text-brasspale"
+                          : "bg-rust/15 text-rust"
+                    }`}
+                  >
+                    {credit >= 1 ? (
+                      <Check size={11} />
+                    ) : credit > 0 ? (
+                      <Minus size={11} />
+                    ) : (
+                      <X size={11} />
+                    )}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[13.5px] font-medium leading-relaxed text-ink/90">{q.stem}</p>
-                    {!ok && (
-                      <p className="mt-1.5 text-[12px] text-muted">
-                        Yours: {answers[i] !== null ? q.options[answers[i]!] : "— skipped"} · Key:{" "}
-                        <span className="text-sage">{q.options[q.answerIndex]}</span>
-                      </p>
+                    {isSol ? (
+                      <>
+                        {chk ? (
+                          <div className="mt-2">
+                            <SolutionVerdictCard check={chk} />
+                          </div>
+                        ) : subs[i] ? (
+                          <p className="mt-1.5 text-[12px] text-muted">
+                            This photo couldn't be checked — switch to a vision-capable model in Settings, then retake to grade it.
+                          </p>
+                        ) : (
+                          <p className="mt-1.5 text-[12px] text-muted">No solution submitted — skipped.</p>
+                        )}
+                        <p className="mt-1.5 text-[12px] text-muted">
+                          Key: <span className="text-sage">{q.answer}</span>
+                        </p>
+                      </>
+                    ) : (
+                      credit === 0 && (
+                        <p className="mt-1.5 text-[12px] text-muted">
+                          Yours: {answers[i] !== null ? q.options[answers[i]!] : "— skipped"} · Key:{" "}
+                          <span className="text-sage">{q.options[q.answerIndex]}</span>
+                        </p>
+                      )
                     )}
                     <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink/70">{q.rationale}</p>
                   </div>

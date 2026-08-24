@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
-import type { AnthropicModelId, Citation, Effort, ProviderId } from "./types";
+import type { AnthropicModelId, Citation, Effort, ProviderId, SolutionCheck, SolutionVerdict } from "./types";
 import { groundContext, type GroundingDoc } from "./retrieval";
 import { compatFetchBase } from "./compatRoute";
 
@@ -594,6 +594,124 @@ export async function generateMarkdown(args: GenerateArgs): Promise<string> {
     ],
     args.signal,
   );
+}
+
+/* ── Solution checking (the one multimodal call) ──────────── */
+
+const CHECK_SYSTEM = `You are Comtus's exam grader — a precise, kind board examiner marking a student's handwritten solution. You receive the problem, the expected final answer, the expected method, and a photo of the student's handwritten working (plus a typed final answer if they entered one).
+
+Mark it:
+- Read the photo carefully first. Transcribe the student's final answer as written, even if it is wrong.
+- Accept ANY valid method — a different but sound route earns full marks.
+- Tolerate rounding differences, equivalent forms (0.5 vs 1/2 vs 50%), unit notation variants (m/s vs ms⁻¹), and messy-but-legible notation.
+- verdict "correct": final answer is right AND the shown working is essentially sound.
+- verdict "partial": the approach has real merit but contains mistakes, or the final answer is wrong while the method is mostly sound.
+- verdict "incorrect": fundamental misunderstanding, or essentially no meaningful working visible.
+- verdict "unreadable": the photo is too blurry, dark, or cropped to judge — never guess or grade from imagination.
+- errors[]: one short sentence per concrete mistake in the working (empty when correct).
+- feedback: 2–4 sentences in a calm teaching voice — what held up, where it went wrong, what to review.
+
+Respond with ONLY the raw JSON value — no prose, no code fences:
+{"verdict":"correct"|"partial"|"incorrect"|"unreadable","finalAnswerOk":true|false,"transcribedAnswer":"...","errors":["..."],"feedback":"..."}`;
+
+const VISION_HINT =
+  "This model can't read images — switch to a vision-capable model (Claude Sonnet / Opus, Gemini, GPT-4o, Llama 4…) in Settings and check again.";
+
+export interface CheckSolutionArgs extends CallSettings {
+  stem: string;
+  expectedAnswer: string;
+  expectedApproach: string;
+  /** What the student typed as their final answer, when they did. */
+  studentFinalAnswer?: string;
+  image: { dataUrl: string; mediaType: "image/png" | "image/jpeg" };
+  signal?: AbortSignal;
+}
+
+/** Coerce whatever the model returned into a SolutionCheck. An
+ *  unparseable verdict degrades to "unreadable", never a crash. */
+export function sanitizeCheck(raw: unknown): SolutionCheck {
+  const o = (raw ?? {}) as Record<string, unknown>;
+  const verdicts: SolutionVerdict[] = ["correct", "partial", "incorrect", "unreadable"];
+  return {
+    verdict: verdicts.includes(o.verdict as SolutionVerdict)
+      ? (o.verdict as SolutionVerdict)
+      : "unreadable",
+    finalAnswerOk: o.finalAnswerOk === true,
+    transcribedAnswer: typeof o.transcribedAnswer === "string" ? o.transcribedAnswer : "",
+    errors: Array.isArray(o.errors)
+      ? o.errors.filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+      : [],
+    feedback: typeof o.feedback === "string" ? o.feedback : "",
+  };
+}
+
+function visionShapedError(err: unknown): boolean {
+  if (!(err instanceof Anthropic.APIError || err instanceof OpenAI.APIError)) return false;
+  // Endpoints without image support say so in wildly different words
+  // ("image", "vision", "multimodal", "media type", "input_image"…).
+  return /imag|vision|multimodal|media|modality/i.test(err.message ?? "");
+}
+
+/** Grade a submitted photo of handwritten working with the active
+ *  model. Requires a vision-capable model; text-only endpoints surface
+ *  VISION_HINT. */
+export async function checkSolution(args: CheckSolutionArgs): Promise<SolutionCheck> {
+  const ask = `Problem given to the student:
+${args.stem}
+
+Expected final answer: ${args.expectedAnswer}
+Expected method: ${args.expectedApproach || "(any sound method)"}
+${args.studentFinalAnswer?.trim() ? `The student also typed their final answer: "${args.studentFinalAnswer.trim()}"` : "The student did not type a final answer — read theirs from the photo."}
+
+The student's handwritten solution is attached as a photo. Grade it now.`;
+
+  try {
+    let raw: string;
+    if (args.provider === "anthropic") {
+      const data = args.image.dataUrl.slice(args.image.dataUrl.indexOf(",") + 1);
+      const response = await getAnthropic(args).messages.create(
+        {
+          model: args.model,
+          max_tokens: 2000,
+          system: CHECK_SYSTEM,
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "image",
+                  source: { type: "base64", media_type: args.image.mediaType, data },
+                },
+                { type: "text", text: ask },
+              ],
+            },
+          ] satisfies Anthropic.MessageParam[],
+        },
+        { signal: args.signal },
+      );
+      raw = response.content
+        .filter((b): b is Anthropic.TextBlock => b.type === "text")
+        .map((b) => b.text)
+        .join("\n");
+    } else {
+      const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+        { role: "system", content: CHECK_SYSTEM },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: ask },
+            { type: "image_url", image_url: { url: args.image.dataUrl } },
+          ],
+        },
+      ];
+      raw = await createCompatNonStream(args, messages, args.signal);
+    }
+    return sanitizeCheck(parseJSON(raw));
+  } catch (err) {
+    if (isAbort(err)) throw err;
+    if (visionShapedError(err)) throw new Error(VISION_HINT);
+    throw err;
+  }
 }
 
 /* ── Connection checks & model discovery ──────────────────── */

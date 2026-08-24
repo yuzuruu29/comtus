@@ -99,7 +99,9 @@ export interface Generation {
 
 /* ── Quiz & exam payloads ─────────────────────────────────── */
 
-export type QuizFormat = "mcq" | "truefalse" | "identification";
+/** "solution" = problem-solving item: the student submits a photo of
+ *  their handwritten solution and AI grades it (see SolutionCheck). */
+export type QuizFormat = "mcq" | "truefalse" | "identification" | "solution";
 
 export interface QuizQuestion {
   id: string;
@@ -150,6 +152,25 @@ export interface ExamPayload {
 }
 
 export type ExamMode = "simulated" | "drill";
+
+/* ── Handwritten solution submissions ─────────────────────── */
+
+export type SolutionVerdict = "correct" | "partial" | "incorrect" | "unreadable";
+
+/** AI grading of a submitted handwritten solution. Scoring: correct = 1,
+ *  partial = ½, anything else = 0 — and it can be wrong, so the UI
+ *  always tells the student to double-check. */
+export interface SolutionCheck {
+  verdict: SolutionVerdict;
+  /** Whether the final answer (drawn or typed) matches the expected one. */
+  finalAnswerOk: boolean;
+  /** The final answer as best the model could read it off the sheet. */
+  transcribedAnswer: string;
+  /** Concrete mistakes in the working, one sentence each. */
+  errors: string[];
+  /** Teaching feedback — what held up, what broke, what to review. */
+  feedback: string;
+}
 
 /* ── Essay payloads ───────────────────────────────────────── */
 
