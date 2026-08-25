@@ -817,7 +817,8 @@ export default function ChatPane({
                     {voice.state === "recording" && (
                       <span className="font-mono text-[11px] text-muted">
                         Recording {Math.floor(voice.elapsed / 60)}:
-                        {String(voice.elapsed % 60).padStart(2, "0")} — tap the mic to transcribe
+                        {String(voice.elapsed % 60).padStart(2, "0")} — transcribes itself when
+                        you pause
                       </span>
                     )}
                     {voice.state === "transcribing" && (

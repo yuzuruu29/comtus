@@ -30,8 +30,16 @@ export function useVoiceInput(onCommit: (text: string) => void) {
   onCommitRef.current = onCommit;
   const stateRef = useRef<VoiceState>("idle");
   stateRef.current = state;
+  // Belt-and-braces for the manual stop path: the engine normally
+  // finalizes any pending tail and reports end within milliseconds,
+  // but if it never does this forces the commit.
+  const tailGuardRef = useRef<number | null>(null);
 
   const commitFinals = useCallback(() => {
+    if (tailGuardRef.current !== null) {
+      window.clearTimeout(tailGuardRef.current);
+      tailGuardRef.current = null;
+    }
     const text = finalsRef.current.trim();
     finalsRef.current = "";
     setInterim("");
@@ -65,10 +73,18 @@ export function useVoiceInput(onCommit: (text: string) => void) {
     const current = stateRef.current;
 
     if (current === "listening") {
-      stopDictationRef.current?.();
+      const stop = stopDictationRef.current;
       stopDictationRef.current = null;
-      commitFinals();
-      setState("idle");
+      stop?.();
+      // The engine finalizes the trailing words and fires onEnd, which
+      // commits — don't commit here or the tail would be dropped.
+      tailGuardRef.current = window.setTimeout(() => {
+        tailGuardRef.current = null;
+        if (stateRef.current === "listening") {
+          commitFinals();
+          setState("idle");
+        }
+      }, 800);
       return;
     }
     if (current === "recording") {
@@ -86,6 +102,9 @@ export function useVoiceInput(onCommit: (text: string) => void) {
           finalsRef.current += text;
           setInterim("");
         },
+        // Endpointing: a pause after speech commits the phrase to the
+        // composer immediately — the mic stays live for the next one.
+        onPause: () => commitFinals(),
         onError: (message) => {
           stopDictationRef.current = null;
           commitFinals(); // keep whatever was recognized before the failure
@@ -111,7 +130,11 @@ export function useVoiceInput(onCommit: (text: string) => void) {
     setElapsed(0);
     void (async () => {
       try {
-        clipRef.current = await recordClip();
+        clipRef.current = await recordClip({
+          // Voice-activity endpointing: the clip ends itself after the
+          // last word and transcription starts without a second tap.
+          onAutoStop: () => void finishRecording(),
+        });
       } catch (err) {
         setState("idle");
         const name = err instanceof DOMException ? err.name : "";
@@ -134,6 +157,7 @@ export function useVoiceInput(onCommit: (text: string) => void) {
   // Mic tracks and recognition must not outlive the composer.
   useEffect(
     () => () => {
+      if (tailGuardRef.current !== null) window.clearTimeout(tailGuardRef.current);
       stopDictationRef.current?.();
       void clipRef.current?.stop().catch(() => {});
     },

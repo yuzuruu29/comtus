@@ -49,12 +49,20 @@ export function whisperModelFor(baseUrl: string): string {
 
 /* ── Live dictation (Web Speech API) ──────────────────────── */
 
+/** How long a pause ends an utterance and commits it to the composer.
+ *  Aggressive enough to feel instant; commits append seamlessly so a
+ *  rare mid-sentence cut costs nothing. */
+export const DICTATION_SILENCE_MS = 1100;
+
 export interface DictationHandlers {
   onInterim?: (text: string) => void;
   onFinal?: (text: string) => void;
   onError?: (message: string) => void;
   /** The engine ended on its own and could not be kept alive. */
   onEnd?: () => void;
+  /** Trailing-silence endpointing: the phrase just spoken is done —
+   *  commit what's recognized now without ending the session. */
+  onPause?: () => void;
 }
 
 /* Minimal structural view of SpeechRecognition — the DOM lib may or
@@ -79,7 +87,9 @@ function recognitionCtor(): (new () => MinimalRecognition) | null {
 
 /** Start live dictation; returns a stop function. The session stays
  *  alive across engine-side ends (iOS Safari stops after every
- *  phrase) until the user stops it or a real error lands. */
+ *  phrase) until the user stops it or a real error lands. After each
+ *  spoken phrase, a trailing-silence pause fires onPause so the text
+ *  lands in the composer immediately instead of waiting for a tap. */
 export function startDictation(handlers: DictationHandlers): () => void {
   const Ctor = recognitionCtor();
   if (!Ctor) {
@@ -95,7 +105,17 @@ export function startDictation(handlers: DictationHandlers): () => void {
   rec.interimResults = true;
 
   let active = true;
-  let started = false;
+  let stoppedByUser = false;
+  let lastVoiceAt = 0;
+  let awaitingSpeech = true;
+
+  // Session-scoped endpointing poll — survives the engine's internal
+  // restarts; torn down by teardown() on every terminal transition.
+  let poll = 0;
+  const teardown = () => {
+    if (poll) window.clearInterval(poll);
+    poll = 0;
+  };
 
   rec.onresult = (e: unknown) => {
     const ev = e as {
@@ -109,6 +129,8 @@ export function startDictation(handlers: DictationHandlers): () => void {
       if (res.isFinal) handlers.onFinal?.(text);
       else interim += text;
     }
+    lastVoiceAt = Date.now();
+    awaitingSpeech = false;
     handlers.onInterim?.(interim);
   };
 
@@ -116,6 +138,7 @@ export function startDictation(handlers: DictationHandlers): () => void {
     const code = (e as { error?: string }).error ?? "";
     if (code === "no-speech" || code === "aborted") return;
     active = false;
+    teardown();
     if (code === "not-allowed" || code === "service-not-allowed")
       handlers.onError?.(
         "Microphone access is blocked — allow it in your browser's site settings and try again.",
@@ -128,30 +151,42 @@ export function startDictation(handlers: DictationHandlers): () => void {
   };
 
   rec.onend = () => {
-    if (!active) return;
-    if (!started) {
-      handlers.onEnd?.();
+    if (stoppedByUser) {
+      teardown();
+      handlers.onEnd?.(); // user asked to stop — hand back for the final commit
       return;
     }
+    if (!active) return;
     try {
       rec.start(); // keep the session alive through silence and phrase breaks
     } catch {
+      teardown();
       handlers.onEnd?.();
     }
   };
 
   try {
     rec.start();
-    started = true;
   } catch {
     active = false;
     handlers.onError?.("Voice input couldn't start — try again.");
+    return () => {};
   }
+
+  poll = window.setInterval(() => {
+    if (!active || awaitingSpeech) return;
+    if (Date.now() - lastVoiceAt >= DICTATION_SILENCE_MS) {
+      awaitingSpeech = true; // re-arms on the next recognized word
+      handlers.onPause?.();
+    }
+  }, 200);
 
   return () => {
     active = false;
+    stoppedByUser = true;
+    teardown();
     try {
-      rec.stop();
+      rec.stop(); // engine finalizes any pending tail, then fires onend → onEnd
     } catch {
       /* never started */
     }
@@ -160,13 +195,30 @@ export function startDictation(handlers: DictationHandlers): () => void {
 
 /* ── Clip recording (fallback engine) ─────────────────────── */
 
+/** RMS above this counts as voice; below it, silence. Speech near a
+ *  laptop mic sits around 0.05–0.3, quiet rooms under ~0.015. */
+export const VOICE_RMS_THRESHOLD = 0.02;
+/** Silence after speech that ends the clip and starts transcription. */
+export const CLIP_SILENCE_MS = 1800;
+
 export interface VoiceClip {
   stop: () => Promise<Blob>;
 }
 
-/** Record from the microphone until stop() — resolves the clip blob
- *  (webm where supported, mp4 for Safari). */
-export async function recordClip(): Promise<VoiceClip> {
+export interface RecordClipOptions {
+  /** Called once when the recorder ends itself after trailing
+   *  silence — the blob is already final; stop() resolves it too. */
+  onAutoStop?: () => void;
+  /** Override the trailing-silence window (tests, tuning). */
+  silenceMs?: number;
+}
+
+/** Record from the microphone until stop() or until voice-activity
+ *  detection sees CLIP_SILENCE_MS of silence after speech — then the
+ *  clip finishes itself so transcription starts without a second
+ *  tap. Resolves the clip blob (webm where supported, mp4 for
+ *  Safari). */
+export async function recordClip(opts: RecordClipOptions = {}): Promise<VoiceClip> {
   if (
     typeof navigator === "undefined" ||
     !navigator.mediaDevices?.getUserMedia ||
@@ -186,12 +238,64 @@ export async function recordClip(): Promise<VoiceClip> {
   const stopped = new Promise<Blob>((resolve) => {
     rec.onstop = () => resolve(new Blob(chunks, { type: rec.mimeType || mime || "audio/webm" }));
   });
+
+  let finished = false;
+  let analyser: AnalyserNode | null = null;
+  let ctx: AudioContext | null = null;
+  let vadPoll = 0;
+
+  const finish = () => {
+    if (finished) return stopped;
+    finished = true;
+    if (vadPoll) window.clearInterval(vadPoll);
+    if (rec.state !== "inactive") rec.stop();
+    stream.getTracks().forEach((t) => t.stop());
+    void ctx?.close().catch(() => {});
+    return stopped;
+  };
+
+  // Voice-activity endpointing: end the clip on its own after the
+  // last word so transcription begins immediately. If WebAudio isn't
+  // available the manual stop button remains the only exit.
+  try {
+    const AC =
+      (window as unknown as { AudioContext?: typeof AudioContext }).AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (AC) {
+      ctx = new AC();
+      void ctx.resume().catch(() => {});
+      const source = ctx.createMediaStreamSource(stream);
+      analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      source.connect(analyser);
+      const buf = new Uint8Array(analyser.fftSize);
+      const silenceMs = opts.silenceMs ?? CLIP_SILENCE_MS;
+      let hasSpoken = false;
+      let lastVoiceAt = performance.now();
+      vadPoll = window.setInterval(() => {
+        if (finished || !analyser) return;
+        analyser.getByteTimeDomainData(buf);
+        let sum = 0;
+        for (let i = 0; i < buf.length; i++) {
+          const d = (buf[i] - 128) / 128;
+          sum += d * d;
+        }
+        const rms = Math.sqrt(sum / buf.length);
+        if (rms >= VOICE_RMS_THRESHOLD) {
+          hasSpoken = true;
+          lastVoiceAt = performance.now();
+        } else if (hasSpoken && performance.now() - lastVoiceAt >= silenceMs) {
+          finish();
+          opts.onAutoStop?.();
+        }
+      }, 120);
+    }
+  } catch {
+    /* no WebAudio — manual stop only */
+  }
+
   return {
-    stop: () => {
-      if (rec.state !== "inactive") rec.stop();
-      stream.getTracks().forEach((t) => t.stop());
-      return stopped;
-    },
+    stop: finish,
   };
 }
 
