@@ -52,13 +52,11 @@ export const useSettings = create<SettingsState>()(
       anthropicModel: "claude-opus-5",
       compatKey: "",
       compatBaseUrl: "https://openrouter.ai/api/v1",
-      compatModel: "deepseek/deepseek-r1:free",
+      compatModel: "openrouter/free",
       recentModels: [
-        "deepseek/deepseek-r1:free",
+        "openrouter/free",
         "dots-studio/dots-3-note-preview:free",
         "nvidia/nemotron-3.5-lightning:free",
-        "meta-llama/llama-3.3-70b-instruct:free",
-        "google/gemma-4-31b-it:free",
       ],
       storedKeys: [],
       isPro: false,
@@ -104,7 +102,7 @@ export const useSettings = create<SettingsState>()(
           provider: "openai-compatible",
           compatKey: key.apiKey,
           compatBaseUrl: key.baseUrl,
-          compatModel: key.defaultModel || get().compatModel || "deepseek/deepseek-r1:free",
+          compatModel: key.defaultModel || get().compatModel || "openrouter/free",
         });
       },
       activateProPass: (passCode: string, planTier: PlanTier = "scholar", tokenAmount?: number) => {
@@ -151,7 +149,7 @@ export const useSettings = create<SettingsState>()(
           model?: string;
         };
         const base: Partial<SettingsState> = {
-          recentModels: ["deepseek/deepseek-r1", "meta-llama/llama-3.3-70b-instruct", "qwen/qwen-2.5-72b-instruct"],
+          recentModels: ["openrouter/free", "dots-studio/dots-3-note-preview:free", "nvidia/nemotron-3.5-lightning:free"],
           ...old,
           storedKeys: old.storedKeys || [],
           isPro: old.isPro ?? false,

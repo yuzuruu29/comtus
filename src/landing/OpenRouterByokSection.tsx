@@ -78,23 +78,6 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     tags: ["#LectureNotes", "#SlideDecks", "#VisualDiagrams", "#StudyGuides"],
   },
   {
-    id: "google/gemma-4-31b-it:free",
-    name: "Google Gemma 4 31B",
-    badge: "Configurable Thinking Mode",
-    badgeColor: "text-sky-300 border-sky-400/40 bg-sky-500/15",
-    category: "vision",
-    modality: "multimodal",
-    modalityNote: "🖼️ Multimodal (Vision + Video + Text)",
-    speed: "Fast · ~65 tok/s",
-    context: "262,144 tokens (256k)",
-    contextNum: 262144,
-    architecture: "30.7B Dense Multimodal (DeepMind)",
-    benchmarkScore: "DeepMind Open Weights Leader",
-    bestFor: "Handwritten test papers, anatomical illustrations, multi-step math and physics breakdown",
-    why: "Google DeepMind's flagship 30.7B dense multimodal model with native reasoning mode.",
-    tags: ["#HandwrittenNotes", "#Physics", "#BiologyDiagrams", "#ThinkingMode"],
-  },
-  {
     id: "thinkingmachines/inkling:free",
     name: "Inkling Omni",
     badge: "Omni-Modal Vision",
@@ -595,7 +578,7 @@ export default function OpenRouterByokSection() {
               </div>
               <div className="text-[12.5px] leading-relaxed text-faded">
                 <strong className="font-medium text-parchment">Understanding Model Modality:</strong>{" "}
-                <span className="text-sky-300 font-medium">Multimodal models (like Ox Alpha, Dots3-Note, Gemma 4, Inkling)</span> directly parse raw image attachments, anatomical diagrams, handwritten formulas, and lecture slides.{" "}
+                <span className="text-sky-300 font-medium">Multimodal models (like Ox Alpha, Dots3-Note, Inkling)</span> directly parse raw image attachments, anatomical diagrams, handwritten formulas, and lecture slides.{" "}
                 <span className="text-amber-300 font-medium">Text-only models (like Nemotron 3.5 Lightning, Laguna S 2.1)</span> excel at pure logic, coding, and reasoning proofs. When you upload PDFs or slides in Comtus, Comtus automatically extracts the text locally on your device before sending so you get clean answers on any model.
               </div>
             </div>

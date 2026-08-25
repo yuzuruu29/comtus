@@ -72,16 +72,6 @@ export const CURATED_FREE_MODELS: CuratedFreeModel[] = [
     icon: Lightning,
   },
   {
-    id: "google/gemma-4-31b-it:free",
-    name: "Google Gemma 4 Vision",
-    badge: "Handwriting & Math",
-    badgeType: "vision",
-    desc: "Analyzes handwritten notes, whiteboard photos, diagrams, charts, and math work.",
-    bestFor: "Visual Diagrams & Photos",
-    context: "256k Context",
-    icon: Eye,
-  },
-  {
     id: "poolside/laguna-s-2.1:free",
     name: "Poolside Laguna STEM",
     badge: "Math & Code Drills",

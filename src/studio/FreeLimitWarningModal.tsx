@@ -86,12 +86,6 @@ export default function FreeLimitWarningModal({
                 badge: "500+ tok/s · 1M Ctx",
                 desc: "Fastest 1M context engine for instant drills & flashcards.",
               },
-              {
-                id: "google/gemma-4-31b-it:free",
-                name: "Google Gemma 4 31B",
-                badge: "Vision Thinking Mode",
-                desc: "DeepMind multimodal model for handwritten notes & math.",
-              },
             ].map((m) => {
               const isCurrent = activeModel === m.id;
               return (
