@@ -6,6 +6,7 @@ import { buildSearchQuery, searchWeb } from "./webSearch";
 import { webSearchGroundingClause, webSearchUserReminder } from "./webSearchPrompt";
 import { compatFetchBase } from "./compatRoute";
 import { useSettings, CODEX_FALLBACK_MODELS } from "./settings";
+import { parseCodexUsageFromHeaders } from "./codexUsage";
 import { ensureFreshAccessToken, jwtClaims } from "./oauthProviders";
 
 /**
@@ -269,28 +270,11 @@ function getResponses(cs: CallSettings): OpenAI {
   });
 }
 
-/** Best-effort read of the plan's usage window from the x-codex-primary-*
- *  headers on a stream response; used for the card's usage line. The SDK
- *  stream keeps the raw response — read structurally. */
+/** Read 5-hour + weekly plan windows from x-codex-* headers on a stream. */
 function captureCodexUsage(stream: AsyncIterable<unknown>): void {
   const headers = (stream as unknown as { response?: { headers?: Headers } }).response?.headers;
   if (!headers) return;
-  const parseNum = (v: string | null): number | undefined => {
-    if (!v) return undefined;
-    const n = Number.parseFloat(v);
-    return Number.isFinite(n) ? n : undefined;
-  };
-  const used = parseNum(headers.get("x-codex-primary-used-percent"));
-  if (used === undefined) return;
-  if (used <= 0) {
-    useSettings.getState().setCodexUsage(null);
-    return;
-  }
-  const windowMinutes = parseNum(headers.get("x-codex-primary-window-minutes")) ?? 0;
-  const resetSec = parseNum(headers.get("x-codex-primary-reset-at")) ?? 0;
-  useSettings
-    .getState()
-    .setCodexUsage({ usedPercent: used, windowMinutes, resetsAt: resetSec * 1000 });
+  useSettings.getState().setCodexUsage(parseCodexUsageFromHeaders(headers));
 }
 
 export function isAbort(err: unknown): boolean {
@@ -1180,8 +1164,8 @@ export async function validateConnection(
         stream: true,
         store: false,
       });
-      for await (const _event of stream) {
-        // Drain — 16 output tokens completes almost instantly.
+      for await (const event of stream) {
+        void event; // Drain — 16 output tokens completes almost instantly.
       }
     } else if (cs.provider === "anthropic") {
       const client = getAnthropic(cs);

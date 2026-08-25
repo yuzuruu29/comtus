@@ -35,6 +35,9 @@ const CODEK_USAGE_HEADERS = [
   "x-codex-primary-used-percent",
   "x-codex-primary-window-minutes",
   "x-codex-primary-reset-at",
+  "x-codex-secondary-used-percent",
+  "x-codex-secondary-window-minutes",
+  "x-codex-secondary-reset-at",
 ] as const;
 
 /* Origins allowed to call the relay — mirrors api/compat.ts. */
@@ -56,6 +59,10 @@ function corsHeaders(origin?: string | string[] | null): Array<[string, string]>
     ["access-control-allow-origin", o],
     ["access-control-allow-headers", "content-type,authorization,chatgpt-account-id,openai-beta,session_id,conversation_id,originator,version"],
     ["access-control-allow-methods", "GET,POST,OPTIONS"],
+    [
+      "access-control-expose-headers",
+      "x-codex-primary-used-percent, x-codex-primary-window-minutes, x-codex-primary-reset-at, x-codex-secondary-used-percent, x-codex-secondary-window-minutes, x-codex-secondary-reset-at",
+    ],
   ];
 }
 

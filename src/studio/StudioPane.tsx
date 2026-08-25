@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   BookOpen,
+  ArrowCounterClockwise,
   Briefcase,
   ClockCounterClockwise,
   FileText,
@@ -17,7 +18,13 @@ import {
   Stack,
   Trash,
 } from "@phosphor-icons/react";
-import { db, createCustomNote, updateCustomNote, deleteGeneration } from "../lib/db";
+import {
+  db,
+  createCustomNote,
+  updateCustomNote,
+  deleteGeneration,
+  restoreGeneration,
+} from "../lib/db";
 import type {
   Generation,
   GenerationKind,
@@ -44,6 +51,10 @@ import {
 import { useDesk } from "./DeskContext";
 
 type Flow = "quiz" | "exam" | "essay" | "flashcards" | "presentation" | "aids" | null;
+type DeletedGenerationNotice = {
+  generation: Generation;
+  focusUndo: boolean;
+};
 
 const QUICK_AID_PILLS: { kind: GenerationKind; icon: typeof BookOpen; name: string }[] = [
   { kind: "study-guide", icon: BookOpen, name: "Study guide" },
@@ -69,6 +80,8 @@ const FLOW_TITLES: Record<string, string> = {
   aids: "Study aid",
 };
 
+const UNDO_DELETE_MS = 5_000;
+
 export default function StudioPane({
   notebookId,
   onCollapse,
@@ -85,6 +98,9 @@ export default function StudioPane({
   const [flow, setFlow] = useState<Flow>(null);
   const [aidKind, setAidKind] = useState<GenerationKind | undefined>(undefined);
   const [viewing, setViewing] = useState<Generation | null>(null);
+  const [deleteNotice, setDeleteNotice] = useState<DeletedGenerationNotice | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const artifactButtonRefs = useRef(new Map<string, HTMLButtonElement>());
 
   // Note editor modal
   const [noteModalOpen, setNoteModalOpen] = useState(false);
@@ -92,16 +108,18 @@ export default function StudioPane({
   const [noteTitle, setNoteTitle] = useState("");
   const [noteContent, setNoteContent] = useState("");
 
-  const refresh = useCallback(() => {
-    void db.generations
+  const refresh = useCallback(async () => {
+    const rows = await db.generations
       .where("notebookId")
       .equals(notebookId)
       .reverse()
-      .sortBy("createdAt")
-      .then(setGens);
+      .sortBy("createdAt");
+    setGens(rows);
   }, [notebookId]);
 
-  useEffect(refresh, [refresh]);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   useEffect(() => {
     if (!pendingGenerationId) return;
@@ -129,7 +147,7 @@ export default function StudioPane({
   const done = (gen: Generation) => {
     setFlow(null);
     setAidKind(undefined);
-    refresh();
+    void refresh();
     setViewing(gen);
   };
 
@@ -144,7 +162,7 @@ export default function StudioPane({
     setEditingNote(null);
     setNoteTitle("");
     setNoteContent("");
-    refresh();
+    await refresh();
   };
 
   const openEditNote = (g: Generation) => {
@@ -155,9 +173,32 @@ export default function StudioPane({
     setNoteModalOpen(true);
   };
 
-  const handleDeleteGen = async (id: string) => {
-    await deleteGeneration(id);
-    refresh();
+  const handleDeleteGen = async (generation: Generation, focusUndo: boolean) => {
+    setDeleteError("");
+    try {
+      const deleted = await deleteGeneration(generation.id);
+      if (!deleted) return;
+      setDeleteNotice({ generation: deleted, focusUndo });
+      await refresh();
+    } catch {
+      setDeleteError("This saved item could not be removed. Please try again.");
+    }
+  };
+
+  const handleUndoDelete = async () => {
+    const deleted = deleteNotice?.generation;
+    if (!deleted) return;
+    setDeleteError("");
+    try {
+      await restoreGeneration(deleted);
+      setDeleteNotice(null);
+      await refresh();
+      const restoreFocus = () => artifactButtonRefs.current.get(deleted.id)?.focus();
+      if (typeof requestAnimationFrame === "function") requestAnimationFrame(restoreFocus);
+      else restoreFocus();
+    } catch {
+      setDeleteError("Undo did not complete. Please try again while this notice is open.");
+    }
   };
 
   return (
@@ -306,6 +347,10 @@ export default function StudioPane({
 
                       {/* Title & Preview */}
                       <button
+                        ref={(node) => {
+                          if (node) artifactButtonRefs.current.set(g.id, node);
+                          else artifactButtonRefs.current.delete(g.id);
+                        }}
                         onClick={() => {
                           if (isNote) {
                             openEditNote(g);
@@ -324,20 +369,22 @@ export default function StudioPane({
                       </button>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="artifact-actions flex items-center gap-0.5 transition-opacity">
                         {isNote && (
                           <button
                             onClick={() => openEditNote(g)}
-                            className="flex h-7 w-7 items-center justify-center rounded text-muted hover:text-ink"
+                            className="flex h-7 w-7 items-center justify-center rounded text-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/70"
+                            aria-label={`Edit note ${g.title}`}
                             title="Edit note"
                           >
                             <PencilSimple size={13} />
                           </button>
                         )}
                         <button
-                          onClick={() => void handleDeleteGen(g.id)}
-                          className="flex h-7 w-7 items-center justify-center rounded text-muted hover:bg-rust/10 hover:text-rust"
-                          title="Delete note"
+                          onClick={(event) => void handleDeleteGen(g, event.detail === 0)}
+                          className="flex h-7 w-7 items-center justify-center rounded text-muted hover:bg-rust/10 hover:text-rust focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rust/70"
+                          aria-label={`${isNote ? "Delete note" : "Delete saved item"} ${g.title}`}
+                          title={isNote ? "Delete note" : "Delete saved item"}
                         >
                           <Trash size={13} />
                         </button>
@@ -353,9 +400,27 @@ export default function StudioPane({
                 Notes you add and study guides, quizzes, or audio overviews you generate will appear here.
               </p>
             )}
+
+            {deleteError && (
+              <p role="alert" className="rounded-lg border border-rust/30 bg-rust/[0.07] px-3 py-2 text-[11.5px] leading-relaxed text-rust">
+                {deleteError}
+              </p>
+            )}
           </div>
         </section>
       </div>
+
+      <AnimatePresence>
+        {deleteNotice && (
+          <UndoDeleteToast
+            key={deleteNotice.generation.id}
+            generation={deleteNotice.generation}
+            focusUndo={deleteNotice.focusUndo}
+            onUndo={() => void handleUndoDelete()}
+            onExpire={() => setDeleteNotice(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Generator modals */}
       <Modal
@@ -466,6 +531,63 @@ export default function StudioPane({
         )}
       </Modal>
     </div>
+  );
+}
+
+function UndoDeleteToast({
+  generation,
+  focusUndo,
+  onUndo,
+  onExpire,
+}: {
+  generation: Generation;
+  focusUndo: boolean;
+  onUndo: () => void;
+  onExpire: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const undoButtonRef = useRef<HTMLButtonElement>(null);
+  const paused = hovered || focused;
+
+  useEffect(() => {
+    if (focusUndo) undoButtonRef.current?.focus();
+  }, [focusUndo, generation.id]);
+
+  useEffect(() => {
+    if (paused) return;
+    const timeoutId = window.setTimeout(onExpire, UNDO_DELETE_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [onExpire, paused]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 10, scale: 0.98 }}
+      transition={SOFT}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
+      }}
+      className="fixed bottom-[calc(5.5rem+var(--sab))] right-4 z-[80] flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl border border-brass/30 bg-raised px-4 py-3 text-[12.5px] text-ink shadow-modal lg:bottom-6 lg:right-6"
+    >
+      <span role="status" aria-live="polite" aria-atomic="true" className="min-w-0 truncate">
+        Removed “{generation.title}”.
+      </span>
+      <button
+        ref={undoButtonRef}
+        type="button"
+        onClick={onUndo}
+        aria-label="Undo deletion"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-brass/40 bg-brass/[0.09] px-3 py-1.5 font-medium text-brasspale transition-colors hover:bg-brass/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/70"
+      >
+        <ArrowCounterClockwise size={13} weight="bold" />
+        Undo
+      </button>
+    </motion.div>
   );
 }
 

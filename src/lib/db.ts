@@ -269,10 +269,19 @@ export async function updateCustomNote(
   await touchNotebook(existing.notebookId);
 }
 
-export async function deleteGeneration(id: string): Promise<void> {
-  const existing = await db.generations.get(id);
-  if (!existing) return;
-  await db.generations.delete(id);
-  await touchNotebook(existing.notebookId);
+export async function deleteGeneration(id: string): Promise<Generation | undefined> {
+  return db.transaction("rw", [db.generations, db.notebooks], async () => {
+    const existing = await db.generations.get(id);
+    if (!existing) return undefined;
+    await db.generations.delete(id);
+    await db.notebooks.update(existing.notebookId, { updatedAt: Date.now() });
+    return existing;
+  });
 }
 
+export async function restoreGeneration(generation: Generation): Promise<void> {
+  await db.transaction("rw", [db.generations, db.notebooks], async () => {
+    await db.generations.put(generation);
+    await db.notebooks.update(generation.notebookId, { updatedAt: Date.now() });
+  });
+}

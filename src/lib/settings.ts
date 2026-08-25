@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import type { AnthropicModelId, CodexModelInfo, CodexUsage, Effort, OAuthAccount, ProviderId, StoredKey } from "./types";
+import { normalizeStoredCodexUsage } from "./codexUsage";
 import type { CallSettings } from "./llm";
 
 export type PlanTier = "free" | "sprint" | "scholar" | "mastery";
@@ -185,7 +186,7 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: "comtus-settings",
-      version: 8,
+      version: 9,
       migrate: (persisted, version) => {
         const old = persisted as Partial<SettingsState> & {
           apiKey?: string;
@@ -202,7 +203,7 @@ export const useSettings = create<SettingsState>()(
             ? old.codexModel
             : "gpt-5.6-luna",
           codexModels: old.codexModels ?? CODEX_FALLBACK_MODELS,
-          codexUsage: old.codexUsage ?? null,
+          codexUsage: normalizeStoredCodexUsage(old.codexUsage) ?? null,
           isPro: old.isPro ?? false,
           planTier: old.planTier ?? "free",
           tokenBalance: old.tokenBalance ?? 0,

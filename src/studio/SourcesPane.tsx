@@ -27,6 +27,7 @@ import { addSourceWithChunks } from "../lib/db";
 import { SOFT, Spotlight } from "./fx";
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote } from "./ui";
 import ExternalLink from "./ExternalLink";
+import { UsageLimitsPanel } from "./UsageLimitsPanel";
 import { isTauri } from "../lib/desktop";
 
 const KIND_ICON: Record<string, typeof FileText> = {
@@ -436,6 +437,7 @@ export default function SourcesPane({
           <span>{sources.length} sources</span>
         </div>
       )}
+      <UsageLimitsPanel />
 
       <UrlModal
         open={urlOpen}

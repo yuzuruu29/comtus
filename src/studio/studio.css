@@ -519,6 +519,197 @@ button[data-armed="true"] .send-halo {
   outline-offset: -2px;
 }
 
+/* ChatGPT-style effort chip + dotted landscape slider popover. */
+.effort-picker {
+  position: relative;
+  flex-shrink: 0;
+}
+.effort-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 26px;
+  padding: 0 9px 0 11px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-house),
+    background-color var(--dur-fast) var(--ease-house);
+}
+.effort-chip:hover,
+.effort-chip.is-open {
+  border-color: color-mix(in srgb, var(--brass) 40%, transparent);
+  background: color-mix(in srgb, var(--brass) 8%, transparent);
+}
+.effort-chip svg {
+  color: var(--muted);
+  transition: transform var(--dur-fast) var(--ease-house);
+}
+.effort-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 40;
+  width: 220px;
+  padding: 14px 14px 10px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--raised) 92%, var(--ground));
+  box-shadow: var(--elev-modal);
+}
+.effort-track {
+  position: relative;
+  height: 28px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.effort-track::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  top: 50%;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  pointer-events: none;
+}
+.effort-fill {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 999px;
+  background: var(--brass);
+  pointer-events: none;
+  transition: width var(--dur-med) var(--ease-house);
+}
+.effort-dot {
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  margin-left: -4px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 28%, transparent);
+  cursor: pointer;
+  z-index: 1;
+}
+.effort-dot.is-lit {
+  background: var(--brasspale);
+}
+.effort-thumb {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin-top: -9px;
+  margin-left: -9px;
+  border-radius: 999px;
+  background: var(--ink);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  z-index: 2;
+  transition: left var(--dur-med) var(--ease-house);
+}
+html[data-theme="light"] .effort-thumb {
+  background: var(--surface);
+  box-shadow: 0 1px 4px rgba(27, 35, 52, 0.22);
+}
+.effort-advanced {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 4px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  font-size: 12.5px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.effort-advanced:hover {
+  color: var(--ink);
+}
+
+/* Sources-pane usage limits (5-hour + weekly). */
+.usage-limits-panel {
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--hairline);
+  background: color-mix(in srgb, var(--ground) 55%, transparent);
+}
+.usage-limits-kicker {
+  margin-bottom: 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.usage-limit-row + .usage-limit-row {
+  margin-top: 10px;
+}
+.usage-limit-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink);
+}
+.usage-limit-track {
+  position: relative;
+  height: 6px;
+  margin-top: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.usage-limit-track .usage-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--sage);
+  transition: width var(--dur-med) var(--ease-house);
+}
+.usage-limit-row[data-tone="warn"] .usage-fill {
+  background: var(--brass);
+}
+.usage-limit-row[data-tone="limit"] .usage-fill {
+  background: var(--rust);
+}
+.usage-pct {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--ink);
+}
+.usage-caption {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .effort-fill,
+  .effort-thumb,
+  .usage-fill {
+    transition: none;
+  }
+}
+
 /* Keycap chips in the composer footer */
 .kbd-chip {
   display: inline-block;
@@ -532,4 +723,22 @@ button[data-armed="true"] .send-halo {
   border-radius: 4px;
   background: color-mix(in srgb, var(--ink) 4%, transparent);
   color: var(--muted);
+}
+
+/* Saved-work actions stay visible on touch/coarse pointers. Fine-pointer
+   users get the quieter hover treatment, while keyboard focus always
+   reveals the controls before an action is invoked. */
+.artifact-actions {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .artifact-actions {
+    opacity: 0;
+  }
+
+  .group:hover .artifact-actions,
+  .group:focus-within .artifact-actions {
+    opacity: 1;
+  }
 }

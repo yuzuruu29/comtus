@@ -36,6 +36,7 @@ import {
 } from "@phosphor-icons/react";
 import { loadFocus, saveFocus } from "./focus";
 import ModelPickerMenu from "./ModelPickerMenu";
+import ComposerSideRailDock from "./ComposerSideRail";
 import {
   db,
   saveMessage,
@@ -819,15 +820,11 @@ export default function ChatPane({
 
             <div className="relative z-[2]">
               {/* Context strip */}
-              <div className="flex items-center gap-1.5 px-3.5 pb-2 pt-2.5">
+              <div className="flex flex-wrap items-center gap-1.5 px-3.5 pb-2 pt-2.5">
                 <ModelPickerMenu modelLabel={modelLabel} onOpenSettings={onOpenSettings} />
                 {notebook && <FocusMenu notebook={notebook} sourcesVersion={sourcesVersion} />}
                 <span className="flex-1" />
-                {sourceCount > 0 && (
-                  <span className="hidden font-mono text-[9px] uppercase tracking-[0.16em] text-muted/60 sm:inline">
-                    grounded
-                  </span>
-                )}
+                <ComposerSideRailDock onOpenSettings={onOpenSettings} />
               </div>
               <div className="mx-3.5 border-t border-hairline" />
 

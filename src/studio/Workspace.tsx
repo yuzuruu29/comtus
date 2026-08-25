@@ -1,4 +1,4 @@
-import { useState, type ComponentType } from "react";
+import { useCallback, useState, type ComponentType, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Books, CaretLeft, ChatCircle, GearSix, Notebook, SidebarSimple, UserCircle } from "@phosphor-icons/react";
@@ -17,6 +17,7 @@ import DeskShell from "./DeskShell";
 import CaptionButtons from "./Titlebar";
 import { useNotebookDesk } from "./useNotebookDesk";
 import { panesFor } from "./layout";
+import { usePaneResize } from "./usePaneResize";
 import { db } from "../lib/db";
 import { LampPulse, Modal, btnGhost } from "./ui";
 
@@ -25,134 +26,69 @@ type MobilePane = "sources" | "chat" | "studio";
 const DEFAULT_SOURCES_W = 270;
 const DEFAULT_STUDIO_W = 290;
 const RAIL_W = 48;
+const PANE_WIDTH_VAR = "--pane-width" as const;
 
 export default function Workspace({ notebookId }: { notebookId: string }) {
   const cs = useCallSettings();
   const desk = useNotebookDesk(notebookId);
+  const setLayout = desk.setLayout;
+  const openNotebookSource = desk.openSource;
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobilePane, setMobilePane] = useState<MobilePane>("chat");
+  const panes = panesFor(desk.layout);
 
-  const [isDraggingLeft, setIsDraggingLeft] = useState(false);
-  const [isDraggingRight, setIsDraggingRight] = useState(false);
+  const collapseSources = useCallback(
+    () => setLayout(panes.studio ? "writing" : "focus"),
+    [panes.studio, setLayout],
+  );
+  const collapseStudio = useCallback(
+    () => setLayout(panes.sources ? "reading" : "focus"),
+    [panes.sources, setLayout],
+  );
 
-  // Dynamic resizable widths for sidebars (stored across sessions)
-  const [sourcesWidth, setSourcesWidth] = useState(() => {
-    try {
-      const saved = localStorage.getItem("comtus_sources_width");
-      return saved ? Math.min(550, Math.max(180, Number(saved))) : DEFAULT_SOURCES_W;
-    } catch {
-      return DEFAULT_SOURCES_W;
-    }
+  const sourcesResize = usePaneResize({
+    side: "left",
+    storageKey: "comtus_sources_width",
+    cssVariable: PANE_WIDTH_VAR,
+    controlsId: "workspace-sources-content",
+    label: "Resize sources sidebar",
+    minWidth: 180,
+    maxWidth: 550,
+    defaultWidth: DEFAULT_SOURCES_W,
+    collapseThreshold: 140,
+    onCollapse: collapseSources,
+  });
+  const studioResize = usePaneResize({
+    side: "right",
+    storageKey: "comtus_studio_width",
+    cssVariable: PANE_WIDTH_VAR,
+    controlsId: "workspace-studio-content",
+    label: "Resize studio sidebar",
+    minWidth: 200,
+    maxWidth: 550,
+    defaultWidth: DEFAULT_STUDIO_W,
+    collapseThreshold: 150,
+    onCollapse: collapseStudio,
   });
 
-  const [studioWidth, setStudioWidth] = useState(() => {
-    try {
-      const saved = localStorage.getItem("comtus_studio_width");
-      return saved ? Math.min(550, Math.max(200, Number(saved))) : DEFAULT_STUDIO_W;
-    } catch {
-      return DEFAULT_STUDIO_W;
-    }
-  });
-
-  const openSource = (sourceId: string, startChar?: number) => {
-    desk.openSource(sourceId, startChar);
-    setMobilePane("sources");
-  };
+  const openSource = useCallback(
+    (sourceId: string, startChar?: number) => {
+      openNotebookSource(sourceId, startChar);
+      setMobilePane("sources");
+    },
+    [openNotebookSource],
+  );
 
   const modelLabel = modelLabelFor(cs.provider, cs.model);
   const effortLabel = effortLabelFor(cs.effort);
 
-  const panes = panesFor(desk.layout);
+  const toggleSources = useCallback(() => {
+    setLayout(panes.sources ? (panes.studio ? "writing" : "focus") : (panes.studio ? "standard" : "reading"));
+  }, [panes.sources, panes.studio, setLayout]);
 
-  const toggleSources = () => {
-    desk.setLayout(panes.sources ? (panes.studio ? "writing" : "focus") : (panes.studio ? "standard" : "reading"));
-  };
-
-  const toggleStudio = () => {
-    desk.setLayout(panes.studio ? (panes.sources ? "reading" : "focus") : (panes.sources ? "standard" : "writing"));
-  };
-
-  // Drag-to-stretch/pull left sidebar (Sources) with zero drag-lag
-  const startResizingLeft = (e: React.PointerEvent) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startW = sourcesWidth;
-    setIsDraggingLeft(true);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-
-    const onPointerMove = (moveEv: PointerEvent) => {
-      const delta = moveEv.clientX - startX;
-      const nextW = Math.min(550, Math.max(180, startW + delta));
-      if (startW + delta < 140) {
-        desk.setLayout(panes.studio ? "writing" : "focus");
-      } else {
-        if (!panes.sources) {
-          desk.setLayout(panes.studio ? "standard" : "reading");
-        }
-        setSourcesWidth(nextW);
-      }
-    };
-
-    const onPointerUp = (upEv: PointerEvent) => {
-      setIsDraggingLeft(false);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      try {
-        const finalDelta = upEv.clientX - startX;
-        const finalW = Math.min(550, Math.max(180, startW + finalDelta));
-        if (startW + finalDelta >= 140) {
-          localStorage.setItem("comtus_sources_width", String(finalW));
-        }
-      } catch {}
-    };
-
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-  };
-
-  // Drag-to-stretch/pull right sidebar (Studio) with zero drag-lag
-  const startResizingRight = (e: React.PointerEvent) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startW = studioWidth;
-    setIsDraggingRight(true);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
-
-    const onPointerMove = (moveEv: PointerEvent) => {
-      const delta = startX - moveEv.clientX;
-      const nextW = Math.min(550, Math.max(200, startW + delta));
-      if (startW + delta < 150) {
-        desk.setLayout(panes.sources ? "reading" : "focus");
-      } else {
-        if (!panes.studio) {
-          desk.setLayout(panes.sources ? "standard" : "writing");
-        }
-        setStudioWidth(nextW);
-      }
-    };
-
-    const onPointerUp = (upEv: PointerEvent) => {
-      setIsDraggingRight(false);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      try {
-        const finalDelta = startX - upEv.clientX;
-        const finalW = Math.min(550, Math.max(200, startW + finalDelta));
-        if (startW + finalDelta >= 150) {
-          localStorage.setItem("comtus_studio_width", String(finalW));
-        }
-      } catch {}
-    };
-
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-  };
+  const toggleStudio = useCallback(() => {
+    setLayout(panes.studio ? (panes.sources ? "reading" : "focus") : (panes.sources ? "standard" : "writing"));
+  }, [panes.sources, panes.studio, setLayout]);
 
   return (
     <DeskShell
@@ -222,14 +158,18 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
 
         <div className="relative z-10 hidden min-h-0 flex-1 lg:flex">
           {/* Left Sidebar: Sources (Retractable & Resizable) */}
-          <motion.aside
-            initial={false}
-            animate={{ width: panes.sources ? sourcesWidth : RAIL_W }}
-            transition={isDraggingLeft ? { duration: 0 } : { duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="relative shrink-0 overflow-visible border-r desk-split"
+          <aside
+            ref={sourcesResize.paneRef}
+            id="workspace-sources-pane"
+            data-resizing={sourcesResize.isDragging ? "true" : undefined}
+            style={{
+              [PANE_WIDTH_VAR]: `${panes.sources ? sourcesResize.width : RAIL_W}px`,
+              width: `var(${PANE_WIDTH_VAR})`,
+            } as CSSProperties}
+            className="relative shrink-0 overflow-visible border-r desk-split transition-[width] duration-[180ms] ease-[cubic-bezier(0.16,1,0.3,1)] data-[resizing=true]:transition-none motion-reduce:transition-none"
           >
             {panes.sources ? (
-              <div className={`${deskPane} flex flex-col`}>
+              <div id="workspace-sources-content" className={`${deskPane} flex flex-col`}>
                 <SourcesPane
                   notebookId={notebookId}
                   version={desk.sourcesVersion}
@@ -252,16 +192,17 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             {/* Pull / Stretch Resizer Handle for Left Sidebar */}
             {panes.sources && (
               <div
-                onPointerDown={startResizingLeft}
-                onDoubleClick={() => setSourcesWidth(DEFAULT_SOURCES_W)}
-                title="Drag to stretch/pull sidebar · Double-click to reset width"
-                aria-label="Resize sources sidebar"
-                className="group absolute right-0 top-0 bottom-0 z-30 w-3 -mr-1.5 cursor-col-resize select-none flex items-center justify-center transition-opacity hover:opacity-100"
+                {...sourcesResize.separatorProps}
+                title="Drag to resize · Arrow keys adjust · Double-click resets"
+                className="group absolute right-0 top-0 bottom-0 z-30 -mr-1.5 flex w-3 cursor-col-resize select-none items-center justify-center transition-colors hover:opacity-100 focus-visible:bg-brass/[0.06] focus-visible:outline-none"
               >
-                <div className="h-8 w-1 rounded-full bg-hairline/80 transition-all duration-200 group-hover:h-14 group-hover:w-1.5 group-hover:bg-brass group-active:bg-brass group-active:h-20 shadow-sm" />
+                <div className="h-8 w-1 rounded-full bg-hairline/80 shadow-sm transition-all duration-200 group-hover:h-14 group-hover:w-1.5 group-hover:bg-brass group-active:h-20 group-active:bg-brass group-focus-visible:h-14 group-focus-visible:w-1.5 group-focus-visible:bg-brass group-focus-visible:shadow-[0_0_14px_rgba(227,176,75,0.42)] group-data-[collapse-ready=true]:h-20 group-data-[collapse-ready=true]:w-1.5 group-data-[collapse-ready=true]:bg-brass" />
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-brass/30 bg-raised px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.12em] text-brasspale opacity-0 shadow-modal transition-opacity group-data-[collapse-ready=true]:opacity-100">
+                  Release to collapse
+                </span>
               </div>
             )}
-          </motion.aside>
+          </aside>
 
           <main className="min-w-0 flex-1">
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={SOFT} className={`${deskPane} overflow-hidden`}>
@@ -283,14 +224,18 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           </main>
 
           {/* Right Sidebar: Studio (Retractable & Resizable) */}
-          <motion.aside
-            initial={false}
-            animate={{ width: panes.studio ? studioWidth : RAIL_W }}
-            transition={isDraggingRight ? { duration: 0 } : { duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="relative shrink-0 overflow-visible border-l desk-split"
+          <aside
+            ref={studioResize.paneRef}
+            id="workspace-studio-pane"
+            data-resizing={studioResize.isDragging ? "true" : undefined}
+            style={{
+              [PANE_WIDTH_VAR]: `${panes.studio ? studioResize.width : RAIL_W}px`,
+              width: `var(${PANE_WIDTH_VAR})`,
+            } as CSSProperties}
+            className="relative shrink-0 overflow-visible border-l desk-split transition-[width] duration-[180ms] ease-[cubic-bezier(0.16,1,0.3,1)] data-[resizing=true]:transition-none motion-reduce:transition-none"
           >
             {panes.studio ? (
-              <div className={`${deskPane} flex flex-col`}>
+              <div id="workspace-studio-content" className={`${deskPane} flex flex-col`}>
                 <StudioPane
                   notebookId={notebookId}
                   onCollapse={() => desk.setLayout(panes.sources ? "reading" : "focus")}
@@ -305,16 +250,17 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             {/* Pull / Stretch Resizer Handle for Right Sidebar */}
             {panes.studio && (
               <div
-                onPointerDown={startResizingRight}
-                onDoubleClick={() => setStudioWidth(DEFAULT_STUDIO_W)}
-                title="Drag to stretch/pull sidebar · Double-click to reset width"
-                aria-label="Resize studio sidebar"
-                className="group absolute left-0 top-0 bottom-0 z-30 w-3 -ml-1.5 cursor-col-resize select-none flex items-center justify-center transition-opacity hover:opacity-100"
+                {...studioResize.separatorProps}
+                title="Drag to resize · Arrow keys adjust · Double-click resets"
+                className="group absolute left-0 top-0 bottom-0 z-30 -ml-1.5 flex w-3 cursor-col-resize select-none items-center justify-center transition-colors hover:opacity-100 focus-visible:bg-brass/[0.06] focus-visible:outline-none"
               >
-                <div className="h-8 w-1 rounded-full bg-hairline/80 transition-all duration-200 group-hover:h-14 group-hover:w-1.5 group-hover:bg-brass group-active:bg-brass group-active:h-20 shadow-sm" />
+                <div className="h-8 w-1 rounded-full bg-hairline/80 shadow-sm transition-all duration-200 group-hover:h-14 group-hover:w-1.5 group-hover:bg-brass group-active:h-20 group-active:bg-brass group-focus-visible:h-14 group-focus-visible:w-1.5 group-focus-visible:bg-brass group-focus-visible:shadow-[0_0_14px_rgba(227,176,75,0.42)] group-data-[collapse-ready=true]:h-20 group-data-[collapse-ready=true]:w-1.5 group-data-[collapse-ready=true]:bg-brass" />
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-brass/30 bg-raised px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.12em] text-brasspale opacity-0 shadow-modal transition-opacity group-data-[collapse-ready=true]:opacity-100">
+                  Release to collapse
+                </span>
               </div>
             )}
-          </motion.aside>
+          </aside>
         </div>
 
         <div className="relative z-10 flex min-h-0 flex-1 flex-col lg:hidden">

@@ -354,11 +354,18 @@ export interface CodexModelInfo {
   levels?: string[];
 }
 
-/** Snapshot of the ChatGPT plan's usage window, read from the
- *  x-codex-primary-* headers on chat responses. */
-export interface CodexUsage {
+/** One Codex plan window (5-hour or weekly), from x-codex-* headers. */
+export interface CodexUsageWindow {
   usedPercent: number;
   windowMinutes: number;
   /** Epoch ms when the window resets (0 = unknown). */
   resetsAt: number;
+}
+
+/** Snapshot of ChatGPT plan usage. Primary ≈ 5-hour, secondary ≈ weekly;
+ *  slots are assigned by window length, not header name, because some
+ *  accounts swap the two. */
+export interface CodexUsage {
+  fiveHour: CodexUsageWindow | null;
+  weekly: CodexUsageWindow | null;
 }

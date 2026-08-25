@@ -24,6 +24,7 @@ import {
   type CodexDeviceSession,
 } from "../lib/oauthProviders";
 import type { CodexUsage, OAuthAccount } from "../lib/types";
+import { usageLimitRows } from "../lib/codexUsage";
 
 /**
  * "Use your subscription" cards — sign in with an existing Claude
@@ -293,7 +294,13 @@ function SubscriptionCard({
   usage?: CodexUsage | null;
 }) {
   const connected = Boolean(account?.accessToken);
-  const usagePct = usage ? Math.round(usage.usedPercent) : 0;
+  const usageRows = usageLimitRows({
+    provider: "codex",
+    codexUsage: usage ?? null,
+    isPro: false,
+    tokenBalance: 0,
+    tokensUsed: 0,
+  });
   return (
     <div
       className={`relative overflow-hidden rounded-2xl border p-4 text-left transition-all ${
@@ -450,16 +457,15 @@ function SubscriptionCard({
       {connected && (
         <div className="mt-3 space-y-2.5">
           {usage && (
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-hairline bg-ink/[0.03] px-2.5 py-1.5">
-              <span className="font-mono text-[10px] text-muted">
-                Plan usage: {usagePct}%
-                {usage.windowMinutes > 0 ? ` of this ${usage.windowMinutes}m window` : ""}
-              </span>
-              <span className="font-mono text-[10px] text-muted/70">
-                {usage.resetsAt > Date.now()
-                  ? `resets ${new Date(usage.resetsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-                  : "resets shortly"}
-              </span>
+            <div className="space-y-1.5 rounded-lg border border-hairline bg-ink/[0.03] px-2.5 py-1.5">
+              {usageRows.map((row) => (
+                <div key={row.id} className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-[10px] text-muted">
+                    {row.label}: {row.usedPercent}%
+                  </span>
+                  <span className="font-mono text-[10px] text-muted/70">{row.caption}</span>
+                </div>
+              ))}
             </div>
           )}
           <div className="flex flex-wrap gap-1.5">
