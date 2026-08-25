@@ -5,6 +5,7 @@ import { groundContext, type GroundingDoc } from "./retrieval";
 import { buildSearchQuery, searchWeb } from "./webSearch";
 import { webSearchGroundingClause, webSearchUserReminder } from "./webSearchPrompt";
 import { compatFetchBase } from "./compatRoute";
+import { CODEX_FALLBACK_MODELS } from "./settings";
 import { ensureFreshAccessToken, jwtClaims } from "./oauthProviders";
 
 /**
@@ -136,11 +137,30 @@ export function isHostedPass(apiKey: string): boolean {
 }
 
 /* ChatGPT/Codex sign-in: the relay forwards to the Codex backend, which
-   only speaks the Responses API (and only in streaming mode). */
-export const CODEX_MODELS: { id: string; label: string; note: string }[] = [
-  { id: "gpt-5-codex", label: "GPT-5 Codex", note: "Strong all-round reasoning" },
-  { id: "gpt-5", label: "GPT-5", note: "General knowledge & writing" },
-];
+   only speaks the Responses API (and only in streaming mode). The live
+   model roster lives in the settings store (CODEX_FALLBACK_MODELS until
+   discovery refreshes it) — see oauthProviders.listCodexModels. */
+export function codexUsesLite(model: string): boolean {
+  try {
+    const raw = localStorage.getItem("comtus-settings");
+    if (raw) {
+      const parsed = JSON.parse(raw) as {
+        state?: { codexModels?: { id?: string; lite?: boolean }[] };
+      };
+      const found = parsed.state?.codexModels?.find((m) => m.id === model);
+      if (found) return found.lite === true;
+    }
+  } catch {
+    /* fall through to heuristic */
+  }
+  return /^gpt-5\.6|daybreak/i.test(model);
+}
+
+/** Fallback roster for label lookups; discovery replaces it at runtime
+ *  (see oauthProviders.listCodexModels). */
+export const CODEX_MODELS: { id: string; label: string; note: string }[] = CODEX_FALLBACK_MODELS.map(
+  (m) => ({ id: m.id, label: m.label, note: m.ctx ? `${m.ctx} context` : "" }),
+);
 /** Human label for the active model across every provider — curated
  *  catalogue labels first, prettified ids as fallback. Never truncates
  *  mid-word like the old `.slice(0, 16)` did. */
@@ -204,7 +224,8 @@ function getCompat(cs: CallSettings): OpenAI {
 }
 function getResponses(cs: CallSettings): OpenAI {
   // The ChatGPT account id rides in a JWT claim; the backend rejects
-  // requests without it in the header.
+  // requests without it in the header. The Codex client also requires
+  // the beta header and first-turn session/conversation ids.
   const claims = jwtClaims(cs.apiKey);
   const accountId = typeof claims.chatgpt_account_id === "string" ? claims.chatgpt_account_id : "";
   return new OpenAI({
@@ -215,6 +236,10 @@ function getResponses(cs: CallSettings): OpenAI {
     defaultHeaders: {
       ...(accountId ? { "chatgpt-account-id": accountId } : {}),
       originator: "comtus",
+      "openai-beta": "responses=experimental",
+      session_id: crypto.randomUUID(),
+      conversation_id: crypto.randomUUID(),
+      version: "0.144.1",
     },
   });
 }
@@ -246,6 +271,16 @@ export function friendlyError(err: unknown): string {
   const errMsg = err instanceof Error ? err.message : "";
   const isDailyOrQuotaLimit =
     /daily limit|rate limit|too many requests|free model limit|per-day|exceeded.*quota|credit balance/i.test(errMsg);
+
+  // Codex-specific error mapping (the backend's own codes, per oh-my-pi).
+  if (stored === "codex") {
+    if (/usage_limit_reached|usage_not_included|plan.*limit|usage limit/i.test(errMsg))
+      return "You've hit your ChatGPT plan's usage limit — it resets on your plan's schedule. Try again later or switch models.";
+    if (/model.*not founded|invalid_model|model_not_available|model.*unavailable/i.test(errMsg))
+      return "That ChatGPT model isn't available on your account — pick another from the model menu.";
+    if (/workspace.*not authorized|residency/i.test(errMsg))
+      return "Your ChatGPT workspace's data region isn't accepted by Comtus's relay — try a different account or contact support.";
+  }
 
   if (rate || is429 || (is402 && !storedKeyIsHostedPass()) || isDailyOrQuotaLimit) {
     if (stored === "claude-oauth")
@@ -531,16 +566,26 @@ async function streamCodex(
     : `Question: ${asked}`;
 
   const instructions = `${CHAT_SYSTEM_COMPAT}\n\n${groundingPreamble(docs, mode, args.notebookName, false, args.reasoning, webSearch)}`;
-  const input: OpenAI.Responses.ResponseInput = [
-    ...args.history.slice(-12).map((m) => ({ role: m.role, content: m.content })),
-    { role: "user" as const, content: userContent },
-  ];
+  // gpt-5.6-family models speak the Responses-Lite wire format: base
+  // instructions ride in as a developer input item, top-level
+  // `instructions` is rejected (codex-rs build_responses_request).
+  const lite = codexUsesLite(args.model);
+  const input: OpenAI.Responses.ResponseInput = lite
+    ? [
+        { role: "developer" as const, content: instructions },
+        ...args.history.slice(-12).map((m) => ({ role: m.role, content: m.content })),
+        { role: "user" as const, content: userContent },
+      ]
+    : [
+        ...args.history.slice(-12).map((m) => ({ role: m.role, content: m.content })),
+        { role: "user" as const, content: userContent },
+      ];
 
   // The Codex backend only accepts streaming requests with store off.
   // Reasoning summaries flow back as events and surface as thinking.
   const base = {
     model: args.model,
-    instructions,
+    ...(lite ? {} : { instructions }),
     input,
     stream: true as const,
     store: false as const,
@@ -839,10 +884,17 @@ async function codexText(
         { type: "input_text", text: user },
       ]
     : user;
-  const input: OpenAI.Responses.ResponseInput = [{ role: "user", content }];
+  const input: OpenAI.Responses.ResponseInput = codexUsesLite(cs.model)
+    ? [
+        { role: "developer" as const, content: system },
+        { role: "user" as const, content },
+      ]
+    : [
+        { role: "user" as const, content },
+      ];
   const base = {
     model: cs.model,
-    instructions: system,
+    ...(codexUsesLite(cs.model) ? {} : { instructions: system }),
     input,
     stream: true as const,
     store: false as const,
@@ -1071,14 +1123,14 @@ export async function validateConnection(
       const token = await ensureFreshAccessToken("codex");
       // The backend only speaks streaming; a tiny capped stream is the ping.
       const stream = await getResponses({ ...cs, apiKey: token }).responses.create({
-        model: cs.model || "gpt-5-codex",
+        model: cs.model || "gpt-5.6-luna",
         input: "ping",
         max_output_tokens: 16,
         stream: true,
         store: false,
       });
       for await (const _event of stream) {
-        void _event; // Drain — 16 output tokens completes almost instantly.
+        // Drain — 16 output tokens completes almost instantly.
       }
     } else if (cs.provider === "anthropic") {
       const client = getAnthropic(cs);

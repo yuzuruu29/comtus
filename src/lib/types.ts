@@ -341,3 +341,13 @@ export interface OAuthAccount {
   accountId?: string;
   connectedAt: number;
 }
+
+/** One discoverable Codex model. `lite` models need the Responses-Lite
+ *  wire format (instructions delivered as a developer input item, not a
+ *  top-level field). Discovered live from the backend on connect. */
+export interface CodexModelInfo {
+  id: string;
+  label: string;
+  lite?: boolean;
+  ctx?: string;
+}

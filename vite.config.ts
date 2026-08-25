@@ -156,10 +156,10 @@ function oauthRelay(): Plugin {
         const url = new URL(req.url ?? "/", "http://localhost");
         const m = url.pathname.match(/^\/api\/codex(\/.*)?$/);
         if (!m) return next();
-        if (req.method !== "POST") {
+        if (req.method !== "GET" && req.method !== "POST") {
           res.statusCode = 405;
           res.setHeader("content-type", "application/json");
-          res.end(JSON.stringify({ error: "POST only" }));
+          res.end(JSON.stringify({ error: "GET or POST only" }));
           return;
         }
         const authorization = req.headers["authorization"];
@@ -172,24 +172,32 @@ function oauthRelay(): Plugin {
         const subPath = m[1] || "/";
         const headers: Record<string, string> = {
           authorization: String(authorization),
-          "content-type": String(req.headers["content-type"] ?? "application/json"),
           accept: String(req.headers["accept"] ?? "text/event-stream"),
         };
-        if (req.headers["chatgpt-account-id"]) headers["chatgpt-account-id"] = String(req.headers["chatgpt-account-id"]);
-        if (req.headers["originator"]) headers.originator = String(req.headers["originator"]);
+        if (req.method === "POST") {
+          headers["content-type"] = String(req.headers["content-type"] ?? "application/json");
+        }
+        for (const name of ["chatgpt-account-id", "openai-beta", "session_id", "conversation_id", "originator", "version"]) {
+          const value = req.headers[name];
+          if (value) headers[name] = Array.isArray(value) ? value[0] : value;
+        }
         const bodyChunks: Buffer[] = [];
         for await (const chunk of req) bodyChunks.push(chunk as Buffer);
         try {
           const upstream = await fetch(`${CODEX_UPSTREAM}/backend-api/codex${subPath}${url.search}`, {
-            method: "POST",
+            method: req.method,
             headers,
-            body: Buffer.concat(bodyChunks).toString("utf8"),
+            ...(bodyChunks.length ? { body: Buffer.concat(bodyChunks) } : {}),
           });
           res.statusCode = upstream.status;
           res.setHeader(
             "content-type",
             upstream.headers.get("content-type") ?? "application/json",
           );
+          if (req.method === "GET") {
+            res.end(await upstream.text());
+            return;
+          }
           if (upstream.body) {
             await pipeline(
               Readable.fromWeb(upstream.body as unknown as WebReadableStream<Uint8Array>),

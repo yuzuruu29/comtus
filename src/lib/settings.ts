@@ -1,10 +1,22 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
-import type { AnthropicModelId, Effort, OAuthAccount, ProviderId, StoredKey } from "./types";
+import type { AnthropicModelId, CodexModelInfo, Effort, OAuthAccount, ProviderId, StoredKey } from "./types";
 import type { CallSettings } from "./llm";
 
 export type PlanTier = "free" | "sprint" | "scholar" | "mastery";
+
+/** Fallback Codex model roster until discovery (`GET /codex/models`)
+ *  refreshes it with the account's actual list. gpt-5.6 family uses the
+ *  Responses-Lite wire format (see llm.ts). */
+export const CODEX_FALLBACK_MODELS: CodexModelInfo[] = [
+  { id: "gpt-5.6-luna", label: "GPT-5.6 Luna", lite: true, ctx: "1M" },
+  { id: "gpt-5.6-sol", label: "GPT-5.6 Sol", lite: true, ctx: "1M" },
+  { id: "gpt-5.6-terra", label: "GPT-5.6 Terra", lite: true, ctx: "1M" },
+  { id: "gpt-5.5", label: "GPT-5.5", ctx: "272k" },
+  { id: "gpt-5.4-mini", label: "GPT-5.4 Mini", ctx: "272k" },
+  { id: "gpt-5.4", label: "GPT-5.4", ctx: "272k" },
+];
 
 interface SettingsState {
   provider: ProviderId;
@@ -22,6 +34,7 @@ interface SettingsState {
   codexOAuth: OAuthAccount | null;
   claudeOauthModel: AnthropicModelId;
   codexModel: string;
+  codexModels: CodexModelInfo[];
   /* Multiple BYOK Keys Vault */
   storedKeys: StoredKey[];
   /* Plan & Token Balance Management */
@@ -44,6 +57,7 @@ interface SettingsState {
   activateProPass: (passCode: string, planTier?: PlanTier, tokenAmount?: number) => void;
   consumeTokens: (amount: number) => void;
   setOAuthAccount: (account: OAuthAccount | null, which?: "claude-oauth" | "codex") => void;
+  setCodexModels: (models: CodexModelInfo[]) => void;
   hasProPlan: () => boolean;
   hasKey: () => boolean;
 }
@@ -68,7 +82,8 @@ export const useSettings = create<SettingsState>()(
       claudeOAuth: null,
       codexOAuth: null,
       claudeOauthModel: "claude-opus-5",
-      codexModel: "gpt-5-codex",
+      codexModel: "gpt-5.6-luna",
+      codexModels: CODEX_FALLBACK_MODELS,
       isPro: false,
       planTier: "free",
       tokenBalance: 0,
@@ -148,6 +163,10 @@ export const useSettings = create<SettingsState>()(
           set(account ? { codexOAuth: account, provider: "codex" } : { codexOAuth: null });
         }
       },
+      setCodexModels: (models) => {
+        if (!Array.isArray(models) || models.length === 0) return;
+        set({ codexModels: models });
+      },
       hasProPlan: () => {
         const s = get();
         return Boolean(s.isPro && s.planTier && s.planTier !== "free");
@@ -162,7 +181,7 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: "comtus-settings",
-      version: 7,
+      version: 8,
       migrate: (persisted, version) => {
         const old = persisted as Partial<SettingsState> & {
           apiKey?: string;
@@ -175,7 +194,10 @@ export const useSettings = create<SettingsState>()(
           claudeOAuth: old.claudeOAuth ?? null,
           codexOAuth: old.codexOAuth ?? null,
           claudeOauthModel: old.claudeOauthModel ?? "claude-opus-5",
-          codexModel: old.codexModel ?? "gpt-5-codex",
+          codexModel: old.codexModel && !(old.codexModel === "gpt-5-codex" || old.codexModel === "gpt-5")
+            ? old.codexModel
+            : "gpt-5.6-luna",
+          codexModels: old.codexModels ?? CODEX_FALLBACK_MODELS,
           isPro: old.isPro ?? false,
           planTier: old.planTier ?? "free",
           tokenBalance: old.tokenBalance ?? 0,

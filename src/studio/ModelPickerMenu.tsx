@@ -9,7 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { useSettings, useCallSettings } from "../lib/settings";
 import { CURATED_FREE_MODELS } from "./SettingsModal";
-import { MODELS, CODEX_MODELS } from "../lib/llm";
+import { MODELS } from "../lib/llm";
 import type { AnthropicModelId } from "../lib/types";
 
 export default function ModelPickerMenu({
@@ -200,7 +200,7 @@ export default function ModelPickerMenu({
                     );
                   })}
                 {s.codexOAuth &&
-                  CODEX_MODELS.map((m) => {
+                  s.codexModels.map((m) => {
                     const isSelected = cs.provider === "codex" && cs.model === m.id;
                     return (
                       <button
@@ -220,7 +220,7 @@ export default function ModelPickerMenu({
                               {m.label} · ChatGPT account
                             </div>
                             <div className="font-mono text-[9.5px] text-muted truncate">
-                              {m.note}
+                              {m.ctx ? `${m.ctx} context` : m.id}
                             </div>
                           </div>
                         </div>

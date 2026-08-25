@@ -1,6 +1,6 @@
 import { useSettings } from "./settings";
 import { isTauri } from "./desktop";
-import type { OAuthAccount, ProviderId } from "./types";
+import type { CodexModelInfo, OAuthAccount, ProviderId } from "./types";
 
 /**
  * Sign in with an existing Claude (Pro/Max) or ChatGPT (Plus/Pro)
@@ -365,6 +365,7 @@ export async function pollCodexDeviceAuth(
           }),
         );
         useSettings.getState().setOAuthAccount(codexAccountFromTokens(exchanged));
+        void refreshCodexModels();
         return;
       }
       case "pending":
@@ -426,6 +427,7 @@ export async function completeCodexOAuth(input: string): Promise<void> {
   });
   const data = await exchangeCodex(body);
   useSettings.getState().setOAuthAccount(codexAccountFromTokens(data));
+  void refreshCodexModels();
 }
 
 /* ── Refresh ──────────────────────────────────────────────── */
@@ -494,4 +496,59 @@ export async function ensureFreshAccessToken(provider: "claude-oauth" | "codex")
 
 export function disconnectOAuth(provider: "claude-oauth" | "codex"): void {
   useSettings.getState().setOAuthAccount(null, provider);
+}
+
+/* ── Model discovery ──────────────────────────────────────── */
+
+/** Fetch the account's actual Codex model roster from the backend
+ *  (GET /codex/models) through the same relay. The roster carries per-
+ *  model flags like `use_responses_lite`, which decide the wire format. */
+export async function listCodexModels(): Promise<CodexModelInfo[]> {
+  const token = await ensureFreshAccessToken("codex");
+  const account = useSettings.getState().codexOAuth;
+  if (!account) return [];
+  const res = await fetch(`${API_ORIGIN.replace(/\/+$/, "")}/api/codex/models`, {
+    headers: {
+      authorization: `Bearer ${token}`,
+      ...(account.accountId ? { "chatgpt-account-id": account.accountId } : {}),
+      "openai-beta": "responses=experimental",
+    },
+  });
+  if (!res.ok) throw new Error(`Model list failed (${res.status}).`);
+  const data = (await res.json().catch(() => ({}))) as {
+    models?: { slug?: unknown; id?: unknown; display_name?: unknown; use_responses_lite?: unknown; context_window?: unknown }[];
+    data?: { slug?: unknown; id?: unknown; display_name?: unknown; use_responses_lite?: unknown; context_window?: unknown }[];
+  };
+  const rows = Array.isArray(data.models) ? data.models : Array.isArray(data.data) ? data.data : [];
+  const out: CodexModelInfo[] = [];
+  rows.sort((a, b) => (a.display_name ? "b" : "a").localeCompare(b.display_name ? "b" : "a"));
+  for (const row of rows) {
+    const id = typeof row.slug === "string" ? row.slug : typeof row.id === "string" ? row.id : "";
+    if (!id) continue;
+    const ctx = typeof row.context_window === "number" ? `${Math.round(row.context_window / 1000)}k` : undefined;
+    out.push({
+      id,
+      label: typeof row.display_name === "string" && row.display_name ? row.display_name : id,
+      lite: row.use_responses_lite === true,
+      ...(ctx ? { ctx } : {}),
+    });
+  }
+  return out;
+}
+
+/** Best-effort roster refresh after connect — never worth failing the
+ *  sign-in over. */
+async function refreshCodexModels(): Promise<void> {
+  try {
+    const models = await listCodexModels();
+    if (models.length === 0) return;
+    useSettings.getState().setCodexModels(models);
+    const s = useSettings.getState();
+    // Keep the active choice valid against the fresh roster.
+    if (!models.some((m) => m.id === s.codexModel)) {
+      useSettings.getState().update({ codexModel: models[0].id });
+    }
+  } catch {
+    // Fallback roster stays until the next connect.
+  }
 }

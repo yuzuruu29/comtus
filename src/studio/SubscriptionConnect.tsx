@@ -11,7 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { inputCls } from "./ui";
 import { useSettings } from "../lib/settings";
-import { MODELS, CODEX_MODELS } from "../lib/llm";
+import { MODELS } from "../lib/llm";
 import {
   startClaudeOAuth,
   completeClaudeOAuth,
@@ -193,7 +193,11 @@ export default function SubscriptionConnect() {
           onUse={() => s.update({ provider: "codex" })}
           onModel={(id) => s.update({ provider: "codex", codexModel: id })}
           activeModel={s.codexModel}
-          models={CODEX_MODELS.map((m) => ({ id: m.id, label: m.label, note: m.note }))}
+          models={s.codexModels.map((m) => ({
+            id: m.id,
+            label: m.label,
+            note: m.ctx ? `${m.ctx} context` : "",
+          }))}
           onDisconnect={() => {
             disconnectOAuth("codex");
             if (s.provider === "codex") s.update({ provider: "openai-compatible" });

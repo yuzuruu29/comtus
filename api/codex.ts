@@ -1,22 +1,32 @@
 /**
- * ChatGPT/Codex inference relay (Vercel Edge Function).
+ * ChatGPT/Codex inference + model relay (Vercel Node.js Function).
  *
  * The Codex backend (chatgpt.com/backend-api/codex) blocks cross-origin
- * browser reads entirely, so a ChatGPT-subscription sign-in can't call it
- * directly. This relay forwards the Responses-API request server-side and
- * streams the SSE events back same-origin — token-flow, no buffering.
+ * browser reads entirely AND blocks most Vercel Edge egress IPs (verified
+ * 2026-08-26: Edge fetch returns a 403 HTML bot-block page from
+ * chatgpt.com's WAF/Cloudflare — same class of failure as the PayPal
+ * edge 403s, see api/paypal.ts). This relay therefore runs on the Node
+ * runtime, like paypal.ts, forwards the Responses-API request
+ * server-side, and streams the SSE events back chunk-by-chunk.
  *
  * Blind proxy, like api/compat.ts: the caller's OAuth access token rides
- * in the Authorization header and their ChatGPT account id in
- * chatgpt-account-id; both are forwarded and never stored or logged.
- * Requests without a bearer are refused here so the relay can't be used
- * as an open forwarder.
+ * in the Authorization header, account id in chatgpt-account-id, and
+ * Codex-compat headers (OpenAI-Beta, session_id, conversation_id,
+ * originator, version) are forwarded — nothing is stored or logged here.
+ * Requests without a bearer are refused so the relay can't be used as an
+ * open forwarder.
  *
- * Route shape (via vercel.json rewrite): /api/codex/:path*
- *   /api/codex/responses → chatgpt.com/backend-api/codex/responses
+ * Routes (via vercel.json rewrite):
+ *   POST /api/codex/responses → chatgpt.com/backend-api/codex/responses
+ *   GET  /api/codex/models    → chatgpt.com/backend-api/codex/models
  */
 
-export const config = { runtime: "edge" };
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
+import type { ReadableStream as WebReadableStream } from "node:stream/web";
+
+export const config = { runtime: "nodejs" };
 
 const UPSTREAM_ORIGIN = "https://chatgpt.com";
 
@@ -32,70 +42,93 @@ const ALLOWED_ORIGINS = new Set([
   "http://localhost:4173",
 ]);
 
-function corsHeaders(origin: string | null): Record<string, string> {
-  return origin && ALLOWED_ORIGINS.has(origin)
-    ? {
-        "access-control-allow-origin": origin,
-        "access-control-allow-headers": "content-type,authorization,chatgpt-account-id",
-        "access-control-allow-methods": "POST,OPTIONS",
-      }
-    : {};
+function corsHeaders(origin?: string | string[] | null): Array<[string, string]> {
+  const o = Array.isArray(origin) ? origin[0] : origin;
+  if (!o || !ALLOWED_ORIGINS.has(o)) return [];
+  return [
+    ["access-control-allow-origin", o],
+    ["access-control-allow-headers", "content-type,authorization,chatgpt-account-id,openai-beta,session_id,conversation_id,originator,version"],
+    ["access-control-allow-methods", "GET,POST,OPTIONS"],
+  ];
 }
 
-function json(status: number, body: Record<string, string>, origin: string | null): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json", ...corsHeaders(origin) },
-  });
+function sendJson(res: ServerResponse, status: number, body: Record<string, string>, origin?: string | null): void {
+  res.statusCode = status;
+  res.setHeader("content-type", "application/json");
+  for (const [k, v] of corsHeaders(origin)) res.setHeader(k, v);
+  res.end(JSON.stringify(body));
 }
 
-export default async function handler(req: Request): Promise<Response> {
-  const origin = req.headers.get("origin");
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(origin) });
-  if (req.method !== "POST") return json(405, { error: "POST only" }, origin);
-
-  const authorization = req.headers.get("authorization");
-  if (!authorization?.startsWith("Bearer ")) {
-    return json(401, { error: "Sign in with your ChatGPT account in Comtus Settings first." }, origin);
+export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const origin = req.headers.origin;
+  if (req.method === "OPTIONS") {
+    res.statusCode = 204;
+    for (const [k, v] of corsHeaders(origin)) res.setHeader(k, v);
+    res.end();
+    return;
+  }
+  if (req.method !== "GET" && req.method !== "POST") {
+    sendJson(res, 405, { error: "GET or POST only" }, origin);
+    return;
   }
 
-  const incoming = new URL(req.url);
+  const authorization = String(req.headers.authorization ?? "");
+  if (!authorization.startsWith("Bearer ")) {
+    sendJson(res, 401, { error: "Sign in with your ChatGPT account in Comtus Settings first." }, origin);
+    return;
+  }
+
+  const url = new URL(req.url ?? "/", "https://comtus.local");
   // Rewrites carry the subpath as ?path=; direct hits fall back to the URL.
-  const viaRewrite = incoming.searchParams.get("path");
+  const viaRewrite = url.searchParams.get("path");
   const subPath = viaRewrite !== null
     ? `/${viaRewrite.replace(/^\/+/, "")}`
-    : incoming.pathname.replace(/^\/api\/codex\/?/, "/");
+    : url.pathname.replace(/^\/api\/codex\/?/, "/");
   const upstream = `${UPSTREAM_ORIGIN}/backend-api/codex${subPath.startsWith("/") ? subPath : `/${subPath}`}`;
 
   const headers: Record<string, string> = {
     authorization,
-    "content-type": req.headers.get("content-type") ?? "application/json",
-    accept: req.headers.get("accept") ?? "text/event-stream",
+    accept: String(req.headers.accept ?? "text/event-stream"),
   };
-  const accountId = req.headers.get("chatgpt-account-id");
-  if (accountId) headers["chatgpt-account-id"] = accountId;
-  const originator = req.headers.get("originator");
-  if (originator) headers.originator = originator;
+  if (req.method === "POST") headers["content-type"] = String(req.headers["content-type"] ?? "application/json");
+  for (const name of ["chatgpt-account-id", "openai-beta", "session_id", "conversation_id", "originator", "version"]) {
+    const value = req.headers[name];
+    if (value) headers[name] = Array.isArray(value) ? value[0] : value;
+  }
+
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) chunks.push(chunk as Buffer);
 
   let upstreamRes: Response;
   try {
     upstreamRes = await fetch(upstream, {
-      method: "POST",
+      method: req.method,
       headers,
-      body: await req.text(),
+      ...(chunks.length ? { body: Buffer.concat(chunks) } : {}),
     });
   } catch (err) {
-    return json(502, {
+    sendJson(res, 502, {
       error: `Codex relay couldn't reach chatgpt.com: ${err instanceof Error ? err.message : "unknown"}`,
     }, origin);
+    return;
   }
 
-  return new Response(upstreamRes.body, {
-    status: upstreamRes.status,
-    headers: {
-      "content-type": upstreamRes.headers.get("content-type") ?? "application/json",
-      "cache-control": "no-store",
-      ...corsHeaders(origin),
-    },
-  });
+  res.statusCode = upstreamRes.status;
+  res.setHeader("content-type", upstreamRes.headers.get("content-type") ?? "application/json");
+  res.setHeader("cache-control", "no-store");
+  for (const [k, v] of corsHeaders(origin)) res.setHeader(k, v);
+
+  if (!upstreamRes.body) {
+    res.end();
+    return;
+  }
+  if (req.method === "GET") {
+    res.end(await upstreamRes.text());
+    return;
+  }
+  // SSE must token-flow, not buffer until completion.
+  await pipeline(
+    Readable.fromWeb(upstreamRes.body as unknown as WebReadableStream<Uint8Array>),
+    res,
+  );
 }
