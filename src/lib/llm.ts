@@ -248,7 +248,12 @@ function getCompat(cs: CallSettings): OpenAI {
     defaultHeaders: { "X-Title": "Comtus" },
   });
 }
-function getResponses(cs: CallSettings): OpenAI {
+/** Mutable holder for the relay's plan-meter headers. The OpenAI SDK v7
+ *  Stream class no longer keeps the raw Response, so headers are captured
+ *  at the fetch boundary instead of read off the stream object. */
+type CodexUsageCapture = { headers: Headers | null };
+
+function getResponses(cs: CallSettings, capture?: CodexUsageCapture): OpenAI {
   // The ChatGPT account id rides in a JWT claim; the backend rejects
   // requests without it in the header. The Codex client also requires
   // the beta header and first-turn session/conversation ids.
@@ -259,6 +264,11 @@ function getResponses(cs: CallSettings): OpenAI {
     baseURL: `${API_ORIGIN}/api/codex`,
     dangerouslyAllowBrowser: true,
     maxRetries: 1,
+    fetch: async (url, init) => {
+      const response = await fetch(url, init);
+      if (capture) capture.headers = response.headers;
+      return response;
+    },
     defaultHeaders: {
       ...(accountId ? { "chatgpt-account-id": accountId } : {}),
       originator: "comtus",
@@ -270,9 +280,8 @@ function getResponses(cs: CallSettings): OpenAI {
   });
 }
 
-/** Read 5-hour + weekly plan windows from x-codex-* headers on a stream. */
-function captureCodexUsage(stream: AsyncIterable<unknown>): void {
-  const headers = (stream as unknown as { response?: { headers?: Headers } }).response?.headers;
+/** Read 5-hour + weekly plan windows from x-codex-* headers on the relay response. */
+function captureCodexUsage(headers: Headers | null | undefined): void {
   if (!headers) return;
   useSettings.getState().setCodexUsage(parseCodexUsageFromHeaders(headers));
 }
@@ -585,7 +594,8 @@ async function streamCodex(
   webSearch?: WebSearchMeta,
 ): Promise<ChatReply> {
   const token = await ensureFreshAccessToken("codex");
-  const client = getResponses({ ...args, apiKey: token });
+  const usageCapture: CodexUsageCapture = { headers: null };
+  const client = getResponses({ ...args, apiKey: token }, usageCapture);
 
   // No document-citation API on this backend — sources ride in the
   // prompt exactly like the compatible path, citations degrade to
@@ -634,7 +644,7 @@ async function streamCodex(
     const { reasoning: _drop, ...rest } = base;
     stream = await client.responses.create(rest, { signal: args.signal });
   }
-  captureCodexUsage(stream);
+  captureCodexUsage(usageCapture.headers);
 
   let thinking = "";
   let text = "";
@@ -911,7 +921,8 @@ async function codexText(
   signal?: AbortSignal,
 ): Promise<string> {
   const token = await ensureFreshAccessToken("codex");
-  const client = getResponses({ ...cs, apiKey: token });
+  const usageCapture: CodexUsageCapture = { headers: null };
+  const client = getResponses({ ...cs, apiKey: token }, usageCapture);
   const content: OpenAI.Responses.EasyInputMessage["content"] = image
     ? [
         { type: "input_image", image_url: image.dataUrl, detail: "auto" },
@@ -944,7 +955,7 @@ async function codexText(
     const { reasoning: _drop, ...rest } = base;
     stream = await client.responses.create(rest, { signal });
   }
-  captureCodexUsage(stream);
+  captureCodexUsage(usageCapture.headers);
   let out = "";
   for await (const event of stream) {
     const kind = (event as { type?: string }).type ?? "";
