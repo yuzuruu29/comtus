@@ -7,6 +7,7 @@ import { useMediaQuery } from "../lib/useMediaQuery";
 import { DeskContext, defaultDeskActions, type DeskActions } from "./DeskContext";
 import CommandPalette from "./CommandPalette";
 import UpdateToast from "./UpdateToast";
+import FreeLimitWarningModal from "./FreeLimitWarningModal";
 import { cycleLayout, loadLayout, saveLayout, togglePane, type LayoutMode } from "./layout";
 import { matchesShortcut } from "./shortcuts";
 
@@ -168,6 +169,7 @@ export default function DeskShell({
     <DeskContext.Provider value={actions}>
       {children}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <FreeLimitWarningModal onOpenSettings={onSettings} />
       {isTauri() && <UpdateToast />}
     </DeskContext.Provider>
   );

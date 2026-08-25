@@ -6,6 +6,7 @@ import type { ReadableStream as WebReadableStream } from "node:stream/web";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { runSearch } from "./api/_search-core";
 import pkg from "./package.json";
 
 /** Dev-server mirror of the production /api/compat relay
@@ -67,6 +68,30 @@ function compatRelay(): Plugin {
               error: `Relay fetch failed: ${err instanceof Error ? err.message : "unknown"}`,
             }),
           );
+        }
+      });
+
+      // Local dev mirror for /api/search — same core as api/search.ts on Vercel.
+      server.middlewares.use(async (req, res, next) => {
+        const url = new URL(req.url ?? "/", "http://localhost");
+        if (url.pathname !== "/api/search") return next();
+        const query = url.searchParams.get("q")?.trim() ?? "";
+        if (!query) {
+          res.statusCode = 400;
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ error: "Missing query parameter 'q'", results: [] }));
+          return;
+        }
+
+        try {
+          const { results, provider } = await runSearch(query);
+          res.statusCode = 200;
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ results, provider }));
+        } catch {
+          res.statusCode = 500;
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ error: "Search failed", results: [] }));
         }
       });
     },

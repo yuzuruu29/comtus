@@ -4,6 +4,13 @@ import { PAYPAL_CLIENT_ID, type StudyPlan } from "../lib/paypal";
 import { isTauri } from "../lib/desktop";
 import ExternalLink from "./ExternalLink";
 
+/**
+ * PayPal checkout. Money logic lives server-side: order creation uses
+ * server-owned prices (api/paypal/create-order) and capture + pass issuance
+ * happen on the server after buyer approval (api/paypal/capture-order).
+ * The browser SDK only renders the button and collects approval.
+ */
+
 declare global {
   interface Window {
     paypal?: {
@@ -15,26 +22,25 @@ declare global {
           label?: "paypal" | "checkout" | "buynow" | "pay";
           height?: number;
         };
-        createOrder: (data: unknown, actions: {
-          order: {
-            create: (orderPayload: {
-              purchase_units: {
-                description: string;
-                amount: { currency_code: string; value: string };
-              }[];
-            }) => Promise<string>;
-          };
-        }) => Promise<string>;
-        onApprove: (
-          data: { orderID: string },
-          actions: { order: { capture: () => Promise<unknown> } },
-        ) => Promise<void>;
+        createOrder: () => Promise<string>;
+        onApprove: (data: { orderID: string }) => Promise<void>;
         onError: (err: unknown) => void;
       }) => {
         render: (container: HTMLElement) => Promise<void>;
       };
     };
   }
+}
+
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = (await res.json().catch(() => ({}))) as T & { error?: string };
+  if (!res.ok) throw new Error(data.error || "Something went wrong. Please try again.");
+  return data;
 }
 
 export default function PayPalCheckout({
@@ -92,28 +98,25 @@ export default function PayPalCheckout({
             label: "paypal",
             height: 38,
           },
-          createOrder: (_data, actions) => {
+          createOrder: async () => {
             setError("");
-            return actions.order.create({
-              purchase_units: [
-                {
-                  description: `Comtus Smarter Models — ${plan.name} (${plan.tokens})`,
-                  amount: {
-                    currency_code: "USD",
-                    value: plan.price,
-                  },
-                },
-              ],
+            // Server owns the price — the browser only names the plan.
+            const { orderId } = await postJson<{ orderId: string }>("/api/paypal/create-order", {
+              planId: plan.id,
             });
+            return orderId;
           },
-          onApprove: async (data, actions) => {
+          onApprove: async (data) => {
             setLoading(true);
             try {
-              await actions.order.capture();
+              // Capture happens on the server, which verifies the amount
+              // against PayPal's records and issues the pass instantly.
+              const { passToken } = await postJson<{ passToken: string }>(
+                "/api/paypal/capture-order",
+                { orderId: data.orderID, planId: plan.id },
+              );
               setSuccess(data.orderID);
-              // The pass is issued server-side after payment verification
-              // and emailed to the buyer — never generated in the browser.
-              onSuccess("", data.orderID);
+              onSuccess(passToken, data.orderID);
             } catch (err) {
               setError(err instanceof Error ? err.message : "Payment capture failed.");
             } finally {
@@ -136,7 +139,7 @@ export default function PayPalCheckout({
       <div className="space-y-3 rounded-[var(--radius-control)] border border-hairline bg-ink/[0.02] p-4 text-[12px] leading-relaxed text-muted">
         <p>
           Checkout opens on the Comtus website so payment code never runs inside the privileged
-          desktop workspace. Return here and paste the Access Pass emailed after purchase.
+          desktop workspace. Your Access Pass activates automatically right after payment.
         </p>
         <ExternalLink
           href={`${website}/checkout?plan=${plan.id}`}
@@ -161,8 +164,8 @@ export default function PayPalCheckout({
         <div className="flex items-start gap-2 rounded-lg border border-sage/30 bg-sage/[0.08] p-2.5 text-left text-[12px] leading-relaxed text-sage">
           <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
           <span>
-            Payment confirmed (Order #{success.slice(-8)}). Your personal Access Pass will be
-            emailed to you shortly — paste it below to activate.
+            Payment confirmed (Order #{success.slice(-8)}) — your Access Pass has been activated
+            automatically.
           </span>
         </div>
       )}
@@ -177,7 +180,7 @@ export default function PayPalCheckout({
       {loading && (
         <div className="flex items-center justify-center gap-2 rounded-lg border border-brass/30 bg-brass/[0.06] py-3 text-[12px] text-brasspale">
           <Loader2 size={14} className="animate-spin text-brass" />
-          <span>Confirming order & issuing pass token…</span>
+          <span>Confirming payment & activating your pass…</span>
         </div>
       )}
 

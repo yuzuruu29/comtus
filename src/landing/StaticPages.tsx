@@ -89,7 +89,7 @@ export function AboutPage() {
             <strong>2. Visible Reasoning:</strong> Thinking is a first-class user interface surface, not a concealed loading spinner.
           </li>
           <li>
-            <strong>3. Local-First Respect:</strong> Notebooks, documents, and history live in your device's IndexedDB; your API keys stay strictly on-device.
+            <strong>3. Local-First Respect:</strong> Notebooks, documents, and history live in your device's IndexedDB; your own API keys stay strictly on-device, and purchased passes are verified by our server without ever exposing the underlying model key.
           </li>
           <li>
             <strong>4. Pedagogy over Shortcuts:</strong> Designed to help students arrive at true understanding through Socratic questioning and active recall.
@@ -109,31 +109,92 @@ export function PrivacyPage() {
     >
       <div className="space-y-6">
         <h2 className="font-display text-[1.5rem] font-[450] text-brasspale">
-          1. Local-First Architecture
+          1. Who We Are
         </h2>
         <p>
-          Comtus is built with a local-first philosophy. Your uploaded PDF textbooks, lecture slides, flashcards, generated mock exams, and conversation transcripts are stored directly inside your web browser's IndexedDB on your local device.
+          Comtus (&ldquo;we&rdquo;, &ldquo;the service&rdquo;) is an AI study workspace operated from the Philippines.
+          For questions about privacy or your personal data, contact{' '}
+          <a href="mailto:support@comtus-ai.xyz" className="text-brass hover:underline">support@comtus-ai.xyz</a>.
+          This notice is aligned with the Philippine Data Privacy Act of 2012 (RA 10173) and its Implementing Rules.
         </p>
 
         <h2 className="font-display text-[1.5rem] font-[450] text-brasspale pt-4">
-          2. Zero Unauthorized Model Training
+          2. Local-First Architecture
         </h2>
         <p>
-          Your study materials, notes, and questions are never used by Comtus to train public AI foundation models. When using Bring-Your-Own-Key (BYOK) providers such as OpenRouter or Groq, requests are transmitted directly via TLS to the selected model provider under their respective API data privacy terms.
+          Comtus is built with a local-first philosophy. Your uploaded PDF textbooks, lecture slides, flashcards, generated mock exams, and conversation transcripts are stored directly inside your web browser's IndexedDB on your local device. We do not operate a central database of your study materials, and we do not require an account.
         </p>
 
         <h2 className="font-display text-[1.5rem] font-[450] text-brasspale pt-4">
-          3. API Keys & Credentials
+          3. What Leaves Your Device
+        </h2>
+        <ul className="list-disc space-y-2 pl-5">
+          <li>
+            <strong>Model requests:</strong> when you chat, generate quizzes/exams, check solutions, or use voice features, the relevant text (your question, conversation context, and text extracted from sources in the active notebook) is transmitted to the AI provider you selected so it can generate a response.
+          </li>
+          <li>
+            <strong>Hosted-pass telemetry:</strong> if you purchase a Smarter Models pass, we store only the minimum needed to operate it: a random pass identifier, its request quota/expiry counters, and your PayPal order id. We do not store your name, address, or card details — those live with PayPal.
+          </li>
+          <li>
+            <strong>Analytics:</strong> aggregate, non-identifying product analytics are collected via Vercel Analytics (page views and visits).
+          </li>
+        </ul>
+
+        <h2 className="font-display text-[1.5rem] font-[450] text-brasspale pt-4">
+          4. Third-Party Processors
+        </h2>
+        <p>Your data touches these third parties only as needed to provide the feature you invoked:</p>
+        <ul className="list-disc space-y-2 pl-5">
+          <li><strong>PayPal</strong> — payment processing for Smarter Models passes. PayPal receives your payment details and acts as the data controller for its own services.</li>
+          <li><strong>Anthropic</strong> — hosts the Claude models behind paid Smarter Models passes; your prompts and source text are processed by Anthropic under their commercial data terms.</li>
+          <li><strong>BYOK providers</strong> — with Bring-Your-Own-Key mode (OpenRouter, Groq, Cerebras, Google AI Studio, DeepSeek, Together, Nous, OpenCode Zen, Mistral, or your own custom endpoint), requests go directly to that provider under their privacy terms. For Zen and Mistral, requests relay through our server solely to reach their APIs.</li>
+          <li><strong>Vercel</strong> — application hosting, serverless functions, and Vercel Analytics.</li>
+          <li><strong>r.jina.ai</strong> — when you import a URL, the page is fetched through Jina's reader service to extract readable text.</li>
+          <li><strong>Wikipedia / DuckDuckGo</strong> — public search results used when you enable web-grounded answers (relayed through our server).</li>
+        </ul>
+
+        <h2 className="font-display text-[1.5rem] font-[450] text-brasspale pt-4">
+          5. Zero Unauthorized Model Training
         </h2>
         <p>
-          Any API keys you provide (e.g. OpenRouter or custom endpoint keys) are stored solely in your local device storage (`localStorage`). They are never relayed to Comtus analytics or central databases.
+          Your study materials, notes, and questions are never used by Comtus to train public AI foundation models. Each model provider processes your requests under their respective data-use terms.
         </p>
 
         <h2 className="font-display text-[1.5rem] font-[450] text-brasspale pt-4">
-          4. Complete Data Deletion & Export
+          6. API Keys & Credentials
         </h2>
         <p>
-          You retain full ownership of your data. You can export your notebooks at any time in standard Markdown, JSON, PDF, or PowerPoint formats, or execute a complete, irreversible on-device purge with a single click in Settings.
+          Any API keys you provide (e.g. OpenRouter or custom endpoint keys) are stored solely in your local device storage (`localStorage`). They are never relayed to Comtus analytics or central databases. Purchased access passes are credentials stored locally on your devices; treat them like passwords, since anyone holding the token can use its quota.
+        </p>
+
+        <h2 className="font-display text-[1.5rem] font-[450] text-brasspale pt-4">
+          7. Retention
+        </h2>
+        <p>
+          Local study data persists until you delete notebooks yourself or run the full purge described below. Server-side pass counters persist until the pass expires, after which they serve only audit/accounting purposes. PayPal retains transaction records per its own policies and applicable law.
+        </p>
+
+        <h2 className="font-display text-[1.5rem] font-[450] text-brasspale pt-4">
+          8. Your Rights
+        </h2>
+        <p>
+          You have the rights to be informed, to access, to correct, to erase, to object, and to data portability with respect to your personal data. Because your study data lives locally, you can exercise access, portability, and erasure yourself at any time: export your notebooks in standard Markdown, JSON, PDF, or PowerPoint formats, or execute a complete, irreversible on-device purge with a single click in Settings. For anything else — including questions about server-side pass records or payments — email{' '}
+          <a href="mailto:support@comtus-ai.xyz" className="text-brass hover:underline">support@comtus-ai.xyz</a>{' '}
+          and we will respond within a reasonable period.
+        </p>
+
+        <h2 className="font-display text-[1.5rem] font-[450] text-brasspale pt-4">
+          9. International Transfers
+        </h2>
+        <p>
+          Comtus itself operates from the Philippines, but the third parties listed above (Vercel, Anthropic, PayPal, model providers) process data in data centers located outside the Philippines. By using the service, you consent to these international transfers, which each processor safeguards under its own compliance program.
+        </p>
+
+        <h2 className="font-display text-[1.5rem] font-[450] text-brasspale pt-4">
+          10. Children
+        </h2>
+        <p>
+          Comtus is intended for senior high school, university, and professional learners. We do not knowingly collect personal data from children under 13. Younger learners should use Comtus with guidance from a parent, guardian, or school.
         </p>
       </div>
     </StaticPageLayout>
@@ -167,6 +228,43 @@ export function TermsPage() {
         </h2>
         <p>
           You retain all rights and intellectual property in the notes, PDFs, and study materials you import into Comtus.
+        </p>
+
+        <h2 className="font-display text-[1.5rem] font-[450] text-brasspale pt-4">
+          4. Purchases, Delivery & Access Passes
+        </h2>
+        <p>
+          Smarter Models passes are sold in US dollars and processed by PayPal. When PayPal confirms your payment, your access pass is issued automatically and activated in the app immediately — there is no waiting period or manual approval. A pass grants a fixed number of hosted model requests (shown on the plan before purchase) until its expiry date, counted per request at the server. Passes are personal credentials: sharing, reselling, or automating access with a pass is prohibited and may lead to suspension of the pass without refund.
+        </p>
+
+        <h2 className="font-display text-[1.5rem] font-[450] text-brasspale pt-4">
+          5. Refunds, Disputes & Taxes
+        </h2>
+        <p>
+          If a pass does not work as described, contact{' '}
+          <a href="mailto:support@comtus-ai.xyz" className="text-brass hover:underline">support@comtus-ai.xyz</a>{' '}
+          within 14 days of purchase and we will refund passes that have seen little or no usage, or restore lost quota caused by a fault on our side. Refund requests outside this window are considered case by case. Opening a PayPal dispute instead of contacting us first may result in the associated pass being suspended pending resolution. Prices exclude any taxes, bank fees, or currency-conversion charges your payment provider may apply; you are responsible for those.
+        </p>
+
+        <h2 className="font-display text-[1.5rem] font-[450] text-brasspale pt-4">
+          6. Acceptable Use
+        </h2>
+        <p>
+          You agree not to use Comtus to process unlawful content, to attack or overload our infrastructure, to circumvent quotas or rate limits, to resell hosted model access, or to share account-free credentials such as passes. We enforce fair-use throttling and per-pass request limits to keep the service available to everyone.
+        </p>
+
+        <h2 className="font-display text-[1.5rem] font-[450] text-brasspale pt-4">
+          7. Service Availability, Warranty & Suspension
+        </h2>
+        <p>
+          Comtus is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo; without warranties of any kind, express or implied, including fitness for a particular purpose or exam outcome. Hosted models depend on third-party providers whose availability we do not control, and we may pause, throttle, or discontinue hosted access (with notice where practicable) for maintenance, abuse, cost protection, or provider-side changes. Generated study content can contain mistakes — always verify important material against your own sources.
+        </p>
+
+        <h2 className="font-display text-[1.5rem] font-[450] text-brasspale pt-4">
+          8. Limitation of Liability & Governing Law
+        </h2>
+        <p>
+          To the maximum extent permitted by law, Comtus's total liability arising from your use of the service is limited to the amount you paid us in the twelve months preceding the claim. These Terms are governed by the laws of the Republic of the Philippines. We may update these terms; material changes will be reflected on this page with an updated effective date, and continued use after changes constitutes acceptance.
         </p>
       </div>
     </StaticPageLayout>
@@ -229,10 +327,10 @@ export function ContactPage() {
             Community & Support
           </div>
           <p className="text-parchment">
-            Email: <a href="mailto:support@comtus.ai" className="text-brass hover:underline">support@comtus.ai</a>
+            Email: <a href="mailto:support@comtus-ai.xyz" className="text-brass hover:underline">support@comtus-ai.xyz</a>
           </p>
           <p className="text-faded text-[13px]">
-            Open issues & feature discussions are also available on our GitHub repository.
+            We typically reply within 1–2 business days. For payment issues, include your PayPal order id (shown in the app right after checkout).
           </p>
         </div>
       </div>

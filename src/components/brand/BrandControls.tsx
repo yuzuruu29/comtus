@@ -52,13 +52,13 @@ export function ProBadge({
       type="button"
       onClick={onClick}
       className={`flex items-center gap-1.5 rounded-full border border-brass/45 bg-gradient-to-r from-brass/[0.16] to-brass/[0.08] px-3 py-1 font-mono text-[10.5px] font-medium text-brasspale hover:bg-brass/25 transition-all shadow-[0_0_14px_rgba(227,176,75,0.18)] ${className}`}
-      title={`Pro Plan Active (${planTier.toUpperCase()}) ${remainingTokens !== undefined ? `· ${remainingTokens.toLocaleString()} tokens available` : ""}`}
+      title={`Pro Plan Active (${planTier.toUpperCase()}) ${remainingTokens !== undefined ? `· ${remainingTokens.toLocaleString()} hosted requests left` : ""}`}
     >
       <Crown size={12} weight="fill" className="text-brass animate-[pulse_3s_ease-in-out_infinite]" />
       <span className="font-semibold tracking-[0.04em]">{planTier.toUpperCase()}</span>
       {remainingTokens !== undefined && remainingTokens > 0 && (
         <span className="border-l border-brass/35 pl-1.5 text-[9.5px] text-brasspale/85 font-normal">
-          {formatTokens(remainingTokens)} tok
+          {formatTokens(remainingTokens)} req
         </span>
       )}
     </button>

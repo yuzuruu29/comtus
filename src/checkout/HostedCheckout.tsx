@@ -60,7 +60,7 @@ export default function HostedCheckout() {
               <span className="font-display text-title">{plan.name}</span>
               <span className="font-mono text-title text-brasspale">${plan.price}</span>
             </div>
-            <p className="mt-1 text-[12px] text-muted">{plan.tokens} · {plan.desc}</p>
+            <p className="mt-1 text-[12px] text-muted">{plan.requests} hosted requests · {plan.days} days · {plan.desc}</p>
           </div>
 
           <PayPalCheckout plan={plan} onSuccess={() => undefined} />

@@ -19,6 +19,7 @@ import {
   Check,
   Copy,
   Flame,
+  Globe,
   Microphone,
   PaperPlaneRight,
   PencilSimple,
@@ -32,6 +33,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { loadFocus, saveFocus } from "./focus";
+import ModelPickerMenu from "./ModelPickerMenu";
 import {
   db,
   saveMessage,
@@ -120,6 +122,8 @@ export default function ChatPane({
   const menuRef = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(false);
   const [showJump, setShowJump] = useState(false);
+  const [reasoningEnabled, setReasoningEnabled] = useState(true);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
   const activeSession = sessions.find((s) => s.id === activeId) ?? null;
@@ -386,6 +390,8 @@ export default function ChatPane({
           history: history.slice(0, -1),
           question,
           sourceIds: focusedSources && focusedSources.length > 0 ? focusedSources : undefined,
+          reasoning: reasoningEnabled,
+          webSearch: webSearchEnabled,
           signal: controller.signal,
           onThinking: (_d, full) =>
             setStreaming((s) => (s ? { ...s, thinking: full, phase: "thinking" } : s)),
@@ -416,7 +422,7 @@ export default function ChatPane({
         setStreaming(null);
       }
     },
-    [input, notebook, streaming, hasKey, cs, messages, activeId, activeSession],
+    [input, notebook, streaming, hasKey, cs, messages, activeId, activeSession, reasoningEnabled, webSearchEnabled],
   );
 
   const hasText = !!input.trim();
@@ -763,15 +769,7 @@ export default function ChatPane({
             <div className="relative z-[2]">
               {/* Context strip */}
               <div className="flex items-center gap-1.5 px-3.5 pb-2 pt-2.5">
-                <button
-                  onClick={() => onOpenSettings?.()}
-                  title="Change model in Settings"
-                  className="flex min-w-0 items-center gap-1.5 rounded-full border border-brass/35 bg-brass/[0.07] px-2.5 py-1 font-mono text-[10px] tracking-[0.04em] text-brasspale transition-colors hover:bg-brass/[0.14]"
-                >
-                  <Sparkle size={10} weight="fill" className="shrink-0 text-brass" />
-                  <span className="max-w-[9rem] truncate sm:max-w-[11rem]">{modelLabel ?? cs.model}</span>
-                  <CaretDown size={9} className="shrink-0" />
-                </button>
+                <ModelPickerMenu modelLabel={modelLabel} onOpenSettings={onOpenSettings} />
                 {notebook && <FocusMenu notebook={notebook} sourcesVersion={sourcesVersion} />}
                 <span className="flex-1" />
                 {sourceCount > 0 && (
@@ -850,24 +848,55 @@ export default function ChatPane({
                   <Plus size={14} weight="light" />
                 </button>
                 {!streaming && (
-                  <>
-                    <span className="mx-0.5 h-4 w-px bg-ink/10" />
-                    {(
-                      [
-                        ["Quiz me", "Make me a 10-item quiz on the hardest part of my sources"],
-                        ["Flashcards", "Turn the key concepts in my sources into flashcards, front and back"],
-                        ["Outline", "Build me a structured study outline from my sources"],
-                      ] as const
-                    ).map(([label, prompt]) => (
-                      <button
-                        key={label}
-                        onClick={() => void send(prompt)}
-                        className="shrink-0 whitespace-nowrap rounded-full border border-hairline bg-ink/[0.03] px-2 py-1 text-[10.5px] text-muted transition-colors hover:border-brass/40 hover:bg-brass/[0.08] hover:text-brasspale sm:px-2.5 sm:text-[11px]"
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </>
+                  <div className="flex items-center gap-1.5 ml-1">
+                    {/* Deep Reasoning Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => setReasoningEnabled((v) => !v)}
+                      aria-pressed={reasoningEnabled}
+                      title={
+                        reasoningEnabled
+                          ? "Deep Reasoning active — Step-by-step logic, edge cases & verification"
+                          : "Enable Deep Reasoning"
+                      }
+                      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10.5px] transition-all active:scale-[0.96] ${
+                        reasoningEnabled
+                          ? "border-brass/60 bg-brass/15 text-brasspale shadow-[0_0_10px_rgba(227,176,75,0.2)] font-medium"
+                          : "border-hairline bg-ink/[0.03] text-muted hover:border-brass/30 hover:text-ink"
+                      }`}
+                    >
+                      <Brain
+                        size={12}
+                        weight={reasoningEnabled ? "fill" : "regular"}
+                        className={reasoningEnabled ? "text-brass" : "text-muted"}
+                      />
+                      <span>Reasoning</span>
+                    </button>
+
+                    {/* Web Search Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => setWebSearchEnabled((v) => !v)}
+                      aria-pressed={webSearchEnabled}
+                      title={
+                        webSearchEnabled
+                          ? "Web Search active — Searches live web summaries & external knowledge"
+                          : "Enable Web Search (useful when no sources are attached)"
+                      }
+                      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10.5px] transition-all active:scale-[0.96] ${
+                        webSearchEnabled
+                          ? "border-cyan-500/60 bg-cyan-500/15 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)] font-medium"
+                          : "border-hairline bg-ink/[0.03] text-muted hover:border-cyan-500/30 hover:text-ink"
+                      }`}
+                    >
+                      <Globe
+                        size={12}
+                        weight={webSearchEnabled ? "fill" : "regular"}
+                        className={webSearchEnabled ? "text-cyan-400" : "text-muted"}
+                      />
+                      <span>Web Search</span>
+                    </button>
+                  </div>
                 )}
                 <span className="flex-1" />
                 {tkEstimate > 0 && (
@@ -1112,13 +1141,28 @@ function MessageBubble({
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={externalMarkdownComponents}>
             {msg.content}
           </ReactMarkdown>
-          {streaming && <span className="stream-caret ml-1 inline-block h-3.5 w-1.5 bg-brass" />}
+          {streaming && (
+            <span className="stream-typing-beacon" aria-hidden="true">
+              <span className="stream-typing-beacon-halo" />
+              <span className="stream-typing-beacon-core" />
+            </span>
+          )}
         </div>
       ) : (
         streaming && (
-          <div className="flex items-center gap-2 text-[13px] text-muted py-2">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-brass" />
-            {phase === "thinking" ? "Thinking…" : phase === "answering" ? "Composing answer…" : "Reading sources…"}
+          <div className="flex items-center gap-2.5 text-[13px] py-2 font-mono">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-brass/10 border border-brass/25 backdrop-blur-sm">
+              <span className="typing-harmonic-dot" />
+              <span className="typing-harmonic-dot" />
+              <span className="typing-harmonic-dot" />
+            </div>
+            <span className="text-[12px] tracking-wide text-brasspale">
+              {phase === "thinking"
+                ? "Synthesizing deep reasoning…"
+                : phase === "answering"
+                  ? "Composing answer…"
+                  : "Indexing study sources…"}
+            </span>
           </div>
         )
       )}

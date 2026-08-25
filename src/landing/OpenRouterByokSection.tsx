@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
-  Key,
   Sparkles,
   Zap,
   ExternalLink,
@@ -14,6 +13,7 @@ import {
 } from "lucide-react";
 import SectionHead from "./SectionHead";
 import TiltCard from "./TiltCard";
+import { startOpenRouterOAuth } from "../lib/openrouterAuth";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -44,22 +44,21 @@ interface BenchmarkModel {
 
 const BENCHMARK_MODELS: BenchmarkModel[] = [
   {
-    id: "stealth/ox-alpha",
-    name: "Ox Alpha (Stealth)",
-    badge: "🔥 SOTA Frontier · Expiring Soon",
+    id: "openrouter/free",
+    name: "OpenRouter Auto Free",
+    badge: "✨ Best Available Free Router",
     badgeColor: "text-amber-300 border-amber-500/40 bg-amber-500/15 shadow-[0_0_14px_rgba(245,158,11,0.25)]",
     category: "frontier",
     modality: "multimodal",
-    modalityNote: "🖼️ Multimodal (Vision + Video + Text)",
-    speed: "Fast · ~70 tok/s",
-    context: "1,048,576 tokens (1M)",
-    contextNum: 1048576,
-    architecture: "Frontier Stealth Reasoning",
-    benchmarkScore: "Top 1% LMSYS Arena / X Hype",
-    bestFor: "SOTA reasoning, complex math proofs, sustained study sessions, frontier coding logic",
-    why: "Top stealth model trending on X research feeds with 1M context. Active now before trial closes.",
-    tags: ["#FrontierReasoning", "#MathProofs", "#1MContext", "#Vision"],
-    isExpiringSoon: true,
+    modalityNote: "🖼️ Multimodal (Vision + Text)",
+    speed: "Fast · Dynamic",
+    context: "200,000+ tokens",
+    contextNum: 200000,
+    architecture: "Auto Dynamic Free Pool (OpenRouter)",
+    benchmarkScore: "Top Free Pool Aggregator",
+    bestFor: "Zero-config daily study sessions, general homework QA, automatic fallback across free models",
+    why: "OpenRouter's intelligent free router that automatically connects you to the highest quality free model currently available.",
+    tags: ["#AutoRouting", "#ZeroConfig", "#DailyStudy", "#ReliableFallback"],
   },
   {
     id: "dots-studio/dots-3-note-preview:free",
@@ -210,12 +209,13 @@ export default function OpenRouterByokSection() {
         if (!res.ok) return;
         const data = (await res.json()) as { data?: Array<{ id: string }> };
         if (!cancel && data?.data) {
+          const freeModels = data.data.filter((m) => m.id.endsWith(":free") || m.id.includes(":free"));
           const modelMap = new Set(data.data.map((m) => m.id));
-          const hasOx = modelMap.has("stealth/ox-alpha");
+          const hasDots = modelMap.has("dots-studio/dots-3-note-preview:free");
           setLiveStatus({
-            count: data.data.length,
+            count: freeModels.length || BENCHMARK_MODELS.length,
             lastChecked: "Live (auto-synced)",
-            liveOxActive: hasOx,
+            liveOxActive: hasDots,
           });
         }
       } catch {
@@ -277,46 +277,46 @@ export default function OpenRouterByokSection() {
         <div className="reveal-byok">
           <SectionHead
             index="02"
-            label="OpenRouter BYOK Guide"
+            label="Zero Setup · 100% Free"
             title={
               <>
-                How to use <em className="font-[420] text-lamp">Free AI Models</em> in 60 seconds.
+                Connect Free AI in <em className="font-[420] text-lamp">1 Click</em>. Zero Setup.
               </>
             }
-            sub="Never used Bring-Your-Own-Key (BYOK) before? This 3-step guide gets you free access to Ox Alpha, Dots3-Note, and Nemotron 3.5 — no credit card required."
+            sub="No copy-pasting API keys, base URLs, or credit cards. Click Connect with Google or GitHub, and Comtus auto-configures your access to free models instantly."
           />
         </div>
 
-        {/* 3-Step Visual Setup Flow */}
+        {/* 3-Step Visual Setup Flow (1-Click Zero Copy-Paste) */}
         <div className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-3">
           {/* Step 1 */}
-          <div className="reveal-byok group relative flex flex-col justify-between rounded-2xl border border-brass/30 bg-brass/[0.04] p-6 transition-all duration-300 hover:border-brass/50 hover:bg-brass/[0.07]">
+          <div className="reveal-byok group relative flex flex-col justify-between rounded-2xl border border-brass/40 bg-gradient-to-b from-brass/[0.08] to-brass/[0.02] p-6 transition-all duration-300 hover:border-brass/60 hover:shadow-[0_8px_30px_rgba(227,176,75,0.12)]">
             <div>
               <div className="flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-brass/40 bg-brass/15 font-mono text-[13px] font-bold text-brasspale">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-brass/40 bg-brass/20 font-mono text-[13px] font-bold text-brasspale">
                   1
                 </span>
                 <span className="font-mono text-[10px] uppercase tracking-wider text-sage bg-sage/10 border border-sage/25 px-2 py-0.5 rounded-full">
-                  100% Free · No Card
+                  1-Click Connect
                 </span>
               </div>
               <h3 className="mt-4 font-display text-[1.3rem] font-[430] text-parchment">
-                Get your Free Key
+                Sign in with 1 Click
               </h3>
               <p className="mt-2 text-[13px] leading-relaxed text-faded">
-                Go to OpenRouter and sign in with Google or GitHub in 5 seconds. No credit card or payment is ever asked.
+                Click below to authorize securely with Google or GitHub. No credit cards, billing forms, or passwords to remember.
               </p>
             </div>
 
             <div className="mt-6 pt-4 border-t border-white/[0.08]">
-              <a
-                href="https://openrouter.ai/keys"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-brass/40 bg-brass/10 py-2.5 font-mono text-[12px] font-medium text-brasspale transition-colors hover:bg-brass/20"
+              <button
+                type="button"
+                onClick={() => void startOpenRouterOAuth()}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brass py-3 font-mono text-[12px] font-semibold text-night shadow-[0_4px_16px_rgba(227,176,75,0.25)] transition-all hover:bg-brasspale hover:scale-[1.02] active:scale-[0.98]"
               >
-                <Key size={13} /> openrouter.ai/keys <ExternalLink size={11} />
-              </a>
+                <Sparkles size={14} className="shrink-0" />
+                <span>Connect with OpenRouter (1-Click)</span>
+              </button>
             </div>
           </div>
 
@@ -327,21 +327,21 @@ export default function OpenRouterByokSection() {
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/5 font-mono text-[13px] font-bold text-parchment">
                   2
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-faded bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
-                  On-Device Storage
+                <span className="font-mono text-[10px] uppercase tracking-wider text-brasspale bg-brass/10 border border-brass/20 px-2 py-0.5 rounded-full">
+                  Auto-Configured
                 </span>
               </div>
               <h3 className="mt-4 font-display text-[1.3rem] font-[430] text-parchment">
-                Paste in Comtus Settings
+                Zero Copy-Paste Setup
               </h3>
               <p className="mt-2 text-[13px] leading-relaxed text-faded">
-                In Comtus, open <strong>Settings (⚙️)</strong> in the top header, select <strong>OpenRouter (BYOK)</strong>, and paste your key starting with <code className="text-brasspale text-[11.5px]">sk-or-v1-...</code>.
+                Comtus automatically generates and verifies your key in the background. You never have to manually copy keys, endpoints, or base URLs.
               </p>
             </div>
 
             <div className="mt-6 pt-4 border-t border-white/[0.08] text-[11.5px] font-mono text-faded flex items-center gap-1.5">
               <ShieldCheck size={14} className="text-sage shrink-0" />
-              <span>Key stays local on your machine</span>
+              <span>Zero manual copy-paste needed</span>
             </div>
           </div>
 
@@ -352,21 +352,36 @@ export default function OpenRouterByokSection() {
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/5 font-mono text-[13px] font-bold text-parchment">
                   3
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-brasspale bg-brass/10 border border-brass/25 px-2 py-0.5 rounded-full">
-                  Ready to Study
+                <span className="font-mono text-[10px] uppercase tracking-wider text-sage bg-sage/10 border border-sage/25 px-2 py-0.5 rounded-full">
+                  Ready Instantly
                 </span>
               </div>
               <h3 className="mt-4 font-display text-[1.3rem] font-[430] text-parchment">
-                Pick a Free Model & Save
+                Start Studying Right Away
               </h3>
               <p className="mt-2 text-[13px] leading-relaxed text-faded">
-                Click the <span className="text-brasspale font-medium">✨ :free</span> filter chip, pick <strong>Ox Alpha</strong> or <strong>Dots3-Note</strong>, and click <em>Save & test</em>. The lamp is lit.
+                You are taken straight into the studio workspace. Verified free models like <strong>Dots3-Note</strong> and <strong>Nemotron 3.5</strong> are active and ready.
               </p>
             </div>
 
             <div className="mt-6 pt-4 border-t border-white/[0.08] text-[11.5px] font-mono text-brasspale flex items-center gap-1.5">
               <Sparkles size={14} className="text-brass shrink-0" />
-              <span>Free, unlimited grounded learning</span>
+              <span>100% Free Grounded Learning</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Free Tier Daily Limit & Fair Use Advisory */}
+        <div className="reveal-byok mt-5 rounded-2xl border border-amber-500/30 bg-amber-500/[0.04] p-4.5 sm:p-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-start sm:items-center gap-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/15 text-[14px]">
+                ⚠️
+              </span>
+              <div className="text-[12.5px] leading-relaxed text-faded">
+                <strong className="font-medium text-parchment">Free Tier Daily Limit Advisory:</strong>{" "}
+                OpenRouter free models share public compute pools with an estimated daily limit per model (resetting at 00:00 UTC). If you hit a temporary queue or daily cap, Comtus alerts you instantly so you can switch to another free model (or Groq 500 tok/s) in 1 click, or continue with dedicated Smarter Models passes.
+              </div>
             </div>
           </div>
         </div>
@@ -687,7 +702,7 @@ export default function OpenRouterByokSection() {
                     <span className="flex items-baseline gap-1.5 font-mono">
                       <span className="text-[11px] text-faded/60 line-through">$4.99</span>
                       <span className="font-bold text-brass">$2.99</span>
-                      <span className="text-[10px] font-normal text-faded">(~500k tok)</span>
+                      <span className="text-[10px] font-normal text-faded">(60 hosted requests)</span>
                     </span>
                   </div>
                   <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
@@ -697,7 +712,7 @@ export default function OpenRouterByokSection() {
                     <span className="flex items-baseline gap-1.5 font-mono">
                       <span className="text-[11px] text-faded/60 line-through">$11.99</span>
                       <span className="font-bold text-brass">$6.99</span>
-                      <span className="text-[10px] font-normal text-faded">(~1.5M tok)</span>
+                      <span className="text-[10px] font-normal text-faded">(200 hosted requests)</span>
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -705,7 +720,7 @@ export default function OpenRouterByokSection() {
                     <span className="flex items-baseline gap-1.5 font-mono">
                       <span className="text-[11px] text-faded/60 line-through">$24.99</span>
                       <span className="font-bold text-brass">$14.99</span>
-                      <span className="text-[10px] font-normal text-faded">(~3.5M tok)</span>
+                      <span className="text-[10px] font-normal text-faded">(500 hosted requests)</span>
                     </span>
                   </div>
                 </div>

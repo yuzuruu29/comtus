@@ -13,6 +13,7 @@ const TermsPage = lazy(() => import("./landing/StaticPages").then((m) => ({ defa
 const ResponsibleAIPage = lazy(() => import("./landing/StaticPages").then((m) => ({ default: m.ResponsibleAIPage })));
 const ContactPage = lazy(() => import("./landing/StaticPages").then((m) => ({ default: m.ContactPage })));
 const StudyCompanionPage = lazy(() => import("./landing/StaticPages").then((m) => ({ default: m.StudyCompanionPage })));
+const OpenRouterCallback = lazy(() => import("./auth/OpenRouterCallback"));
 
 export default function App() {
   const deskShell = isDeskShell();
@@ -40,6 +41,7 @@ export default function App() {
           path="/checkout"
           element={deskShell ? <Navigate to="/studio" replace /> : <HostedCheckout />}
         />
+        <Route path="/auth/openrouter/callback" element={<OpenRouterCallback />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />

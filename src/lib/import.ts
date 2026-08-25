@@ -24,17 +24,17 @@ export async function extractFile(file: File): Promise<ExtractedDoc[]> {
     file.type.startsWith("image/") ||
     ["png", "jpg", "jpeg", "webp", "bmp", "tiff", "gif", "avif"].includes(ext)
   ) {
-    const dataUrl = await fileToDataUrl(file);
     const text = `[Non-Text Visual Source: ${file.name}]
 Type: ${file.type || ext} · Size: ${(file.size / 1024).toFixed(1)} KB
 
-<<<NON-TEXT SOURCE: HYBRID OCR REQUIRED>>>
-This is a non-text visual / image-based source.
-Agent Directives:
-1. FORCE HYBRID OCR: Exhaustively transcribe, inspect, and extract all text, handwriting, formulas, tables, diagrams, and labels present in this image source.
-2. ADMIT CAPABILITY TRANSPARENTLY: If your active model endpoint does not possess multimodal vision / OCR capability, state this clearly to the user instead of hallucinating.
-<<<END NON-TEXT SOURCE>>>
-${dataUrl ? `\n[Embedded Visual Asset: ${file.name}]` : ""}`;
+[IMAGE SOURCE — VISUAL CONTENT NOT MACHINE-READABLE YET]
+This source is an image. Grounded notebooks cannot read image contents
+(handwriting, diagrams, formulas) at the moment, so no text was extracted.
+If the student asks about this image, state plainly that its visual content
+is not readable here and suggest attaching the photo directly in chat or via
+Check My Solution, where a vision-capable model can view it. Never invent
+text for this image.
+[END IMAGE SOURCE]`;
 
     return [
       {
@@ -73,15 +73,6 @@ ${dataUrl ? `\n[Embedded Visual Asset: ${file.name}]` : ""}`;
   ];
 }
 
-async function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = () => resolve("");
-    reader.readAsDataURL(file);
-  });
-}
-
 async function pdfToText(buffer: ArrayBuffer, title = "PDF Document"): Promise<string> {
   const pdf = await pdfjs.getDocument({ data: buffer }).promise;
   const pages: string[] = [];
@@ -118,11 +109,14 @@ async function pdfToText(buffer: ArrayBuffer, title = "PDF Document"): Promise<s
     text = `[Non-Text / Scanned PDF Source: ${title} (${pdf.numPages} page(s))]
 [Notice: Embedded text layer is sparse (${totalExtractedChars} readable characters). This document is primarily scanned image pages.]
 
-<<<NON-TEXT SOURCE: HYBRID OCR REQUIRED>>>
-Agent Directives:
-1. FORCE HYBRID OCR: Read and transcribe all visual diagrams, scanned typography, and handwritten annotations.
-2. ADMIT CAPABILITY TRANSPARENTLY: If your active model endpoint lacks direct multimodal OCR capabilities to read scanned raster layers, admit this limitation plainly to the user with a direct response.
-<<<END NON-TEXT SOURCE>>>\n\n` + text;
+[SCANNED PDF — VISUAL CONTENT NOT MACHINE-READABLE YET]
+Only the sparse embedded text layer (above, if any) was extracted. Grounded
+notebooks cannot OCR scanned pages yet. If the student asks about the visual
+pages, state plainly that the page images are not readable here and suggest
+attaching photos of the relevant pages in chat or via Check My Solution,
+where a vision-capable model can view them. Never invent text for pages that
+were not extracted.
+[END SCANNED PDF]\n\n` + text;
   }
 
   return text;

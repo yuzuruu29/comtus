@@ -1,7 +1,7 @@
 import { useState, type ComponentType } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Books, CaretLeft, ChatCircle, GearSix, Notebook } from "@phosphor-icons/react";
+import { Books, CaretLeft, ChatCircle, GearSix, Notebook, SidebarSimple } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
 import { useCallSettings, useSettings } from "../lib/settings";
 import { MODELS } from "../lib/llm";
@@ -22,8 +22,8 @@ import { LampPulse, Modal, btnGhost } from "./ui";
 
 type MobilePane = "sources" | "chat" | "studio";
 
-const SOURCES_W = 260;
-const STUDIO_W = 280;
+const DEFAULT_SOURCES_W = 270;
+const DEFAULT_STUDIO_W = 290;
 const RAIL_W = 48;
 
 export default function Workspace({ notebookId }: { notebookId: string }) {
@@ -31,6 +31,28 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   const desk = useNotebookDesk(notebookId);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobilePane, setMobilePane] = useState<MobilePane>("chat");
+
+  const [isDraggingLeft, setIsDraggingLeft] = useState(false);
+  const [isDraggingRight, setIsDraggingRight] = useState(false);
+
+  // Dynamic resizable widths for sidebars (stored across sessions)
+  const [sourcesWidth, setSourcesWidth] = useState(() => {
+    try {
+      const saved = localStorage.getItem("comtus_sources_width");
+      return saved ? Math.min(550, Math.max(180, Number(saved))) : DEFAULT_SOURCES_W;
+    } catch {
+      return DEFAULT_SOURCES_W;
+    }
+  });
+
+  const [studioWidth, setStudioWidth] = useState(() => {
+    try {
+      const saved = localStorage.getItem("comtus_studio_width");
+      return saved ? Math.min(550, Math.max(200, Number(saved))) : DEFAULT_STUDIO_W;
+    } catch {
+      return DEFAULT_STUDIO_W;
+    }
+  });
 
   const openSource = (sourceId: string, startChar?: number) => {
     desk.openSource(sourceId, startChar);
@@ -45,6 +67,96 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
     cs.effort === "medium" ? "Steady" : cs.effort === "high" ? "Deep" : "Exhaustive";
 
   const panes = panesFor(desk.layout);
+
+  const toggleSources = () => {
+    desk.setLayout(panes.sources ? (panes.studio ? "writing" : "focus") : (panes.studio ? "standard" : "reading"));
+  };
+
+  const toggleStudio = () => {
+    desk.setLayout(panes.studio ? (panes.sources ? "reading" : "focus") : (panes.sources ? "standard" : "writing"));
+  };
+
+  // Drag-to-stretch/pull left sidebar (Sources) with zero drag-lag
+  const startResizingLeft = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = sourcesWidth;
+    setIsDraggingLeft(true);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    const onPointerMove = (moveEv: PointerEvent) => {
+      const delta = moveEv.clientX - startX;
+      const nextW = Math.min(550, Math.max(180, startW + delta));
+      if (startW + delta < 140) {
+        desk.setLayout(panes.studio ? "writing" : "focus");
+      } else {
+        if (!panes.sources) {
+          desk.setLayout(panes.studio ? "standard" : "reading");
+        }
+        setSourcesWidth(nextW);
+      }
+    };
+
+    const onPointerUp = (upEv: PointerEvent) => {
+      setIsDraggingLeft(false);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      try {
+        const finalDelta = upEv.clientX - startX;
+        const finalW = Math.min(550, Math.max(180, startW + finalDelta));
+        if (startW + finalDelta >= 140) {
+          localStorage.setItem("comtus_sources_width", String(finalW));
+        }
+      } catch {}
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+  };
+
+  // Drag-to-stretch/pull right sidebar (Studio) with zero drag-lag
+  const startResizingRight = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = studioWidth;
+    setIsDraggingRight(true);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    const onPointerMove = (moveEv: PointerEvent) => {
+      const delta = startX - moveEv.clientX;
+      const nextW = Math.min(550, Math.max(200, startW + delta));
+      if (startW + delta < 150) {
+        desk.setLayout(panes.sources ? "reading" : "focus");
+      } else {
+        if (!panes.studio) {
+          desk.setLayout(panes.sources ? "standard" : "writing");
+        }
+        setStudioWidth(nextW);
+      }
+    };
+
+    const onPointerUp = (upEv: PointerEvent) => {
+      setIsDraggingRight(false);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      try {
+        const finalDelta = startX - upEv.clientX;
+        const finalW = Math.min(550, Math.max(200, startW + finalDelta));
+        if (startW + finalDelta >= 150) {
+          localStorage.setItem("comtus_studio_width", String(finalW));
+        }
+      } catch {}
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+  };
 
   return (
     <DeskShell
@@ -105,16 +217,20 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           notebook={desk.notebook}
           modelLabel={modelLabel}
           effortLabel={effortLabel}
+          panes={panes}
+          onToggleSources={toggleSources}
+          onToggleStudio={toggleStudio}
           onRename={(name) => void desk.rename(name)}
           onSettings={() => setSettingsOpen(true)}
         />
 
         <div className="relative z-10 hidden min-h-0 flex-1 lg:flex">
+          {/* Left Sidebar: Sources (Retractable & Resizable) */}
           <motion.aside
             initial={false}
-            animate={{ width: panes.sources ? SOURCES_W : RAIL_W }}
-            transition={SPRING}
-            className="relative shrink-0 overflow-hidden border-r desk-split"
+            animate={{ width: panes.sources ? sourcesWidth : RAIL_W }}
+            transition={isDraggingLeft ? { duration: 0 } : { duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="relative shrink-0 overflow-visible border-r desk-split"
           >
             {panes.sources ? (
               <div className={`${deskPane} flex flex-col`}>
@@ -134,6 +250,19 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             ) : (
               <div className="flex h-full flex-col items-center pt-3">
                 <RailButton icon={Notebook} label="Sources" side="left" onClick={() => desk.setLayout(panes.studio ? "standard" : "reading")} />
+              </div>
+            )}
+
+            {/* Pull / Stretch Resizer Handle for Left Sidebar */}
+            {panes.sources && (
+              <div
+                onPointerDown={startResizingLeft}
+                onDoubleClick={() => setSourcesWidth(DEFAULT_SOURCES_W)}
+                title="Drag to stretch/pull sidebar · Double-click to reset width"
+                aria-label="Resize sources sidebar"
+                className="group absolute right-0 top-0 bottom-0 z-30 w-3 -mr-1.5 cursor-col-resize select-none flex items-center justify-center transition-opacity hover:opacity-100"
+              >
+                <div className="h-8 w-1 rounded-full bg-hairline/80 transition-all duration-200 group-hover:h-14 group-hover:w-1.5 group-hover:bg-brass group-active:bg-brass group-active:h-20 shadow-sm" />
               </div>
             )}
           </motion.aside>
@@ -157,11 +286,12 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             </motion.div>
           </main>
 
+          {/* Right Sidebar: Studio (Retractable & Resizable) */}
           <motion.aside
             initial={false}
-            animate={{ width: panes.studio ? STUDIO_W : RAIL_W }}
-            transition={SPRING}
-            className="relative shrink-0 overflow-hidden border-l desk-split"
+            animate={{ width: panes.studio ? studioWidth : RAIL_W }}
+            transition={isDraggingRight ? { duration: 0 } : { duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="relative shrink-0 overflow-visible border-l desk-split"
           >
             {panes.studio ? (
               <div className={`${deskPane} flex flex-col`}>
@@ -173,6 +303,19 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             ) : (
               <div className="flex h-full flex-col items-center pt-3">
                 <RailButton icon={Books} label="Studio" side="right" onClick={() => desk.setLayout(panes.sources ? "standard" : "writing")} />
+              </div>
+            )}
+
+            {/* Pull / Stretch Resizer Handle for Right Sidebar */}
+            {panes.studio && (
+              <div
+                onPointerDown={startResizingRight}
+                onDoubleClick={() => setStudioWidth(DEFAULT_STUDIO_W)}
+                title="Drag to stretch/pull sidebar · Double-click to reset width"
+                aria-label="Resize studio sidebar"
+                className="group absolute left-0 top-0 bottom-0 z-30 w-3 -ml-1.5 cursor-col-resize select-none flex items-center justify-center transition-opacity hover:opacity-100"
+              >
+                <div className="h-8 w-1 rounded-full bg-hairline/80 transition-all duration-200 group-hover:h-14 group-hover:w-1.5 group-hover:bg-brass group-active:bg-brass group-active:h-20 shadow-sm" />
               </div>
             )}
           </motion.aside>
@@ -247,12 +390,18 @@ function WorkspaceHeader({
   notebook,
   modelLabel,
   effortLabel,
+  panes,
+  onToggleSources,
+  onToggleStudio,
   onRename,
   onSettings,
 }: {
   notebook: NotebookRow | null;
   modelLabel: string;
   effortLabel: string;
+  panes: { sources: boolean; studio: boolean };
+  onToggleSources: () => void;
+  onToggleStudio: () => void;
   onRename: (name: string) => void;
   onSettings: () => void;
 }) {
@@ -308,6 +457,21 @@ function WorkspaceHeader({
         >
           <CaretLeft size={18} weight="light" />
         </Link>
+
+        {/* Retract / Expand Left Sidebar Button */}
+        <button
+          onClick={onToggleSources}
+          title={panes.sources ? "Retract Sources Sidebar" : "Expand Sources Sidebar"}
+          aria-label="Toggle sources sidebar"
+          className={`no-drag hidden h-8 w-8 items-center justify-center rounded-[var(--radius-control)] transition-all sm:flex ${
+            panes.sources
+              ? "text-brass bg-brass/10 hover:bg-brass/20"
+              : "text-muted hover:bg-ink/5 hover:text-ink"
+          }`}
+        >
+          <SidebarSimple size={16} weight={panes.sources ? "fill" : "light"} />
+        </button>
+
         <StudyGlyph name={notebook?.name} size="sm" />
         <input
           defaultValue={notebook?.name}
@@ -358,7 +522,21 @@ function WorkspaceHeader({
             />
           )}
 
-          {/* User Avatar Badge matching Screenshot 2 */}
+          {/* Retract / Expand Right Sidebar (Studio) Button */}
+          <button
+            onClick={onToggleStudio}
+            title={panes.studio ? "Retract Studio Sidebar" : "Expand Studio Sidebar"}
+            aria-label="Toggle studio sidebar"
+            className={`no-drag hidden h-8 w-8 items-center justify-center rounded-[var(--radius-control)] transition-all sm:flex ${
+              panes.studio
+                ? "text-brass bg-brass/10 hover:bg-brass/20"
+                : "text-muted hover:bg-ink/5 hover:text-ink"
+            }`}
+          >
+            <SidebarSimple size={16} weight={panes.studio ? "fill" : "light"} className="scale-x-[-1]" />
+          </button>
+
+          {/* User Avatar Badge */}
           <button
             onClick={onSettings}
             className="flex h-7 w-7 items-center justify-center rounded-full bg-brass/20 text-brass text-[11px] font-bold font-mono hover:brightness-110 transition-all select-none"

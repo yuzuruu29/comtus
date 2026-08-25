@@ -52,13 +52,13 @@ export const useSettings = create<SettingsState>()(
       anthropicModel: "claude-opus-5",
       compatKey: "",
       compatBaseUrl: "https://openrouter.ai/api/v1",
-      compatModel: "openrouter/auto",
+      compatModel: "deepseek/deepseek-r1:free",
       recentModels: [
-        "openrouter/auto",
         "deepseek/deepseek-r1:free",
+        "dots-studio/dots-3-note-preview:free",
+        "nvidia/nemotron-3.5-lightning:free",
         "meta-llama/llama-3.3-70b-instruct:free",
-        "qwen/qwen-2.5-72b-instruct:free",
-        "google/gemini-2.0-flash-exp:free",
+        "google/gemma-4-31b-it:free",
       ],
       storedKeys: [],
       isPro: false,
@@ -108,13 +108,15 @@ export const useSettings = create<SettingsState>()(
         });
       },
       activateProPass: (passCode: string, planTier: PlanTier = "scholar", tokenAmount?: number) => {
+        // Balances are hosted-request quotas (matching the server proxy's
+        // per-pass counting), never tokens — tokens are not metered.
         const defaultTokensByPlan: Record<PlanTier, number> = {
           free: 0,
-          sprint: 500000,
-          scholar: 1500000,
-          mastery: 3500000,
+          sprint: 60,
+          scholar: 200,
+          mastery: 500,
         };
-        const tokensToAdd = tokenAmount ?? defaultTokensByPlan[planTier] ?? 1000000;
+        const tokensToAdd = tokenAmount ?? defaultTokensByPlan[planTier] ?? 200;
         set((prev) => ({
           isPro: true,
           planTier,

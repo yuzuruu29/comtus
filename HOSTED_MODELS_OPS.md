@@ -1,14 +1,23 @@
 # Hosted Smarter Models — Ops Runbook
 
-How the paid Claude tier works now, and what you (the operator) do after a
-PayPal payment.
+How the paid Claude tier works now, and what you (the operator) must keep
+healthy. Fulfillment is **automatic**: the buyer's pass is issued at capture
+time, no manual step.
 
 ## Architecture
 
 ```
+Browser ──▶ /api/paypal/create-order  (server-owned prices)
+        ◀── orderId; buyer approves in PayPal popup
+Browser ──▶ /api/paypal/capture-order
+              ├─ re-verifies status/amount against PayPal's API
+              ├─ captures server-side
+              └─ mints deterministic comtus-pass-v1 token (idempotent per order)
 Browser (pass token only) ──▶ /api/anthropic (Vercel Edge)
                                 ├─ verify HMAC signature + expiry
-                                ├─ optional: request count vs quota (Upstash)
+                                ├─ per-pass + per-IP quotas via Upstash (fail closed)
+                                ├─ only POST /v1/messages, allowlisted models,
+                                │   max_tokens clamped, 8 MB body cap
                                 └─ forwards with ANTHROPIC_HOSTED_KEY ──▶ api.anthropic.com
                                       ◀── SSE stream passthrough ──
 ```
@@ -19,34 +28,37 @@ Browser (pass token only) ──▶ /api/anthropic (Vercel Edge)
   request quota + expiry, cannot be forged or self-issued in the browser.
 - Users' own `sk-ant-` keys still go direct from their browser (their key,
   their responsibility). BYOK OpenRouter/Groq/Zen/etc. is unchanged.
+- Set `HOSTED_PROXY_OFF=1` on Vercel to pause all hosted traffic instantly
+  (kill switch); redeploy without it to resume.
 
 ## Environment variables (Vercel → Settings → Environment Variables)
 
 | Variable | Required | Purpose |
 |---|---|---|
 | `ANTHROPIC_HOSTED_KEY` | yes | The hosted-tier Anthropic key. **Rotate this on a schedule.** |
-| `PASS_SIGNING_SECRET` | yes | HMAC secret. Must match `.env.local` (used by the issuance script). |
-| `UPSTASH_REDIS_REST_URL` | no | Enables per-pass request counting. |
-| `UPSTASH_REDIS_REST_TOKEN` | no | Enables per-pass request counting. |
-
-Without Upstash, passes are enforced by **expiry only** — set the Anthropic
-workspace spend limit as the backstop. With Upstash (free tier works), each
-pass is additionally capped at its request quota.
+| `PASS_SIGNING_SECRET` | yes | HMAC secret shared by issuance + proxy. Must match `.env.local`. |
+| `PAYPAL_CLIENT_SECRET` | yes | Server-side order create/capture. Checkout fails closed without it. |
+| `PAYPAL_CLIENT_ID` | no | Defaults to the public web SDK id. |
+| `PAYPAL_API_BASE` | no | Default live `https://api-m.paypal.com`; point at sandbox for testing. |
+| `UPSTASH_REDIS_REST_URL` | yes | Per-pass + per-IP quota counters — the proxy refuses traffic without them. |
+| `UPSTASH_REDIS_REST_TOKEN` | yes | Same. |
+| `HOSTED_PROXY_OFF` | no | `1` = global kill switch (503 for all proxied calls). |
 
 ## After a PayPal payment
 
-1. Confirm the payment in PayPal (order id is shown in the buyer's success
-   message).
-2. Issue the pass locally:
+Nothing — fulfillment is automated by `/api/paypal/capture-order`, which
+verifies the captured amount against the server plan table and returns the
+pass to the buyer's app instantly. Use `scripts/issue-pass.mjs` only to
+re-issue or comp a replacement pass:
 
-   ```bash
-   node scripts/issue-pass.mjs --plan scholar            # 200 requests · 120 days
-   node scripts/issue-pass.mjs --plan sprint --days 30   # overrides allowed
-   node scripts/issue-pass.mjs --plan mastery --note "Mark"
-   ```
+```bash
+node scripts/issue-pass.mjs --plan scholar            # 200 requests · 120 days
+node scripts/issue-pass.mjs --plan sprint --days 30   # overrides allowed
+node scripts/issue-pass.mjs --plan mastery --note "Mark"
+```
 
-3. Email the printed `comtus-pass-v1.…` token to the buyer. They paste it
-   in Settings → Smarter Models.
+Then have the buyer paste the printed `comtus-pass-v1.…` token in
+Settings → Smarter Models.
 
 ## Rotating the Anthropic key
 

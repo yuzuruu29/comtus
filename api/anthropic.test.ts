@@ -1,7 +1,78 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { createHmac } from "node:crypto";
 import handler from "./anthropic";
 
-describe("hosted Anthropic proxy CORS", () => {
+/* ── Helpers ──────────────────────────────────────────────── */
+
+const SECRET = "test-signing-secret";
+const UPSTASH = "https://test-upstash.example";
+const HOSTED_KEY = "sk-ant-test-hosted-key";
+
+function b64url(s: string): string {
+  return Buffer.from(s).toString("base64url");
+}
+
+/** Mint a properly-signed pass, mirroring scripts/issue-pass.mjs. */
+function signPass(payload: Record<string, unknown>): string {
+  const payloadB64 = b64url(JSON.stringify({ q: 200, e: Math.floor(Date.now() / 1000) + 3600, ...payload }));
+  const sig = createHmac("sha256", SECRET).update(payloadB64).digest("hex");
+  return `comtus-pass-v1.${payloadB64}.${sig}`;
+}
+
+function postReq(body: string | object, headers: Record<string, string> = {}): Request {
+  return new Request("http://localhost:3000/api/anthropic?p=v1/messages", {
+    method: "POST",
+    headers: {
+      origin: "http://127.0.0.1:5199",
+      "content-type": "application/json",
+      ...(typeof body === "string" ? { "content-length": String(body.length) } : {}),
+      ...headers,
+    },
+    body: typeof body === "string" ? body : JSON.stringify(body),
+  });
+}
+
+function mockFetch(opts: { incrResult?: number; upstream?: Response } = {}) {
+  return vi.fn(async (input: string | URL | Request) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.includes("/incr/")) {
+      return new Response(JSON.stringify({ result: opts.incrResult ?? 1 }), { status: 200 });
+    }
+    if (url.startsWith("https://api.anthropic.com")) {
+      return (
+        opts.upstream ??
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      );
+    }
+    return new Response("{}", { status: 200 });
+  });
+}
+
+const ENV_KEYS = [
+  "PASS_SIGNING_SECRET",
+  "ANTHROPIC_HOSTED_KEY",
+  "UPSTASH_REDIS_REST_URL",
+  "UPSTASH_REDIS_REST_TOKEN",
+  "HOSTED_PROXY_OFF",
+];
+
+export function withProxyEnv(): void {
+  process.env.PASS_SIGNING_SECRET = SECRET;
+  process.env.ANTHROPIC_HOSTED_KEY = HOSTED_KEY;
+  process.env.UPSTASH_REDIS_REST_URL = UPSTASH;
+  process.env.UPSTASH_REDIS_REST_TOKEN = "upstash-token";
+  delete process.env.HOSTED_PROXY_OFF;
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  for (const k of ENV_KEYS) delete process.env[k];
+});
+
+describe("hosted Anthropic proxy", () => {
   it("allows the isolated Tauri development origin", async () => {
     const origin = "http://127.0.0.1:5199";
     const response = await handler(
@@ -13,5 +84,134 @@ describe("hosted Anthropic proxy CORS", () => {
 
     expect(response.status).toBe(204);
     expect(response.headers.get("access-control-allow-origin")).toBe(origin);
+  });
+
+  it("preflight from an unknown origin gets no CORS grant", async () => {
+    const res = await handler(
+      new Request("http://localhost:3000/api/anthropic", { method: "OPTIONS", headers: { origin: "https://evil.example" } }),
+    );
+    expect(res.status).toBe(204);
+    expect(res.headers.get("access-control-allow-origin")).toBeNull();
+  });
+
+  it("rejects non-POST methods", async () => {
+    withProxyEnv();
+    const res = await handler(new Request("http://localhost:3000/api/anthropic"));
+    expect(res.status).toBe(405);
+  });
+
+  it("fails closed when required configuration is missing", async () => {
+    // no env at all
+    const resNoConfig = await handler(postReq({ model: "claude-opus-5", max_tokens: 100 }));
+    expect(resNoConfig.status).toBe(503);
+
+    // kill switch
+    withProxyEnv();
+    process.env.HOSTED_PROXY_OFF = "1";
+    const resKilled = await handler(postReq({ model: "claude-opus-5", max_tokens: 100 }));
+    expect(resKilled.status).toBe(503);
+  });
+
+  it("rejects missing, malformed, and forged passes with 401", async () => {
+    withProxyEnv();
+
+    const resNone = await handler(postReq({ model: "claude-opus-5", max_tokens: 100 }));
+    expect(resNone.status).toBe(401);
+
+    const resGarbage = await handler(
+      postReq({ model: "claude-opus-5", max_tokens: 100 }, { "x-api-key": "comtus-pass-v1.abc.def" }),
+    );
+    expect(resGarbage.status).toBe(401);
+
+    const forged = signPass({ j: "forged01" }).replace(/.$/, (c) => (c === "0" ? "1" : "0"));
+    const resForged = await handler(
+      postReq({ model: "claude-opus-5", max_tokens: 100 }, { "x-api-key": forged }),
+    );
+    expect(resForged.status).toBe(401);
+
+    const expired = signPass({ j: "expired01", e: Math.floor(Date.now() / 1000) - 10 });
+    const resExpired = await handler(
+      postReq({ model: "claude-opus-5", max_tokens: 100 }, { "x-api-key": expired }),
+    );
+    expect(resExpired.status).toBe(401);
+  });
+
+  it("proxies only /v1/messages", async () => {
+    withProxyEnv();
+    const pass = signPass({ j: "pathcheck" });
+    const req = new Request("http://localhost:3000/api/anthropic/v1/models", {
+      method: "POST",
+      headers: { "x-api-key": pass, "content-type": "application/json" },
+      body: JSON.stringify({ model: "claude-opus-5" }),
+    });
+    const res = await handler(req);
+    expect(res.status).toBe(404);
+  });
+
+  it("forwards valid calls with clamped max_tokens and the server key", async () => {
+    withProxyEnv();
+    const fetchMock = mockFetch({});
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await handler(
+      postReq(
+        { model: "claude-opus-5", max_tokens: 999999, stream: true },
+        { "x-api-key": signPass({ j: "clampcheck" }) },
+      ),
+    );
+    expect(res.status).toBe(200);
+
+    const upstreamCall = fetchMock.mock.calls.find(([, init]) =>
+      Boolean(init && typeof init === "object" && "body" in init),
+    );
+    const forwarded = JSON.parse((upstreamCall?.[1] as RequestInit).body as string);
+    expect(forwarded.max_tokens).toBe(64000);
+    expect(forwarded.model).toBe("claude-opus-5");
+    const sentHeaders = (upstreamCall?.[1] as RequestInit).headers as Record<string, string>;
+    expect(sentHeaders["x-api-key"]).toBe(HOSTED_KEY);
+  });
+
+  it("blocks models outside the allowlist", async () => {
+    withProxyEnv();
+    vi.stubGlobal("fetch", mockFetch({}));
+    const res = await handler(
+      postReq({ model: "claude-opus-4-20250514", max_tokens: 100 }, { "x-api-key": signPass({ j: "modcheck" }) }),
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it("enforces the per-pass request quota (402)", async () => {
+    withProxyEnv();
+    vi.stubGlobal("fetch", mockFetch({ incrResult: 201 })); // scholar pass has q=200
+    const res = await handler(
+      postReq({ model: "claude-sonnet-5", max_tokens: 100 }, { "x-api-key": signPass({ j: "quotacheck", q: 200 }) }),
+    );
+    expect(res.status).toBe(402);
+  });
+
+  it("fails closed when the quota counter errors", async () => {
+    withProxyEnv();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("redis down");
+      }),
+    );
+    const res = await handler(
+      postReq({ model: "claude-sonnet-5", max_tokens: 100 }, { "x-api-key": signPass({ j: "redisdown" }) }),
+    );
+    expect(res.status).toBe(503);
+  });
+
+  it("returns 413 for oversized bodies and 400 for invalid JSON", async () => {
+    withProxyEnv();
+    const pass = signPass({ j: "sizecheck" });
+
+    const big = JSON.stringify({ model: "claude-opus-5", max_tokens: 16, pad: "x".repeat(8 * 1024 * 1024 + 64) });
+    const resBig = await handler(postReq(big, { "x-api-key": pass }));
+    expect(resBig.status).toBe(413);
+
+    const resBadJson = await handler(postReq("{not json", { "x-api-key": signPass({ j: "badjson" }) }));
+    expect(resBadJson.status).toBe(400);
   });
 });
