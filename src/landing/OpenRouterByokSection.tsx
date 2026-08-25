@@ -129,23 +129,6 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     tags: ["#500TokPerSec", "#MassiveSyllabus", "#RapidFlashcards", "#ZeroLatency"],
   },
   {
-    id: "z-ai/glm-5.2:free",
-    name: "Z.ai GLM 5.2",
-    badge: "Deep Logic & Exam Agent",
-    badgeColor: "text-brasspale border-brass/30 bg-brass/10",
-    category: "reasoning",
-    modality: "text",
-    modalityNote: "📄 Text-Only · Deep Reasoning",
-    speed: "Fast · ~60 tok/s",
-    context: "256,000 tokens (256k)",
-    contextNum: 256000,
-    architecture: "Long-Horizon Reasoning Engine (Z.ai)",
-    benchmarkScore: "Leader in Long-Horizon Tasks",
-    bestFor: "100-item practice exams, clinical case reasoning, comprehensive review outlines",
-    why: "Large-scale frontier reasoning model from Z.ai designed for deep academic problem solving.",
-    tags: ["#100ItemExam", "#ClinicalReasoning", "#CaseStudies", "#ReviewOutlines"],
-  },
-  {
     id: "poolside/laguna-s-2.1:free",
     name: "Poolside Laguna S 2.1",
     badge: "Coding & Math Proofs",
@@ -613,7 +596,7 @@ export default function OpenRouterByokSection() {
               <div className="text-[12.5px] leading-relaxed text-faded">
                 <strong className="font-medium text-parchment">Understanding Model Modality:</strong>{" "}
                 <span className="text-sky-300 font-medium">Multimodal models (like Ox Alpha, Dots3-Note, Gemma 4, Inkling)</span> directly parse raw image attachments, anatomical diagrams, handwritten formulas, and lecture slides.{" "}
-                <span className="text-amber-300 font-medium">Text-only models (like Nemotron 3.5 Lightning, GLM 5.2, Laguna S 2.1)</span> excel at pure logic, coding, and reasoning proofs. When you upload PDFs or slides in Comtus, Comtus automatically extracts the text locally on your device before sending so you get clean answers on any model.
+                <span className="text-amber-300 font-medium">Text-only models (like Nemotron 3.5 Lightning, Laguna S 2.1)</span> excel at pure logic, coding, and reasoning proofs. When you upload PDFs or slides in Comtus, Comtus automatically extracts the text locally on your device before sending so you get clean answers on any model.
               </div>
             </div>
           </div>

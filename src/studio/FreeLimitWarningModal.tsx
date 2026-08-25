@@ -92,12 +92,6 @@ export default function FreeLimitWarningModal({
                 badge: "Vision Thinking Mode",
                 desc: "DeepMind multimodal model for handwritten notes & math.",
               },
-              {
-                id: "z-ai/glm-5.2:free",
-                name: "Z.ai GLM 5.2",
-                badge: "100-Item Exam Logic",
-                desc: "Long-horizon clinical & complex exam problem solving.",
-              },
             ].map((m) => {
               const isCurrent = activeModel === m.id;
               return (

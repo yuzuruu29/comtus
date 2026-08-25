@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from "react";
 import {
   ArrowClockwise,
   Bookmark,
-  Brain,
   CaretDown,
   CaretUp,
   Check,
@@ -81,16 +80,6 @@ export const CURATED_FREE_MODELS: CuratedFreeModel[] = [
     bestFor: "Visual Diagrams & Photos",
     context: "256k Context",
     icon: Eye,
-  },
-  {
-    id: "z-ai/glm-5.2:free",
-    name: "Z.ai GLM 5.2 Exam Engine",
-    badge: "100-Item Reasoning",
-    badgeType: "logic",
-    desc: "Deep step-by-step problem solver for clinical vignettes, board exams, and complex logic.",
-    bestFor: "Mock Exams & Clinical Cases",
-    context: "256k Context",
-    icon: Brain,
   },
   {
     id: "poolside/laguna-s-2.1:free",
