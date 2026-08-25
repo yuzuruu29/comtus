@@ -101,7 +101,7 @@ export default function PayPalCheckout({
           createOrder: async () => {
             setError("");
             // Server owns the price — the browser only names the plan.
-            const { orderId } = await postJson<{ orderId: string }>("/api/anthropic/paypal/create-order", {
+            const { orderId } = await postJson<{ orderId: string }>("/api/paypal/create-order", {
               planId: plan.id,
             });
             return orderId;
@@ -112,7 +112,7 @@ export default function PayPalCheckout({
               // Capture happens on the server, which verifies the amount
               // against PayPal's records and issues the pass instantly.
               const { passToken } = await postJson<{ passToken: string }>(
-                "/api/anthropic/paypal/capture-order",
+                "/api/paypal/capture-order",
                 { orderId: data.orderID, planId: plan.id },
               );
               setSuccess(data.orderID);
@@ -164,8 +164,7 @@ export default function PayPalCheckout({
         <div className="flex items-start gap-2 rounded-lg border border-sage/30 bg-sage/[0.08] p-2.5 text-left text-[12px] leading-relaxed text-sage">
           <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
           <span>
-            Payment confirmed (Order #{success.slice(-8)}) — your Access Pass has been activated
-            automatically.
+            Payment confirmed (Order #{success.slice(-8)}) — your Access Pass has been issued.
           </span>
         </div>
       )}
