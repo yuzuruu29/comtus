@@ -350,4 +350,15 @@ export interface CodexModelInfo {
   label: string;
   lite?: boolean;
   ctx?: string;
+  /** Wire reasoning tiers the model accepts, from the roster. */
+  levels?: string[];
+}
+
+/** Snapshot of the ChatGPT plan's usage window, read from the
+ *  x-codex-primary-* headers on chat responses. */
+export interface CodexUsage {
+  usedPercent: number;
+  windowMinutes: number;
+  /** Epoch ms when the window resets (0 = unknown). */
+  resetsAt: number;
 }

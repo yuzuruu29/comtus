@@ -516,8 +516,22 @@ export async function listCodexModels(): Promise<CodexModelInfo[]> {
   });
   if (!res.ok) throw new Error(`Model list failed (${res.status}).`);
   const data = (await res.json().catch(() => ({}))) as {
-    models?: { slug?: unknown; id?: unknown; display_name?: unknown; use_responses_lite?: unknown; context_window?: unknown }[];
-    data?: { slug?: unknown; id?: unknown; display_name?: unknown; use_responses_lite?: unknown; context_window?: unknown }[];
+    models?: {
+      slug?: unknown;
+      id?: unknown;
+      display_name?: unknown;
+      use_responses_lite?: unknown;
+      context_window?: unknown;
+      supported_reasoning_levels?: unknown;
+    }[];
+    data?: {
+      slug?: unknown;
+      id?: unknown;
+      display_name?: unknown;
+      use_responses_lite?: unknown;
+      context_window?: unknown;
+      supported_reasoning_levels?: unknown;
+    }[];
   };
   const rows = Array.isArray(data.models) ? data.models : Array.isArray(data.data) ? data.data : [];
   const out: CodexModelInfo[] = [];
@@ -526,11 +540,15 @@ export async function listCodexModels(): Promise<CodexModelInfo[]> {
     const id = typeof row.slug === "string" ? row.slug : typeof row.id === "string" ? row.id : "";
     if (!id) continue;
     const ctx = typeof row.context_window === "number" ? `${Math.round(row.context_window / 1000)}k` : undefined;
+    const levels = Array.isArray(row.supported_reasoning_levels)
+      ? row.supported_reasoning_levels.filter((l): l is string => typeof l === "string")
+      : undefined;
     out.push({
       id,
       label: typeof row.display_name === "string" && row.display_name ? row.display_name : id,
       lite: row.use_responses_lite === true,
       ...(ctx ? { ctx } : {}),
+      ...(levels && levels.length ? { levels } : {}),
     });
   }
   return out;

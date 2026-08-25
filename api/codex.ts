@@ -30,6 +30,13 @@ export const config = { runtime: "nodejs" };
 
 const UPSTREAM_ORIGIN = "https://chatgpt.com";
 
+/* ChatGPT plan-window meters — forwarded so the client can show usage. */
+const CODEK_USAGE_HEADERS = [
+  "x-codex-primary-used-percent",
+  "x-codex-primary-window-minutes",
+  "x-codex-primary-reset-at",
+] as const;
+
 /* Origins allowed to call the relay — mirrors api/compat.ts. */
 const ALLOWED_ORIGINS = new Set([
   "https://comtus-ai.vercel.app",
@@ -117,6 +124,11 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   res.setHeader("content-type", upstreamRes.headers.get("content-type") ?? "application/json");
   res.setHeader("cache-control", "no-store");
   for (const [k, v] of corsHeaders(origin)) res.setHeader(k, v);
+  // Plan-window usage headers — the client surfaces them as a meter.
+  for (const name of CODEK_USAGE_HEADERS) {
+    const v = upstreamRes.headers.get(name);
+    if (v) res.setHeader(name, v);
+  }
 
   if (!upstreamRes.body) {
     res.end();

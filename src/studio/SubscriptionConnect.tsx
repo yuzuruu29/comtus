@@ -23,7 +23,7 @@ import {
   disconnectOAuth,
   type CodexDeviceSession,
 } from "../lib/oauthProviders";
-import type { OAuthAccount } from "../lib/types";
+import type { CodexUsage, OAuthAccount } from "../lib/types";
 
 /**
  * "Use your subscription" cards — sign in with an existing Claude
@@ -202,6 +202,7 @@ export default function SubscriptionConnect() {
             disconnectOAuth("codex");
             if (s.provider === "codex") s.update({ provider: "openai-compatible" });
           }}
+          usage={s.codexUsage}
           device={
             codexStage === "code"
               ? {
@@ -262,6 +263,7 @@ function SubscriptionCard({
   models,
   onDisconnect,
   device,
+  usage,
 }: {
   tone: "claude" | "codex";
   title: string;
@@ -288,8 +290,10 @@ function SubscriptionCard({
     onCopy: () => void;
     onFallback: () => void;
   };
+  usage?: CodexUsage | null;
 }) {
   const connected = Boolean(account?.accessToken);
+  const usagePct = usage ? Math.round(usage.usedPercent) : 0;
   return (
     <div
       className={`relative overflow-hidden rounded-2xl border p-4 text-left transition-all ${
@@ -445,6 +449,19 @@ function SubscriptionCard({
 
       {connected && (
         <div className="mt-3 space-y-2.5">
+          {usage && (
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-hairline bg-ink/[0.03] px-2.5 py-1.5">
+              <span className="font-mono text-[10px] text-muted">
+                Plan usage: {usagePct}%
+                {usage.windowMinutes > 0 ? ` of this ${usage.windowMinutes}m window` : ""}
+              </span>
+              <span className="font-mono text-[10px] text-muted/70">
+                {usage.resetsAt > Date.now()
+                  ? `resets ${new Date(usage.resetsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                  : "resets shortly"}
+              </span>
+            </div>
+          )}
           <div className="flex flex-wrap gap-1.5">
             {models.map((m) => (
               <button

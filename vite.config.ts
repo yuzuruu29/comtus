@@ -194,6 +194,10 @@ function oauthRelay(): Plugin {
             "content-type",
             upstream.headers.get("content-type") ?? "application/json",
           );
+          for (const name of ["x-codex-primary-used-percent", "x-codex-primary-window-minutes", "x-codex-primary-reset-at"]) {
+            const v = upstream.headers.get(name);
+            if (v) res.setHeader(name, v);
+          }
           if (req.method === "GET") {
             res.end(await upstream.text());
             return;

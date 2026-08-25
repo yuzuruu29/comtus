@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
-import type { AnthropicModelId, CodexModelInfo, Effort, OAuthAccount, ProviderId, StoredKey } from "./types";
+import type { AnthropicModelId, CodexModelInfo, CodexUsage, Effort, OAuthAccount, ProviderId, StoredKey } from "./types";
 import type { CallSettings } from "./llm";
 
 export type PlanTier = "free" | "sprint" | "scholar" | "mastery";
@@ -35,6 +35,7 @@ interface SettingsState {
   claudeOauthModel: AnthropicModelId;
   codexModel: string;
   codexModels: CodexModelInfo[];
+  codexUsage: CodexUsage | null;
   /* Multiple BYOK Keys Vault */
   storedKeys: StoredKey[];
   /* Plan & Token Balance Management */
@@ -58,6 +59,7 @@ interface SettingsState {
   consumeTokens: (amount: number) => void;
   setOAuthAccount: (account: OAuthAccount | null, which?: "claude-oauth" | "codex") => void;
   setCodexModels: (models: CodexModelInfo[]) => void;
+  setCodexUsage: (usage: CodexUsage | null) => void;
   hasProPlan: () => boolean;
   hasKey: () => boolean;
 }
@@ -82,9 +84,10 @@ export const useSettings = create<SettingsState>()(
       claudeOAuth: null,
       codexOAuth: null,
       claudeOauthModel: "claude-opus-5",
-      codexModel: "gpt-5.6-luna",
-      codexModels: CODEX_FALLBACK_MODELS,
-      isPro: false,
+  codexModel: "gpt-5.6-luna",
+  codexModels: CODEX_FALLBACK_MODELS,
+  codexUsage: null,
+  isPro: false,
       planTier: "free",
       tokenBalance: 0,
       tokensUsed: 0,
@@ -167,6 +170,7 @@ export const useSettings = create<SettingsState>()(
         if (!Array.isArray(models) || models.length === 0) return;
         set({ codexModels: models });
       },
+      setCodexUsage: (usage) => set(usage ? { codexUsage: usage } : { codexUsage: null }),
       hasProPlan: () => {
         const s = get();
         return Boolean(s.isPro && s.planTier && s.planTier !== "free");
@@ -198,6 +202,7 @@ export const useSettings = create<SettingsState>()(
             ? old.codexModel
             : "gpt-5.6-luna",
           codexModels: old.codexModels ?? CODEX_FALLBACK_MODELS,
+          codexUsage: old.codexUsage ?? null,
           isPro: old.isPro ?? false,
           planTier: old.planTier ?? "free",
           tokenBalance: old.tokenBalance ?? 0,

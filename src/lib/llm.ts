@@ -5,7 +5,7 @@ import { groundContext, type GroundingDoc } from "./retrieval";
 import { buildSearchQuery, searchWeb } from "./webSearch";
 import { webSearchGroundingClause, webSearchUserReminder } from "./webSearchPrompt";
 import { compatFetchBase } from "./compatRoute";
-import { CODEX_FALLBACK_MODELS } from "./settings";
+import { useSettings, CODEX_FALLBACK_MODELS } from "./settings";
 import { ensureFreshAccessToken, jwtClaims } from "./oauthProviders";
 
 /**
@@ -161,6 +161,31 @@ export function codexUsesLite(model: string): boolean {
 export const CODEX_MODELS: { id: string; label: string; note: string }[] = CODEX_FALLBACK_MODELS.map(
   (m) => ({ id: m.id, label: m.label, note: m.ctx ? `${m.ctx} context` : "" }),
 );
+
+/** Pure effort → wire tier mapping for Codex. The wire ladder accepts
+ *  xhigh; clamp only when the model's own roster says it doesn't. */
+export function codexEffort(effort: Effort, supportsXhigh: boolean): "medium" | "high" | "xhigh" {
+  if (effort === "medium") return "medium";
+  if (effort === "xhigh" && supportsXhigh) return "xhigh";
+  return "high";
+}
+
+function codexSupportsXhigh(model: string): boolean {
+  try {
+    const raw = localStorage.getItem("comtus-settings");
+    if (raw) {
+      const parsed = JSON.parse(raw) as {
+        state?: { codexModels?: { id?: string; levels?: string[] }[] };
+      };
+      const found = parsed.state?.codexModels?.find((m) => m.id === model);
+      if (found?.levels?.length) return found.levels.includes("xhigh");
+    }
+  } catch {
+    /* fall through to heuristic below */
+  }
+  // The 5.6 family advertises the full ladder; anything older clamps.
+  return /^gpt-5\.6|daybreak/i.test(model);
+}
 /** Human label for the active model across every provider — curated
  *  catalogue labels first, prettified ids as fallback. Never truncates
  *  mid-word like the old `.slice(0, 16)` did. */
@@ -242,6 +267,30 @@ function getResponses(cs: CallSettings): OpenAI {
       version: "0.144.1",
     },
   });
+}
+
+/** Best-effort read of the plan's usage window from the x-codex-primary-*
+ *  headers on a stream response; used for the card's usage line. The SDK
+ *  stream keeps the raw response — read structurally. */
+function captureCodexUsage(stream: AsyncIterable<unknown>): void {
+  const headers = (stream as unknown as { response?: { headers?: Headers } }).response?.headers;
+  if (!headers) return;
+  const parseNum = (v: string | null): number | undefined => {
+    if (!v) return undefined;
+    const n = Number.parseFloat(v);
+    return Number.isFinite(n) ? n : undefined;
+  };
+  const used = parseNum(headers.get("x-codex-primary-used-percent"));
+  if (used === undefined) return;
+  if (used <= 0) {
+    useSettings.getState().setCodexUsage(null);
+    return;
+  }
+  const windowMinutes = parseNum(headers.get("x-codex-primary-window-minutes")) ?? 0;
+  const resetSec = parseNum(headers.get("x-codex-primary-reset-at")) ?? 0;
+  useSettings
+    .getState()
+    .setCodexUsage({ usedPercent: used, windowMinutes, resetsAt: resetSec * 1000 });
 }
 
 export function isAbort(err: unknown): boolean {
@@ -589,7 +638,7 @@ async function streamCodex(
     input,
     stream: true as const,
     store: false as const,
-    reasoning: { effort: args.effort === "medium" ? ("medium" as const) : ("high" as const) },
+    reasoning: { effort: codexEffort(args.effort, codexSupportsXhigh(args.model)) },
   };
   let stream: AsyncIterable<OpenAI.Responses.ResponseStreamEvent>;
   try {
@@ -601,6 +650,7 @@ async function streamCodex(
     const { reasoning: _drop, ...rest } = base;
     stream = await client.responses.create(rest, { signal: args.signal });
   }
+  captureCodexUsage(stream);
 
   let thinking = "";
   let text = "";
@@ -898,7 +948,7 @@ async function codexText(
     input,
     stream: true as const,
     store: false as const,
-    reasoning: { effort: cs.effort === "medium" ? ("medium" as const) : ("high" as const) },
+    reasoning: { effort: codexEffort(cs.effort, codexSupportsXhigh(cs.model)) },
   };
   let stream: AsyncIterable<OpenAI.Responses.ResponseStreamEvent>;
   try {
@@ -910,6 +960,7 @@ async function codexText(
     const { reasoning: _drop, ...rest } = base;
     stream = await client.responses.create(rest, { signal });
   }
+  captureCodexUsage(stream);
   let out = "";
   for await (const event of stream) {
     const kind = (event as { type?: string }).type ?? "";
