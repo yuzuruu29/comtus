@@ -12,8 +12,8 @@
  *   PAYPAL_API_BASE        optional; default https://api-m.paypal.com (live)
  */
 
-import { json } from "../_http";
-import { SERVER_PLANS } from "../_pass";
+import { json } from "../http";
+import { SERVER_PLANS } from "../pass";
 
 export const config = { runtime: "nodejs" };
 

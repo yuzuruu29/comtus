@@ -57,7 +57,7 @@ describe("capture-order guard rails", () => {
 
 describe("pass issuance is deterministic per order", () => {
   it("re-deriving a pass for the same order yields the identical token", async () => {
-    const { issuePassForOrder, SERVER_PLANS } = await import("../_pass");
+    const { issuePassForOrder, SERVER_PLANS } = await import("../pass");
     const t1 = await issuePassForOrder(SERVER_PLANS.scholar, "ORDER123");
     const t2 = await issuePassForOrder(SERVER_PLANS.scholar, "ORDER123");
     expect(t1).toBe(t2);

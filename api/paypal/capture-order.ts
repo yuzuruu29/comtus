@@ -11,8 +11,8 @@
  *      UPSTASH_REDIS_REST_URL/TOKEN (optional ops record), PAYPAL_API_BASE.
  */
 
-import { json, withinIpThrottle } from "../_http";
-import { issuePassForOrder, SERVER_PLANS } from "../_pass";
+import { json, withinIpThrottle } from "../http";
+import { issuePassForOrder, SERVER_PLANS } from "../pass";
 
 export const config = { runtime: "nodejs" };
 

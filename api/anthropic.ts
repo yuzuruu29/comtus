@@ -18,7 +18,7 @@
  *   HOSTED_PROXY_OFF              set to "1" as a global kill switch
  */
 
-import { corsHeaders, json, withinIpThrottle } from "./_http";
+import { corsHeaders, json, withinIpThrottle } from "./http";
 
 export const config = { runtime: "nodejs" };
 
