@@ -16,7 +16,7 @@ function signPass(payload: Record<string, unknown>): string {
   return `comtus-pass-v1.${payloadB64}.${sig}`;
 }
 
-function proxyReq(body: object, pass?: string): Request {
+function proxyReq(body: object | string, pass?: string): Request {
   const headers: Record<string, string> = {
     origin: "http://127.0.0.1:5199",
     "content-type": "application/json",
@@ -31,7 +31,8 @@ function proxyReq(body: object, pass?: string): Request {
 }
 
 function mockFetch(opts: { incrResult?: number; upstream?: Response } = {}) {
-  return vi.fn(async (input: string | URL | Request) => {
+  return vi.fn(async (input: string | URL | Request, _init?: RequestInit) => {
+    void _init;
     const url = String(input instanceof Request ? input.url : input);
     if (url.includes("/incr/")) {
       return new Response(JSON.stringify({ result: opts.incrResult ?? 1 }), { status: 200 });
@@ -147,9 +148,10 @@ describe("hosted Anthropic proxy", () => {
     );
     expect(res.status).toBe(200);
 
-    const upstreamCall = fetchMock.mock.calls.find(([, init]) =>
-      Boolean(init && typeof init === "object" && "body" in init),
-    );
+    const upstreamCall = fetchMock.mock.calls.find((call) => {
+      const init = call[1] as RequestInit | undefined;
+      return Boolean(init && typeof init === "object" && "body" in init);
+    }) as [string | URL | Request, RequestInit] | undefined;
     const forwarded = JSON.parse((upstreamCall?.[1] as RequestInit).body as string);
     expect(forwarded.max_tokens).toBe(64000);
     expect(forwarded.model).toBe("claude-opus-5");

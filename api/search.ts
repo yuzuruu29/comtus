@@ -1,21 +1,38 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+export const config = { runtime: "edge" };
+
 import { runSearch } from "./_search-core";
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const query = String(req.query.q ?? "").trim();
+export default async function handler(req: Request): Promise<Response> {
+  const incoming = new URL(req.url);
+  const query = (incoming.searchParams.get("q") ?? "").trim();
   if (!query) {
-    return res.status(400).json({ error: "Missing search query parameter 'q'", results: [] });
+    return new Response(JSON.stringify({ error: "Missing search query parameter 'q'", results: [] }), {
+      status: 400,
+      headers: {
+        "content-type": "application/json",
+        "access-control-allow-origin": "*",
+      },
+    });
   }
-
-  // The desktop app has no same-origin /api, so let it hit this relay directly.
-  res.setHeader("Access-Control-Allow-Origin", "*");
 
   try {
     const { results, provider } = await runSearch(query);
-    res.setHeader("Cache-Control", "public, s-maxage=600, stale-while-revalidate=1800");
-    return res.status(200).json({ results, provider });
+    return new Response(JSON.stringify({ results, provider }), {
+      status: 200,
+      headers: {
+        "content-type": "application/json",
+        "access-control-allow-origin": "*",
+        "cache-control": "public, s-maxage=600, stale-while-revalidate=1800",
+      },
+    });
   } catch (err) {
     console.error("Search relay error:", err);
-    return res.status(500).json({ error: "Failed to fetch search results", results: [] });
+    return new Response(JSON.stringify({ error: "Failed to fetch search results", results: [] }), {
+      status: 500,
+      headers: {
+        "content-type": "application/json",
+        "access-control-allow-origin": "*",
+      },
+    });
   }
 }

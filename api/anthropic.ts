@@ -7,7 +7,7 @@
  *   POST /api/anthropic/paypal/capture-order       — capture + instant pass issuance
  */
 
-export const config = { runtime: "nodejs" };
+export const config = { runtime: "edge" };
 
 /* ── Shared HTTP plumbing ───────────────────────────────── */
 
@@ -337,10 +337,17 @@ async function handlePayPalCaptureOrder(req: Request, origin: string | null): Pr
 
     const initial = await paypal(`/v2/checkout/orders/${orderId}`, "GET", token);
     if (initial.status === 404) return json(404, { error: "Order not found." }, origin);
-    if (initial.status !== 200 || !initial.data.purchase_units?.length) {
+    const orderData = initial.data as {
+      status?: string;
+      purchase_units?: Array<{
+        amount?: { value?: string; currency_code?: string };
+        payments?: { captures?: Array<{ status?: string }> };
+      }>;
+    };
+    if (initial.status !== 200 || !orderData.purchase_units?.length) {
       return json(502, { error: "Could not verify the order with PayPal." }, origin);
     }
-    let order = initial.data;
+    let order = orderData;
 
     const unit = (order.purchase_units as Array<{ amount?: { value?: string; currency_code?: string } }>)[0];
     const amountOk = unit?.amount?.value === plan.price && unit?.amount?.currency_code === plan.currency;
