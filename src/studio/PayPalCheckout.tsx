@@ -32,16 +32,16 @@ declare global {
   }
 }
 
-async function postJson<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(path, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const data = (await res.json().catch(() => ({}))) as T & { error?: string };
-  if (!res.ok) throw new Error(data.error || "Something went wrong. Please try again.");
-  return data;
-}
+  async function postJson<T>(path: string, body: unknown): Promise<T> {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = (await res.json().catch(() => ({}))) as T & { error?: string };
+    if (!res.ok) throw new Error(data.error || "Something went wrong. Please try again.");
+    return data;
+  }
 
 export default function PayPalCheckout({
   plan,
@@ -101,7 +101,7 @@ export default function PayPalCheckout({
           createOrder: async () => {
             setError("");
             // Server owns the price — the browser only names the plan.
-            const { orderId } = await postJson<{ orderId: string }>("/api/paypal/create-order", {
+            const { orderId } = await postJson<{ orderId: string }>("/api/anthropic/paypal/create-order", {
               planId: plan.id,
             });
             return orderId;
@@ -112,7 +112,7 @@ export default function PayPalCheckout({
               // Capture happens on the server, which verifies the amount
               // against PayPal's records and issues the pass instantly.
               const { passToken } = await postJson<{ passToken: string }>(
-                "/api/paypal/capture-order",
+                "/api/anthropic/paypal/capture-order",
                 { orderId: data.orderID, planId: plan.id },
               );
               setSuccess(data.orderID);

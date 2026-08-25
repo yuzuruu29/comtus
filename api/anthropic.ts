@@ -1,26 +1,83 @@
 /**
- * Comtus hosted-models proxy (Vercel Edge Function).
+ * Comtus API — single file, no cross-module imports for Vercel nodejs runtime.
  *
- * The browser never holds the Anthropic key. Clients that purchased a
- * Smarter Models pass authenticate with an HMAC-signed pass token
- * (issued automatically by api/paypal/capture-order.ts at purchase time);
- * this function verifies the signature + expiry, enforces per-pass and
- * per-IP quotas (Upstash Redis REST, fail-closed), restricts traffic to
- * exactly POST /v1/messages on an allowlisted Claude model with bounded
- * max_tokens, and forwards to Anthropic with the server-held key,
- * streaming the SSE response straight back.
- *
- * Env (Vercel → Settings → Environment Variables):
- *   ANTHROPIC_HOSTED_KEY          sk-ant-… key, never in client code
- *   PASS_SIGNING_SECRET           same secret used by issuance
- *   UPSTASH_REDIS_REST_URL        REQUIRED — quota counting fails closed
- *   UPSTASH_REDIS_REST_TOKEN      REQUIRED
- *   HOSTED_PROXY_OFF              set to "1" as a global kill switch
+ * Routes:
+ *   POST /api/anthropic?p=v1/messages             — hosted-model proxy
+ *   POST /api/anthropic/paypal/create-order        — server-side PayPal order creation
+ *   POST /api/anthropic/paypal/capture-order       — capture + instant pass issuance
  */
 
-import { corsHeaders, json, withinIpThrottle } from "./http";
-
 export const config = { runtime: "nodejs" };
+
+/* ── Shared HTTP plumbing ───────────────────────────────── */
+
+const ALLOWED_ORIGINS = new Set([
+  "https://comtus-ai.vercel.app",
+  "https://www.comtus-ai.xyz",
+  "http://tauri.localhost",
+  "tauri://localhost",
+  "http://localhost:5173",
+  "http://localhost:5199",
+  "http://127.0.0.1:5199",
+  "http://localhost:4173",
+]);
+
+function corsHeaders(origin?: string | null): HeadersInit {
+  return origin && ALLOWED_ORIGINS.has(origin)
+    ? {
+        "access-control-allow-origin": origin,
+        "access-control-allow-headers": "content-type,x-api-key,anthropic-version",
+        "access-control-allow-methods": "POST,OPTIONS",
+      }
+    : {};
+}
+
+function json(status: number, body: Record<string, unknown>, origin?: string | null): Response {
+  return new Response(status === 204 ? null : JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json", ...corsHeaders(origin) },
+  });
+}
+
+async function hmacHex(input: string, secret: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(input));
+  let hex = "";
+  for (const b of new Uint8Array(sig)) hex += b.toString(16).padStart(2, "0");
+  return hex.slice(0, 24);
+}
+
+/** Best-effort per-IP hourly throttle backed by Upstash (no-op if unconfigured). */
+async function withinIpThrottle(req: Request, secret: string, limitPerHour: number): Promise<boolean> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token || !secret) return true;
+  const ip =
+    req.headers.get("x-real-ip") ??
+    (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ??
+    "unknown";
+  const bucket = Math.floor(Date.now() / 3600_000);
+  const key = `ipthrottle:${await hmacHex(`${ip}:${bucket}`, secret)}`;
+  try {
+    const res = await fetch(`${url}/incr/${key}`, { headers: { Authorization: `Bearer ${token}` } });
+    const { result } = (await res.json()) as { result?: number };
+    if (typeof result !== "number") return true;
+    if (result === 1) {
+      await fetch(`${url}/expire/${key}/3600`, { headers: { Authorization: `Bearer ${token}` } });
+    }
+    return result <= limitPerHour;
+  } catch {
+    return true;
+  }
+}
+
+/* ── Hosted-model pass system ───────────────────────────── */
 
 const ANTHROPIC_ORIGIN = "https://api.anthropic.com";
 const PASS_PREFIX = "comtus-pass-v1.";
@@ -32,10 +89,10 @@ const MAX_BODY_BYTES = 8 * 1024 * 1024;
 const IP_REQUESTS_PER_HOUR = 240;
 
 interface PassPayload {
-  j: string; // random id (quota counter key)
-  q: number; // allowed requests
-  e: number; // expiry, epoch seconds
-  n?: string; // plan name, for logs/support
+  j: string;
+  q: number;
+  e: number;
+  n?: string;
 }
 
 function b64urlDecode(s: string): string {
@@ -53,12 +110,10 @@ async function hmac(payloadB64: string): Promise<string> {
   );
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payloadB64));
   let hex = "";
-  const bytes = new Uint8Array(sig);
-  for (const b of bytes) hex += b.toString(16).padStart(2, "0");
+  for (const b of new Uint8Array(sig)) hex += b.toString(16).padStart(2, "0");
   return hex;
 }
 
-/** Verify signature (timing-safe-ish) and expiry; returns the payload. */
 async function verifyPass(token: string): Promise<PassPayload | null> {
   if (!token.startsWith(PASS_PREFIX)) return null;
   const rest = token.slice(PASS_PREFIX.length);
@@ -69,7 +124,6 @@ async function verifyPass(token: string): Promise<PassPayload | null> {
 
   const expected = await hmac(payloadB64);
   if (sigHex.length !== expected.length) return null;
-  // constant-time compare
   let diff = 0;
   for (let i = 0; i < expected.length; i++) diff |= sigHex.charCodeAt(i) ^ expected.charCodeAt(i);
   if (diff !== 0) return null;
@@ -98,9 +152,253 @@ async function withinQuota(jti: string, quota: number): Promise<boolean> {
   return result <= quota;
 }
 
+/* ── PayPal helpers ─────────────────────────────────────── */
+
+interface ServerPlan {
+  id: "sprint" | "scholar" | "mastery";
+  name: string;
+  price: string;
+  currency: "USD";
+  requests: number;
+  days: number;
+}
+
+const SERVER_PLANS: Record<string, ServerPlan> = {
+  sprint: { id: "sprint", name: "Sprint Pass", price: "2.99", currency: "USD", requests: 60, days: 60 },
+  scholar: { id: "scholar", name: "Scholar Pass", price: "6.99", currency: "USD", requests: 200, days: 120 },
+  mastery: { id: "mastery", name: "Mastery Pass", price: "14.99", currency: "USD", requests: 500, days: 180 },
+};
+
+function b64url(s: string): string {
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function deterministicJti(orderId: string, secret: string): Promise<string> {
+  return (await hmacHex(`jti:${orderId}`, secret)).slice(0, 12);
+}
+
+/** Mint the buyer's pass token for a verified PayPal order (idempotent). */
+async function issuePassForOrder(plan: ServerPlan, orderId: string): Promise<string> {
+  const secret = process.env.PASS_SIGNING_SECRET ?? "";
+  if (!secret) throw new Error("PASS_SIGNING_SECRET is not configured");
+  const j = await deterministicJti(orderId, secret);
+  const payload = {
+    j,
+    q: plan.requests,
+    e: Math.floor(Date.now() / 1000) + plan.days * 86400,
+    n: plan.name,
+  };
+  const payloadB64 = b64url(JSON.stringify(payload));
+  const sig = await hmac(payloadB64);
+  return `comtus-pass-v1.${payloadB64}.${sig}`;
+}
+
+const PAYPAL_BASE = process.env.PAYPAL_API_BASE || "https://api-m.paypal.com";
+
+async function paypalOauthToken(id: string, secret: string): Promise<string> {
+  const res = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${btoa(`${id}:${secret}`)}`,
+      "content-type": "application/x-www-form-urlencoded",
+    },
+    body: "grant_type=client_credentials",
+  });
+  if (!res.ok) throw new Error(`PayPal auth failed (${res.status})`);
+  const data = (await res.json()) as { access_token?: string };
+  if (!data.access_token) throw new Error("PayPal auth returned no token");
+  return data.access_token;
+}
+
+async function paypal(
+  path: string,
+  method: "GET" | "POST",
+  token: string,
+  body?: unknown,
+): Promise<{ status: number; data: Record<string, unknown> }> {
+  const res = await fetch(`${PAYPAL_BASE}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+      ...(method === "POST" ? { "paypal-request-id": `cap-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` } : {}),
+    },
+    body: method === "POST" ? JSON.stringify(body ?? {}) : undefined,
+  });
+  let data: Record<string, unknown> = {};
+  try {
+    data = (await res.json()) as Record<string, unknown>;
+  } catch {
+    /* empty body */
+  }
+  return { status: res.status, data };
+}
+
+/* ── Route dispatch ─────────────────────────────────────── */
+
 export default async function handler(req: Request): Promise<Response> {
   const origin = req.headers.get("origin");
+  const url = new URL(req.url);
 
+  // PayPal routes live under the same file to avoid Vercel nodejs module
+  // resolution issues with nested directories.
+  if (url.pathname.startsWith("/api/anthropic/paypal/")) {
+    return handlePayPal(req, origin);
+  }
+
+  // Default: hosted-model proxy
+  return handleAnthropicProxy(req, origin);
+}
+
+/* ── PayPal: create-order ───────────────────────────────── */
+
+async function handlePayPalCreateOrder(req: Request, origin: string | null): Promise<Response> {
+  const clientId = process.env.PAYPAL_CLIENT_ID ||
+    "BAAynutt7UG_TKFyejl9ht8OGDrlSrLtTkw7CY9sJtz88QPBBojk7Zq98tasmx4g2rhtyl4XaDTPpStcNY";
+  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+  if (!clientSecret) {
+    return json(503, { error: "Checkout is temporarily unavailable. Please try again later." }, origin);
+  }
+
+  let body: { planId?: string };
+  try {
+    body = (await req.json()) as { planId?: string };
+  } catch {
+    return json(400, { error: "Invalid JSON body." }, origin);
+  }
+
+  const plan = body.planId ? SERVER_PLANS[body.planId] : undefined;
+  if (!plan) return json(400, { error: "Unknown plan." }, origin);
+
+  try {
+    const token = await paypalOauthToken(clientId, clientSecret);
+    const res = await fetch(`${PAYPAL_BASE}/v2/checkout/orders`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "content-type": "application/json",
+        "paypal-request-id": `comtus-${plan.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      },
+      body: JSON.stringify({
+        intent: "CAPTURE",
+        purchase_units: [
+          {
+            description: `Comtus ${plan.name} — ${plan.requests} hosted requests`,
+            amount: { currency_code: plan.currency, value: plan.price },
+          },
+        ],
+        application_context: {
+          brand_name: "Comtus",
+          shipping_preference: "NO_SHIPPING",
+          user_action: "PAY_NOW",
+        },
+      }),
+    });
+    const data = (await res.json()) as { id?: string; message?: string };
+    if (!res.ok || !data.id) {
+      console.error("PayPal create-order failed:", res.status, data.message);
+      return json(502, { error: "Could not start checkout. Please try again." }, origin);
+    }
+    return json(200, { orderId: data.id }, origin);
+  } catch (e) {
+    console.error("create-order error:", e instanceof Error ? e.message : e);
+    return json(502, { error: "Could not start checkout. Please try again." }, origin);
+  }
+}
+
+/* ── PayPal: capture-order ──────────────────────────────── */
+
+async function handlePayPalCaptureOrder(req: Request, origin: string | null): Promise<Response> {
+  const clientId = process.env.PAYPAL_CLIENT_ID ||
+    "BAAynutt7UG_TKFyejl9ht8OGDrlSrLtTkw7CY9sJtz88QPBBojk7Zq98tasmx4g2rhtyl4XaDTPpStcNY";
+  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+  if (!clientSecret || !process.env.PASS_SIGNING_SECRET) {
+    return json(503, { error: "Fulfillment is temporarily unavailable. Payment was not captured." }, origin);
+  }
+
+  if (!(await withinIpThrottle(req, process.env.PASS_SIGNING_SECRET, 60))) {
+    return json(429, { error: "Too many requests. Try again later." }, origin);
+  }
+
+  let body: { orderId?: string; planId?: string };
+  try {
+    body = (await req.json()) as { orderId?: string; planId?: string };
+  } catch {
+    return json(400, { error: "Invalid JSON body." }, origin);
+  }
+  const { orderId } = body;
+  const plan = body.planId ? SERVER_PLANS[body.planId] : undefined;
+  if (!orderId || !/^[A-Z0-9]{5,32}$/i.test(orderId) || !plan) {
+    return json(400, { error: "Missing or invalid order reference." }, origin);
+  }
+
+  try {
+    const token = await paypalOauthToken(clientId, clientSecret);
+
+    const { status, data: order } = await paypal(`/v2/checkout/orders/${orderId}`, "GET", token);
+    if (status === 404) return json(404, { error: "Order not found." }, origin);
+    if (status !== 200 || !order.purchase_units?.length) {
+      return json(502, { error: "Could not verify the order with PayPal." }, origin);
+    }
+
+    const unit = (order.purchase_units as Array<{ amount?: { value?: string; currency_code?: string } }>)[0];
+    const amountOk = unit?.amount?.value === plan.price && unit?.amount?.currency_code === plan.currency;
+    if (!amountOk) {
+      console.error(`capture-order amount mismatch: order ${orderId} vs plan ${plan.id}`);
+      return json(400, { error: "This order does not match the selected plan." }, origin);
+    }
+    if (!["APPROVED", "COMPLETED"].includes((order.status as string) ?? "")) {
+      return json(409, { error: "The order is not approved for capture yet." }, origin);
+    }
+
+    if (order.status !== "COMPLETED") {
+      const cap = await paypal(`/v2/checkout/orders/${orderId}/capture`, "POST", token);
+      const alreadyCaptured =
+        cap.status === 422 && (cap.data.details as Array<{ issue?: string }> | undefined)?.some((d) => d.issue === "ORDER_ALREADY_CAPTURED");
+      if (cap.status !== 201 && !alreadyCaptured) {
+        console.error("PayPal capture failed:", cap.status, JSON.stringify(cap.data).slice(0, 300));
+        return json(502, { error: "Payment capture failed. If you were charged, contact support." }, origin);
+      }
+      const recheck = await paypal(`/v2/checkout/orders/${orderId}`, "GET", token);
+      if (recheck.status !== 200) {
+        return json(502, { error: "Could not confirm the captured payment." }, origin);
+      }
+      order = recheck.data;
+    }
+
+    const captureStatus = ((order.purchase_units as Array<{ payments?: { captures?: Array<{ status?: string }> } }>)[0]?.payments?.captures?.[0]?.status);
+    if (order.status !== "COMPLETED" || (captureStatus && captureStatus !== "COMPLETED")) {
+      return json(409, { error: "The payment has not completed yet." }, origin);
+    }
+
+    const passToken = await issuePassForOrder(plan, orderId);
+
+    return json(
+      200,
+      { passToken, requests: plan.requests, expiresDays: plan.days, orderId },
+      origin,
+    );
+  } catch (e) {
+    console.error("capture-order error:", e instanceof Error ? e.message : e);
+    return json(502, { error: "Fulfillment failed. If you were charged, contact support." }, origin);
+  }
+}
+
+/* ── PayPal router ──────────────────────────────────────── */
+
+async function handlePayPal(req: Request, origin: string | null): Promise<Response> {
+  if (req.method === "OPTIONS") return json(204, {}, origin);
+  if (req.method !== "POST") return json(405, { error: "POST only" }, origin);
+
+  const path = new URL(req.url).pathname;
+  if (path.endsWith("/create-order")) return handlePayPalCreateOrder(req, origin);
+  if (path.endsWith("/capture-order")) return handlePayPalCaptureOrder(req, origin);
+  return json(404, { error: "Not found." }, origin);
+}
+
+/* ── Hosted-model proxy ─────────────────────────────────── */
+
+async function handleAnthropicProxy(req: Request, origin: string | null): Promise<Response> {
   if (req.method === "OPTIONS") return json(204, {}, origin);
   if (req.method !== "POST") return json(405, { error: "POST only" }, origin);
 
@@ -132,8 +430,6 @@ export default async function handler(req: Request): Promise<Response> {
     return json(429, { error: "Too many requests from this network. Try again later." }, origin);
   }
 
-  // Only the chat-completions surface is proxied. Rewrites carry SDK
-  // subpaths as ?p=v1/messages; direct hits use the URL path.
   const incoming = new URL(req.url);
   const subPathRaw =
     incoming.searchParams.get("p") ??
@@ -150,9 +446,6 @@ export default async function handler(req: Request): Promise<Response> {
     return json(413, { error: "Request too large." }, origin);
   }
 
-  // Bound what a pass can spend per call: parseable JSON, allowlisted
-  // model, max_tokens clamped under the ceiling. Re-serialize so upstream
-  // receives exactly the fields we validated.
   let parsed: { model?: unknown; max_tokens?: unknown; stream?: unknown };
   try {
     parsed = JSON.parse(bodyText);
@@ -167,8 +460,6 @@ export default async function handler(req: Request): Promise<Response> {
       ? Math.min(Math.floor(parsed.max_tokens), MAX_TOKENS_CEILING)
       : MAX_TOKENS_CEILING;
 
-  // Quota is counted last, after every other gate — rejected requests
-  // must never consume a paid request.
   try {
     if (!(await withinQuota(pass.j, pass.q))) {
       return json(402, { error: "This pass has reached its request limit." }, origin);

@@ -1,6 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
+    { "source": "/api/paypal/create-order", "destination": "/api/anthropic/paypal/create-order" },
+    { "source": "/api/paypal/capture-order", "destination": "/api/anthropic/paypal/capture-order" },
     { "source": "/api/anthropic/:path*", "destination": "/api/anthropic?p=:path*" },
     { "source": "/api/compat/:provider/:path*", "destination": "/api/compat?p=:provider&path=:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
