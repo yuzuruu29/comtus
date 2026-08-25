@@ -20,7 +20,7 @@
 
 import { corsHeaders, json, withinIpThrottle } from "./_http";
 
-export const config = { runtime: "edge" };
+export const config = { runtime: "nodejs" };
 
 const ANTHROPIC_ORIGIN = "https://api.anthropic.com";
 const PASS_PREFIX = "comtus-pass-v1.";

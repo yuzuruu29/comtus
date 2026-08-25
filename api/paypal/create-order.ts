@@ -15,7 +15,7 @@
 import { json } from "../_http";
 import { SERVER_PLANS } from "../_pass";
 
-export const config = { runtime: "edge" };
+export const config = { runtime: "nodejs" };
 
 const PAYPAL_BASE = process.env.PAYPAL_API_BASE || "https://api-m.paypal.com";
 
