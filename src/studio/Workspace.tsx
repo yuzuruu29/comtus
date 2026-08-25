@@ -1,10 +1,10 @@
 import { useState, type ComponentType } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Books, CaretLeft, ChatCircle, GearSix, Notebook, SidebarSimple } from "@phosphor-icons/react";
+import { Books, CaretLeft, ChatCircle, GearSix, Notebook, SidebarSimple, UserCircle } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
 import { useCallSettings, useSettings } from "../lib/settings";
-import { MODELS } from "../lib/llm";
+import { effortLabelFor, modelLabelFor } from "../lib/llm";
 import { detectPlatform, isTauri } from "../lib/desktop";
 import StudyGlyph from "../components/icons/StudyGlyph";
 import { ProBadge } from "../components/brand/BrandControls";
@@ -59,12 +59,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
     setMobilePane("sources");
   };
 
-  const modelLabel =
-    cs.provider === "anthropic"
-      ? (MODELS.find((m) => m.id === cs.model)?.label ?? cs.model)
-      : (cs.model.split("/").pop() ?? cs.model).slice(0, 16);
-  const effortLabel =
-    cs.effort === "medium" ? "Steady" : cs.effort === "high" ? "Deep" : "Exhaustive";
+  const modelLabel = modelLabelFor(cs.provider, cs.model);
+  const effortLabel = effortLabelFor(cs.effort);
 
   const panes = panesFor(desk.layout);
 
@@ -362,6 +358,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               <button
                 key={id}
                 onClick={() => setMobilePane(id)}
+                aria-pressed={mobilePane === id}
                 className={`relative flex min-h-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-[var(--radius-control)] px-3 py-1.5 text-[10.5px] font-medium tracking-[0.08em] transition-colors duration-200 active:scale-95 ${
                   mobilePane === id ? "text-brasspale" : "text-muted"
                 }`}
@@ -373,7 +370,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                     className="absolute inset-0 rounded-[var(--radius-control)] bg-brass/[0.08]"
                   />
                 )}
-                <Icon size={20} weight="light" className="relative z-10" />
+                <Icon size={20} weight={mobilePane === id ? "fill" : "light"} className="relative z-10" />
                 <span className="relative z-10">{label}</span>
               </button>
             ))}
@@ -463,6 +460,7 @@ function WorkspaceHeader({
           onClick={onToggleSources}
           title={panes.sources ? "Retract Sources Sidebar" : "Expand Sources Sidebar"}
           aria-label="Toggle sources sidebar"
+          aria-pressed={panes.sources}
           className={`no-drag hidden h-8 w-8 items-center justify-center rounded-[var(--radius-control)] transition-all sm:flex ${
             panes.sources
               ? "text-brass bg-brass/10 hover:bg-brass/20"
@@ -527,6 +525,7 @@ function WorkspaceHeader({
             onClick={onToggleStudio}
             title={panes.studio ? "Retract Studio Sidebar" : "Expand Studio Sidebar"}
             aria-label="Toggle studio sidebar"
+            aria-pressed={panes.studio}
             className={`no-drag hidden h-8 w-8 items-center justify-center rounded-[var(--radius-control)] transition-all sm:flex ${
               panes.studio
                 ? "text-brass bg-brass/10 hover:bg-brass/20"
@@ -536,13 +535,14 @@ function WorkspaceHeader({
             <SidebarSimple size={16} weight={panes.studio ? "fill" : "light"} className="scale-x-[-1]" />
           </button>
 
-          {/* User Avatar Badge */}
+          {/* Account & Settings */}
           <button
             onClick={onSettings}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-brass/20 text-brass text-[11px] font-bold font-mono hover:brightness-110 transition-all select-none"
-            title="User Profile & Settings"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-brass transition-all hover:bg-brass/10 hover:text-brasspale active:scale-95"
+            title="Account & Settings"
+            aria-label="Account and settings"
           >
-            N
+            <UserCircle size={21} weight="light" />
           </button>
         </div>
         <CaptionButtons />
@@ -604,7 +604,7 @@ function RailButton({
         <Icon size={16} weight="light" />
       </button>
       <span
-        className={`pointer-events-none absolute top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-control)] border border-hairline bg-surface px-2 py-1 text-[11px] text-ink opacity-0 transition-opacity group-hover:opacity-100 ${
+        className={`pointer-events-none absolute top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-control)] border border-hairline bg-surface px-2 py-1 text-[11px] text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 ${
           side === "left" ? "left-full ml-2" : "right-full mr-2"
         }`}
       >

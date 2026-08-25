@@ -34,6 +34,7 @@ import type { ProviderId, StoredKey } from "../lib/types";
 import { STUDY_PLANS, decodePassInfo, planTierForRequests, type StudyPlan } from "../lib/paypal";
 import PayPalCheckout from "./PayPalCheckout";
 import DataTrustPanel from "./DataTrustPanel";
+import SubscriptionConnect from "./SubscriptionConnect";
 import { isTauri } from "../lib/desktop";
 import { requestUpdateCheck } from "./useUpdater";
 import { startOpenRouterOAuth } from "../lib/openrouterAuth";
@@ -202,6 +203,13 @@ export default function SettingsModal({
   const saveAndTest = async () => {
     setErr("");
     setOkProvider(null);
+    // Subscription sign-ins are validated at connect time — just persist
+    // shared preferences and leave the provider untouched.
+    if (draft.provider === "claude-oauth" || draft.provider === "codex") {
+      useSettings.getState().update({ effort: draft.effort });
+      setOkProvider(draft.provider);
+      return;
+    }
     const cs = activeSettings();
     if (cs.provider === "openai-compatible" && !/^https?:\/\//i.test(cs.baseUrl)) {
       setErr("The base URL must be a full http(s) URL, including /v1.");
@@ -541,6 +549,9 @@ export default function SettingsModal({
                   </div>
                 )}
               </div>
+
+              {/* Subscription sign-ins — Claude Pro/Max & ChatGPT (Codex) */}
+              <SubscriptionConnect />
 
               {/* Curated Free Models Grid */}
               <div className="space-y-3">

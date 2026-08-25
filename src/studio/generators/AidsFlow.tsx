@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { mathRemarkPlugins, mathRehypePlugins } from "../../lib/markdownMath";
 import { externalMarkdownComponents } from "../ExternalLink";
 import { motion } from "motion/react";
 import {
@@ -165,7 +166,11 @@ export function DocViewer({ payload }: { payload: DocPayload }) {
         {copied ? "copied" : "copy"}
       </button>
       <div className="md pt-10">
-        <ReactMarkdown remarkPlugins={[remarkGfm]} components={externalMarkdownComponents}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, ...mathRemarkPlugins]}
+          rehypePlugins={[...mathRehypePlugins]}
+          components={externalMarkdownComponents}
+        >
           {payload.markdown}
         </ReactMarkdown>
       </div>
@@ -541,7 +546,7 @@ export function PresentationConfigForm({
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
 
-  const isAnthropic = cs.provider === "anthropic";
+  const isAnthropic = cs.provider === "anthropic" || cs.provider === "claude-oauth";
 
   const STYLES = [
     { name: "Lecture Deck", desc: "Comprehensive slide-by-slide concepts & teaching notes" },

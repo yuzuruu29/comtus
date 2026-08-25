@@ -9,7 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { useSettings, useCallSettings } from "../lib/settings";
 import { CURATED_FREE_MODELS } from "./SettingsModal";
-import { MODELS } from "../lib/llm";
+import { MODELS, CODEX_MODELS } from "../lib/llm";
 import type { AnthropicModelId } from "../lib/types";
 
 export default function ModelPickerMenu({
@@ -60,7 +60,23 @@ export default function ModelPickerMenu({
     setOpen(false);
   };
 
-  const activeModelId = cs.provider === "anthropic" ? cs.model : s.compatModel;
+  const selectClaudeOauthModel = (modelId: AnthropicModelId) => {
+    s.update({
+      provider: "claude-oauth",
+      claudeOauthModel: modelId,
+    });
+    setOpen(false);
+  };
+
+  const selectCodexModel = (modelId: string) => {
+    s.update({
+      provider: "codex",
+      codexModel: modelId,
+    });
+    setOpen(false);
+  };
+
+  const activeModelId = cs.provider === "openai-compatible" ? s.compatModel : cs.model;
 
   return (
     <div ref={ref} className="relative">
@@ -77,7 +93,7 @@ export default function ModelPickerMenu({
             : "border-brass/35 bg-brass/[0.07] text-brasspale hover:bg-brass/[0.14]"
         }`}
       >
-        {cs.provider === "anthropic" ? (
+        {cs.provider === "anthropic" || cs.provider === "claude-oauth" ? (
           <Crown size={11} weight="fill" className="shrink-0 text-brass" />
         ) : (
           <Sparkle size={10} weight="fill" className="shrink-0 text-brass" />
@@ -144,6 +160,74 @@ export default function ModelPickerMenu({
                     </button>
                   );
                 })}
+              </div>
+            )}
+
+            {/* Subscription sign-ins — only when connected */}
+            {(s.claudeOAuth || s.codexOAuth) && (
+              <div className="mb-2 space-y-1">
+                <div className="px-2 pt-1 pb-0.5 font-mono text-[9.5px] uppercase tracking-wider text-brasspale flex items-center gap-1">
+                  <Crown size={11} weight="fill" className="text-brass" />
+                  <span>Your Subscriptions</span>
+                </div>
+                {s.claudeOAuth &&
+                  MODELS.map((m) => {
+                    const isSelected = cs.provider === "claude-oauth" && cs.model === m.id;
+                    return (
+                      <button
+                        key={`claude-oauth-${m.id}`}
+                        type="button"
+                        onClick={() => selectClaudeOauthModel(m.id)}
+                        className={`w-full flex items-center justify-between rounded-xl px-2.5 py-2 text-left transition-all ${
+                          isSelected
+                            ? "bg-brass/20 text-brasspale font-medium border border-brass/40 shadow-sm"
+                            : "hover:bg-ink/[0.04] text-ink"
+                        }`}
+                      >
+                        <div className="min-w-0 flex items-center gap-2">
+                          <Crown size={14} className={isSelected ? "text-brass" : "text-muted"} />
+                          <div>
+                            <div className="text-[12.5px] font-medium leading-tight truncate">
+                              {m.label} · Claude account
+                            </div>
+                            <div className="font-mono text-[9.5px] text-muted truncate">
+                              your Claude subscription
+                            </div>
+                          </div>
+                        </div>
+                        {isSelected && <Check size={14} className="text-brasspale shrink-0 ml-2" />}
+                      </button>
+                    );
+                  })}
+                {s.codexOAuth &&
+                  CODEX_MODELS.map((m) => {
+                    const isSelected = cs.provider === "codex" && cs.model === m.id;
+                    return (
+                      <button
+                        key={`codex-${m.id}`}
+                        type="button"
+                        onClick={() => selectCodexModel(m.id)}
+                        className={`w-full flex items-center justify-between rounded-xl px-2.5 py-2 text-left transition-all ${
+                          isSelected
+                            ? "bg-brass/20 text-brasspale font-medium border border-brass/40 shadow-sm"
+                            : "hover:bg-ink/[0.04] text-ink"
+                        }`}
+                      >
+                        <div className="min-w-0 flex items-center gap-2">
+                          <Sparkle size={14} className={isSelected ? "text-brass" : "text-muted"} />
+                          <div>
+                            <div className="text-[12.5px] font-medium leading-tight truncate">
+                              {m.label} · ChatGPT account
+                            </div>
+                            <div className="font-mono text-[9.5px] text-muted truncate">
+                              {m.note}
+                            </div>
+                          </div>
+                        </div>
+                        {isSelected && <Check size={14} className="text-brasspale shrink-0 ml-2" />}
+                      </button>
+                    );
+                  })}
               </div>
             )}
 

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
-import type { AnthropicModelId, Effort, ProviderId, StoredKey } from "./types";
+import type { AnthropicModelId, Effort, OAuthAccount, ProviderId, StoredKey } from "./types";
 import type { CallSettings } from "./llm";
 
 export type PlanTier = "free" | "sprint" | "scholar" | "mastery";
@@ -17,6 +17,11 @@ interface SettingsState {
   compatBaseUrl: string; // full base URL, includes /v1
   compatModel: string; // free-text model id
   recentModels: string[];
+  /* Subscription sign-ins — Claude Pro/Max and ChatGPT (Codex). */
+  claudeOAuth: OAuthAccount | null;
+  codexOAuth: OAuthAccount | null;
+  claudeOauthModel: AnthropicModelId;
+  codexModel: string;
   /* Multiple BYOK Keys Vault */
   storedKeys: StoredKey[];
   /* Plan & Token Balance Management */
@@ -38,6 +43,7 @@ interface SettingsState {
   applyStoredKey: (id: string) => void;
   activateProPass: (passCode: string, planTier?: PlanTier, tokenAmount?: number) => void;
   consumeTokens: (amount: number) => void;
+  setOAuthAccount: (account: OAuthAccount | null, which?: "claude-oauth" | "codex") => void;
   hasProPlan: () => boolean;
   hasKey: () => boolean;
 }
@@ -59,6 +65,10 @@ export const useSettings = create<SettingsState>()(
         "nvidia/nemotron-3.5-lightning:free",
       ],
       storedKeys: [],
+      claudeOAuth: null,
+      codexOAuth: null,
+      claudeOauthModel: "claude-opus-5",
+      codexModel: "gpt-5-codex",
       isPro: false,
       planTier: "free",
       tokenBalance: 0,
@@ -130,6 +140,14 @@ export const useSettings = create<SettingsState>()(
           tokensUsed: (prev.tokensUsed || 0) + amount,
         }));
       },
+      setOAuthAccount: (account, which) => {
+        const slot = which ?? account?.provider;
+        if (slot === "claude-oauth") {
+          set(account ? { claudeOAuth: account, provider: "claude-oauth" } : { claudeOAuth: null });
+        } else if (slot === "codex") {
+          set(account ? { codexOAuth: account, provider: "codex" } : { codexOAuth: null });
+        }
+      },
       hasProPlan: () => {
         const s = get();
         return Boolean(s.isPro && s.planTier && s.planTier !== "free");
@@ -137,12 +155,14 @@ export const useSettings = create<SettingsState>()(
       hasKey: () => {
         const s = get();
         if (s.provider === "anthropic") return s.anthropicKey.trim().length > 10;
+        if (s.provider === "claude-oauth") return Boolean(s.claudeOAuth?.accessToken);
+        if (s.provider === "codex") return Boolean(s.codexOAuth?.accessToken);
         return s.compatBaseUrl.trim().length > 8 && s.compatModel.trim().length > 0;
       },
     }),
     {
       name: "comtus-settings",
-      version: 6,
+      version: 7,
       migrate: (persisted, version) => {
         const old = persisted as Partial<SettingsState> & {
           apiKey?: string;
@@ -152,6 +172,10 @@ export const useSettings = create<SettingsState>()(
           recentModels: ["openrouter/free", "dots-studio/dots-3-note-preview:free", "nvidia/nemotron-3.5-lightning:free"],
           ...old,
           storedKeys: old.storedKeys || [],
+          claudeOAuth: old.claudeOAuth ?? null,
+          codexOAuth: old.codexOAuth ?? null,
+          claudeOauthModel: old.claudeOauthModel ?? "claude-opus-5",
+          codexModel: old.codexModel ?? "gpt-5-codex",
           isPro: old.isPro ?? false,
           planTier: old.planTier ?? "free",
           tokenBalance: old.tokenBalance ?? 0,
@@ -192,22 +216,41 @@ export const useSettings = create<SettingsState>()(
  *  workspace re-renders in a loop and React tears the pane down. */
 export function useCallSettings(): CallSettings {
   return useSettings(
-    useShallow((s) =>
-      s.provider === "anthropic"
-        ? {
-            provider: "anthropic" as const,
-            apiKey: s.anthropicKey,
-            baseUrl: s.anthropicBaseUrl,
-            model: s.anthropicModel,
-            effort: s.effort,
-          }
-        : {
-            provider: "openai-compatible" as const,
-            apiKey: s.compatKey,
-            baseUrl: s.compatBaseUrl,
-            model: s.compatModel,
-            effort: s.effort,
-          },
-    ),
+    useShallow((s) => {
+      if (s.provider === "anthropic") {
+        return {
+          provider: "anthropic" as const,
+          apiKey: s.anthropicKey,
+          baseUrl: s.anthropicBaseUrl,
+          model: s.anthropicModel,
+          effort: s.effort,
+        };
+      }
+      if (s.provider === "claude-oauth") {
+        return {
+          provider: "claude-oauth" as const,
+          apiKey: s.claudeOAuth?.accessToken ?? "",
+          baseUrl: "",
+          model: s.claudeOauthModel,
+          effort: s.effort,
+        };
+      }
+      if (s.provider === "codex") {
+        return {
+          provider: "codex" as const,
+          apiKey: s.codexOAuth?.accessToken ?? "",
+          baseUrl: "",
+          model: s.codexModel,
+          effort: s.effort,
+        };
+      }
+      return {
+        provider: "openai-compatible" as const,
+        apiKey: s.compatKey,
+        baseUrl: s.compatBaseUrl,
+        model: s.compatModel,
+        effort: s.effort,
+      };
+    }),
   );
 }

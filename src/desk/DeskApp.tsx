@@ -5,7 +5,7 @@ import { GearSix } from "@phosphor-icons/react";
 import { createNotebook, db } from "../lib/db";
 import type { Notebook as NotebookRow } from "../lib/types";
 import { useCallSettings, useSettings } from "../lib/settings";
-import { MODELS } from "../lib/llm";
+import { effortLabelFor, modelLabelFor } from "../lib/llm";
 import { isTauri } from "../lib/desktop";
 import ComtusLogo from "../components/brand/ComtusLogo";
 import { ProBadge } from "../components/brand/BrandControls";
@@ -143,12 +143,8 @@ export default function DeskApp() {
     if (notebookId) navigate(`/studio/${notebookId}`, { replace: true });
   }, [navigate, notebookId]);
 
-  const modelLabel =
-    cs.provider === "anthropic"
-      ? (MODELS.find((m) => m.id === cs.model)?.label ?? cs.model)
-      : (cs.model.split("/").pop() ?? cs.model).slice(0, 16);
-  const effortLabel =
-    cs.effort === "medium" ? "Steady" : cs.effort === "high" ? "Deep" : "Exhaustive";
+  const modelLabel = modelLabelFor(cs.provider, cs.model);
+  const effortLabel = effortLabelFor(cs.effort);
 
   return (
     <DeskShell

@@ -8,6 +8,7 @@ import {
 } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { mathRemarkPlugins, mathRehypePlugins } from "../lib/markdownMath";
 import { externalMarkdownComponents } from "./ExternalLink";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -1199,7 +1200,11 @@ const MessageBubble = memo(function MessageBubble({
       {/* Formatted Markdown Content */}
       {msg.content ? (
         <div className="md text-[14.5px] leading-relaxed text-ink/90">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={externalMarkdownComponents}>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, ...mathRemarkPlugins]}
+            rehypePlugins={[...mathRehypePlugins]}
+            components={externalMarkdownComponents}
+          >
             {msg.content}
           </ReactMarkdown>
           {streaming && (

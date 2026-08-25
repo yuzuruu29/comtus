@@ -109,6 +109,105 @@ function compatRelay(): Plugin {
   };
 }
 
+/** Dev-server mirrors of the OAuth relays (api/claude-auth.ts and
+ *  api/codex.ts on Vercel): Claude's token endpoint sends no CORS headers
+ *  to third-party origins and the Codex backend blocks cross-origin reads
+ *  entirely, so both sign-in paths are relayed same-origin in production —
+ *  these middlewares keep `pnpm dev` behaving identically. */
+function oauthRelay(): Plugin {
+  const CODEX_UPSTREAM = "https://chatgpt.com";
+  return {
+    name: "oauth-relay",
+    configureServer(server) {
+      // Claude OAuth token exchange/refresh → platform.claude.com.
+      server.middlewares.use(async (req, res, next) => {
+        const url = new URL(req.url ?? "/", "http://localhost");
+        if (url.pathname !== "/api/claude-auth") return next();
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ error: "POST only" }));
+          return;
+        }
+        const chunks: Buffer[] = [];
+        for await (const chunk of req) chunks.push(chunk as Buffer);
+        try {
+          const upstream = await fetch("https://platform.claude.com/v1/oauth/token", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: Buffer.concat(chunks).toString("utf8") || "{}",
+          });
+          res.statusCode = upstream.status;
+          res.setHeader(
+            "content-type",
+            upstream.headers.get("content-type") ?? "application/json",
+          );
+          res.end(await upstream.text());
+        } catch (err) {
+          res.statusCode = 502;
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ error: `Claude auth relay failed: ${err instanceof Error ? err.message : "unknown"}` }));
+        }
+      });
+
+      // Codex inference relay → chatgpt.com/backend-api/codex (SSE streams
+      // through chunk-by-chunk, same as the compat mirror).
+      server.middlewares.use(async (req, res, next) => {
+        const url = new URL(req.url ?? "/", "http://localhost");
+        const m = url.pathname.match(/^\/api\/codex(\/.*)?$/);
+        if (!m) return next();
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ error: "POST only" }));
+          return;
+        }
+        const authorization = req.headers["authorization"];
+        if (!authorization || !String(authorization).startsWith("Bearer ")) {
+          res.statusCode = 401;
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ error: "Sign in with your ChatGPT account in Comtus Settings first." }));
+          return;
+        }
+        const subPath = m[1] || "/";
+        const headers: Record<string, string> = {
+          authorization: String(authorization),
+          "content-type": String(req.headers["content-type"] ?? "application/json"),
+          accept: String(req.headers["accept"] ?? "text/event-stream"),
+        };
+        if (req.headers["chatgpt-account-id"]) headers["chatgpt-account-id"] = String(req.headers["chatgpt-account-id"]);
+        if (req.headers["originator"]) headers.originator = String(req.headers["originator"]);
+        const bodyChunks: Buffer[] = [];
+        for await (const chunk of req) bodyChunks.push(chunk as Buffer);
+        try {
+          const upstream = await fetch(`${CODEX_UPSTREAM}/backend-api/codex${subPath}${url.search}`, {
+            method: "POST",
+            headers,
+            body: Buffer.concat(bodyChunks).toString("utf8"),
+          });
+          res.statusCode = upstream.status;
+          res.setHeader(
+            "content-type",
+            upstream.headers.get("content-type") ?? "application/json",
+          );
+          if (upstream.body) {
+            await pipeline(
+              Readable.fromWeb(upstream.body as unknown as WebReadableStream<Uint8Array>),
+              res,
+            );
+          } else {
+            res.end();
+          }
+        } catch (err) {
+          res.statusCode = 502;
+          res.setHeader("content-type", "application/json");
+          res.end(JSON.stringify({ error: `Codex relay failed: ${err instanceof Error ? err.message : "unknown"}` }));
+        }
+      });
+    },
+  };
+}
+
 /** public/ files skip the bundle pipeline, so stamp the service worker's
  *  cache version post-build — each deploy rotates the shell cache. */
 function stampSwVersion(): Plugin {
@@ -147,7 +246,7 @@ function copyDesktopReleases(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), compatRelay(), stampSwVersion(), copyDesktopReleases()],
+  plugins: [react(), tailwindcss(), compatRelay(), oauthRelay(), stampSwVersion(), copyDesktopReleases()],
   server: {
     // Tauri's devUrl and the browser smoke suite both depend on this exact port.
     host: "127.0.0.1",

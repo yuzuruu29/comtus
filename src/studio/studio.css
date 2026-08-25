@@ -56,6 +56,18 @@
   overflow-x: auto;
 }
 .md pre code { background: none; padding: 0; }
+
+/* KaTeX math — display equations breathe and scroll on narrow panes;
+   inline math inherits the surrounding text color in every theme. */
+.md .katex { color: inherit; }
+.md .katex-display {
+  margin: 1.1em 0;
+  padding: 0.35em 0.2em;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.md .katex-display > .katex { white-space: normal; }
+.md .katex-error { color: #b3543f; font-family: var(--font-mono); font-size: 0.85em; }
 .md table {
   display: block;
   width: 100%;
@@ -493,18 +505,18 @@ button[data-armed="true"] .send-halo {
   );
 }
 
-/* Unconditionally eradicate yellow outline rectangles on composer textarea and all typing elements */
-.composer-shell textarea,
-.composer-shell textarea:focus,
-.composer-shell textarea:focus-visible,
-.composer-shell button:focus-visible,
-.composer-shell *,
-textarea:focus,
-textarea:focus-visible,
-input:focus,
-input:focus-visible {
-  outline: none !important;
-  outline-offset: 0 !important;
+/* Composer textarea: suppress the browser's default focus rectangle —
+   the shell lights a brass ring via [data-focused], and keyboard users
+   still get an inset brass ring on the textarea itself. Every other
+   control keeps the global brass :focus-visible ring from index.css;
+   the old blanket `outline: none !important` on all inputs/buttons
+   silently broke keyboard navigation app-wide and is gone. */
+.composer-shell textarea {
+  outline: none;
+}
+.composer-shell textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brass) 55%, transparent);
+  outline-offset: -2px;
 }
 
 /* Keycap chips in the composer footer */
