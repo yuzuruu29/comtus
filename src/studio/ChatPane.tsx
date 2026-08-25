@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  memo,
   useRef,
   useState,
 } from "react";
@@ -47,6 +48,8 @@ import {
 import type { ChatMessage, ChatSession, Notebook, Citation, WebSearchMeta } from "../lib/types";
 import { deriveSessionTitle } from "../lib/sessionText";
 import { streamChat, friendlyError, isAbort } from "../lib/llm";
+import type { ChatReply } from "../lib/llm";
+import { useSmoothText } from "../lib/useSmoothText";
 import { useSettings, useCallSettings } from "../lib/settings";
 import StudyGlyph from "../components/icons/StudyGlyph";
 import { Collapse, SOFT, SPRING, HOUSE, Spotlight, BorderBeam } from "./fx";
@@ -100,7 +103,6 @@ export default function ChatPane({
   const [menuOpen, setMenuOpen] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
-  const [armedDeleteId, setArmedDeleteId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sourceCount, setSourceCount] = useState(0);
   const [input, setInput] = useState("");
@@ -128,6 +130,18 @@ export default function ChatPane({
   const [reasoningEnabled, setReasoningEnabled] = useState(true);
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
+
+  // Typewriter reveal of the streaming answer. The finished reply is held in
+  // finalizeRef until the reveal has drained, so the tail doesn't snap in at
+  // network speed the instant the stream ends.
+  const smoothed = useSmoothText(streaming?.text ?? "", !!streaming);
+  const finalizeRef = useRef<{
+    reply: ChatReply;
+    sessionId: string;
+    notebookId: string;
+    token: number;
+  } | null>(null);
+  const [finalizeTick, setFinalizeTick] = useState(0);
 
   const activeSession = sessions.find((s) => s.id === activeId) ?? null;
 
@@ -179,7 +193,7 @@ export default function ChatPane({
   useEffect(() => {
     const el = scrollRef.current;
     if (el && stickBottom.current) el.scrollTop = el.scrollHeight;
-  }, [streaming, messages]);
+  }, [streaming, messages, smoothed.text]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.visualViewport) return;
@@ -266,7 +280,6 @@ export default function ChatPane({
   }, [notebook]);
 
   const startRename = (session: ChatSession) => {
-    setArmedDeleteId(null);
     setRenamingId(session.id);
     setRenameDraft(session.title);
   };
@@ -286,11 +299,6 @@ export default function ChatPane({
 
   const removeSession = async (id: string) => {
     if (!notebook) return;
-    if (armedDeleteId !== id) {
-      setArmedDeleteId(id);
-      return;
-    }
-    setArmedDeleteId(null);
     await deleteChatSession(id);
     const rest = sessions.filter((s) => s.id !== id);
     setSessions(rest);
@@ -319,12 +327,17 @@ export default function ChatPane({
     stickBottom.current = true;
   };
 
-  const handleSaveToNote = async (title: string, text: string) => {
-    if (!notebook) return;
-    await createCustomNote(notebook.id, title, text);
-    setToastNoteSaved(true);
-    setTimeout(() => setToastNoteSaved(false), 2400);
-  };
+  const handleSaveToNote = useCallback(
+    async (title: string, text: string) => {
+      if (!notebook) return;
+      await createCustomNote(notebook.id, title, text);
+      setToastNoteSaved(true);
+      setTimeout(() => setToastNoteSaved(false), 2400);
+    },
+    [notebook],
+  );
+
+  const toggleThinking = useCallback(() => setThinkingOpen((v) => !v), []);
 
   const send = useCallback(
     async (raw?: string) => {
@@ -416,32 +429,56 @@ export default function ChatPane({
             setThinkingOpen(false);
           },
         });
-        const assistant: ChatMessage = {
-          id: uid(),
-          notebookId: notebook.id,
+        // Answer complete — hold it until the typewriter catches up so the
+        // tail doesn't pop in at network speed (commit happens in the drain
+        // effect below).
+        finalizeRef.current = {
+          reply,
           sessionId,
-          role: "assistant",
-          content: reply.text,
-          thinking: reply.thinking,
-          citations: reply.citations,
-          webSearch: reply.webSearch,
-          createdAt: Date.now(),
+          notebookId: notebook.id,
+          token: loadToken.current,
         };
-        await saveMessage(assistant);
-        setMessages((m) => [...m, assistant]);
-        bumpSession(sessionId);
+        abortRef.current = null;
+        setFinalizeTick((n) => n + 1);
       } catch (err) {
+        abortRef.current = null;
+        finalizeRef.current = null;
+        setStreaming(null);
         if (!isAbort(err) && !controller.signal.aborted) {
           setError(friendlyError(err));
           if (searchMetaRef.current) setSearchBanner(searchMetaRef.current);
         }
-      } finally {
-        abortRef.current = null;
-        setStreaming(null);
       }
     },
     [input, notebook, streaming, hasKey, cs, messages, activeId, activeSession, reasoningEnabled, webSearchEnabled],
   );
+
+  // Commit a finished answer once its typewriter reveal has drained.
+  useEffect(() => {
+    const fin = finalizeRef.current;
+    if (!fin || !smoothed.caughtUp) return;
+    finalizeRef.current = null;
+    void (async () => {
+      const assistant: ChatMessage = {
+        id: uid(),
+        notebookId: fin.notebookId,
+        sessionId: fin.sessionId,
+        role: "assistant",
+        content: fin.reply.text,
+        thinking: fin.reply.thinking,
+        citations: fin.reply.citations,
+        webSearch: fin.reply.webSearch,
+        createdAt: Date.now(),
+      };
+      await saveMessage(assistant);
+      setStreaming(null);
+      // Switched chats while the reveal drained — persist, but don't touch
+      // the view that's now showing a different thread.
+      if (fin.token !== loadToken.current) return;
+      setMessages((m) => [...m, assistant]);
+      bumpSession(fin.sessionId);
+    })();
+  }, [finalizeTick, smoothed.caughtUp]);
 
   const hasText = !!input.trim();
   const tkEstimate = useMemo(
@@ -514,7 +551,6 @@ export default function ChatPane({
                 {sessions.map((session) => {
                   const isActive = session.id === activeId;
                   const isRenaming = renamingId === session.id;
-                  const isArmed = armedDeleteId === session.id;
 
                   if (isRenaming) {
                     return (
@@ -556,9 +592,7 @@ export default function ChatPane({
                         {/* Timestamp — visible at rest, fades out on hover */}
                         <span
                           className={`font-mono text-[9px] text-muted/60 transition-all duration-200 ${
-                            isArmed
-                              ? "opacity-0 invisible scale-95"
-                              : "opacity-70 group-hover:opacity-0 group-hover:invisible group-hover:scale-95"
+                            "opacity-70 group-hover:opacity-0 group-hover:invisible group-hover:scale-95"
                           }`}
                         >
                           {timeAgo(session.updatedAt)}
@@ -566,11 +600,7 @@ export default function ChatPane({
 
                         {/* Edit & Delete Actions — hidden at rest, fades & glides in on hover */}
                         <div
-                          className={`absolute right-0 flex items-center gap-0.5 transition-all duration-200 ${
-                            isArmed
-                              ? "opacity-100 translate-x-0 pointer-events-auto"
-                              : "opacity-0 translate-x-1 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 group-hover:pointer-events-auto"
-                          }`}
+                          className="absolute right-0 flex items-center gap-0.5 opacity-0 translate-x-1 pointer-events-none transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-hover:pointer-events-auto"
                         >
                           <button
                             type="button"
@@ -590,15 +620,11 @@ export default function ChatPane({
                               e.stopPropagation();
                               void removeSession(session.id);
                             }}
-                            className={`flex h-5 w-5 items-center justify-center rounded transition-colors ${
-                              isArmed
-                                ? "bg-rust/20 text-rust"
-                                : "text-muted/70 hover:bg-rust/15 hover:text-rust"
-                            }`}
-                            title={isArmed ? "Click again to confirm delete" : "Delete"}
+                            className="flex h-5 w-5 items-center justify-center rounded text-muted/70 hover:bg-rust/15 hover:text-rust transition-colors"
+                            title="Delete"
                             aria-label="Delete"
                           >
-                            <Trash size={12} weight={isArmed ? "fill" : "bold"} />
+                            <Trash size={12} weight="bold" />
                           </button>
                         </div>
                       </div>
@@ -673,7 +699,7 @@ export default function ChatPane({
                 key={m.id}
                 msg={m}
                 onCite={onNavigateSources}
-                onSaveToNote={(title, content) => void handleSaveToNote(title, content)}
+                onSaveToNote={handleSaveToNote}
               />
             ))}
 
@@ -684,7 +710,7 @@ export default function ChatPane({
                   notebookId: notebook.id,
                   sessionId: activeId ?? undefined,
                   role: "assistant",
-                  content: streaming.text,
+                  content: smoothed.text,
                   thinking: streaming.thinking,
                   webSearch: streaming.webSearch,
                   createdAt: Date.now(),
@@ -692,9 +718,9 @@ export default function ChatPane({
                 streaming
                 phase={streaming.phase}
                 thinkingOpen={thinkingOpen}
-                onToggleThinking={() => setThinkingOpen((v) => !v)}
+                onToggleThinking={toggleThinking}
                 onCite={onNavigateSources}
-                onSaveToNote={(title, content) => void handleSaveToNote(title, content)}
+                onSaveToNote={handleSaveToNote}
               />
             )}
           </div>
@@ -966,7 +992,12 @@ export default function ChatPane({
                       transition={SPRING}
                       whileHover={{ scale: 1.07 }}
                       whileTap={{ scale: 0.88 }}
-                      onClick={() => abortRef.current?.abort()}
+                      onClick={() => {
+                        // While the typewriter drains a finished answer, Stop
+                        // just finishes the reveal now instead of aborting.
+                        if (finalizeRef.current) smoothed.flush();
+                        else abortRef.current?.abort();
+                      }}
                       className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-hairline-strong text-ink transition-colors duration-fast hover:border-rust/60 hover:bg-rust/[0.09] hover:text-rust"
                       aria-label="Stop generating"
                       title="Stop"
@@ -1081,7 +1112,9 @@ export default function ChatPane({
   );
 }
 
-function MessageBubble({
+// Memoized so typewriter ticks only re-render the streaming bubble, not the
+// whole transcript (ReactMarkdown re-parses on every render).
+const MessageBubble = memo(function MessageBubble({
   msg,
   streaming = false,
   phase,
@@ -1256,7 +1289,7 @@ function MessageBubble({
       )}
     </motion.div>
   );
-}
+});
 
 function formatSearchMs(ms: number): string {
   return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.max(ms, 0)}ms`;
