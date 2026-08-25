@@ -248,16 +248,18 @@ export interface CodexDeviceSession {
 }
 
 /** Classify one poll response — pure, so the retry loop stays simple
- *  and testable. The success shape isn't documented; accept tokens
- *  directly or an authorization code we can exchange. */
+ *  and testable. Ground truth from the working oh-my-pi implementation:
+ *  still-waiting is signaled by HTTP 403/404; success returns
+ *  {authorization_code, code_verifier} which must then be exchanged. */
 export function classifyDevicePoll(
-  ok: boolean,
+  status: number,
   data: Record<string, unknown>,
-): "pending" | "expired" | "tokens" | "code" | "unknown" {
-  if (ok && typeof data.access_token === "string") return "tokens";
-  const code = typeof data.code === "string" ? data.code : "";
-  if (ok && /^[A-Za-z0-9._~-]{8,}$/.test(code)) return "code";
-  const err = (data.error ?? {}) as { code?: unknown; message?: unknown };
+): "pending" | "expired" | "code" | "unknown" {
+  const code = typeof data.authorization_code === "string" ? data.authorization_code : "";
+  const verifier = typeof data.code_verifier === "string" ? data.code_verifier : "";
+  if (status >= 200 && status < 300 && /^[A-Za-z0-9._~-]{8,}$/.test(code) && verifier) return "code";
+  if (status === 403 || status === 404) return "pending";
+  const err = (data.error ?? {}) as { code?: unknown };
   const errCode = typeof err.code === "string" ? err.code : "";
   if (/pending/i.test(errCode)) return "pending";
   if (/expired|denied|reject/i.test(errCode)) return "expired";
@@ -290,8 +292,20 @@ export async function openCodexDevicePage(): Promise<void> {
 
 function codexAccountFromTokens(data: TokenResponse): OAuthAccount {
   const claims = jwtClaims(data.access_token!);
-  const accountId = typeof claims.chatgpt_account_id === "string" ? claims.chatgpt_account_id : undefined;
-  const email = typeof claims.email === "string" ? claims.email : undefined;
+  // OpenAI nests the account identity in namespaced claims; fall back to
+  // top-level for resilience.
+  const authNested = claims["https://api.openai.com/auth"] as
+    | { chatgpt_account_id?: unknown; chatgpt_plan_type?: unknown }
+    | undefined;
+  const profileNested = claims["https://api.openai.com/profile"] as
+    | { email?: unknown }
+    | undefined;
+  const accountId =
+    (typeof claims.chatgpt_account_id === "string" && claims.chatgpt_account_id) ||
+    (typeof authNested?.chatgpt_account_id === "string" ? authNested.chatgpt_account_id : undefined);
+  const email =
+    (typeof claims.email === "string" && claims.email) ||
+    (typeof profileNested?.email === "string" ? profileNested.email : undefined);
   return {
     provider: "codex",
     accessToken: data.access_token!,
@@ -304,7 +318,10 @@ function codexAccountFromTokens(data: TokenResponse): OAuthAccount {
 }
 
 /** Poll until the student approves (or the code expires/denies). The
- *  device page is OpenAI-hosted, so approval is one normal login away. */
+ *  device page is OpenAI-hosted, so approval is one normal login away.
+ *  Success hands back {authorization_code, code_verifier} — OpenAI mints
+ *  its own PKCE pair per device login — which we exchange at the token
+ *  endpoint with the device callback as redirect_uri. */
 export async function pollCodexDeviceAuth(
   session: CodexDeviceSession,
   signal?: AbortSignal,
@@ -313,37 +330,38 @@ export async function pollCodexDeviceAuth(
   while (!signal?.aborted && Date.now() < session.expiresAt) {
     await new Promise((r) => setTimeout(r, sleepMs));
     if (signal?.aborted) return;
-    let ok = false;
+    let status = 0;
     let data: Record<string, unknown> = {};
     try {
       const res = await fetch(CODEX_DEVICE.token, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          client_id: CODEX.clientId,
           device_auth_id: session.deviceAuthId,
           user_code: session.userCode,
         }),
         signal,
       });
-      ok = res.ok;
-      data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      status = res.status;
+      if (status !== 403 && status !== 404) {
+        data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      }
     } catch (err) {
       if (signal?.aborted) return;
       if (err instanceof TypeError) continue; // transient network blip — keep polling
       throw err;
     }
 
-    switch (classifyDevicePoll(ok, data)) {
-      case "tokens":
-        useSettings.getState().setOAuthAccount(codexAccountFromTokens(data as TokenResponse));
-        return;
+    switch (classifyDevicePoll(status, data)) {
       case "code": {
+        // The poll-returned verifier is the one bound to this code.
         const exchanged = await exchangeCodex(
           new URLSearchParams({
             grant_type: "authorization_code",
             client_id: CODEX.clientId,
-            code: String(data.code),
+            code: String(data.authorization_code),
+            code_verifier: String(data.code_verifier),
+            redirect_uri: "https://auth.openai.com/deviceauth/callback",
           }),
         );
         useSettings.getState().setOAuthAccount(codexAccountFromTokens(exchanged));

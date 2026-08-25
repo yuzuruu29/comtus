@@ -60,32 +60,36 @@ describe("jwtClaims", () => {
 });
 
 describe("classifyDevicePoll", () => {
-  it("sees tokens on a 200 with an access_token", () => {
-    expect(classifyDevicePoll(true, { access_token: "abc" })).toBe("tokens");
-  });
-
-  it("sees an exchangeable authorization code", () => {
-    expect(classifyDevicePoll(true, { code: "AbCdEf123456" })).toBe("code");
-    // short junk strings are not codes
-    expect(classifyDevicePoll(true, { code: "x" })).toBe("unknown");
-  });
-
-  it("keeps polling while authorization is pending", () => {
+  it("sees an exchangeable code on a 200 with OpenAI's own verifier", () => {
     expect(
-      classifyDevicePoll(false, {
+      classifyDevicePoll(200, {
+        authorization_code: "AbCdEf123456ghIJ7890",
+        code_verifier: "v-0123456789abcdef0123456789abcdef",
+      }),
+    ).toBe("code");
+    // missing verifier or short junk codes are not terminal
+    expect(classifyDevicePoll(200, { authorization_code: "x" })).toBe("unknown");
+    expect(classifyDevicePoll(200, { authorization_code: "AbCdEf123456" })).toBe("unknown");
+  });
+
+  it("keeps polling while authorization is pending (403/404 per OpenAI)", () => {
+    expect(classifyDevicePoll(403, {})).toBe("pending");
+    expect(classifyDevicePoll(404, {})).toBe("pending");
+    expect(
+      classifyDevicePoll(400, {
         error: { code: "deviceauth_authorization_pending", message: "pending" },
       }),
     ).toBe("pending");
   });
 
   it("stops on expired or denied codes", () => {
-    expect(classifyDevicePoll(false, { error: { code: "deviceauth_expired" } })).toBe("expired");
-    expect(classifyDevicePoll(false, { error: { code: "access_denied" } })).toBe("expired");
+    expect(classifyDevicePoll(400, { error: { code: "deviceauth_expired" } })).toBe("expired");
+    expect(classifyDevicePoll(400, { error: { code: "access_denied" } })).toBe("expired");
   });
 
   it("flags anything else as unknown", () => {
-    expect(classifyDevicePoll(false, {})).toBe("unknown");
-    expect(classifyDevicePoll(false, { error: { message: "boom" } })).toBe("unknown");
-    expect(classifyDevicePoll(true, {})).toBe("unknown");
+    expect(classifyDevicePoll(200, {})).toBe("unknown");
+    expect(classifyDevicePoll(400, {})).toBe("unknown");
+    expect(classifyDevicePoll(400, { error: { message: "boom" } })).toBe("unknown");
   });
 });
