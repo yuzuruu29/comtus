@@ -239,10 +239,9 @@ async function paypal(
 export default async function handler(req: Request): Promise<Response> {
   const origin = req.headers.get("origin");
   const url = new URL(req.url);
+  const p = (url.searchParams.get("p") || url.pathname.replace(/^\/api\/anthropic\/?/, "")).replace(/^\/+/, "");
 
-  // PayPal routes live under the same file to avoid Vercel nodejs module
-  // resolution issues with nested directories.
-  if (url.pathname.startsWith("/api/anthropic/paypal/")) {
+  if (url.pathname.startsWith("/api/anthropic/paypal/") || p.startsWith("paypal/")) {
     return handlePayPal(req, origin);
   }
 
@@ -398,9 +397,10 @@ async function handlePayPal(req: Request, origin: string | null): Promise<Respon
   if (req.method === "OPTIONS") return json(204, {}, origin);
   if (req.method !== "POST") return json(405, { error: "POST only" }, origin);
 
-  const path = new URL(req.url).pathname;
-  if (path.endsWith("/create-order")) return handlePayPalCreateOrder(req, origin);
-  if (path.endsWith("/capture-order")) return handlePayPalCaptureOrder(req, origin);
+  const incoming = new URL(req.url);
+  const path = (incoming.searchParams.get("p") || incoming.pathname).replace(/^\/+/, "");
+  if (path.endsWith("create-order")) return handlePayPalCreateOrder(req, origin);
+  if (path.endsWith("capture-order")) return handlePayPalCaptureOrder(req, origin);
   return json(404, { error: "Not found." }, origin);
 }
 
