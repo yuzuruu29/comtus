@@ -9,6 +9,17 @@ import tailwindcss from "@tailwindcss/vite";
 import { runSearch } from "./api/_search-core";
 import pkg from "./package.json";
 
+// Server-side secrets (e.g. FIRECRAWL_API_KEY for /api/search) live in .env
+// files; Vite loads those into import.meta.env for client code but never into
+// process.env for the config itself. Local wins by loading second.
+for (const envFile of [".env", ".env.local"]) {
+  try {
+    process.loadEnvFile(resolve(import.meta.dirname ?? process.cwd(), envFile));
+  } catch {
+    // file absent — fine
+  }
+}
+
 /** Dev-server mirror of the production /api/compat relay
  *  (api/compat.ts on Vercel): same route shape, same behavior —
  *  fetch upstream server-side and re-serve same-origin so

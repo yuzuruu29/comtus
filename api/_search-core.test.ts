@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   decodeEntities,
-  firecrawlSearch,
   parseDdgHtml,
   parseDdgLite,
   runSearch,
@@ -19,6 +18,24 @@ const DDG_LITE = `<html><body><table>
 
 const WIKI_JSON = JSON.stringify({
   query: { search: [{ title: "Module", snippet: "A <b>module</b> is a self-contained unit." }] },
+});
+
+const FIRECRAWL_JSON = JSON.stringify({
+  success: true,
+  data: [
+    {
+      url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules",
+      title: "JavaScript modules - MDN",
+      description: "This guide explains how to use <b>ES modules</b>.",
+    },
+    { url: "https://www.xhamster.com/junk", title: "Dirty hit", description: "Adult junk." },
+    { url: "not-a-url", title: "Bad url", description: "Should be dropped." },
+    { url: "https://nodejs.org/api/esm.html", title: "ESM: Node.js docs", description: "Native module support." },
+    { url: "https://vitejs.dev/guide/", title: "Vite Guide", description: "Native-ESM dev server." },
+    { url: "https://diveinto.html5doctor.com/", title: "Dive Into HTML5", description: "Modules history." },
+    { url: "https://javascript.info/modules", title: "javascript.info", description: "Modules tutorial." },
+    { url: "https://exploringjs.com/es6/ch_modules.html", title: "Exploring JS", description: "ES6 modules chapter." },
+  ],
 });
 
 describe("decodeEntities", () => {
@@ -55,8 +72,52 @@ describe("parseDdgLite", () => {
 describe("runSearch provider chain", () => {
   const originalFetch = global.fetch;
 
+  beforeEach(() => {
+    // Tests below assume the keyless chain; the keyed tests opt back in.
+    delete process.env.FIRECRAWL_API_KEY;
+  });
+
   afterEach(() => {
     global.fetch = originalFetch;
+    vi.unstubAllEnvs();
+  });
+
+  it("prefers Firecrawl when keyed and skips the keyless chain on rich results", async () => {
+    vi.stubEnv("FIRECRAWL_API_KEY", "test-key");
+    const ddgCalled = vi.fn();
+    global.fetch = vi.fn().mockImplementation(async (input: string) => {
+      const url = String(input);
+      if (url.includes("firecrawl.dev")) {
+        return { ok: true, json: async () => JSON.parse(FIRECRAWL_JSON) };
+      }
+      if (url.includes("duckduckgo.com")) ddgCalled();
+      return { ok: false };
+    });
+
+    const { results, provider } = await runSearch("es modules");
+    expect(provider).toBe("firecrawl");
+    expect(results[0].url).toContain("developer.mozilla.org");
+    expect(results[0].snippet).toBe("This guide explains how to use ES modules.");
+    // Family filter drops the adult hit, URL check drops the malformed one.
+    expect(results).toHaveLength(6);
+    // Five clean hits is rich enough — no keyless fallback requests.
+    expect(ddgCalled).not.toHaveBeenCalled();
+  });
+
+  it("falls through to Wikipedia when Firecrawl is unkeyed", async () => {
+    global.fetch = vi.fn().mockImplementation(async (input: string) => {
+      const url = String(input);
+      if (url.includes("firecrawl.dev") || url.includes("duckduckgo.com")) {
+        return { ok: false };
+      }
+      if (url.includes("wikipedia.org")) {
+        return { ok: true, text: async () => WIKI_JSON };
+      }
+      return { ok: false };
+    });
+
+    const { provider } = await runSearch("module pattern javascript");
+    expect(provider).toBe("wikipedia");
   });
 
   it("serves DuckDuckGo first and keeps its results at the front", async () => {
