@@ -1,8 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
-import type { AnthropicModelId, Citation, Effort, ProviderId, SolutionCheck, SolutionVerdict } from "./types";
+import type { AnthropicModelId, Citation, Effort, ProviderId, SolutionCheck, SolutionVerdict, WebSearchMeta } from "./types";
 import { groundContext, type GroundingDoc } from "./retrieval";
-import { searchWeb } from "./webSearch";
+import { buildSearchQuery, searchWeb } from "./webSearch";
+import { webSearchGroundingClause, webSearchUserReminder } from "./webSearchPrompt";
 import { compatFetchBase } from "./compatRoute";
 
 /**
@@ -253,7 +254,7 @@ function groundingPreamble(
   notebookName: string,
   anthropic: boolean,
   reasoning?: boolean,
-  webSearch?: boolean,
+  webSearch?: WebSearchMeta,
 ): string {
   const sourceList = docs.map((d, i) => `[${i}] ${d.source.title}`).join("\n");
   let prompt = `Notebook: "${notebookName}" — ${docs.length} source document(s) attached:
@@ -278,10 +279,7 @@ Grounding mode: ${
   }
 
   if (webSearch) {
-    prompt += `\n\nWeb Search Grounding: ACTIVE.
-- Live results fetched for this question are attached as sources titled "Web: ...".
-- Treat them as fresh evidence, not the entire answer: weave them together with your own knowledge, and prefer the Web sources when they carry newer facts.
-- Snippets are excerpts and may be truncated — read them carefully, never claim the search came up empty when Web sources exist, and never invent URLs beyond those attached.`;
+    prompt += `\n\n${webSearchGroundingClause(webSearch)}`;
   }
 
   return prompt;
@@ -300,22 +298,34 @@ export interface StreamChatArgs extends CallSettings {
   signal?: AbortSignal;
   onThinking?: (delta: string, full: string) => void;
   onText?: (delta: string, full: string) => void;
+  onSearchStart?: () => void;
+  onSearchDone?: (meta: WebSearchMeta) => void;
 }
 
 export interface ChatReply {
   text: string;
   thinking: string;
   citations: Citation[];
+  webSearch?: WebSearchMeta;
 }
 
 export async function streamChat(args: StreamChatArgs): Promise<ChatReply> {
   const { docs: groundedDocs, mode } = await groundContext(args.notebookId, args.question, args.sourceIds);
   let docs = groundedDocs;
 
-  // If webSearch is enabled, fetch real-time web summaries to augment or populate sources
+  let webSearchMeta: WebSearchMeta | undefined;
   if (args.webSearch) {
+    args.onSearchStart?.();
+    const started = Date.now();
+    const query = buildSearchQuery(args.question);
     try {
       const webHits = await searchWeb(args.question, args.signal);
+      webSearchMeta = {
+        status: webHits.length > 0 ? "ok" : "empty",
+        query,
+        count: webHits.length,
+        ms: Date.now() - started,
+      };
       if (webHits.length > 0) {
         const webDocs: GroundingDoc[] = webHits.map((hit, idx) => ({
           source: {
@@ -334,21 +344,31 @@ export async function streamChat(args: StreamChatArgs): Promise<ChatReply> {
         docs = [...docs, ...webDocs];
       }
     } catch (e) {
+      if (isAbort(e)) throw e;
+      webSearchMeta = {
+        status: "error",
+        query,
+        count: 0,
+        ms: Date.now() - started,
+        error: e instanceof Error ? e.message : "Search failed",
+      };
       console.warn("Web search grounding error:", e);
     }
+    if (webSearchMeta) args.onSearchDone?.(webSearchMeta);
   }
 
   const reply =
     args.provider === "anthropic"
-      ? await streamAnthropic(args, docs, mode)
-      : await streamCompatible(args, docs, mode);
-  return reply;
+      ? await streamAnthropic(args, docs, mode, webSearchMeta)
+      : await streamCompatible(args, docs, mode, webSearchMeta);
+  return { ...reply, webSearch: webSearchMeta };
 }
 
 async function streamAnthropic(
   args: StreamChatArgs,
   docs: GroundingDoc[],
   mode: "full" | "retrieved",
+  webSearch?: WebSearchMeta,
 ): Promise<ChatReply> {
   const client = getAnthropic(args);
 
@@ -359,13 +379,14 @@ async function streamAnthropic(
     citations: { enabled: true },
     context: `Source [${i}] of this notebook`,
   }));
-  content.push({ type: "text", text: args.question });
+  const question = webSearch ? `${args.question}${webSearchUserReminder(webSearch)}` : args.question;
+  content.push({ type: "text", text: question });
 
   const stream = client.messages.stream(
     {
       model: args.model,
       max_tokens: 64000,
-      system: `${CHAT_SYSTEM}\n\n${groundingPreamble(docs, mode, args.notebookName, true, args.reasoning, args.webSearch)}`,
+      system: `${CHAT_SYSTEM}\n\n${groundingPreamble(docs, mode, args.notebookName, true, args.reasoning, webSearch)}`,
       messages: [
         ...args.history.slice(-12),
         { role: "user", content },
@@ -405,17 +426,19 @@ async function streamCompatible(
   args: StreamChatArgs,
   docs: GroundingDoc[],
   mode: "full" | "retrieved",
+  webSearch?: WebSearchMeta,
 ): Promise<ChatReply> {
   const client = getCompat(args);
   const sourcesText = docs
     .map((d) => `<<<SOURCE: ${d.source.title}>>>\n${d.text}\n<<<END SOURCE>>>`)
     .join("\n\n");
+  const asked = webSearch ? `${args.question}${webSearchUserReminder(webSearch)}` : args.question;
   const userContent = docs.length
-    ? `Sources:\n\n${sourcesText}\n\n---\n\nQuestion: ${args.question}`
-    : `Question: ${args.question}`;
+    ? `Sources:\n\n${sourcesText}\n\n---\n\nQuestion: ${asked}`
+    : `Question: ${asked}`;
 
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-    { role: "system", content: `${CHAT_SYSTEM_COMPAT}\n\n${groundingPreamble(docs, mode, args.notebookName, false, args.reasoning, args.webSearch)}` },
+    { role: "system", content: `${CHAT_SYSTEM_COMPAT}\n\n${groundingPreamble(docs, mode, args.notebookName, false, args.reasoning, webSearch)}` },
     ...args.history.slice(-12),
     { role: "user", content: userContent },
   ];

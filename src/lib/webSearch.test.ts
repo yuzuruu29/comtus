@@ -107,4 +107,17 @@ describe("searchWeb", () => {
       global.fetch = originalFetch;
     }
   });
+
+  it("rethrows abort instead of falling through to Wikipedia", async () => {
+    const originalFetch = global.fetch;
+    const err = new Error("Aborted");
+    err.name = "AbortError";
+    global.fetch = vi.fn().mockRejectedValue(err);
+
+    try {
+      await expect(searchWeb("Krebs Cycle")).rejects.toMatchObject({ name: "AbortError" });
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
 });

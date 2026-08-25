@@ -42,6 +42,13 @@ export function buildSearchQuery(question: string): string {
   return condensed || question.trim().slice(0, 200);
 }
 
+function isAbortError(err: unknown): boolean {
+  return (
+    (typeof DOMException !== "undefined" && err instanceof DOMException && err.name === "AbortError") ||
+    (err instanceof Error && err.name === "AbortError")
+  );
+}
+
 async function fetchRelay(origin: string, query: string, signal?: AbortSignal) {
   const res = await fetch(`${origin}/api/search?q=${encodeURIComponent(query)}`, { signal });
   if (!res.ok) return null;
@@ -59,7 +66,8 @@ export async function searchWeb(question: string, signal?: AbortSignal): Promise
     try {
       const hits = await fetchRelay(window.location.origin, cleanQuery, signal);
       if (hits) return hits;
-    } catch {
+    } catch (err) {
+      if (isAbortError(err)) throw err;
       // Fall through.
     }
 
@@ -68,7 +76,8 @@ export async function searchWeb(question: string, signal?: AbortSignal): Promise
       try {
         const hits = await fetchRelay(PROD_SEARCH_ORIGIN, cleanQuery, signal);
         if (hits) return hits;
-      } catch {
+      } catch (err) {
+        if (isAbortError(err)) throw err;
         // Fall through.
       }
     }
@@ -116,6 +125,7 @@ export async function searchWeb(question: string, signal?: AbortSignal): Promise
       }
     }
   } catch (err) {
+    if (isAbortError(err)) throw err;
     console.warn("Direct Wikipedia search error:", err);
   }
 

@@ -44,7 +44,7 @@ import {
   deleteChatSession,
   createCustomNote,
 } from "../lib/db";
-import type { ChatMessage, ChatSession, Notebook, Citation } from "../lib/types";
+import type { ChatMessage, ChatSession, Notebook, Citation, WebSearchMeta } from "../lib/types";
 import { deriveSessionTitle } from "../lib/sessionText";
 import { streamChat, friendlyError, isAbort } from "../lib/llm";
 import { useSettings, useCallSettings } from "../lib/settings";
@@ -109,13 +109,16 @@ export default function ChatPane({
   const [streaming, setStreaming] = useState<{
     text: string;
     thinking: string;
-    phase?: "reading" | "thinking" | "answering";
+    phase?: "searching" | "reading" | "thinking" | "answering";
+    webSearch?: WebSearchMeta;
   } | null>(null);
   const [thinkingOpen, setThinkingOpen] = useState(true);
   const [error, setError] = useState("");
+  const [searchBanner, setSearchBanner] = useState<WebSearchMeta | null>(null);
   const [toastNoteSaved, setToastNoteSaved] = useState(false);
   const [dismissedFollowUps, setDismissedFollowUps] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const searchMetaRef = useRef<WebSearchMeta | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickBottom = useRef(true);
   const loadToken = useRef(0);
@@ -332,6 +335,8 @@ export default function ChatPane({
         return;
       }
       setError("");
+      setSearchBanner(null);
+      searchMetaRef.current = null;
       setInput("");
 
       let sessionId = activeId;
@@ -377,7 +382,11 @@ export default function ChatPane({
       setDismissedFollowUps(false);
       stickBottom.current = true;
       setThinkingOpen(true);
-      setStreaming({ text: "", thinking: "", phase: "reading" });
+      setStreaming({
+        text: "",
+        thinking: "",
+        phase: webSearchEnabled ? "searching" : "reading",
+      });
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -393,6 +402,13 @@ export default function ChatPane({
           reasoning: reasoningEnabled,
           webSearch: webSearchEnabled,
           signal: controller.signal,
+          onSearchStart: () =>
+            setStreaming((s) => (s ? { ...s, phase: "searching" } : s)),
+          onSearchDone: (meta) => {
+            searchMetaRef.current = meta;
+            setSearchBanner(meta);
+            setStreaming((s) => (s ? { ...s, phase: "reading", webSearch: meta } : s));
+          },
           onThinking: (_d, full) =>
             setStreaming((s) => (s ? { ...s, thinking: full, phase: "thinking" } : s)),
           onText: (_d, full) => {
@@ -408,6 +424,7 @@ export default function ChatPane({
           content: reply.text,
           thinking: reply.thinking,
           citations: reply.citations,
+          webSearch: reply.webSearch,
           createdAt: Date.now(),
         };
         await saveMessage(assistant);
@@ -416,6 +433,7 @@ export default function ChatPane({
       } catch (err) {
         if (!isAbort(err) && !controller.signal.aborted) {
           setError(friendlyError(err));
+          if (searchMetaRef.current) setSearchBanner(searchMetaRef.current);
         }
       } finally {
         abortRef.current = null;
@@ -668,6 +686,7 @@ export default function ChatPane({
                   role: "assistant",
                   content: streaming.text,
                   thinking: streaming.thinking,
+                  webSearch: streaming.webSearch,
                   createdAt: Date.now(),
                 }}
                 streaming
@@ -681,9 +700,12 @@ export default function ChatPane({
           </div>
 
           {error && (
-            <div role="alert" className="mt-6 flex items-start gap-3 rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] text-rust">
-              <Flame size={16} className="mt-0.5 shrink-0" />
-              <span>{error}</span>
+            <div className="mt-6 space-y-3">
+              {searchBanner && <SearchStatusStrip meta={searchBanner} />}
+              <div role="alert" className="flex items-start gap-3 rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] text-rust">
+                <Flame size={16} className="mt-0.5 shrink-0" />
+                <span>{error}</span>
+              </div>
             </div>
           )}
         </div>
@@ -761,7 +783,9 @@ export default function ChatPane({
                     ? "thinking"
                     : streaming.phase === "answering"
                       ? "answering"
-                      : "reading sources"}
+                      : streaming.phase === "searching"
+                        ? "searching the web"
+                        : "reading sources"}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1068,7 +1092,7 @@ function MessageBubble({
 }: {
   msg: ChatMessage;
   streaming?: boolean;
-  phase?: "reading" | "thinking" | "answering";
+  phase?: "searching" | "reading" | "thinking" | "answering";
   thinkingOpen?: boolean;
   onToggleThinking?: () => void;
   onCite: (sourceId: string, startChar?: number) => void;
@@ -1111,6 +1135,10 @@ function MessageBubble({
       transition={SOFT}
       className="space-y-3"
     >
+      {(msg.webSearch || phase === "searching") && (
+        <SearchStatusStrip meta={msg.webSearch} searching={phase === "searching" && !msg.webSearch} />
+      )}
+
       {/* Reasoning Process Drawer */}
       {hasThinking && (
         <div className="think-rule overflow-hidden rounded-xl border border-moon/25 bg-moon/[0.04]">
@@ -1161,7 +1189,9 @@ function MessageBubble({
                 ? "Synthesizing deep reasoning…"
                 : phase === "answering"
                   ? "Composing answer…"
-                  : "Indexing study sources…"}
+                  : phase === "searching"
+                    ? "Searching the web…"
+                    : "Indexing study sources…"}
             </span>
           </div>
         )
@@ -1225,6 +1255,91 @@ function MessageBubble({
         </div>
       )}
     </motion.div>
+  );
+}
+
+function formatSearchMs(ms: number): string {
+  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.max(ms, 0)}ms`;
+}
+
+function SearchStatusStrip({
+  meta,
+  searching,
+}: {
+  meta?: WebSearchMeta;
+  searching?: boolean;
+}) {
+  if (searching && !meta) {
+    return (
+      <div
+        role="status"
+        className="flex items-center gap-2 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] px-3.5 py-2 text-[12px] text-cyan-300"
+      >
+        <Globe size={15} weight="fill" className="shrink-0 text-cyan-400" />
+        <span>Searching the web…</span>
+      </div>
+    );
+  }
+  if (!meta) return null;
+
+  if (meta.status === "error") {
+    return (
+      <div
+        role="status"
+        className="flex items-start gap-2 rounded-xl border border-rust/30 bg-rust/[0.07] px-3.5 py-2 text-[12px] text-rust"
+      >
+        <Flame size={15} className="mt-0.5 shrink-0" />
+        <div className="min-w-0 flex-1">
+          <div>Web search failed — answering without live pages</div>
+          {meta.error && (
+            <div className="mt-0.5 truncate font-mono text-[10.5px] text-rust/80">{meta.error}</div>
+          )}
+        </div>
+        <span className="shrink-0 font-mono text-[10.5px] text-rust/70">{formatSearchMs(meta.ms)}</span>
+      </div>
+    );
+  }
+
+  if (meta.status === "empty") {
+    return (
+      <div
+        role="status"
+        className="flex items-center gap-2 rounded-xl border border-hairline bg-ink/[0.03] px-3.5 py-2 text-[12px] text-muted"
+      >
+        <Globe size={15} className="shrink-0" />
+        <span className="min-w-0 flex-1 truncate">Searched the web · no results</span>
+        {meta.query && (
+          <span className="hidden max-w-[10rem] truncate font-mono text-[10.5px] sm:inline">
+            {meta.query}
+          </span>
+        )}
+        <span className="shrink-0 font-mono text-[10.5px]">{formatSearchMs(meta.ms)}</span>
+      </div>
+    );
+  }
+
+  const noun = meta.count === 1 ? "source" : "sources";
+  return (
+    <div
+      role="status"
+      className="flex items-center gap-2 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] px-3.5 py-2 text-[12px] text-cyan-300"
+    >
+      <Globe size={15} weight="fill" className="shrink-0 text-cyan-400" />
+      <span className="min-w-0 flex-1">
+        Fetched {meta.count} web {noun} just now
+      </span>
+      {meta.query && (
+        <span
+          title={meta.query}
+          className="hidden max-w-[12rem] truncate font-mono text-[10.5px] text-cyan-300/70 sm:inline"
+        >
+          {meta.query}
+        </span>
+      )}
+      <span className="shrink-0 font-mono text-[10.5px] text-cyan-300/70">
+        {formatSearchMs(meta.ms)}
+      </span>
+    </div>
   );
 }
 

@@ -61,6 +61,17 @@ export interface ChatSession {
   updatedAt: number;
 }
 
+/** Outcome of a live web-search turn, shown in the chat strip and sent to the model. */
+export type WebSearchStatus = "ok" | "empty" | "error";
+
+export interface WebSearchMeta {
+  status: WebSearchStatus;
+  query: string;
+  count: number;
+  ms: number;
+  error?: string;
+}
+
 export interface ChatMessage {
   id: string;
   notebookId: string;
@@ -69,6 +80,7 @@ export interface ChatMessage {
   content: string;
   thinking?: string;
   citations?: Citation[];
+  webSearch?: WebSearchMeta;
   error?: string;
   createdAt: number;
 }
