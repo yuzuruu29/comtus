@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CaretDown,
   Check,
+  Copy,
   Crown,
   PaperPlaneRight,
   Plug,
+  SpinnerGap,
   Warning,
 } from "@phosphor-icons/react";
 import { inputCls } from "./ui";
@@ -15,20 +17,27 @@ import {
   completeClaudeOAuth,
   startCodexOAuth,
   completeCodexOAuth,
+  startCodexDeviceAuth,
+  openCodexDevicePage,
+  pollCodexDeviceAuth,
   disconnectOAuth,
+  type CodexDeviceSession,
 } from "../lib/oauthProviders";
 import type { OAuthAccount } from "../lib/types";
 
 /**
  * "Use your subscription" cards — sign in with an existing Claude
  * (Pro/Max) or ChatGPT (Plus/Pro) account and Comtus routes chat through
- * it, no API key involved. Both providers require a manual hand-off
- * (neither lets third-party web apps register redirect URIs), so each
- * card runs: open the provider's sign-in → student pastes the code /
- * redirected URL back → tokens stored locally and auto-refreshed.
+ * it, no API key involved.
+ *
+ * Claude uses a manual hand-off (the code Claude's callback page displays,
+ * pasted back). ChatGPT uses OpenAI's device flow: a short code the student
+ * enters at auth.openai.com/codex/device — no redirect URI, nothing lands
+ * on a dead localhost page. The old paste-a-redirect-URL flow stays as a
+ * fallback link.
  */
 
-type Stage = "idle" | "paste";
+type Stage = "idle" | "paste" | "code";
 
 export default function SubscriptionConnect() {
   const s = useSettings();
@@ -36,8 +45,15 @@ export default function SubscriptionConnect() {
   const [claudeCode, setClaudeCode] = useState("");
   const [codexStage, setCodexStage] = useState<Stage>("idle");
   const [codexCode, setCodexCode] = useState("");
+  const [deviceSession, setDeviceSession] = useState<CodexDeviceSession | null>(null);
+  const [deviceWaiting, setDeviceWaiting] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState<"" | "claude" | "codex">("");
   const [err, setErr] = useState("");
+  const pollAbort = useRef<AbortController | null>(null);
+
+  // Stop polling when the settings sheet closes (component unmounts).
+  useEffect(() => () => pollAbort.current?.abort(), []);
 
   const fail = (who: "claude" | "codex", e: unknown) => {
     setErr(`${who === "claude" ? "Claude" : "ChatGPT"}: ${e instanceof Error ? e.message : "sign-in failed"}`);
@@ -71,17 +87,32 @@ export default function SubscriptionConnect() {
     setClaudeCode("");
   };
 
+  /** Device flow: the OpenAI page opens first (while the click still
+   *  counts as a user gesture), then the code is minted and shown. */
   const openCodex = async () => {
     setErr("");
     setBusy("codex");
+    pollAbort.current?.abort();
+    const controller = new AbortController();
+    pollAbort.current = controller;
     try {
-      await startCodexOAuth();
-      setCodexStage("paste");
+      await openCodexDevicePage();
+      const session = await startCodexDeviceAuth();
+      if (controller.signal.aborted) return;
+      setDeviceSession(session);
+      setCodexStage("code");
+      setBusy("");
+      setDeviceWaiting(true);
+      try {
+        await pollCodexDeviceAuth(session, controller.signal);
+      } catch (e) {
+        if (!controller.signal.aborted) fail("codex", e);
+      } finally {
+        if (!controller.signal.aborted) setDeviceWaiting(false);
+      }
     } catch (e) {
-      fail("codex", e);
-      return;
+      if (!controller.signal.aborted) fail("codex", e);
     }
-    setBusy("");
   };
 
   const finishCodex = async () => {
@@ -94,6 +125,14 @@ export default function SubscriptionConnect() {
       return;
     }
     setBusy("");
+    setCodexStage("idle");
+    setCodexCode("");
+  };
+
+  const cancelCodex = () => {
+    pollAbort.current?.abort();
+    setDeviceSession(null);
+    setDeviceWaiting(false);
     setCodexStage("idle");
     setCodexCode("");
   };
@@ -140,7 +179,7 @@ export default function SubscriptionConnect() {
         <SubscriptionCard
           tone="codex"
           title="ChatGPT Plus / Pro"
-          desc="Sign in with ChatGPT, then paste the localhost URL your browser lands on."
+          desc="Sign in with ChatGPT — we show a short code, you enter it on OpenAI's device page. Done."
           account={s.codexOAuth}
           isActive={s.provider === "codex"}
           stage={codexStage}
@@ -150,10 +189,7 @@ export default function SubscriptionConnect() {
           pasteHint="paste the whole address bar URL — it starts with http://localhost:1455/auth/callback?code=…"
           onOpen={() => void openCodex()}
           onFinish={() => void finishCodex()}
-          onCancel={() => {
-            setCodexStage("idle");
-            setCodexCode("");
-          }}
+          onCancel={cancelCodex}
           onUse={() => s.update({ provider: "codex" })}
           onModel={(id) => s.update({ provider: "codex", codexModel: id })}
           activeModel={s.codexModel}
@@ -162,6 +198,28 @@ export default function SubscriptionConnect() {
             disconnectOAuth("codex");
             if (s.provider === "codex") s.update({ provider: "openai-compatible" });
           }}
+          device={
+            codexStage === "code"
+              ? {
+                  session: deviceSession,
+                  waiting: deviceWaiting,
+                  copied,
+                  onCopy: () => {
+                    if (deviceSession) {
+                      void navigator.clipboard.writeText(deviceSession.userCode);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }
+                  },
+                  onFallback: () => {
+                    pollAbort.current?.abort();
+                    setDeviceWaiting(false);
+                    setCodexStage("paste");
+                    void startCodexOAuth();
+                  },
+                }
+              : undefined
+          }
         />
       </div>
 
@@ -199,6 +257,7 @@ function SubscriptionCard({
   activeModel,
   models,
   onDisconnect,
+  device,
 }: {
   tone: "claude" | "codex";
   title: string;
@@ -218,6 +277,13 @@ function SubscriptionCard({
   activeModel: string;
   models: { id: string; label: string; note: string }[];
   onDisconnect: () => void;
+  device?: {
+    session: CodexDeviceSession | null;
+    waiting: boolean;
+    copied: boolean;
+    onCopy: () => void;
+    onFallback: () => void;
+  };
 }) {
   const connected = Boolean(account?.accessToken);
   return (
@@ -287,6 +353,56 @@ function SubscriptionCard({
             {busy ? "Opening sign-in…" : "Sign in →"}
           </button>
         </>
+      )}
+
+      {!connected && stage === "code" && device?.session && (
+        <div className="mt-3 space-y-2.5">
+          <p className="text-[11.5px] leading-snug text-muted">
+            Enter this code on the OpenAI page that just opened
+            <span className="font-mono text-muted/70"> (auth.openai.com/codex/device)</span>, then approve access.
+          </p>
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-brass/40 bg-brass/[0.08] px-3 py-2.5">
+            <span className="font-mono text-[19px] font-bold tracking-[0.18em] text-brasspale select-all">
+              {device.session.userCode}
+            </span>
+            <button
+              type="button"
+              onClick={device.onCopy}
+              className="flex shrink-0 items-center gap-1 rounded-lg border border-hairline bg-ink/[0.03] px-2.5 py-1.5 font-mono text-[10.5px] text-muted hover:text-ink transition-colors"
+            >
+              {device.copied ? <Check size={12} className="text-sage" /> : <Copy size={12} />}
+              {device.copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="flex items-center gap-1.5 font-mono text-[11px] text-muted">
+              {device.waiting ? (
+                <>
+                  <SpinnerGap size={13} className="animate-spin text-brass" />
+                  Waiting for your approval…
+                </>
+              ) : (
+                "Starting…"
+              )}
+            </span>
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={device.onFallback}
+                className="font-mono text-[10px] text-muted/60 hover:text-ink transition-colors underline underline-offset-2"
+              >
+                Paste a redirect URL instead
+              </button>
+              <button
+                type="button"
+                onClick={onCancel}
+                className="shrink-0 rounded-xl border border-hairline px-3 py-1.5 font-mono text-[10.5px] text-muted hover:text-ink transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {!connected && stage === "paste" && (

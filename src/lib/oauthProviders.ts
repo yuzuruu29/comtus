@@ -227,6 +227,147 @@ export async function completeClaudeOAuth(input: string): Promise<void> {
 
 /* ── Flow: ChatGPT / Codex ────────────────────────────────── */
 
+/* Preferred: the device flow. auth.openai.com mints a short code the
+   student enters at the (OpenAI-hosted) device page — no redirect URI
+   involved, so nothing ever lands on a dead localhost page. The Codex
+   client's redirect allowlist is byte-exact (Ory Hydra) and contains
+   only http://localhost:1455|1457/auth/callback — custom domains are
+   rejected server-side, which is why the old paste-a-URL flow exists
+   only as a fallback below. */
+const CODEX_DEVICE = {
+  usercode: "https://auth.openai.com/api/accounts/deviceauth/usercode",
+  token: "https://auth.openai.com/api/accounts/deviceauth/token",
+  verify: "https://auth.openai.com/codex/device",
+} as const;
+
+export interface CodexDeviceSession {
+  deviceAuthId: string;
+  userCode: string;
+  intervalSec: number;
+  expiresAt: number;
+}
+
+/** Classify one poll response — pure, so the retry loop stays simple
+ *  and testable. The success shape isn't documented; accept tokens
+ *  directly or an authorization code we can exchange. */
+export function classifyDevicePoll(
+  ok: boolean,
+  data: Record<string, unknown>,
+): "pending" | "expired" | "tokens" | "code" | "unknown" {
+  if (ok && typeof data.access_token === "string") return "tokens";
+  const code = typeof data.code === "string" ? data.code : "";
+  if (ok && /^[A-Za-z0-9._~-]{8,}$/.test(code)) return "code";
+  const err = (data.error ?? {}) as { code?: unknown; message?: unknown };
+  const errCode = typeof err.code === "string" ? err.code : "";
+  if (/pending/i.test(errCode)) return "pending";
+  if (/expired|denied|reject/i.test(errCode)) return "expired";
+  return "unknown";
+}
+
+export async function startCodexDeviceAuth(): Promise<CodexDeviceSession> {
+  const res = await fetch(CODEX_DEVICE.usercode, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ client_id: CODEX.clientId }),
+  });
+  const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  const deviceAuthId = typeof data.device_auth_id === "string" ? data.device_auth_id : "";
+  const userCode = typeof data.user_code === "string" ? data.user_code : "";
+  if (!res.ok || !deviceAuthId || !userCode) {
+    throw new Error("OpenAI's device sign-in didn't start — try again in a moment.");
+  }
+  return {
+    deviceAuthId,
+    userCode,
+    intervalSec: Number(data.interval) > 0 ? Number(data.interval) : 5,
+    expiresAt: typeof data.expires_at === "string" ? Date.parse(data.expires_at) : Date.now() + 15 * 60 * 1000,
+  };
+}
+
+export async function openCodexDevicePage(): Promise<void> {
+  await openAuthPage(CODEX_DEVICE.verify);
+}
+
+function codexAccountFromTokens(data: TokenResponse): OAuthAccount {
+  const claims = jwtClaims(data.access_token!);
+  const accountId = typeof claims.chatgpt_account_id === "string" ? claims.chatgpt_account_id : undefined;
+  const email = typeof claims.email === "string" ? claims.email : undefined;
+  return {
+    provider: "codex",
+    accessToken: data.access_token!,
+    refreshToken: data.refresh_token ?? "",
+    expiresAt: Date.now() + (data.expires_in ?? 8 * 24 * 3600) * 1000,
+    ...(accountId ? { accountId } : {}),
+    ...(email ? { email } : {}),
+    connectedAt: Date.now(),
+  };
+}
+
+/** Poll until the student approves (or the code expires/denies). The
+ *  device page is OpenAI-hosted, so approval is one normal login away. */
+export async function pollCodexDeviceAuth(
+  session: CodexDeviceSession,
+  signal?: AbortSignal,
+): Promise<void> {
+  const sleepMs = Math.max(2, session.intervalSec) * 1000;
+  while (!signal?.aborted && Date.now() < session.expiresAt) {
+    await new Promise((r) => setTimeout(r, sleepMs));
+    if (signal?.aborted) return;
+    let ok = false;
+    let data: Record<string, unknown> = {};
+    try {
+      const res = await fetch(CODEX_DEVICE.token, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          client_id: CODEX.clientId,
+          device_auth_id: session.deviceAuthId,
+          user_code: session.userCode,
+        }),
+        signal,
+      });
+      ok = res.ok;
+      data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    } catch (err) {
+      if (signal?.aborted) return;
+      if (err instanceof TypeError) continue; // transient network blip — keep polling
+      throw err;
+    }
+
+    switch (classifyDevicePoll(ok, data)) {
+      case "tokens":
+        useSettings.getState().setOAuthAccount(codexAccountFromTokens(data as TokenResponse));
+        return;
+      case "code": {
+        const exchanged = await exchangeCodex(
+          new URLSearchParams({
+            grant_type: "authorization_code",
+            client_id: CODEX.clientId,
+            code: String(data.code),
+          }),
+        );
+        useSettings.getState().setOAuthAccount(codexAccountFromTokens(exchanged));
+        return;
+      }
+      case "pending":
+        continue;
+      case "expired":
+        throw new Error("The code was denied or expired — start the sign-in again.");
+      default: {
+        const err = (data.error ?? {}) as { message?: unknown };
+        throw new Error(
+          typeof err.message === "string" && err.message
+            ? err.message
+            : "OpenAI's device sign-in hit an unexpected response — try again.",
+        );
+      }
+    }
+  }
+  if (!signal?.aborted) {
+    throw new Error("The code expired before approval — start the sign-in again for a fresh one.");
+  }
+}
+
 export async function startCodexOAuth(): Promise<void> {
   const verifier = randomString();
   const state = randomString(24);
@@ -266,21 +407,7 @@ export async function completeCodexOAuth(input: string): Promise<void> {
     ...(verifier ? { code_verifier: verifier } : {}),
   });
   const data = await exchangeCodex(body);
-
-  const claims = jwtClaims(data.access_token!);
-  const accountId = typeof claims.chatgpt_account_id === "string" ? claims.chatgpt_account_id : undefined;
-  const email = typeof claims.email === "string" ? claims.email : undefined;
-
-  const account: OAuthAccount = {
-    provider: "codex",
-    accessToken: data.access_token!,
-    refreshToken: data.refresh_token ?? "",
-    expiresAt: Date.now() + (data.expires_in ?? 8 * 24 * 3600) * 1000,
-    ...(accountId ? { accountId } : {}),
-    ...(email ? { email } : {}),
-    connectedAt: Date.now(),
-  };
-  useSettings.getState().setOAuthAccount(account);
+  useSettings.getState().setOAuthAccount(codexAccountFromTokens(data));
 }
 
 /* ── Refresh ──────────────────────────────────────────────── */

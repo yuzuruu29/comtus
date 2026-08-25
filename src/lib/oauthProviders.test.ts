@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { jwtClaims, parseGrantInput } from "./oauthProviders";
+import { classifyDevicePoll, jwtClaims, parseGrantInput } from "./oauthProviders";
 
 describe("parseGrantInput", () => {
   it("accepts a raw authorization code", () => {
@@ -56,5 +56,36 @@ describe("jwtClaims", () => {
     expect(jwtClaims("")).toEqual({});
     expect(jwtClaims("not-a-jwt")).toEqual({});
     expect(jwtClaims("aa.bbb.ccc")).toEqual({});
+  });
+});
+
+describe("classifyDevicePoll", () => {
+  it("sees tokens on a 200 with an access_token", () => {
+    expect(classifyDevicePoll(true, { access_token: "abc" })).toBe("tokens");
+  });
+
+  it("sees an exchangeable authorization code", () => {
+    expect(classifyDevicePoll(true, { code: "AbCdEf123456" })).toBe("code");
+    // short junk strings are not codes
+    expect(classifyDevicePoll(true, { code: "x" })).toBe("unknown");
+  });
+
+  it("keeps polling while authorization is pending", () => {
+    expect(
+      classifyDevicePoll(false, {
+        error: { code: "deviceauth_authorization_pending", message: "pending" },
+      }),
+    ).toBe("pending");
+  });
+
+  it("stops on expired or denied codes", () => {
+    expect(classifyDevicePoll(false, { error: { code: "deviceauth_expired" } })).toBe("expired");
+    expect(classifyDevicePoll(false, { error: { code: "access_denied" } })).toBe("expired");
+  });
+
+  it("flags anything else as unknown", () => {
+    expect(classifyDevicePoll(false, {})).toBe("unknown");
+    expect(classifyDevicePoll(false, { error: { message: "boom" } })).toBe("unknown");
+    expect(classifyDevicePoll(true, {})).toBe("unknown");
   });
 });
