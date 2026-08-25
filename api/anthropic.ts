@@ -335,11 +335,12 @@ async function handlePayPalCaptureOrder(req: Request, origin: string | null): Pr
   try {
     const token = await paypalOauthToken(clientId, clientSecret);
 
-    const { status, data: order } = await paypal(`/v2/checkout/orders/${orderId}`, "GET", token);
-    if (status === 404) return json(404, { error: "Order not found." }, origin);
-    if (status !== 200 || !order.purchase_units?.length) {
+    const initial = await paypal(`/v2/checkout/orders/${orderId}`, "GET", token);
+    if (initial.status === 404) return json(404, { error: "Order not found." }, origin);
+    if (initial.status !== 200 || !initial.data.purchase_units?.length) {
       return json(502, { error: "Could not verify the order with PayPal." }, origin);
     }
+    let order = initial.data;
 
     const unit = (order.purchase_units as Array<{ amount?: { value?: string; currency_code?: string } }>)[0];
     const amountOk = unit?.amount?.value === plan.price && unit?.amount?.currency_code === plan.currency;
