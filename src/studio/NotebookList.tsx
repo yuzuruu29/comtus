@@ -364,7 +364,7 @@ export default function NotebookList({
               {/* 1st Card: + Create new notebook */}
               <button
                 onClick={openCreateModal}
-                className="group flex min-h-[175px] flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed border-hairline-strong bg-surface/30 p-5 text-center transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-brass/60 hover:bg-brass/[0.04] hover:shadow-[0_14px_30px_-6px_rgba(227,176,75,0.16)] active:scale-[0.98]"
+                className="card-wake group flex min-h-[175px] flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed border-hairline-strong bg-surface/30 p-5 text-center"
               >
                 <CreateNotebookEmblem />
                 <span className="font-display text-[15px] font-[450] text-ink/90 group-hover:text-brasspale">
@@ -389,7 +389,7 @@ export default function NotebookList({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={SOFT}
-                        className="group relative flex min-h-[175px] flex-col justify-between rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-5 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-brass/50 hover:bg-surface hover:shadow-[0_16px_36px_-8px_rgba(0,0,0,0.5),0_0_24px_-4px_rgba(227,176,75,0.18)] active:scale-[0.985]"
+                        className="card-wake group relative flex min-h-[175px] flex-col justify-between rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-5"
                       >
                         {/* Top Row: Study Glyph & 3-Dot Menu */}
                         <div className="flex items-start justify-between">
@@ -417,6 +417,7 @@ export default function NotebookList({
                                   transition={SOFT}
                                   className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-[var(--radius-control)] border border-hairline bg-surface p-1 shadow-modal"
                                 >
+                                  {/* Rows arrive on the 30ms house stagger (--stagger-step) */}
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -424,7 +425,8 @@ export default function NotebookList({
                                       setRenamingNotebook(nb);
                                       setRenameDraft(nb.name);
                                     }}
-                                    className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
+                                    className="chip-in flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
+                                    style={{ ["--d" as string]: "0ms" }}
                                   >
                                     <PencilSimple size={13} />
                                     Rename
@@ -434,7 +436,8 @@ export default function NotebookList({
                                       e.stopPropagation();
                                       void handleExport(nb);
                                     }}
-                                    className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
+                                    className="chip-in flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
+                                    style={{ ["--d" as string]: "30ms" }}
                                   >
                                     <DownloadSimple size={13} />
                                     Export
@@ -445,7 +448,8 @@ export default function NotebookList({
                                       e.stopPropagation();
                                       setDeletingId(nb.id);
                                     }}
-                                    className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-rust hover:bg-rust/10"
+                                    className="chip-in flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-rust hover:bg-rust/10"
+                                    style={{ ["--d" as string]: "60ms" }}
                                   >
                                     <Trash size={13} />
                                     Delete

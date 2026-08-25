@@ -54,7 +54,8 @@ import type { ChatReply } from "../lib/llm";
 import { useSmoothText } from "../lib/useSmoothText";
 import { useSettings, useCallSettings } from "../lib/settings";
 import StudyGlyph from "../components/icons/StudyGlyph";
-import { Collapse, SOFT, SPRING, HOUSE, Spotlight, BorderBeam } from "./fx";
+import { Collapse, SOFT, SPRING, HOUSE, Spotlight, BorderBeam, DRIFT_X, RISE_1, BEAM_IDLE_S, BEAM_STREAM_S } from "./fx";
+import { Toast } from "./Toast";
 import { timeAgo } from "./ui";
 import { appendTranscript } from "../lib/voice";
 import { useVoiceInput } from "./useVoiceInput";
@@ -106,6 +107,9 @@ export default function ChatPane({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // Id of the assistant message that just handed off from the streaming slot;
+  // that one bubble mounts entrance-free so the swap paints identically.
+  const [settledId, setSettledId] = useState<string | null>(null);
   const [sourceCount, setSourceCount] = useState(0);
   const [input, setInput] = useState("");
   // Voice input lands in the composer for review — never auto-sent.
@@ -122,6 +126,10 @@ export default function ChatPane({
   const [toastNoteSaved, setToastNoteSaved] = useState(false);
   const [dismissedFollowUps, setDismissedFollowUps] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  // How the live stream is ending — written BEFORE setStreaming(null) so the
+  // streaming slot can pick its exit: "commit" swaps instantly into the
+  // identical persisted bubble, "abort" fades away.
+  const streamEndRef = useRef<"commit" | "abort">("abort");
   const searchMetaRef = useRef<WebSearchMeta | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickBottom = useRef(true);
@@ -333,8 +341,8 @@ export default function ChatPane({
     async (title: string, text: string) => {
       if (!notebook) return;
       await createCustomNote(notebook.id, title, text);
+      // Toast owns the fuse (and its hover/focus pause) from here.
       setToastNoteSaved(true);
-      setTimeout(() => setToastNoteSaved(false), 2400);
     },
     [notebook],
   );
@@ -397,6 +405,7 @@ export default function ChatPane({
       setDismissedFollowUps(false);
       stickBottom.current = true;
       setThinkingOpen(true);
+      streamEndRef.current = "abort";
       setStreaming({
         text: "",
         thinking: "",
@@ -440,11 +449,16 @@ export default function ChatPane({
           notebookId: notebook.id,
           token: loadToken.current,
         };
+        // From here every render of the streaming slot carries the instant
+        // exit — when the drain commits, the persisted twin replaces it in
+        // the same paint instead of stacking behind a fade.
+        streamEndRef.current = "commit";
         abortRef.current = null;
         setFinalizeTick((n) => n + 1);
       } catch (err) {
         abortRef.current = null;
         finalizeRef.current = null;
+        streamEndRef.current = "abort";
         setStreaming(null);
         if (!isAbort(err) && !controller.signal.aborted) {
           setError(friendlyError(err));
@@ -477,6 +491,7 @@ export default function ChatPane({
       // Switched chats while the reveal drained — persist, but don't touch
       // the view that's now showing a different thread.
       if (fin.token !== loadToken.current) return;
+      setSettledId(assistant.id);
       setMessages((m) => [...m, assistant]);
       bumpSession(fin.sessionId);
     })();
@@ -677,21 +692,23 @@ export default function ChatPane({
                 : "No sources added yet. Add documents or links in Sources to ground your discussions."}
             </p>
 
-            {/* Quick Starters Grid */}
-            {messages.length === 0 && (
-              <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {STARTERS.map((s) => (
+            {/* Quick Starters Grid — kept mounted; collapse-grid folds it away
+                once the conversation starts (no unmount layout snap). */}
+            <div className={`collapse-grid mt-5 ${messages.length === 0 ? "is-open" : ""}`}>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {STARTERS.map((s, i) => (
                   <button
                     key={s}
                     onClick={() => void send(s)}
-                    className="flex items-center justify-between rounded-xl border border-hairline bg-surface px-3.5 py-2.5 text-left text-[12.5px] text-ink/90 transition-all hover:border-brass/40 hover:bg-raised hover:text-brasspale active:scale-[0.98]"
+                    style={{ ["--d" as string]: `${i * 30}ms` }}
+                    className="chip-in flex items-center justify-between rounded-xl border border-hairline bg-surface px-3.5 py-2.5 text-left text-[12.5px] text-ink/90 transition-all hover:border-brass/40 hover:bg-raised hover:text-brasspale active:scale-[0.98]"
                   >
                     <span>{s}</span>
                     <ArrowRight size={13} className="text-muted/60 shrink-0 ml-2" />
                   </button>
                 ))}
               </div>
-            )}
+            </div>
           </div>
 
           {/* Message List */}
@@ -700,40 +717,55 @@ export default function ChatPane({
               <MessageBubble
                 key={m.id}
                 msg={m}
+                settled={m.id === settledId}
                 onCite={onNavigateSources}
                 onSaveToNote={handleSaveToNote}
               />
             ))}
 
-            {streaming && (
-              <MessageBubble
-                msg={{
-                  id: "streaming",
-                  notebookId: notebook.id,
-                  sessionId: activeId ?? undefined,
-                  role: "assistant",
-                  content: smoothed.text,
-                  thinking: streaming.thinking,
-                  webSearch: streaming.webSearch,
-                  createdAt: Date.now(),
-                }}
-                streaming
-                phase={streaming.phase}
-                thinkingOpen={thinkingOpen}
-                onToggleThinking={toggleThinking}
-                onCite={onNavigateSources}
-                onSaveToNote={handleSaveToNote}
-              />
-            )}
+            {/* Streaming slot — AnimatePresence owns the teardown: an instant
+                drop when committing (the identical persisted bubble takes over
+                in one paint), a short fade on abort/error. */}
+            <AnimatePresence initial={false}>
+              {streaming && (
+                <MessageBubble
+                  msg={{
+                    id: "streaming",
+                    notebookId: notebook.id,
+                    sessionId: activeId ?? undefined,
+                    role: "assistant",
+                    content: smoothed.text,
+                    thinking: streaming.thinking,
+                    webSearch: streaming.webSearch,
+                    createdAt: Date.now(),
+                  }}
+                  streaming
+                  phase={streaming.phase}
+                  thinkingOpen={thinkingOpen}
+                  onToggleThinking={toggleThinking}
+                  onCite={onNavigateSources}
+                  onSaveToNote={handleSaveToNote}
+                  leave={streamEndRef.current === "commit" ? "instant" : "fade"}
+                />
+              )}
+            </AnimatePresence>
           </div>
 
-          {error && (
+          {(error || searchBanner) && (
             <div className="mt-6 space-y-3">
               {searchBanner && <SearchStatusStrip meta={searchBanner} />}
-              <div role="alert" className="flex items-start gap-3 rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] text-rust">
-                <Flame size={16} className="mt-0.5 shrink-0" />
-                <span>{error}</span>
-              </div>
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    role="alert"
+                    className="anim-shake flex items-start gap-3 rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] text-rust"
+                    exit={{ opacity: 0, transition: { duration: 0.18 } }}
+                  >
+                    <Flame size={16} className="mt-0.5 shrink-0" />
+                    <span>{error}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </div>
@@ -791,7 +823,7 @@ export default function ChatPane({
                   transition={{ duration: 0.22 }}
                   className="pointer-events-none absolute inset-0 rounded-[inherit] overflow-hidden"
                 >
-                  <BorderBeam size={84} duration={streaming ? 3.4 : 5} />
+                  <BorderBeam size={84} duration={streaming ? BEAM_STREAM_S : BEAM_IDLE_S} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -807,13 +839,24 @@ export default function ChatPane({
                   role="status"
                 >
                   <span className="phase-dot" />
-                  {streaming.phase === "thinking"
-                    ? "thinking"
-                    : streaming.phase === "answering"
-                      ? "answering"
-                      : streaming.phase === "searching"
-                        ? "searching the web"
-                        : "reading sources"}
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.span
+                      key={streaming.phase ?? "reading"}
+                      className="phase-label"
+                      initial={{ opacity: 0, y: RISE_1 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -RISE_1 }}
+                      transition={{ duration: 0.14, ease: HOUSE }}
+                    >
+                      {streaming.phase === "thinking"
+                        ? "thinking"
+                        : streaming.phase === "answering"
+                          ? "answering"
+                          : streaming.phase === "searching"
+                            ? "searching the web"
+                            : "reading sources"}
+                    </motion.span>
+                  </AnimatePresence>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -895,8 +938,11 @@ export default function ChatPane({
                 >
                   <Plus size={14} weight="light" />
                 </button>
-                {!streaming && (
-                  <div className="flex items-center gap-1.5 ml-1">
+                {/* Reasoning/Web-search rail — kept mounted so the toggles'
+                    state survives streams; collapse-grid hides height and,
+                    once visibility flips, keyboard tab order when folded. */}
+                <div className={`collapse-grid ml-1 ${streaming ? "" : "is-open"}`}>
+                  <div className="flex items-center gap-1.5">
                     {/* Deep Reasoning Toggle */}
                     <button
                       type="button"
@@ -945,10 +991,10 @@ export default function ChatPane({
                       <span>Web Search</span>
                     </button>
                   </div>
-                )}
+                </div>
                 <span className="flex-1" />
                 {tkEstimate > 0 && (
-                  <span className="mr-1 hidden font-mono text-[9.5px] tracking-[0.06em] text-muted/60 sm:inline">
+                  <span className="chip-in mr-1 hidden font-mono text-[9.5px] tracking-[0.06em] text-muted/60 sm:inline">
                     ~{tkEstimate.toLocaleString()} tk
                   </span>
                 )}
@@ -1091,21 +1137,18 @@ export default function ChatPane({
         </p>
       </div>
 
-      {/* Note Saved Toast Notification */}
-      <AnimatePresence>
-        {toastNoteSaved && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 16 }}
-            transition={SOFT}
-            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-sage/40 bg-surface px-4 py-2.5 text-[13px] text-sage shadow-modal"
-          >
-            <Check size={16} weight="bold" />
-            <span>Saved to Studio Notes</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Note Saved Toast Notification — shared Toast owns enter/exit and the
+          hover-paused fuse; the card chrome stays with the caller because
+          .toast-card carries none of the sage styling. */}
+      <Toast
+        open={toastNoteSaved}
+        onClose={() => setToastNoteSaved(false)}
+        durationMs={2600}
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-sage/40 bg-surface px-4 py-2.5 text-[13px] text-sage shadow-modal"
+      >
+        <Check size={16} weight="bold" />
+        <span role="status">Saved to Studio Notes</span>
+      </Toast>
     </div>
   );
 }
@@ -1120,6 +1163,8 @@ const MessageBubble = memo(function MessageBubble({
   onToggleThinking,
   onCite,
   onSaveToNote,
+  settled = false,
+  leave = "none",
 }: {
   msg: ChatMessage;
   streaming?: boolean;
@@ -1128,6 +1173,13 @@ const MessageBubble = memo(function MessageBubble({
   onToggleThinking?: () => void;
   onCite: (sourceId: string, startChar?: number) => void;
   onSaveToNote?: (title: string, content: string) => void;
+  /** Mount without the rise entrance — the just-committed handoff from the
+   *  streaming slot swaps identical geometry in a single paint. */
+  settled?: boolean;
+  /** Streaming-slot teardown only: "instant" when committing (the persisted
+   *  twin replaces it in the same paint), "fade" on abort/error, "none"
+   *  (default) for transcript bubbles which never animate out. */
+  leave?: "none" | "instant" | "fade";
 }) {
   const [open, setOpen] = useState(thinkingOpen);
   const [copied, setCopied] = useState(false);
@@ -1143,7 +1195,7 @@ const MessageBubble = memo(function MessageBubble({
   if (msg.role === "user") {
     return (
       <motion.div
-        initial={{ opacity: 0, x: 16, scale: 0.98 }}
+        initial={{ opacity: 0, x: DRIFT_X, scale: 0.98 }}
         animate={{ opacity: 1, x: 0, scale: 1 }}
         transition={SPRING}
         className="flex justify-end"
@@ -1158,11 +1210,20 @@ const MessageBubble = memo(function MessageBubble({
   const citations = dedupeCitations(msg.citations ?? []);
   const hasThinking = !!msg.thinking?.trim();
   const isThinking = streaming && !msg.content;
+  // Transcript bubbles never animate out (session swaps replace the whole
+  // list); the streaming slot picks its teardown by how the stream ended.
+  const exit =
+    leave === "instant"
+      ? { opacity: 0, transition: { duration: 0 } }
+      : leave === "fade"
+        ? { opacity: 0, y: 6, transition: { duration: 0.15, ease: HOUSE } }
+        : undefined;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={settled ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
+      exit={exit}
       transition={SOFT}
       className="space-y-3"
     >
@@ -1172,13 +1233,19 @@ const MessageBubble = memo(function MessageBubble({
 
       {/* Reasoning Process Drawer */}
       {hasThinking && (
-        <div className="think-rule overflow-hidden rounded-xl border border-moon/25 bg-moon/[0.04]">
+        <div className="think-rule relative overflow-hidden rounded-xl border border-moon/25 bg-moon/[0.04]">
           <button
             onClick={() => (onToggleThinking ? onToggleThinking() : setOpen((v) => !v))}
             className="flex w-full items-center gap-2 px-3.5 py-2 text-left transition-colors hover:bg-moon/[0.06]"
           >
             <Brain size={15} weight="light" className="text-moon" />
-            <span className="text-[12px] font-medium text-moon/90">
+            {/* thinking-live clips the color to a shimmer gradient, so it
+                replaces the static moon tint rather than stacking with it. */}
+            <span
+              className={`text-[12px] font-medium ${
+                isThinking ? "thinking-live" : "text-moon/90"
+              }`}
+            >
               {isThinking ? "Thinking…" : "Reasoning process"}
             </span>
             <CaretDown
@@ -1191,6 +1258,9 @@ const MessageBubble = memo(function MessageBubble({
               {msg.thinking}
             </div>
           </Collapse>
+          {/* Light sweep while reasoning streams; the panel wrapper is the
+              positioned, non-scrolling ancestor the gloss requires. */}
+          {isThinking && <span aria-hidden className="think-gloss" />}
         </div>
       )}
 
@@ -1236,16 +1306,20 @@ const MessageBubble = memo(function MessageBubble({
       {citations.length > 0 && !streaming && (
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
           <Quotes size={13} weight="light" className="text-muted/60 mr-1" />
-          {citations.map((c, i) => (
-            <button
-              key={i}
-              onClick={() => c.sourceId && onCite(c.sourceId, c.startChar)}
-              title={c.citedText.slice(0, 160)}
-              className="rounded-md border border-hairline bg-ink/[0.03] px-2 py-0.5 font-mono text-[10.5px] text-brasspale hover:border-brass/40 hover:bg-brass/10 transition-colors"
-            >
-              {i + 1} · {c.sourceTitle.length > 24 ? `${c.sourceTitle.slice(0, 24)}…` : c.sourceTitle}
-            </button>
-          ))}
+          {/* Chips-only wrapper — .cite-chip staggers by nth-child, so nothing
+              but chips may sit in here or every delay shifts by one slot. */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {citations.map((c, i) => (
+              <button
+                key={`${c.sourceId ?? "cite"}-${i}`}
+                onClick={() => c.sourceId && onCite(c.sourceId, c.startChar)}
+                title={c.citedText.slice(0, 160)}
+                className="cite-chip rounded-md border border-hairline bg-ink/[0.03] px-2 py-0.5 font-mono text-[10.5px] text-brasspale hover:border-brass/40 hover:bg-brass/10 transition-colors"
+              >
+                {i + 1} · {c.sourceTitle.length > 24 ? `${c.sourceTitle.slice(0, 24)}…` : c.sourceTitle}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -1307,8 +1381,9 @@ function SearchStatusStrip({
   if (searching && !meta) {
     return (
       <div
+        key="searching"
         role="status"
-        className="flex items-center gap-2 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] px-3.5 py-2 text-[12px] text-cyan-300"
+        className="anim-rise flex items-center gap-2 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] px-3.5 py-2 text-[12px] text-cyan-300"
       >
         <Globe size={15} weight="fill" className="shrink-0 text-cyan-400" />
         <span>Searching the web…</span>
@@ -1320,8 +1395,9 @@ function SearchStatusStrip({
   if (meta.status === "error") {
     return (
       <div
+        key="error"
         role="status"
-        className="flex items-start gap-2 rounded-xl border border-rust/30 bg-rust/[0.07] px-3.5 py-2 text-[12px] text-rust"
+        className="anim-rise anim-shake flex items-start gap-2 rounded-xl border border-rust/30 bg-rust/[0.07] px-3.5 py-2 text-[12px] text-rust"
       >
         <Flame size={15} className="mt-0.5 shrink-0" />
         <div className="min-w-0 flex-1">
@@ -1338,8 +1414,9 @@ function SearchStatusStrip({
   if (meta.status === "empty") {
     return (
       <div
+        key="empty"
         role="status"
-        className="flex items-center gap-2 rounded-xl border border-hairline bg-ink/[0.03] px-3.5 py-2 text-[12px] text-muted"
+        className="anim-rise flex items-center gap-2 rounded-xl border border-hairline bg-ink/[0.03] px-3.5 py-2 text-[12px] text-muted"
       >
         <Globe size={15} className="shrink-0" />
         <span className="min-w-0 flex-1 truncate">Searched the web · no results</span>
@@ -1356,8 +1433,9 @@ function SearchStatusStrip({
   const noun = meta.count === 1 ? "source" : "sources";
   return (
     <div
+      key="results"
       role="status"
-      className="flex items-center gap-2 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] px-3.5 py-2 text-[12px] text-cyan-300"
+      className="anim-rise flex items-center gap-2 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] px-3.5 py-2 text-[12px] text-cyan-300"
     >
       <Globe size={15} weight="fill" className="shrink-0 text-cyan-400" />
       <span className="min-w-0 flex-1">

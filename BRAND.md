@@ -55,7 +55,8 @@ Landing keeps the literal names (`night`, `study`, `shelf`, `parchment`, `faded`
 marketing page never follows Daylight.
 
 Elevation: `--shadow-card`, `--shadow-lift`, `--shadow-modal`. Motion: `--dur-fast 120ms`,
-`--dur-med 220ms`. Glows become soft warm washes at lower opacity in Daylight.
+`--dur-med 220ms`, `--dur-slow 360ms`, `--dur-glow 480ms`, `--dur-settle 700ms`.
+Glows become soft warm washes at lower opacity in Daylight.
 
 - **Signature gradient:** `linear-gradient(92deg, var(--brassdeep), var(--brasspale))`.
 - **Glows (dark):** warm `rgba(227,176,75,0.14)` and cool `rgba(42,54,84,0.35)`.
@@ -87,6 +88,34 @@ silent at the end. Nothing bounces except where a lamp would flicker.
   motes drifting through a lamp cone with a pointer-reactive constellation of idea-nodes.
 - **Reduced motion:** `prefers-reduced-motion` renders everything instantly — no parallax,
   no scrub, static canvas frame. Content is never hidden behind an animation.
+
+### App surfaces (studio · desk)
+
+The landing's cinematic toolkit stops at the studio door. App motion follows the same
+soul with quieter means:
+
+- **Split of duties** — continuous/micro-state motion is tokenized CSS (`.anim-*`,
+  `.card-wake`, breathing loops); enter/exit orchestration is `motion/react`
+  (`AnimatePresence` + house springs). GSAP stays landing-only, never imported by
+  studio or desk code.
+- **House springs** — `SPRING` (380/34) for placed-feeling moves (bubbles, morphs),
+  `SOFT` (240/26) for popover/toast travel; both live in `src/studio/fx.tsx` next to
+  distance constants `RISE_1/2/3`, `DRIFT_X` (mirrors `--rise-*`, `--drift-x`;
+  keyframes take numbers, never `var()` strings).
+- **Stagger** — `--stagger-step` 30ms per item, capped at 10 items everywhere
+  (`.cite-chip`, source rows, context menus).
+- **Decision rule for enter vs exit** — conditional render inside the chat transcript,
+  composer, or any overlay → `AnimatePresence`; persistent-region visibility toggles →
+  keep-mounted class/attribute flips (`.collapse-grid`, `data-dropping`); content
+  arriving into a region that is itself moving (pane widths, mobile tabs) → CSS
+  entrance only, no exit.
+- **Reduced motion, three tiers** — ambient loops stop and rest visibly (the streaming
+  beacon becomes a static caret); entrances keep a plain opacity fade; everything else
+  resolves in one frame. Springs collapse via `MotionPrefs` (`MotionConfig`). Animated
+  numbers are display-only — raw values always feed ARIA.
+- **Focus is sacred** — every keyboard-reachable control shows the brass focus ring;
+  outlines may only be suppressed where a visible alternative exists (composer inset
+  ring, `inputCls` border/shadow wake).
 
 ## 6 · Voice
 

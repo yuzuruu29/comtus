@@ -479,7 +479,7 @@ export default function SettingsModal({
               VIEW 1: STARTER / BASIC MODE (Easy, Clean, Curated Free Models)
              ========================================================================= */}
           {settingsMode === "starter" && (
-            <div className="space-y-5">
+            <div key={settingsMode} className="space-y-5 anim-fade anim-fade--fast">
               {/* 1-Click OpenRouter Connect Hero Box */}
               <div className="overflow-hidden rounded-2xl border border-brass/40 bg-gradient-to-b from-brass/[0.12] to-brass/[0.03] p-4.5 shadow-[0_4px_24px_rgba(227,176,75,0.09)] space-y-3.5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -677,7 +677,7 @@ export default function SettingsModal({
               VIEW 2: ADVANCED BYOK (Power Users, Stored Keys, Custom Endpoints)
              ========================================================================= */}
           {settingsMode === "advanced" && (
-            <div className="space-y-6">
+            <div key={settingsMode} className="space-y-6 anim-fade anim-fade--fast">
               {/* Back to Starter mode banner */}
               <div className="rounded-xl border border-hairline bg-surface p-3 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-[12.5px] text-ink">
@@ -938,7 +938,7 @@ export default function SettingsModal({
               VIEW 3: SMARTER MODELS (Claude Opus 5 & Sonnet 5 via PayPal)
              ========================================================================= */}
           {settingsMode === "smarter" && (
-            <div className="space-y-5">
+            <div key={settingsMode} className="space-y-5 anim-fade anim-fade--fast">
               {(() => {
                 const isPro = s.hasProPlan();
                 const planTier = s.planTier;

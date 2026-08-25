@@ -284,7 +284,10 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          "vendor-motion": ["motion/react", "gsap"],
+          "vendor-motion": ["motion/react"],
+          // gsap is landing-page-only (CustomCursor); keeping it out of
+          // vendor-motion stops studio routes from downloading its bytes.
+          "vendor-gsap": ["gsap"],
           "vendor-ai": ["@anthropic-ai/sdk", "openai"],
           "vendor-markdown": ["react-markdown", "remark-gfm"],
           "vendor-icons": ["lucide-react", "@phosphor-icons/react"],

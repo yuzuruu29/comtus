@@ -357,7 +357,7 @@ function SubscriptionCard({
       </div>
 
       {!connected && stage === "idle" && (
-        <>
+        <div key="idle" className="anim-fade anim-fade--fast">
           <p className="mt-2.5 text-[11.5px] leading-snug text-muted">{desc}</p>
           <button
             type="button"
@@ -367,11 +367,11 @@ function SubscriptionCard({
           >
             {busy ? "Opening sign-in…" : "Sign in →"}
           </button>
-        </>
+        </div>
       )}
 
       {!connected && stage === "code" && device?.session && (
-        <div className="mt-3 space-y-2.5">
+        <div key="code" className="mt-3 space-y-2.5 anim-fade anim-fade--fast">
           <p className="text-[11.5px] leading-snug text-muted">
             Enter this code on the OpenAI page that just opened
             <span className="font-mono text-muted/70"> (auth.openai.com/codex/device)</span>, then approve access.
@@ -421,7 +421,7 @@ function SubscriptionCard({
       )}
 
       {!connected && stage === "paste" && (
-        <div className="mt-3 space-y-2">
+        <div key="paste" className="mt-3 space-y-2 anim-fade anim-fade--fast">
           <p className="text-[11.5px] leading-snug text-muted">
             Approve access in the sign-in window, copy what it gives you, and paste it here.
           </p>
@@ -455,7 +455,7 @@ function SubscriptionCard({
       )}
 
       {connected && (
-        <div className="mt-3 space-y-2.5">
+        <div key="connected" className="mt-3 space-y-2.5 anim-fade anim-fade--fast">
           {usage && (
             <div className="space-y-1.5 rounded-lg border border-hairline bg-ink/[0.03] px-2.5 py-1.5">
               {usageRows.map((row) => (

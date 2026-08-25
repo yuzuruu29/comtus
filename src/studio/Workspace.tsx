@@ -1,6 +1,6 @@
-import { useCallback, useState, type ComponentType, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Books, CaretLeft, ChatCircle, GearSix, Notebook, SidebarSimple, UserCircle } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
 import { useCallSettings, useSettings } from "../lib/settings";
@@ -8,7 +8,7 @@ import { effortLabelFor, modelLabelFor } from "../lib/llm";
 import { detectPlatform, isTauri } from "../lib/desktop";
 import StudyGlyph from "../components/icons/StudyGlyph";
 import { ProBadge } from "../components/brand/BrandControls";
-import { SPRING, SOFT, deskPane } from "./fx";
+import { SPRING, SOFT, deskPane, useCountUp } from "./fx";
 import SourcesPane from "./SourcesPane";
 import ChatPane from "./ChatPane";
 import StudioPane from "./StudioPane";
@@ -27,6 +27,10 @@ const DEFAULT_SOURCES_W = 270;
 const DEFAULT_STUDIO_W = 290;
 const RAIL_W = 48;
 const PANE_WIDTH_VAR = "--pane-width" as const;
+
+/** Left-to-right reading order of the mobile panes; a swap between two of
+    them slides the incoming pane in from the direction it sits toward. */
+const MOBILE_PANE_ORDER: Record<MobilePane, number> = { sources: 0, chat: 1, studio: 2 };
 
 export default function Workspace({ notebookId }: { notebookId: string }) {
   const cs = useCallSettings();
@@ -82,6 +86,17 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   const modelLabel = modelLabelFor(cs.provider, cs.model);
   const effortLabel = effortLabelFor(cs.effort);
 
+  const isDropping = desk.dropping > 0;
+  // Direction of the last mobile pane swap, read before the effect advances
+  // the ref — the entering pane slides in from the side it sits toward.
+  const lastPaneRef = useRef<MobilePane>(mobilePane);
+  useEffect(() => {
+    lastPaneRef.current = mobilePane;
+  }, [mobilePane]);
+  const paneDelta = MOBILE_PANE_ORDER[mobilePane] - MOBILE_PANE_ORDER[lastPaneRef.current];
+  const paneSlideClass = paneDelta > 0 ? "anim-slide-r" : paneDelta < 0 ? "anim-slide-l" : undefined;
+  const paneWrapperClass = `flex min-h-0 flex-1 flex-col${paneSlideClass ? ` ${paneSlideClass}` : ""}`;
+
   const toggleSources = useCallback(() => {
     setLayout(panes.sources ? (panes.studio ? "writing" : "focus") : (panes.studio ? "standard" : "reading"));
   }, [panes.sources, panes.studio, setLayout]);
@@ -111,14 +126,20 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           if (e.dataTransfer.files.length) desk.setDropFiles(e.dataTransfer.files);
         }}
       >
-        {desk.loadState === "loading" && (
-          <div className="absolute inset-0 z-[70] flex items-center justify-center bg-ground/90">
-            <LampPulse label="Opening notebook…" />
-          </div>
-        )}
+        <AnimatePresence>
+          {desk.loadState === "loading" && (
+            <motion.div
+              key="workspace-loading"
+              exit={{ opacity: 0, transition: { duration: 0.2 } }}
+              className="absolute inset-0 z-[70] flex items-center justify-center bg-ground/90"
+            >
+              <LampPulse label="Opening notebook…" />
+            </motion.div>
+          )}
+        </AnimatePresence>
         {desk.loadState === "error" && (
           <div role="alert" className="absolute inset-0 z-[70] flex items-center justify-center bg-ground/95 px-6 text-center">
-            <div className="max-w-sm rounded-[var(--radius-dialog)] border border-rust/30 bg-surface p-6 shadow-modal">
+            <div className="anim-rise max-w-sm rounded-[var(--radius-dialog)] border border-rust/30 bg-surface p-6 shadow-modal">
               <h1 className="font-display text-heading text-ink">This notebook did not open.</h1>
               <p className="mt-2 text-body text-muted">{desk.loadError}</p>
               <div className="mt-5 flex justify-center gap-2">
@@ -138,11 +159,19 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             </div>
           </div>
         )}
-        {desk.dropping > 0 && (
-          <div className="pointer-events-none absolute inset-0 z-[50] flex items-center justify-center bg-ground/70 text-[15px] text-ink">
+        {/* Kept mounted: the drop veil fades on a data-attribute flip so the
+            overlay never remounts mid-drag (dragenter/leave pairs flicker). */}
+        <div
+          data-dropping={isDropping ? "true" : undefined}
+          className="pointer-events-none absolute inset-0 z-[50] flex items-center justify-center bg-ground/70 text-[15px] text-ink opacity-0 transition-opacity duration-fast ease-house data-[dropping]:opacity-100"
+        >
+          <div
+            data-dropping={isDropping ? "true" : undefined}
+            className={`rounded-[var(--radius-control)] px-6 py-3 scale-[0.98] transition-transform duration-fast ease-house data-[dropping]:scale-100 ${isDropping ? "ring-breathe" : ""}`}
+          >
             Drop onto this notebook
           </div>
-        )}
+        </div>
         <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[38vh] bg-[radial-gradient(50%_90%_at_50%_0%,rgba(227,176,75,0.05),transparent_70%)]" />
 
         <WorkspaceHeader
@@ -166,10 +195,10 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               [PANE_WIDTH_VAR]: `${panes.sources ? sourcesResize.width : RAIL_W}px`,
               width: `var(${PANE_WIDTH_VAR})`,
             } as CSSProperties}
-            className="relative shrink-0 overflow-visible border-r desk-split transition-[width] duration-[180ms] ease-[cubic-bezier(0.16,1,0.3,1)] data-[resizing=true]:transition-none motion-reduce:transition-none"
+            className="relative shrink-0 overflow-visible border-r desk-split transition-[width] duration-med ease-house data-[resizing=true]:transition-none motion-reduce:transition-none"
           >
             {panes.sources ? (
-              <div id="workspace-sources-content" className={`${deskPane} flex flex-col`}>
+              <div id="workspace-sources-content" className={`${deskPane} flex flex-col anim-fade anim-fade--fast`}>
                 <SourcesPane
                   notebookId={notebookId}
                   version={desk.sourcesVersion}
@@ -184,7 +213,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 />
               </div>
             ) : (
-              <div className="flex h-full flex-col items-center pt-3">
+              <div className="anim-fade flex h-full flex-col items-center pt-3" style={{ ["--d"]: "60ms" } as CSSProperties}>
                 <RailButton icon={Notebook} label="Sources" side="left" onClick={() => desk.setLayout(panes.studio ? "standard" : "reading")} />
               </div>
             )}
@@ -232,17 +261,17 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               [PANE_WIDTH_VAR]: `${panes.studio ? studioResize.width : RAIL_W}px`,
               width: `var(${PANE_WIDTH_VAR})`,
             } as CSSProperties}
-            className="relative shrink-0 overflow-visible border-l desk-split transition-[width] duration-[180ms] ease-[cubic-bezier(0.16,1,0.3,1)] data-[resizing=true]:transition-none motion-reduce:transition-none"
+            className="relative shrink-0 overflow-visible border-l desk-split transition-[width] duration-med ease-house data-[resizing=true]:transition-none motion-reduce:transition-none"
           >
             {panes.studio ? (
-              <div id="workspace-studio-content" className={`${deskPane} flex flex-col`}>
+              <div id="workspace-studio-content" className={`${deskPane} flex flex-col anim-fade anim-fade--fast`}>
                 <StudioPane
                   notebookId={notebookId}
                   onCollapse={() => desk.setLayout(panes.sources ? "reading" : "focus")}
                 />
               </div>
             ) : (
-              <div className="flex h-full flex-col items-center pt-3">
+              <div className="anim-fade flex h-full flex-col items-center pt-3" style={{ ["--d"]: "60ms" } as CSSProperties}>
                 <RailButton icon={Books} label="Studio" side="right" onClick={() => desk.setLayout(panes.sources ? "standard" : "writing")} />
               </div>
             )}
@@ -269,29 +298,37 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               sources panes silently lost all scrolling on mobile. */}
           <div className="flex min-h-0 flex-1 flex-col">
             {mobilePane === "sources" && (
-              <SourcesPane
-                notebookId={notebookId}
-                version={desk.sourcesVersion}
-                onChanged={desk.bumpSources}
-                pendingView={desk.pendingView}
-                onPendingConsumed={desk.clearPendingView}
-                importTick={desk.importTick}
-                onImportTriggered={desk.consumeImport}
-                dropFiles={desk.dropFiles}
-                onDropConsumed={() => desk.setDropFiles(null)}
-              />
+              <div key={mobilePane} className={paneWrapperClass}>
+                <SourcesPane
+                  notebookId={notebookId}
+                  version={desk.sourcesVersion}
+                  onChanged={desk.bumpSources}
+                  pendingView={desk.pendingView}
+                  onPendingConsumed={desk.clearPendingView}
+                  importTick={desk.importTick}
+                  onImportTriggered={desk.consumeImport}
+                  dropFiles={desk.dropFiles}
+                  onDropConsumed={() => desk.setDropFiles(null)}
+                />
+              </div>
             )}
             {mobilePane === "chat" && (
-              <ChatPane
-                notebook={desk.notebook}
-                sourcesVersion={desk.sourcesVersion}
-                onNavigateSources={openSource}
-                modelLabel={modelLabel}
-                onOpenSettings={() => setSettingsOpen(true)}
-                onAddSources={() => setMobilePane("sources")}
-              />
+              <div key={mobilePane} className={paneWrapperClass}>
+                <ChatPane
+                  notebook={desk.notebook}
+                  sourcesVersion={desk.sourcesVersion}
+                  onNavigateSources={openSource}
+                  modelLabel={modelLabel}
+                  onOpenSettings={() => setSettingsOpen(true)}
+                  onAddSources={() => setMobilePane("sources")}
+                />
+              </div>
             )}
-            {mobilePane === "studio" && <StudioPane notebookId={notebookId} />}
+            {mobilePane === "studio" && (
+              <div key={mobilePane} className={paneWrapperClass}>
+                <StudioPane notebookId={notebookId} />
+              </div>
+            )}
           </div>
           <nav className="flex h-[calc(4.25rem+var(--sab))] shrink-0 items-center justify-around border-t border-hairline bg-ground/95 px-3 pb-[var(--sab)] pt-1">
             {(
@@ -499,18 +536,14 @@ function WorkspaceHeader({
         <Modal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} title="Notebook Analytics">
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-xl border border-hairline bg-surface/70 p-3">
-                <div className="font-mono text-[18px] font-semibold text-brasspale">{stats?.sources ?? 0}</div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted mt-1">Sources</div>
-              </div>
-              <div className="rounded-xl border border-hairline bg-surface/70 p-3">
-                <div className="font-mono text-[18px] font-semibold text-brasspale">{((stats?.tokens ?? 0) / 1000).toFixed(1)}k</div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted mt-1">Tokens Grounded</div>
-              </div>
-              <div className="rounded-xl border border-hairline bg-surface/70 p-3">
-                <div className="font-mono text-[18px] font-semibold text-brasspale">{stats?.gens ?? 0}</div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted mt-1">Saved Artifacts</div>
-              </div>
+              <AnalyticsTile index={0} label="Sources" target={stats?.sources ?? 0} format={(v) => `${v}`} />
+              <AnalyticsTile
+                index={1}
+                label="Tokens Grounded"
+                target={stats?.tokens ?? 0}
+                format={(v) => `${(v / 1000).toFixed(1)}k`}
+              />
+              <AnalyticsTile index={2} label="Saved Artifacts" target={stats?.gens ?? 0} format={(v) => `${v}`} />
             </div>
 
             <div className="rounded-xl border border-hairline/80 bg-ink/[0.02] p-3 text-[12.5px] leading-relaxed text-muted">
@@ -556,6 +589,29 @@ function RailButton({
       >
         {label}
       </span>
+    </div>
+  );
+}
+
+function AnalyticsTile({
+  label,
+  target,
+  format,
+  index,
+}: {
+  label: string;
+  target: number;
+  format: (value: number) => string;
+  index: number;
+}) {
+  const counted = useCountUp(target);
+  return (
+    <div
+      className="anim-rise rounded-xl border border-hairline bg-surface/70 p-3"
+      style={{ ["--d"]: `${Math.min(index, 10) * 30}ms` } as CSSProperties}
+    >
+      <div className="font-mono text-[18px] font-semibold text-brasspale">{format(counted)}</div>
+      <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted mt-1">{label}</div>
     </div>
   );
 }

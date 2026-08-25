@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   CheckSquare,
   ClipboardText,
@@ -24,7 +24,7 @@ import { importFiles, extractUrl, chunkText } from "../lib/import";
 import { estTokens } from "../lib/retrieval";
 import { uid } from "../lib/db";
 import { addSourceWithChunks } from "../lib/db";
-import { SOFT, Spotlight } from "./fx";
+import { DRIFT_X, RISE_2, SOFT, Spotlight } from "./fx";
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote } from "./ui";
 import ExternalLink from "./ExternalLink";
 import { UsageLimitsPanel } from "./UsageLimitsPanel";
@@ -112,6 +112,7 @@ export default function SourcesPane({
   const [importing, setImporting] = useState<{ done: number; total: number; current: string } | null>(
     null,
   );
+  const [flushed, setFlushed] = useState(false);
   const [failed, setFailed] = useState<string[]>([]);
   const [urlOpen, setUrlOpen] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
@@ -130,11 +131,12 @@ export default function SourcesPane({
       if (!files || files.length === 0) return;
       const selected = Array.from(files);
       setFailed([]);
+      setFlushed(false);
       setImporting({ done: 0, total: selected.length, current: selected[0].name });
-      const outcome = await importFiles(selected, notebookId, (done, total, current) =>
-        setImporting({ done, total, current }),
-      );
-      setImporting(null);
+      const outcome = await importFiles(selected, notebookId, (done, total, current) => {
+        setImporting({ done, total, current });
+        if (done >= total) setFlushed(true);
+      });
       if (outcome.failed.length) {
         setFailed(outcome.failed.map((failure) => `${failure.name}: ${failure.reason}`));
       }
@@ -192,6 +194,14 @@ export default function SourcesPane({
     void handleFilesRef.current(dropFiles);
     onDropConsumed?.();
   }, [dropFiles, dropRequestId, onDropConsumed]);
+
+  // Completion beat: hold the full bar ~260ms so the lamp-flush lands, then
+  // release the progress card to its exit transition.
+  useEffect(() => {
+    if (!flushed) return;
+    const timer = window.setTimeout(() => setImporting(null), 260);
+    return () => window.clearTimeout(timer);
+  }, [flushed]);
 
   useEffect(() => {
     void refresh();
@@ -292,24 +302,36 @@ export default function SourcesPane({
           </button>
         </div>
 
-        {importing && (
-          <div role="status" aria-live="polite" className="mt-3 rounded-xl border border-hairline bg-ink/[0.02] px-3.5 py-3">
-            <div className="text-[11.5px] text-muted">
-              {importing.current || "Processing…"} ({importing.done}/{importing.total})
-            </div>
-            <div className="relative mt-2 h-1 overflow-hidden rounded bg-ink/[0.07]">
-              <div
-                role="progressbar"
-                aria-label="Import progress"
-                aria-valuemin={0}
-                aria-valuemax={importing.total}
-                aria-valuenow={importing.done}
-                className="h-full grad-lamp transition-all duration-300"
-                style={{ width: `${(importing.done / Math.max(1, importing.total)) * 100}%` }}
-              />
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {importing && (
+            <motion.div
+              key="import-progress"
+              role="status"
+              aria-live="polite"
+              initial={{ opacity: 0, y: RISE_2 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6, transition: { duration: 0.16 } }}
+              transition={SOFT}
+              className="mt-3 rounded-xl border border-hairline bg-ink/[0.02] px-3.5 py-3"
+            >
+              <div className="text-[11.5px] text-muted">
+                {importing.current || "Processing…"} ({importing.done}/{importing.total})
+              </div>
+              <div className="relative mt-2 h-1 overflow-hidden rounded bg-ink/[0.07]">
+                {!flushed && <span aria-hidden className="bar-sheen" />}
+                <div
+                  role="progressbar"
+                  aria-label="Import progress"
+                  aria-valuemin={0}
+                  aria-valuemax={importing.total}
+                  aria-valuenow={importing.done}
+                  className={`h-full grad-lamp transition-all duration-300${flushed ? " lamp-flush" : ""}`}
+                  style={{ width: `${(importing.done / Math.max(1, importing.total)) * 100}%` }}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {failed.length > 0 && (
           <div className="mt-3 space-y-1.5">
@@ -322,7 +344,7 @@ export default function SourcesPane({
 
       {/* "Select all sources" subheader matching Screenshot 2 */}
       {sources.length > 0 && (
-        <div className="flex items-center justify-between border-b border-hairline px-4 py-2 text-[12px] text-muted">
+        <div className="anim-fade flex items-center justify-between border-b border-hairline px-4 py-2 text-[12px] text-muted">
           <button
             onClick={toggleSelectAll}
             className="flex items-center gap-2 hover:text-ink transition-colors"
@@ -359,7 +381,7 @@ export default function SourcesPane({
                   layout
                   initial={{ opacity: 0, y: -8, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: -12, scale: 0.96, transition: { duration: 0.16 } }}
+                  exit={{ opacity: 0, x: -DRIFT_X, scale: 0.96, transition: { duration: 0.16 } }}
                   transition={i < 10 ? { ...SOFT, delay: i * 0.03 } : SOFT}
                   className={`group flex items-center gap-2 rounded-xl px-2.5 py-2 transition-all duration-200 hover:-translate-y-0.5 hover:border-brass/40 hover:bg-surface hover:shadow-[0_4px_16px_-2px_rgba(0,0,0,0.35),0_0_12px_-3px_rgba(227,176,75,0.12)] ${
                     isSelected ? "bg-surface/80 border border-hairline/60" : "opacity-60 hover:opacity-100 bg-surface/40 border border-transparent"
@@ -420,19 +442,25 @@ export default function SourcesPane({
           })}
         </AnimatePresence>
 
-        {sources.length === 0 && !importing && (
-          <div className="px-4 py-12 text-center">
-            <ComtusEmblem size={24} breathe className="mx-auto mb-3" />
-            <h3 className="font-display text-[14.5px] font-[450] text-ink">No sources added yet</h3>
-            <p className="mt-2 text-[12px] leading-relaxed text-muted">
-              Add PDFs, notes, documents, or links. Your questions and study aids ground directly in your materials.
-            </p>
-          </div>
-        )}
+        <AnimatePresence>
+          {sources.length === 0 && !importing && (
+            <motion.div
+              key="empty-sources"
+              exit={{ opacity: 0, transition: { duration: 0.2 } }}
+              className="px-4 py-12 text-center"
+            >
+              <ComtusEmblem size={24} breathe className="mx-auto mb-3" />
+              <h3 className="font-display text-[14.5px] font-[450] text-ink">No sources added yet</h3>
+              <p className="mt-2 text-[12px] leading-relaxed text-muted">
+                Add PDFs, notes, documents, or links. Your questions and study aids ground directly in your materials.
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {sources.length > 0 && (
-        <div className="border-t border-hairline px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted/70 flex items-center justify-between">
+        <div className="anim-fade border-t border-hairline px-4 py-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted/70 flex items-center justify-between">
           <span>{totalTokens.toLocaleString()} tokens</span>
           <span>{sources.length} sources</span>
         </div>
@@ -614,12 +642,17 @@ function SourceViewer({
   onClose: () => void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  // Bumped on every citation jump so the cite-flash animation replays
+  // (an unchanged className does not restart a CSS animation).
+  const [jumpTick, setJumpTick] = useState(0);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     if (startChar === undefined || !bodyRef.current) return;
     const el = bodyRef.current.querySelector(`[data-char="${Math.floor(startChar / 500) * 500}"]`);
-    el?.scrollIntoView({ block: "center" });
-  }, [startChar]);
+    setJumpTick((tick) => tick + 1);
+    el?.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
+  }, [startChar, reduceMotion]);
 
   const blocks: { at: number; text: string }[] = [];
   for (let i = 0; i < source.content.length; i += 500)
@@ -639,21 +672,23 @@ function SourceViewer({
         )}
       </div>
       <div ref={bodyRef} className="space-y-2 text-[14px] leading-[1.75] text-ink/85 max-h-[60vh] overflow-y-auto pr-2">
-        {blocks.map((b) => (
-          <p
-            key={b.at}
-            data-char={b.at}
-            className={
-              startChar !== undefined &&
-              startChar >= b.at &&
-              startChar < b.at + 500
-                ? "rounded bg-brass/[0.14] px-1.5 -mx-1.5 ring-1 ring-brass/30"
-                : undefined
-            }
-          >
-            {b.text}
-          </p>
-        ))}
+        {blocks.map((b) => {
+          const isTarget =
+            startChar !== undefined && startChar >= b.at && startChar < b.at + 500;
+          return (
+            <p
+              key={isTarget ? `${b.at}:${jumpTick}` : b.at}
+              data-char={b.at}
+              className={
+                isTarget
+                  ? "cite-flash rounded bg-brass/[0.14] px-1.5 -mx-1.5 ring-1 ring-brass/30"
+                  : undefined
+              }
+            >
+              {b.text}
+            </p>
+          );
+        })}
       </div>
       <div className="mt-5 flex justify-end">
         <button onClick={onClose} className={btnGhost}>

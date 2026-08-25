@@ -37,7 +37,7 @@ interface ReqInit {
   body?: unknown;
 }
 
-async function call(spec: ReqInit): Promise<{ status: number; json: () => any; headers: Record<string, string> }> {
+async function call(spec: ReqInit): Promise<{ status: number; json: () => unknown; headers: Record<string, string> }> {
   const req = {
     method: spec.method ?? "POST",
     url: spec.url,
@@ -86,7 +86,7 @@ describe("PayPal checkout", () => {
 
     const res = await call(paypalReq("create-order", { planId: "scholar" }));
     expect(res.status).toBe(200);
-    expect(res.json().orderId).toBe("ORDER123");
+    expect((res.json() as { orderId?: string }).orderId).toBe("ORDER123");
     expect(fetchMock).toHaveBeenCalledTimes(2); // OAuth + create order
   });
 
@@ -118,7 +118,7 @@ describe("PayPal checkout", () => {
     expect(d1.passToken).toBeTruthy();
 
     const res2 = await call(paypalReq("capture-order", { orderId: "ORDER123", planId: "scholar" }));
-    const d2 = res2.json();
+    const d2 = res2.json() as { passToken?: string };
     expect(d2.passToken).toBe(d1.passToken);
   });
 

@@ -290,12 +290,33 @@
 
 .anim-shake { animation: shake-x 0.45s var(--ease-house) both; }
 
+/* Shorter beat for stage/content swaps where the 450ms default drags —
+   pair it with .anim-fade (this modifier wins on source order). */
+.anim-fade--fast { animation-duration: 200ms; }
+
 .chip-in {
   animation: chip-pop 0.34s var(--ease-house) both;
   animation-delay: var(--d, 0ms);
 }
 
-.breathe { animation: breathe 3.2s ease-in-out infinite; }
+/* Citation chips arrive one after another. Scope this to a wrapper that
+   contains ONLY chips — an icon sibling would consume the nth-child(1)
+   slot and shift every delay. Caps at 10 like every other stagger. */
+.cite-chip {
+  animation: chip-pop 0.34s var(--ease-house) both;
+}
+.cite-chip:nth-child(2)  { animation-delay: calc(1 * var(--stagger-step)); }
+.cite-chip:nth-child(3)  { animation-delay: calc(2 * var(--stagger-step)); }
+.cite-chip:nth-child(4)  { animation-delay: calc(3 * var(--stagger-step)); }
+.cite-chip:nth-child(5)  { animation-delay: calc(4 * var(--stagger-step)); }
+.cite-chip:nth-child(6)  { animation-delay: calc(5 * var(--stagger-step)); }
+.cite-chip:nth-child(7)  { animation-delay: calc(6 * var(--stagger-step)); }
+.cite-chip:nth-child(8)  { animation-delay: calc(7 * var(--stagger-step)); }
+.cite-chip:nth-child(9)  { animation-delay: calc(8 * var(--stagger-step)); }
+.cite-chip:nth-child(10) { animation-delay: calc(9 * var(--stagger-step)); }
+.cite-chip:nth-child(11) { animation-delay: calc(10 * var(--stagger-step)); }
+
+.breathe { animation: breathe var(--beat-slow) ease-in-out infinite; }
 
 /* Thin quiet scrollbar for the library rail */
 .scroll-thin {
@@ -311,25 +332,30 @@
 }
 .scroll-thin::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--ink) 22%, transparent); }
 
-/* Modal choreography — backdrop fades while the panel rises to meet it */
-@keyframes modal-backdrop-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes modal-panel-in {
-  from { opacity: 0; transform: translateY(18px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-.modal-backdrop { animation: modal-backdrop-in 0.28s ease-out both; }
-.modal-panel {
-  animation: modal-panel-in 0.38s var(--ease-house) both;
-}
+/* Modal enter/exit choreography lives in ui.tsx (`Modal`) via motion/react —
+   the old CSS-only backdrop/panel classes here are retired. */
 
 /* Collapsible region — grid-rows trick keeps it height-agnostic.
-   Wrap: .collapse-grid (grid, transition); inner: overflow-hidden. */
+   Wrap content in .collapse-grid (+ .is-open to expand); children get
+   overflow clipping automatically. visibility leaves tab order/AT only
+   after the close finishes and returns immediately on open, so controls
+   inside never become ghost-tabbable mid-transition. */
 .collapse-grid {
   display: grid;
-  transition: grid-template-rows 0.34s var(--ease-house);
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  transition:
+    grid-template-rows var(--dur-slow) var(--ease-house),
+    visibility 0s linear var(--dur-slow);
+}
+.collapse-grid.is-open {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition: grid-template-rows var(--dur-slow) var(--ease-house);
+}
+.collapse-grid > * {
+  overflow: hidden;
+  min-height: 0;
 }
 
 /* Progress bar sheen — overlay span inside an overflow-hidden track */
@@ -363,7 +389,7 @@
      the card's rounded frame. Blurring the layer turns any boundary cut
      into an imperceptible falloff and lets the light breathe past the
      card edge like real lamplight. */
-  filter: blur(10px);
+  filter: blur(var(--glow-blur));
 }
 
 /* ── Dot grid — quiet texture for pane interiors ──────────── */
@@ -372,30 +398,8 @@
   background-size: 22px 22px;
 }
 
-/* ── Flashcard 3D flip ────────────────────────────────────── */
-.flip-scene { perspective: 1400px; }
-.flip-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-  transition: transform 0.55s var(--ease-house-inout);
-}
-.flip-inner.is-flipped { transform: rotateY(180deg); }
-.flip-face {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform: translate3d(0, 0, 0);
-  will-change: transform;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.flip-face.is-back { transform: rotateY(180deg) translate3d(0, 0, 0); }
+/* Flashcard flips are owned by the generator flows' inline motion/react
+   styles — the CSS-only .flip-* classes were unreferenced and are gone. */
 
 /* ── Composer — the lamp-lit writing instrument ─────────────
    A dialog-grade surface that wakes when engaged: hairline →
@@ -446,7 +450,7 @@
 }
 button[data-armed="true"] .send-halo {
   opacity: 0.42;
-  animation: breathe 2.6s ease-in-out infinite;
+  animation: breathe var(--beat-med) ease-in-out infinite;
 }
 
 /* ── Console-deck composer ──────────────────────────────────
@@ -476,7 +480,13 @@ button[data-armed="true"] .send-halo {
   height: 5px;
   border-radius: 999px;
   background: var(--brass);
-  animation: breathe 1.4s ease-in-out infinite;
+  animation: breathe var(--beat-fast) ease-in-out infinite;
+}
+
+/* The streaming phase label crossfades via motion/react; transforms need
+   a non-inline box to act on. */
+.phase-label {
+  display: inline-block;
 }
 
 /* Horizontal scroll hiding & edge fades for chip rails */
@@ -708,6 +718,89 @@ html[data-theme="light"] .effort-thumb {
   .usage-fill {
     transition: none;
   }
+}
+
+/* ── Studio-wide motion pass — shared treatments ────────────
+   Everything here is compositor-friendly and gated the same way
+   as .hover-lift in index.css where hover is involved. */
+
+/* Canonical card wake — ONE house hover treatment for cards, pills
+   and tiles that previously each hand-rolled a variant. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .card-wake {
+    transition:
+      transform var(--dur-med) var(--ease-house),
+      border-color var(--dur-med) var(--ease-house),
+      box-shadow var(--dur-med) var(--ease-house);
+  }
+  .card-wake:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--brass) 45%, transparent);
+    box-shadow:
+      0 12px 32px -8px rgba(8, 11, 20, 0.5),
+      0 0 22px -4px var(--glow-warm);
+  }
+  .card-wake:active {
+    transform: translateY(0) scale(0.985);
+  }
+}
+
+/* Citation jump lands like a lamp being pointed at the passage —
+   bloom once, then settle. Restart per jump by changing the element's
+   React key (an unchanged className does not replay an animation). */
+@keyframes cite-bloom {
+  0% {
+    background-color: color-mix(in srgb, var(--brass) 20%, transparent);
+    box-shadow: 0 0 0 5px rgba(227, 176, 75, 0.28);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 0 rgba(227, 176, 75, 0);
+  }
+}
+.cite-flash {
+  animation: cite-bloom 1.1s var(--ease-house) both;
+  border-radius: 4px;
+}
+
+/* One-shot brightness bloom when an import bar completes */
+@keyframes lamp-flush {
+  50% { filter: brightness(1.35); }
+}
+.lamp-flush {
+  animation: lamp-flush 0.24s var(--ease-house);
+}
+
+/* Drop-target ring pulses twice while something is dragged over */
+@keyframes ring-breathe {
+  0%, 100% { box-shadow: inset 0 0 0 2px rgba(227, 176, 75, 0.25); }
+  50%      { box-shadow: inset 0 0 0 3px rgba(227, 176, 75, 0.55); }
+}
+.ring-breathe {
+  animation: ring-breathe 1s var(--ease-house-inout) 2;
+}
+
+/* Shared toast fuse — brass rule burning down = time remaining.
+   Duration is set inline via --fuse-ms; JS owns the real timer and its
+   hover/focus pause, this is the visual twin of that state. */
+@keyframes toast-fuse {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+.toast-fuse {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--brassdeep), var(--brasspale));
+  animation: toast-fuse linear both;
+  animation-duration: var(--fuse-ms, 5000ms);
+}
+.toast-card:hover .toast-fuse,
+.toast-card:focus-within .toast-fuse {
+  animation-play-state: paused;
 }
 
 /* Keycap chips in the composer footer */

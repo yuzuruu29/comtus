@@ -84,4 +84,14 @@ describe("ComposerSideRail", () => {
     openPicker();
     expect(screen.queryByRole("meter")).not.toBeInTheDocument();
   });
+
+  it("marks the picker open and closed on the trigger via aria-expanded", () => {
+    render(<ComposerSideRail effort="high" onEffortChange={vi.fn()} />);
+    const trigger = screen.getByRole("button", { name: "Thinking effort" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
 });

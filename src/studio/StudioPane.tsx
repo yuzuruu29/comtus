@@ -35,6 +35,7 @@ import type {
   NotePayload,
 } from "../lib/types";
 import { SOFT, Spotlight } from "./fx";
+import { Toast } from "./Toast";
 import { timeAgo, Modal, Field, inputCls, btnLamp, btnGhost } from "./ui";
 import ExportMenu from "./ExportMenu";
 import { QuizConfigForm, QuizTaker } from "./generators/QuizFlow";
@@ -410,17 +411,14 @@ export default function StudioPane({
         </section>
       </div>
 
-      <AnimatePresence>
-        {deleteNotice && (
-          <UndoDeleteToast
-            key={deleteNotice.generation.id}
-            generation={deleteNotice.generation}
-            focusUndo={deleteNotice.focusUndo}
-            onUndo={() => void handleUndoDelete()}
-            onExpire={() => setDeleteNotice(null)}
-          />
-        )}
-      </AnimatePresence>
+      {/* Keyed by notice id: a second delete while one is open remounts the
+          toast so its fuse restarts, instead of riding the running timer. */}
+      <UndoDeleteToast
+        key={deleteNotice?.generation.id ?? "none"}
+        notice={deleteNotice}
+        onUndo={() => void handleUndoDelete()}
+        onExpire={() => setDeleteNotice(null)}
+      />
 
       {/* Generator modals */}
       <Modal
@@ -535,59 +533,49 @@ export default function StudioPane({
 }
 
 function UndoDeleteToast({
-  generation,
-  focusUndo,
+  notice,
   onUndo,
   onExpire,
 }: {
-  generation: Generation;
-  focusUndo: boolean;
+  notice: DeletedGenerationNotice | null;
   onUndo: () => void;
   onExpire: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
   const undoButtonRef = useRef<HTMLButtonElement>(null);
-  const paused = hovered || focused;
 
+  // Keyboard-triggered deletions hand focus straight to Undo; pointer
+  // deletions leave focus alone (contract asserted in StudioPane.test.tsx).
   useEffect(() => {
-    if (focusUndo) undoButtonRef.current?.focus();
-  }, [focusUndo, generation.id]);
+    if (notice?.focusUndo) undoButtonRef.current?.focus();
+  }, [notice]);
 
-  useEffect(() => {
-    if (paused) return;
-    const timeoutId = window.setTimeout(onExpire, UNDO_DELETE_MS);
-    return () => window.clearTimeout(timeoutId);
-  }, [onExpire, paused]);
-
+  // Shared Toast owns enter/exit motion, the fuse timer and hover/focus
+  // pause; expiry commits the deletion via onExpire, Undo restores instead.
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 14, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 10, scale: 0.98 }}
-      transition={SOFT}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onFocusCapture={() => setFocused(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
-      }}
+    <Toast
+      open={notice !== null}
+      onClose={onExpire}
+      durationMs={UNDO_DELETE_MS}
       className="fixed bottom-[calc(5.5rem+var(--sab))] right-4 z-[80] flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl border border-brass/30 bg-raised px-4 py-3 text-[12.5px] text-ink shadow-modal lg:bottom-6 lg:right-6"
     >
-      <span role="status" aria-live="polite" aria-atomic="true" className="min-w-0 truncate">
-        Removed “{generation.title}”.
-      </span>
-      <button
-        ref={undoButtonRef}
-        type="button"
-        onClick={onUndo}
-        aria-label="Undo deletion"
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-brass/40 bg-brass/[0.09] px-3 py-1.5 font-medium text-brasspale transition-colors hover:bg-brass/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/70"
-      >
-        <ArrowCounterClockwise size={13} weight="bold" />
-        Undo
-      </button>
-    </motion.div>
+      {notice && (
+        <>
+          <span role="status" aria-live="polite" aria-atomic="true" className="min-w-0 truncate">
+            Removed “{notice.generation.title}”.
+          </span>
+          <button
+            ref={undoButtonRef}
+            type="button"
+            onClick={onUndo}
+            aria-label="Undo deletion"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-brass/40 bg-brass/[0.09] px-3 py-1.5 font-medium text-brasspale transition-colors hover:bg-brass/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/70"
+          >
+            <ArrowCounterClockwise size={13} weight="bold" />
+            Undo
+          </button>
+        </>
+      )}
+    </Toast>
   );
 }
 

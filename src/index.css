@@ -44,6 +44,18 @@
 
   --duration-fast: 120ms;
   --duration-med: 220ms;
+  --duration-slow: 360ms;
+  --duration-glow: 480ms;
+  --duration-settle: 700ms;
+
+  /* Tailwind v4 generates named duration-* utilities from
+     --transition-duration-* (NOT --duration-*) — alias the ladder so
+     duration-fast/med/slow/glow/settle classes actually resolve. */
+  --transition-duration-fast: 120ms;
+  --transition-duration-med: 220ms;
+  --transition-duration-slow: 360ms;
+  --transition-duration-glow: 480ms;
+  --transition-duration-settle: 700ms;
 
   --text-display: clamp(1.9rem, 3.2vw, 2.6rem);
   --text-display--line-height: 1.08;
@@ -86,6 +98,23 @@
 
   --dur-fast: 120ms;
   --dur-med: 220ms;
+  --dur-slow: 360ms; /* Collapse reveals, card entrances, stage swaps */
+  --dur-glow: 480ms; /* light blooms — ambience pools, spotlight opacity */
+  --dur-settle: 700ms; /* grow-x bars, cite-flash decay, big one-shots */
+
+  /* Distances — lamplight travels short distances */
+  --rise-1: 4px; /* chips, pills, phase-label crossfade */
+  --rise-2: 8px; /* popovers, jump-to-latest */
+  --rise-3: 14px; /* toasts */
+  --drift-x: 12px; /* list-row exits */
+
+  /* Stagger — per-item entrance step; cap at 10 items everywhere */
+  --stagger-step: 30ms;
+
+  /* Loop tempos — the lamp breathes at three speeds */
+  --beat-fast: 1.4s; /* phase dot */
+  --beat-med: 2.6s; /* send halo */
+  --beat-slow: 3.2s; /* emblem breathe */
 
   /* Lamplight (dark) — default */
   --ground: #0b0f1a;
@@ -339,44 +368,8 @@ html[data-shell] body {
   }
 }
 
-/* ── Clean Input & Studio Reset ── */
-input,
-textarea,
-select {
-  outline: none !important;
-}
-
-.studio-card-hover {
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-              background-color 0.25s ease;
-}
-
-.studio-card-hover:hover {
-  transform: translateY(-2px);
-  border-color: rgba(227, 176, 75, 0.42);
-  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5),
-              0 0 22px -4px rgba(227, 176, 75, 0.16);
-}
-
-.studio-card-hover:active {
-  transform: translateY(0) scale(0.985);
-}
-
-.studio-btn-hover {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.studio-btn-hover:hover {
-  transform: translateY(-1px);
-  border-color: rgba(227, 176, 75, 0.4);
-  box-shadow: 0 4px 14px -2px rgba(227, 176, 75, 0.2);
-}
-
-.studio-btn-hover:active {
-  transform: scale(0.97);
-}
+/* Card & button hover wakes live in studio.css (.card-wake) — the old
+   off-token duplicates here are retired. */
 
 /* ── Torch mode — the cursor is a flame; showcases light under it ──
    Rendered only for fine pointers with motion allowed (TorchLayer).
@@ -701,32 +694,21 @@ body.torch-on [data-torch]::after {
   to { opacity: 0; transform: translateY(4px); }
 }
 
-/* Focus — brass ring on keyboard-navigated interactive elements, never inputs or textareas */
+/* Focus — brass ring on every keyboard-reachable control, inputs included.
+   Two exceptions carry their own visible focus treatment instead of this
+   ring: the composer textarea keeps its inset brass ring (studio.css), and
+   `inputCls` fields wake a border/shadow glow (ui.tsx). Never suppress an
+   outline without a visible alternative — earlier blanket resets here
+   silently broke keyboard navigation app-wide. */
 button:focus-visible,
 a:focus-visible,
-[tabindex]:not(input):not(textarea):not(select):not(.composer-shell):not(.composer-shell *):focus-visible {
+[tabindex]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[contenteditable]:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--brass) 75%, transparent);
   outline-offset: 2px;
-}
-
-input,
-input:focus,
-input:focus-visible,
-textarea,
-textarea:focus,
-textarea:focus-visible,
-select,
-select:focus,
-select:focus-visible,
-[contenteditable],
-[contenteditable]:focus,
-[contenteditable]:focus-visible,
-.composer-shell,
-.composer-shell *,
-.composer-shell textarea,
-.composer-shell input {
-  outline: none !important;
-  outline-offset: 0 !important;
 }
 
 html[data-theme="light"] .grad-lamp {
@@ -735,7 +717,11 @@ html[data-theme="light"] .grad-lamp {
 
 html[data-theme="light"] button:focus-visible,
 html[data-theme="light"] a:focus-visible,
-html[data-theme="light"] [tabindex]:not(input):not(textarea):not(select):not(.composer-shell):not(.composer-shell *):focus-visible {
+html[data-theme="light"] [tabindex]:focus-visible,
+html[data-theme="light"] input:focus-visible,
+html[data-theme="light"] select:focus-visible,
+html[data-theme="light"] textarea:focus-visible,
+html[data-theme="light"] [contenteditable]:focus-visible {
   outline-color: #765018;
 }
 
@@ -769,20 +755,58 @@ html[data-theme="light"] [tabindex]:not(input):not(textarea):not(select):not(.co
   }
 }
 
-/* Reduced motion — everything appears, nothing moves */
+/* Reduced motion — reduce, don't amputate. Ambient loops rest in their calm
+   state, entrances keep a plain opacity fade, and everything else resolves
+   in one frame. Content is never hidden behind an animation, and state
+   changes still read as changes. Springs/tweens from motion/react collapse
+   separately via MotionPrefs (fx.tsx). */
 @media (prefers-reduced-motion: reduce) {
-  .grain {
-    animation: none;
+  /* Tier 1 — ambient/infinite loops stop entirely and rest visibly. */
+  .grain,
+  .breathe,
+  .phase-dot,
+  .send-halo,
+  .bar-sheen,
+  .think-gloss {
+    animation: none !important;
   }
+  .send-halo {
+    opacity: 0 !important;
+  }
+
+  /* The streaming beacon rests as a static solid caret — still marking
+     "more is coming", just without movement. */
+  .stream-typing-beacon-core,
+  .stream-typing-beacon-halo,
+  .typing-harmonic-dot {
+    animation: none !important;
+    transform: none;
+    opacity: 1;
+  }
+
+  /* Tier 2 — entrances keep their opacity fade, lose all translation/scale.
+     Same keyframe names: these definitions win while the media query holds. */
+  @keyframes rise-in        { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slide-left-in  { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slide-right-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pop-in         { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes chip-pop       { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes shake-x        { from { opacity: 0.4; } to { opacity: 1; } }
+
   html[data-shell],
   html[data-shell] body {
     transition: none;
   }
+
+  /* Tier 3 — backstop: everything else resolves instantly, and any loop we
+     missed plays once and stops instead of spinning at ~0ms forever. */
   *,
   *::before,
   *::after {
     animation-duration: 0.001s !important;
     transition-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
   }
 }
 

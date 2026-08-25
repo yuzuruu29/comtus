@@ -176,11 +176,13 @@ export default function LibraryRail({
       >
         {notebooks.map((nb, i) =>
           railCollapsed ? (
-            <div key={nb.id} className="anim-rise" style={{ ["--d" as string]: `${i * 40}ms` }}>
+            // House stagger: 30ms x row index — pairs with --stagger-step in index.css
+            <div key={nb.id} className="anim-rise" style={{ ["--d" as string]: `${Math.min(i, 10) * 30}ms` }}>
               <RailItemSlim notebook={nb} active={nb.id === activeId} onSelect={onSelect} />
             </div>
           ) : (
-            <div key={nb.id} className="anim-rise" style={{ ["--d" as string]: `${i * 40}ms` }}>
+            // House stagger: 30ms x row index — pairs with --stagger-step in index.css
+            <div key={nb.id} className="anim-rise" style={{ ["--d" as string]: `${Math.min(i, 10) * 30}ms` }}>
               <RailItemWide
                 notebook={nb}
                 active={nb.id === activeId}

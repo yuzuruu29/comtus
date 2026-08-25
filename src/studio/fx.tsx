@@ -13,6 +13,27 @@ export const SOFT = { type: "spring", stiffness: 240, damping: 26 } as const;
 /** Cubic approximation of the house ease, for non-spring tweens. */
 export const HOUSE = [0.22, 1, 0.36, 1] as const;
 
+/** Distances for spring/tween keyframes — mirror --rise-* / --drift-x in
+ *  index.css. motion/react cannot interpolate var()/calc() strings, so
+ *  TSX reads these numbers; the CSS tokens serve CSS-declared animation. */
+export const RISE_1 = 4;
+export const RISE_2 = 8;
+export const RISE_3 = 14;
+export const DRIFT_X = 12;
+
+/** BorderBeam orbit tempo, seconds — idle vs streaming. */
+export const BEAM_IDLE_S = 5;
+export const BEAM_STREAM_S = 3.4;
+
+/** Standard popover travel for AnimatePresence-wrapped menus (model picker,
+ *  effort picker, sessions, focus menu). Spread onto a motion element:
+ *  <motion.div {...POPOVER.initial} animate={POPOVER.animate} exit={POPOVER.exit}> */
+export const POPOVER = {
+  initial: { opacity: 0, y: -6, scale: 0.98 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: -4, scale: 0.985 },
+} as const;
+
 /** Bound desk pane — flush to the window, split by hairlines. */
 export const deskPane = "h-full min-h-0 bg-ground";
 /** @deprecated Use deskPane. Kept so older imports fail loudly in typecheck. */
@@ -133,13 +154,24 @@ export function Collapse({
 
 export function useCountUp(target: number, durationMs = 900): number {
   const [value, setValue] = useState(0);
+  const reduce = useReducedMotion();
+  // Seed each sweep from wherever the last one ended — meters refresh
+  // periodically and replaying 0→X on every refresh reads as a glitch.
+  // The first mount still sweeps from 0 so entrances keep their weight.
+  const lastRef = useRef(0);
   useEffect(() => {
-    const controls = animate(0, target, {
+    const from = lastRef.current;
+    lastRef.current = target;
+    if (reduce || from === target) {
+      setValue(target);
+      return;
+    }
+    const controls = animate(from, target, {
       duration: durationMs / 1000,
       ease: HOUSE,
       onUpdate: (v) => setValue(Math.round(v)),
     });
     return () => controls.stop();
-  }, [target, durationMs]);
+  }, [target, durationMs, reduce]);
   return value;
 }

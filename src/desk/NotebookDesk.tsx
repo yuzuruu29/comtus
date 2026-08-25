@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ComponentType } from "react";
 import { motion } from "motion/react";
 import { Books, Notebook } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
-import { SPRING, SOFT, deskPane } from "../studio/fx";
+import { RISE_2, SPRING, SOFT, deskPane } from "../studio/fx";
 import SourcesPane from "../studio/SourcesPane";
 import ChatPane from "../studio/ChatPane";
 import StudioPane from "../studio/StudioPane";
@@ -108,7 +108,7 @@ export default function NotebookDesk({
       <main className="min-w-0 flex-1">
         <motion.div
           key="chat"
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: RISE_2 }}
           animate={{ opacity: 1, y: 0 }}
           transition={SOFT}
           className={`${deskPane} overflow-hidden`}
