@@ -102,7 +102,7 @@ function pageFoot(s: Slide, n: number): void {
 
 function quizExamPptx(pptx: PptxGenJS, gen: Generation): void {
   const payload = gen.payload as QuizPayload & ExamPayload;
-  const questions = payload.questions;
+  const questions = payload.questions ?? [];
 
   const sub: string[] =
     gen.kind === "exam" && payload.blueprint
@@ -134,6 +134,17 @@ function quizExamPptx(pptx: PptxGenJS, gen: Generation): void {
         x: 0.55,
         y: 3.1,
         w: 3,
+        h: 0.4,
+        fontFace: "Arial",
+        fontSize: 13,
+        color: FADED,
+        italic: true,
+      });
+    } else if (q.format === "solution") {
+      qs.addText("Show your working on paper.", {
+        x: 0.55,
+        y: 3.1,
+        w: 8.9,
         h: 0.4,
         fontFace: "Arial",
         fontSize: 13,
@@ -208,7 +219,7 @@ function quizExamPptx(pptx: PptxGenJS, gen: Generation): void {
 }
 
 function flashcardsPptx(pptx: PptxGenJS, gen: Generation): void {
-  const cards = (gen.payload as FlashcardsPayload).cards;
+  const cards = (gen.payload as FlashcardsPayload).cards ?? [];
   titleSlide(pptx, gen.title, [`${cards.length} cards`, "Advance for each answer"]);
 
   cards.forEach((card, i) => {
@@ -278,13 +289,14 @@ function flashcardsPptx(pptx: PptxGenJS, gen: Generation): void {
 
 function presentationPptx(pptx: PptxGenJS, gen: Generation): void {
   const deck = gen.payload as PresentationPayload;
+  const slides = deck.slides ?? [];
   titleSlide(
     pptx,
     deck.deckTitle || gen.title,
     [deck.deckSubtitle, `Comtus · ${deck.topic}`].filter(Boolean) as string[],
   );
 
-  deck.slides.forEach((sl) => {
+  slides.forEach((sl) => {
     const s = baseSlide(pptx, { study: true });
     sectionTag(s, `Slide ${sl.slideNumber}`);
     s.addText(sl.title, {
@@ -351,5 +363,6 @@ export async function savePptx(gen: Generation, notebookName: string, base: stri
       presentationPptx(pptx, gen);
   }
 
-  await pptx.writeFile({ fileName: base });
+  const fileName = base.toLowerCase().endsWith(".pptx") ? base : `${base}.pptx`;
+  await pptx.writeFile({ fileName });
 }

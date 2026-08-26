@@ -160,8 +160,15 @@ function questionBlock(flow: Flow, q: QuizQuestion, n: number): void {
   setFill(doc, INK);
   const stemLines = doc.splitTextToSize(q.stem, W - 22) as string[];
 
-  // Never orphan an item's options on the next page.
-  const optionsCount = q.format === "identification" ? 0 : q.format === "truefalse" ? 2 : q.options.length;
+  // Never orphan an item's options / working lines on the next page.
+  const optionsCount =
+    q.format === "identification"
+      ? 0
+      : q.format === "truefalse"
+        ? 2
+        : q.format === "solution"
+          ? 4
+          : q.options.length;
   const needed = stemLines.length * 15 + optionsCount * 16 + 34;
   if (flow.y + needed > BOTTOM && flow.y > M + 20) doc.addPage();
 
@@ -181,6 +188,21 @@ function questionBlock(flow: Flow, q: QuizQuestion, n: number): void {
     if (flow.y + 16 > BOTTOM) doc.addPage();
     doc.line(stemX + 4, flow.y + 8, M + W - 30, flow.y + 8);
     flow.gap(20);
+  } else if (q.format === "solution") {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    setFill(doc, FADED);
+    if (flow.y + 14 > BOTTOM) doc.addPage();
+    doc.text("Show your working:", stemX, flow.y + 10);
+    flow.y += 16;
+    doc.setDrawColor(CARD_LINE[0], CARD_LINE[1], CARD_LINE[2]);
+    doc.setLineWidth(0.6);
+    for (let i = 0; i < 4; i++) {
+      if (flow.y + 16 > BOTTOM) doc.addPage();
+      doc.line(stemX + 4, flow.y + 8, M + W - 30, flow.y + 8);
+      flow.gap(16);
+    }
+    flow.gap(8);
   } else {
     const opts = q.format === "truefalse" ? ["True", "False"] : q.options;
     opts.forEach((opt, i) => {
@@ -194,7 +216,7 @@ function questionBlock(flow: Flow, q: QuizQuestion, n: number): void {
 function quizExamPdf(doc: Doc, gen: Generation, notebookName: string): void {
   const isExam = gen.kind === "exam";
   const payload = gen.payload as QuizPayload & ExamPayload;
-  const questions: QuizQuestion[] = payload.questions;
+  const questions: QuizQuestion[] = payload.questions ?? [];
 
   const flow = chrome(doc, gen.title, metaLineFor(gen), notebookName);
 
@@ -319,7 +341,7 @@ function cardSheet(
 }
 
 function flashcardsPdf(doc: Doc, gen: Generation, notebookName: string): void {
-  const cards = (gen.payload as FlashcardsPayload).cards;
+  const cards = (gen.payload as FlashcardsPayload).cards ?? [];
   const flow = chrome(doc, gen.title, metaLineFor(gen), notebookName);
   wrapped(
     flow,
@@ -337,7 +359,7 @@ function flashcardsPdf(doc: Doc, gen: Generation, notebookName: string): void {
 /* ── markdown-ish study aids ──────────────────────────────── */
 
 function docPdf(doc: Doc, gen: Generation, notebookName: string): void {
-  const md = (gen.payload as DocPayload).markdown;
+  const md = (gen.payload as DocPayload).markdown ?? "";
   const flow = chrome(doc, gen.title, metaLineFor(gen), notebookName);
   for (const raw of md.split("\n")) {
     const line = raw.trimEnd();

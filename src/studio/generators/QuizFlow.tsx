@@ -73,7 +73,15 @@ JSON shape:
 Constraints: MCQ always has exactly 4 options; truefalse has options ["True","False"] and answerIndex 0 or 1; identification has options: [] and a concise answer in "answer"; solution items are problem-solving questions the student answers ON PAPER and submits as a photo — give them options: [], the precise final answer (with units) in "answer", the concise worked method in "rationale", and a stem that asks for the working to be shown. Include solution items ONLY where the sources genuinely support computation or quantitative reasoning. Every item must be answerable from the sources alone.`,
         onStatus: setStatus,
       });
-      const payload: QuizPayload = { questions: sanitizeQuestions(raw.questions), config: raw.config };
+      const payload: QuizPayload = {
+        questions: sanitizeQuestions(raw.questions),
+        config: {
+          count,
+          formats,
+          difficulty,
+          scope: scope.trim() || "entire notebook",
+        },
+      };
       if (!payload.questions?.length) throw new Error("The quiz came back empty — try widening the scope.");
       const gen: Generation = {
         id: `${Date.now().toString(36)}-q`,

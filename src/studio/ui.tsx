@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { X } from "@phosphor-icons/react";
 import { SOFT } from "./fx";
@@ -112,9 +113,11 @@ export function Modal({
     };
   }, [open]);
 
-  // The overlay container stays mounted so AnimatePresence can play the
-  // exit; it's click-transparent when empty (pointer-events-none).
-  return (
+  // Portal to body so the overlay isn't trapped in a pane stacking
+  // context (chat's motion transform + workspace z-10). Otherwise the
+  // composer paints on top of quiz/exam dialogs and their Check control
+  // collides with the effort chip.
+  return createPortal(
     <div className="pointer-events-none fixed inset-0 z-[220] flex items-end justify-center sm:items-center">
       <AnimatePresence>
         {open && (
@@ -129,7 +132,7 @@ export function Modal({
             <button
               type="button"
               tabIndex={-1}
-              aria-label={`Close ${title}`}
+              aria-label={typeof title === "string" ? `Close ${title}` : "Close dialog"}
               className="absolute inset-0 border-0 bg-ground/80 backdrop-blur-sm"
               onClick={onClose}
             />
@@ -167,7 +170,8 @@ export function Modal({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

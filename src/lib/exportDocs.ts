@@ -61,7 +61,7 @@ export async function exportGeneration(
 const LETTERS = ["A", "B", "C", "D", "E"];
 
 export function answerText(q: QuizQuestion): string {
-  if (q.format === "identification") return q.answer;
+  if (q.format === "identification" || q.format === "solution") return q.answer;
   if (q.format === "truefalse") return q.answerIndex === 0 ? "True" : "False";
   return LETTERS[q.answerIndex] ?? q.answer;
 }
@@ -69,16 +69,25 @@ export function answerText(q: QuizQuestion): string {
 export function metaLineFor(gen: Generation): string {
   const d = new Date(gen.createdAt);
   const nice = d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+  const payload = gen.payload as Partial<QuizPayload & ExamPayload & FlashcardsPayload>;
+  const nQuestions = payload.questions?.length;
   if (gen.kind === "exam") {
-    const bp = (gen.payload as ExamPayload).blueprint;
-    return `${notebookTag(gen, nice)} · ${bp.totalItems} items · ${bp.minutes} minutes`;
+    const bp = payload.blueprint;
+    const items = bp?.totalItems ?? nQuestions ?? 0;
+    return bp?.minutes
+      ? `${notebookTag(gen, nice)} · ${items} items · ${bp.minutes} minutes`
+      : `${notebookTag(gen, nice)} · ${items} items`;
   }
   if (gen.kind === "quiz") {
-    const cfg = (gen.payload as QuizPayload).config;
-    return `${notebookTag(gen, nice)} · ${cfg.count} items · ${cfg.difficulty} · ${cfg.scope}`;
+    const cfg = payload.config;
+    const items = cfg?.count ?? nQuestions ?? 0;
+    const bits = [notebookTag(gen, nice), `${items} items`];
+    if (cfg?.difficulty) bits.push(cfg.difficulty);
+    if (cfg?.scope) bits.push(cfg.scope);
+    return bits.join(" · ");
   }
   if (gen.kind === "flashcards") {
-    return `${notebookTag(gen, nice)} · ${(gen.payload as FlashcardsPayload).cards.length} cards`;
+    return `${notebookTag(gen, nice)} · ${payload.cards?.length ?? 0} cards`;
   }
   return `${notebookTag(gen, nice)}`;
 }
