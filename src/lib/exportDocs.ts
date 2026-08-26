@@ -5,6 +5,7 @@ import type {
   FlashcardsPayload,
   QuizQuestion,
 } from "./types";
+import { loadChunk } from "./lazyChunk";
 
 export type ExportFormat = "pdf" | "pptx";
 
@@ -47,10 +48,10 @@ export async function exportGeneration(
 ): Promise<void> {
   const base = `${slug(notebookName)}-${slug(gen.title)}-${dateStamp()}`;
   if (format === "pdf") {
-    const { savePdf } = await import("./pdfExport");
+    const { savePdf } = await loadChunk(() => import("./pdfExport"));
     await savePdf(gen, notebookName, base);
   } else {
-    const { savePptx } = await import("./pptxExport");
+    const { savePptx } = await loadChunk(() => import("./pptxExport"));
     await savePptx(gen, notebookName, base);
   }
 }

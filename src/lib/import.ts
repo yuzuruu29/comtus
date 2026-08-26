@@ -3,6 +3,7 @@ import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { estTokens } from "./retrieval";
 import type { SourceKind } from "./types";
 import { uid } from "./db";
+import { loadChunk } from "./lazyChunk";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -51,7 +52,7 @@ text for this image.
     return [{ title: name, kind: "pdf", text, meta: { pages: countPages(text) } }];
   }
   if (ext === "docx") {
-    const mammoth = await import("mammoth/mammoth.browser");
+    const mammoth = await loadChunk(() => import("mammoth/mammoth.browser"));
     const result = await (
       mammoth as unknown as {
         extractRawText: (o: { arrayBuffer: ArrayBuffer }) => Promise<{ value: string }>;
@@ -234,7 +235,7 @@ export async function importFiles(
   notebookId: string,
   onProgress?: (done: number, total: number, current: string) => void,
 ): Promise<ImportOutcome> {
-  const { addSourceWithChunks } = await import("./db");
+  const { addSourceWithChunks } = await loadChunk(() => import("./db"));
   const outcome: ImportOutcome = { added: 0, failed: [] };
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
