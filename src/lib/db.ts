@@ -9,6 +9,7 @@ import type {
   CardProgress,
 } from "./types";
 import { DEFAULT_SESSION_TITLE, deriveSessionTitle } from "./sessionText";
+import { notifyDeskActivity } from "./activity";
 
 /** Local-first store. Everything lives in IndexedDB on this device.
  *  (Settings live in localStorage via zustand — not here.) */
@@ -101,6 +102,7 @@ export async function createNotebook(name: string): Promise<Notebook> {
   const now = Date.now();
   const nb: Notebook = { id: uid(), name, createdAt: now, updatedAt: now };
   await db.notebooks.add(nb);
+  notifyDeskActivity();
   return nb;
 }
 
@@ -135,6 +137,7 @@ export async function addSourceWithChunks(
     await db.chunks.bulkPut(chunks);
   });
   await touchNotebook(source.notebookId);
+  notifyDeskActivity();
 }
 
 export async function deleteSource(sourceId: string) {
@@ -226,11 +229,13 @@ export async function saveMessage(msg: ChatMessage) {
     await db.chatSessions.update(msg.sessionId, { updatedAt: Date.now() });
   }
   await touchNotebook(msg.notebookId);
+  notifyDeskActivity();
 }
 
 export async function saveGeneration(gen: Generation) {
   await db.generations.put(gen);
   await touchNotebook(gen.notebookId);
+  notifyDeskActivity();
 }
 
 export async function createCustomNote(
@@ -249,6 +254,7 @@ export async function createCustomNote(
   };
   await db.generations.put(note);
   await touchNotebook(notebookId);
+  notifyDeskActivity();
   return note;
 }
 
@@ -284,4 +290,5 @@ export async function restoreGeneration(generation: Generation): Promise<void> {
     await db.generations.put(generation);
     await db.notebooks.update(generation.notebookId, { updatedAt: Date.now() });
   });
+  notifyDeskActivity();
 }

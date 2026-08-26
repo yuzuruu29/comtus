@@ -2,12 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useNavigate } from "react-router-dom";
 import { createNotebook } from "../lib/db";
 import { detectPlatform, isDeskShell, isTauri } from "../lib/desktop";
-import { useThemeEffect } from "../lib/theme";
+import { usePixelDeskEffect, useThemeEffect } from "../lib/theme";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { DeskContext, defaultDeskActions, type DeskActions } from "./DeskContext";
 import CommandPalette from "./CommandPalette";
 import UpdateToast from "./UpdateToast";
 import FreeLimitWarningModal from "./FreeLimitWarningModal";
+import DeskLife from "./companion/DeskLife";
+import { MilestoneUiProvider } from "./companion/milestoneUi";
+import "./pixel-desk.css";
 import { cycleLayout, loadLayout, saveLayout, togglePane, type LayoutMode } from "./layout";
 import { matchesShortcut } from "./shortcuts";
 
@@ -34,10 +37,13 @@ export default function DeskShell({
 }) {
   const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [milestonesOpen, setMilestonesOpen] = useState(false);
+  const [milestoneCount, setMilestoneCount] = useState(0);
   const platform = detectPlatform();
   const compactViewport = useMediaQuery("(max-width: 1199px)");
   const compact = isDeskShell() && compactViewport;
   useThemeEffect();
+  usePixelDeskEffect();
 
   useEffect(() => {
     document.documentElement.dataset.shell = isDeskShell() ? "desktop" : "browser";
@@ -78,6 +84,7 @@ export default function DeskShell({
       focusChat: () => setLayout("focus"),
       importFiles: () => onImport?.(),
       openPalette: () => setPaletteOpen(true),
+      openMilestones: () => setMilestonesOpen(true),
     };
   }, [compact, layout, navigate, onHome, onImport, onNewNotebook, onSettings, setLayout]);
   const actionsRef = useRef(actions);
@@ -167,10 +174,17 @@ export default function DeskShell({
 
   return (
     <DeskContext.Provider value={actions}>
-      {children}
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-      <FreeLimitWarningModal onOpenSettings={onSettings} />
-      {isTauri() && <UpdateToast />}
+      <MilestoneUiProvider value={{ count: milestoneCount, open: () => setMilestonesOpen(true) }}>
+        {children}
+        <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+        <FreeLimitWarningModal onOpenSettings={onSettings} />
+        {isTauri() && <UpdateToast />}
+        <DeskLife
+          panelOpen={milestonesOpen}
+          onPanelOpenChange={setMilestonesOpen}
+          onCount={setMilestoneCount}
+        />
+      </MilestoneUiProvider>
     </DeskContext.Provider>
   );
 }

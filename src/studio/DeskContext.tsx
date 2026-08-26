@@ -13,6 +13,7 @@ export type DeskActions = {
   focusChat: () => void;
   importFiles: () => void;
   openPalette: () => void;
+  openMilestones: () => void;
 };
 
 const noop = () => {};
@@ -29,6 +30,7 @@ export const defaultDeskActions: DeskActions = {
   focusChat: noop,
   importFiles: noop,
   openPalette: noop,
+  openMilestones: noop,
 };
 
 export const DeskContext = createContext<DeskActions>(defaultDeskActions);

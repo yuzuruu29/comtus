@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -34,6 +34,7 @@ const FEATURES = [
  *  cascade + a CSS-built glimpse of the workspace right. */
 export default function StudioShowcase() {
   const rootRef = useRef<HTMLElement>(null);
+  const [flipped, setFlipped] = useState<string | null>(null);
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -50,8 +51,8 @@ export default function StudioShowcase() {
           {
             opacity: 1,
             y: 0,
-            duration: 0.9,
-            ease: "power3.out",
+            duration: 0.5,
+            ease: "steps(6)",
             scrollTrigger: { trigger: el, start: "top 87%", once: true },
           },
         );
@@ -103,12 +104,12 @@ export default function StudioShowcase() {
 
         <div className="lg:col-span-7 space-y-5">
           {/* Visual preview of the midnight lamplight study */}
-          <div className="reveal group relative overflow-hidden rounded-[1.9rem] border border-white/[0.08] bg-study/40 p-2 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
-            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[1.5rem]">
+          <div className="reveal group relative overflow-hidden border-2 border-white/[0.08] bg-study/40 p-2 shadow-[0_20px_60px_rgba(0,0,0,0.45)] arcade-press">
+            <div className="relative aspect-[16/9] w-full overflow-hidden">
               <img
                 src="/images/studio-workspace.jpg"
                 alt="Comtus midnight lamplight study workspace"
-                className="h-full w-full object-cover object-center transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
+                className="h-full w-full object-cover object-center transition-transform duration-500 ease-[steps(6)] group-hover:scale-105"
                 loading="lazy"
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-night/90 via-night/20 to-transparent" />
@@ -191,18 +192,43 @@ export default function StudioShowcase() {
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {FEATURES.map((f) => (
-              <div
-                key={f.tag}
-                className="reveal group rounded-[1.4rem] border border-white/[0.06] bg-white/[0.02] p-6 transition-colors duration-500 hover:border-brass/25 hover:bg-brass/[0.03]"
-              >
-                <div className="label-mono !text-[10px] text-brass/80">{f.tag}</div>
-                <h3 className="mt-3 font-display text-[1.25rem] font-[430] text-parchment">
-                  {f.title}
-                </h3>
-                <p className="mt-2 text-[13.5px] leading-relaxed text-faded">{f.line}</p>
-              </div>
-            ))}
+            {FEATURES.map((f) => {
+              const isFlipped = flipped === f.tag;
+              return (
+                <button
+                  key={f.tag}
+                  type="button"
+                  className="desk-swap reveal text-left"
+                  data-flipped={isFlipped}
+                  onClick={() => setFlipped(isFlipped ? null : f.tag)}
+                  aria-pressed={isFlipped}
+                >
+                  <div className="desk-swap-stage">
+                    <div
+                      className="desk-swap-front arcade-press border border-white/[0.06] bg-white/[0.02] p-6"
+                      aria-hidden={isFlipped}
+                    >
+                      <div className="label-mono !text-[12px] text-brass/80">{f.tag}</div>
+                      <h3 className="mt-3 font-display text-[1.25rem] font-[430] text-parchment">
+                        {f.title}
+                      </h3>
+                      <p className="mt-2 text-[14px] leading-relaxed text-faded">{f.line}</p>
+                      <span className="mt-4 inline-block text-[12px] text-brasspale">Turn the card</span>
+                    </div>
+                    <div
+                      className="desk-swap-back arcade-press border border-brass/35 bg-brass/[0.08] p-6"
+                      aria-hidden={!isFlipped}
+                    >
+                      <div className="label-mono !text-[12px] text-brasspale">On the desk</div>
+                      <p className="mt-3 text-[14px] leading-relaxed text-parchment">
+                        {f.line} Open the studio when you are ready — this card is just a lamp on the shelf.
+                      </p>
+                      <span className="mt-4 inline-block text-[12px] text-brasspale">Turn back</span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

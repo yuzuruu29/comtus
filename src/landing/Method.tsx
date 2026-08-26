@@ -21,13 +21,12 @@ export default function Method() {
       targets.forEach((el, i) => {
         gsap.fromTo(
           el,
-          { opacity: 0, y: 44, filter: "blur(6px)" },
+          { opacity: 0, y: 28 },
           {
             opacity: 1,
             y: 0,
-            filter: "blur(0px)",
-            duration: 0.95,
-            ease: "power3.out",
+            duration: 0.5,
+            ease: "steps(6)",
             delay: (i % 2) * 0.08,
             scrollTrigger: { trigger: el, start: "top 86%", once: true },
           },

@@ -42,8 +42,8 @@ export default function ProductDemo() {
           {
             opacity: 1,
             y: 0,
-            duration: 0.9,
-            ease: "power3.out",
+            duration: 0.5,
+            ease: "steps(6)",
             scrollTrigger: { trigger: el, start: "top 88%", once: true },
           },
         );

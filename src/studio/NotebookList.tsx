@@ -18,12 +18,13 @@ import { detectPlatform, isTauri } from "../lib/desktop";
 import StudyGlyph from "../components/icons/StudyGlyph";
 import ComtusLogo, { ComtusEmblem } from "../components/brand/ComtusLogo";
 import { ByokBadge, ProBadge, SettingsButton, CreateNotebookEmblem } from "../components/brand/BrandControls";
-import { SOFT, Spotlight } from "./fx";
+import { SOFT, Spotlight, staggerDelay } from "./fx";
 import { timeAgo, Modal, Field, inputCls, btnLamp, btnGhost } from "./ui";
 import SettingsModal from "./SettingsModal";
 import DeskShell from "./DeskShell";
 import CaptionButtons from "./Titlebar";
 import { useSettings } from "../lib/settings";
+import MilestonesButton from "./companion/MilestonesButton";
 
 type SortOption = "recent" | "az" | "oldest" | "sources";
 
@@ -187,7 +188,7 @@ export default function NotebookList({
   return (
     <DeskShell onSettings={() => setSettingsOpen(true)} onNewNotebook={openCreateModal}>
       <div className="min-h-[100svh] bg-ground">
-        <div className="pointer-events-none fixed inset-x-0 top-0 h-[45vh] bg-[radial-gradient(75%_100%_at_50%_0%,rgba(227,176,75,0.06),transparent_80%)]" />
+        <div className="pointer-events-none fixed inset-x-0 top-0 h-[48vh] bg-[radial-gradient(75%_100%_at_50%_0%,rgba(227,176,75,0.12),transparent_78%),radial-gradient(35%_60%_at_90%_0%,rgba(127,168,201,0.10),transparent_70%)]" />
         <div className="relative mx-auto w-full max-w-6xl px-6 pb-24 sm:px-10 lg:px-12">
           <ShelfHeader onSettings={() => setSettingsOpen(true)} />
 
@@ -361,35 +362,38 @@ export default function NotebookList({
           {/* Grid View Mode */}
           {viewMode === "grid" ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {/* 1st Card: + Create new notebook */}
-              <button
-                onClick={openCreateModal}
-                className="card-wake group flex min-h-[175px] flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed border-hairline-strong bg-surface/30 p-5 text-center"
-              >
-                <CreateNotebookEmblem />
-                <span className="font-display text-[15px] font-[450] text-ink/90 group-hover:text-brasspale">
-                  Create new notebook
-                </span>
-              </button>
+              {/* 1st Card: + Create new notebook — anim-rise on a wrapper
+                  so fill-mode transforms never fight .card-wake hover. */}
+              <div className="anim-rise h-full" style={{ ["--d" as string]: staggerDelay(0) }}>
+                <button
+                  onClick={openCreateModal}
+                  className="card-wake group flex min-h-[175px] h-full w-full flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed border-hairline-strong bg-surface/30 p-5 text-center"
+                >
+                  <CreateNotebookEmblem />
+                  <span className="font-display text-[15px] font-[450] text-ink/90 group-hover:text-brasspale">
+                    Create new notebook
+                  </span>
+                </button>
+              </div>
 
               {/* Notebook Cards */}
-              <AnimatePresence initial={false}>
-                {processedNotebooks.map((nb) => {
+              <AnimatePresence>
+                {processedNotebooks.map((nb, i) => {
                   const isMenuOpen = menuOpenId === nb.id;
 
                   return (
                     <Spotlight
                       key={nb.id}
-                      className="rounded-[var(--radius-dialog)]"
+                      className="anim-rise h-full rounded-[var(--radius-dialog)]"
+                      style={{ ["--d" as string]: staggerDelay(i + 1) }}
                       radius={200}
                     >
                       <motion.div
                         layout
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
+                        initial={false}
+                        exit={{ opacity: 0, scale: 0.97 }}
                         transition={SOFT}
-                        className="card-wake group relative flex min-h-[175px] flex-col justify-between rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-5"
+                        className="card-wake group relative flex min-h-[175px] h-full flex-col justify-between rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-5 before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-1 before:rounded-t-[var(--radius-dialog)] before:bg-gradient-to-r before:from-brass/70 before:via-moon/40 before:to-sage/50"
                       >
                         {/* Top Row: Study Glyph & 3-Dot Menu */}
                         <div className="flex items-start justify-between">
@@ -487,11 +491,12 @@ export default function NotebookList({
           ) : (
             /* List View Mode */
             <div className="divide-y divide-hairline rounded-[var(--radius-dialog)] border border-hairline bg-surface/50 overflow-hidden">
-              {processedNotebooks.map((nb) => {
+              {processedNotebooks.map((nb, i) => {
                 return (
                   <div
                     key={nb.id}
-                    className="group flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-ink/[0.025] transition-colors"
+                    className="anim-rise group flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-ink/[0.025] transition-colors"
+                    style={{ ["--d" as string]: staggerDelay(i) }}
                   >
                     <button
                       onClick={() => onOpen(nb.id)}
@@ -654,6 +659,7 @@ function ShelfHeader({ onSettings }: { onSettings: () => void }) {
         </Link>
       )}
       <div className="no-drag flex items-center gap-2.5">
+        <MilestonesButton />
         <SettingsButton onClick={onSettings} />
 
         {/* Plan Status Badge */}

@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, within } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import Hero from "./Hero";
 import LearningLoop from "./LearningLoop";
@@ -38,6 +38,7 @@ vi.mock("gsap", () => ({
     fromTo: vi.fn(),
     set: vi.fn(),
     to: vi.fn(),
+    quickTo: vi.fn(() => vi.fn()),
     timeline: vi.fn(() => ({
       fromTo: vi.fn().mockReturnThis(),
     })),
@@ -228,6 +229,84 @@ describe("Static Public Pages", () => {
       </BrowserRouter>
     );
     expect(screen.getByRole("heading", { name: "AI Study Companion for Students" })).toBeDefined();
+    cleanup();
+  });
+});
+
+describe("Pixel landing overlay", () => {
+  it("sets and clears html[data-landing-pixel]", async () => {
+    const { applyLandingPixel } = await import("./pixelMotion");
+    applyLandingPixel(true);
+    expect(document.documentElement.dataset.landingPixel).toBe("on");
+    applyLandingPixel(false);
+    expect(document.documentElement.dataset.landingPixel).toBeUndefined();
+    expect(document.documentElement.dataset.lamp).toBeUndefined();
+  });
+
+  it("renders a pokeable hero lamp and desk diorama", async () => {
+    const { LandingPlayProvider } = await import("./LandingPlay");
+    render(
+      <BrowserRouter>
+        <LandingPlayProvider>
+          <Hero ready={true} />
+        </LandingPlayProvider>
+      </BrowserRouter>,
+    );
+    const lamp = screen.getByRole("button", { name: /study lamp/i });
+    expect(lamp).toBeDefined();
+    fireEvent.click(lamp);
+    expect(screen.getByRole("button", { name: /study lamp, lit/i })).toBeDefined();
+    expect(screen.getByRole("button", { name: /lamp lit/i })).toBeDefined();
+    cleanup();
+  });
+
+  it("lights the lamp from the desk diorama", async () => {
+    const { LandingPlayProvider } = await import("./LandingPlay");
+    render(
+      <BrowserRouter>
+        <LandingPlayProvider>
+          <Hero ready={true} />
+        </LandingPlayProvider>
+      </BrowserRouter>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /light the lamp/i }));
+    expect(screen.getByRole("button", { name: /lamp lit/i })).toBeDefined();
+    cleanup();
+  });
+});
+
+describe("Studio showcase flip cards", () => {
+  it("turns a feature card on click", async () => {
+    const { default: StudioShowcase } = await import("./StudioShowcase");
+    render(
+      <BrowserRouter>
+        <StudioShowcase />
+      </BrowserRouter>,
+    );
+    const card = screen.getByRole("button", { name: /mock exams/i });
+    fireEvent.click(card);
+    expect(card.getAttribute("aria-pressed")).toBe("true");
+    const backHint = within(card).getByText(/Turn back/i);
+    expect(backHint.closest("[aria-hidden='true']")).toBeNull();
+    const frontHint = within(card).getByText(/Turn the card/i);
+    expect(frontHint.closest("[aria-hidden='true']")).toBeTruthy();
+    cleanup();
+  });
+});
+
+describe("Landing keyboard egg", () => {
+  it("shows a calm note after typing COMTUS", async () => {
+    const { default: LandingEgg } = await import("./LandingEgg");
+    const { LandingPlayProvider } = await import("./LandingPlay");
+    render(
+      <LandingPlayProvider>
+        <LandingEgg />
+      </LandingPlayProvider>,
+    );
+    for (const key of ["c", "o", "m", "t", "u", "s"]) {
+      fireEvent.keyDown(document.body, { key });
+    }
+    expect(screen.getByText(/The lamp remembers/i)).toBeDefined();
     cleanup();
   });
 });

@@ -1,0 +1,624 @@
+/* Pixel landing — marketing-only skin (html[data-landing-pixel="on"]).
+   All copy uses Pixelify Sans Variable. Studio keeps html[data-pixel]
+   via DeskShell and is never styled by this file. */
+
+@import "@fontsource-variable/pixelify-sans";
+
+html[data-landing-pixel="on"] {
+  --font-display: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
+  --font-body: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
+  --font-mono: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
+  --radius-control: 2px;
+  --radius-field: 2px;
+  --radius-dialog: 2px;
+  --glow-warm: rgba(227, 176, 75, 0.34);
+}
+
+html[data-landing-pixel="on"] body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: unset;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--brass) 8%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--brass) 8%, transparent) 1px, transparent 1px),
+    radial-gradient(ellipse 78% 52% at 86% 118%, color-mix(in srgb, var(--brass) 22%, transparent), transparent 60%);
+  background-size: 16px 16px, 16px 16px, auto;
+  background-attachment: fixed;
+}
+
+html[data-landing-pixel="on"] .font-display,
+html[data-landing-pixel="on"] .label-mono,
+html[data-landing-pixel="on"] button,
+html[data-landing-pixel="on"] a,
+html[data-landing-pixel="on"] p,
+html[data-landing-pixel="on"] li,
+html[data-landing-pixel="on"] h1,
+html[data-landing-pixel="on"] h2,
+html[data-landing-pixel="on"] h3,
+html[data-landing-pixel="on"] h4,
+html[data-landing-pixel="on"] span,
+html[data-landing-pixel="on"] input,
+html[data-landing-pixel="on"] textarea,
+html[data-landing-pixel="on"] label {
+  font-family: var(--font-display);
+}
+
+html[data-landing-pixel="on"] .font-display {
+  font-optical-sizing: none;
+  font-variation-settings: "wght" 520;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: auto;
+}
+
+html[data-landing-pixel="on"] .label-mono {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+html[data-landing-pixel="on"] p,
+html[data-landing-pixel="on"] li {
+  font-size: max(14px, 1em);
+  font-variation-settings: "wght" 420;
+}
+
+/* Hard corners — arcade chrome, not pills */
+html[data-landing-pixel="on"] .rounded-full,
+html[data-landing-pixel="on"] .rounded-lg,
+html[data-landing-pixel="on"] .rounded-xl,
+html[data-landing-pixel="on"] .rounded-2xl,
+html[data-landing-pixel="on"] .rounded-3xl,
+html[data-landing-pixel="on"] [class*="rounded-["] {
+  border-radius: 2px;
+}
+
+html[data-landing-pixel="on"] .cursor-dot {
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  margin-top: -4px;
+  border-radius: 0;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brasspale) 50%, transparent);
+}
+
+html[data-landing-pixel="on"] .cursor-ring {
+  width: 36px;
+  height: 36px;
+  margin-left: -18px;
+  margin-top: -18px;
+  border-radius: 0;
+  border-width: 2px;
+}
+
+html[data-landing-pixel="on"] .cursor-ring.is-active {
+  width: 52px;
+  height: 52px;
+  margin-left: -26px;
+  margin-top: -26px;
+}
+
+html[data-landing-pixel="on"] .grain {
+  opacity: 0.07;
+  animation-duration: 0.55s;
+}
+
+html[data-landing-pixel="on"] .torch-halo,
+html[data-landing-pixel="on"] .torch-halo-core {
+  border-radius: 0;
+  mix-blend-mode: screen;
+}
+
+html[data-landing-pixel="on"] .torch-halo {
+  width: 640px;
+  height: 640px;
+  margin-left: -320px;
+  margin-top: -320px;
+  background: radial-gradient(
+    circle,
+    rgba(227, 176, 75, 0.28) 0%,
+    rgba(201, 146, 54, 0.12) 36%,
+    rgba(227, 176, 75, 0) 68%
+  );
+}
+
+html[data-landing-pixel="on"] .torch-halo-core {
+  width: 260px;
+  height: 260px;
+  margin-left: -130px;
+  margin-top: -130px;
+}
+
+html[data-landing-pixel="on"] .torch-pill {
+  border-radius: 0;
+  border-width: 2px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--brass) 42%, transparent);
+}
+
+html[data-landing-pixel="on"] .torch-pill:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 color-mix(in srgb, var(--brass) 55%, transparent);
+}
+
+html[data-landing-pixel="on"] .torch-pill:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 transparent;
+}
+
+html[data-landing-pixel="on"] .torch-hint,
+html[data-landing-pixel="on"] .torch-hint-key {
+  border-radius: 0;
+}
+
+html[data-landing-pixel="on"] .landing-scan {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 54;
+  opacity: 0.1;
+  mix-blend-mode: multiply;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    rgba(8, 11, 20, 0.22) 2px 3px
+  );
+  animation: landing-crt 7s linear infinite;
+}
+
+@keyframes landing-crt {
+  from { background-position: 0 0; }
+  to { background-position: 0 3px; }
+}
+
+html[data-landing-pixel="on"] .landing-ignite {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255, 214, 120, 0.5), transparent 42%),
+    radial-gradient(circle at 50% 40%, rgba(227, 176, 75, 0.2), transparent 62%);
+  animation: landing-ignite 0.7s var(--ease-house) both;
+}
+
+@keyframes landing-ignite {
+  0% { opacity: 0; }
+  28% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+html[data-landing-pixel="on"][data-lamp="lit"] .hero-canvas-layer {
+  filter: brightness(1.18) saturate(1.08);
+}
+
+html[data-landing-pixel="on"][data-lamp="lit"] .landing-hero-bloom {
+  opacity: 1;
+}
+
+.landing-hero-bloom {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  background:
+    radial-gradient(ellipse 55% 45% at 78% 28%, rgba(227, 176, 75, 0.28), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 50% 80%, rgba(227, 176, 75, 0.12), transparent 70%);
+  transition: opacity 0.55s steps(6);
+}
+
+/* Arcade press — cards, CTAs, chips */
+html[data-landing-pixel="on"] .arcade-press {
+  border-radius: 0;
+  border-width: 2px;
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--brass) 42%, transparent);
+  transition:
+    transform 0.16s steps(3),
+    box-shadow 0.16s steps(3),
+    background-color 0.2s var(--ease-house),
+    border-color 0.2s var(--ease-house);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  html[data-landing-pixel="on"] .arcade-press:hover {
+    transform: translate(-3px, -3px);
+    box-shadow: 7px 7px 0 color-mix(in srgb, var(--brass) 55%, transparent);
+  }
+  html[data-landing-pixel="on"] .arcade-press:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 color-mix(in srgb, var(--brass) 35%, transparent);
+  }
+}
+
+html[data-landing-pixel="on"] .tilt-card,
+html[data-landing-pixel="on"] .tilt-card-inner,
+html[data-landing-pixel="on"] .tilt-card-glow {
+  border-radius: 0;
+}
+
+html[data-landing-pixel="on"] .tilt-card {
+  border-width: 2px;
+  box-shadow: 5px 5px 0 color-mix(in srgb, var(--brass) 28%, transparent);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  html[data-landing-pixel="on"] .tilt-card:hover {
+    transform: translate(-3px, -3px);
+    box-shadow:
+      8px 8px 0 color-mix(in srgb, var(--brass) 45%, transparent),
+      0 0 28px -4px var(--glow-warm);
+  }
+  html[data-landing-pixel="on"] .tilt-card[data-lit="true"] {
+    border-color: color-mix(in srgb, var(--brass) 55%, transparent);
+    box-shadow:
+      6px 6px 0 color-mix(in srgb, var(--brass) 50%, transparent),
+      0 0 36px -2px var(--glow-warm);
+  }
+}
+
+html[data-landing-pixel="on"] .roll > span {
+  transition: transform 0.32s steps(5);
+}
+
+.pixel-spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--brasspale);
+  box-shadow: 0 0 6px var(--brass);
+  pointer-events: none;
+  animation: pixel-spark 0.55s steps(5) both;
+}
+
+@keyframes pixel-spark {
+  0% { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--sx, 12px), var(--sy, -18px)) scale(0.4); }
+}
+
+.hero-lamp {
+  position: absolute;
+  right: max(1.2rem, var(--sar));
+  bottom: 5.5rem;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+@media (min-width: 768px) {
+  .hero-lamp {
+    right: max(8%, var(--sar));
+    bottom: 18%;
+  }
+}
+
+.hero-lamp-speech {
+  max-width: 14rem;
+  padding: 0.45rem 0.7rem;
+  border: 2px solid color-mix(in srgb, var(--brass) 45%, transparent);
+  background: color-mix(in srgb, #121828 92%, var(--brass));
+  color: var(--parchment);
+  font-family: var(--font-display);
+  font-size: 13px;
+  line-height: 1.35;
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--brass) 45%, transparent);
+}
+
+.hero-lamp-btn {
+  position: relative;
+  width: 96px;
+  height: 112px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  filter: drop-shadow(0 10px 22px rgba(8, 11, 20, 0.5)) drop-shadow(0 0 22px var(--glow-warm));
+  animation: hero-lamp-hop 2.4s steps(4) infinite;
+}
+
+.hero-lamp-btn:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+}
+
+.hero-lamp[data-mood="poke"] .hero-lamp-btn,
+.hero-lamp[data-mood="cheer"] .hero-lamp-btn {
+  animation: hero-lamp-poke 0.45s steps(5) both;
+}
+
+.hero-lamp-glow {
+  position: absolute;
+  left: 50%;
+  top: 18%;
+  width: 78px;
+  height: 78px;
+  transform: translate(-50%, -40%);
+  background: radial-gradient(circle, rgba(227, 176, 75, 0.5) 0%, rgba(227, 176, 75, 0.12) 48%, transparent 72%);
+  animation: hero-lamp-flicker 1.8s steps(4) infinite;
+}
+
+.hero-lamp[data-lit="false"] .hero-lamp-glow {
+  opacity: 0.2;
+  animation: none;
+}
+
+.hero-lamp-sparks {
+  position: absolute;
+  inset: 8% 18% auto;
+  height: 28px;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.hero-lamp[data-mood="poke"] .hero-lamp-sparks,
+.hero-lamp[data-mood="cheer"] .hero-lamp-sparks {
+  opacity: 1;
+}
+
+.hero-lamp-sparks i {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: var(--brasspale);
+  animation: hero-spark 0.55s steps(4) both;
+}
+
+.hero-lamp-sparks i:nth-child(1) { left: 10%; --dx: -10px; --dy: -16px; }
+.hero-lamp-sparks i:nth-child(2) { left: 30%; --dx: 8px; --dy: -20px; animation-delay: 40ms; }
+.hero-lamp-sparks i:nth-child(3) { left: 50%; --dx: -4px; --dy: -22px; animation-delay: 80ms; }
+.hero-lamp-sparks i:nth-child(4) { left: 70%; --dx: 12px; --dy: -14px; animation-delay: 50ms; }
+
+@keyframes hero-lamp-hop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes hero-lamp-poke {
+  0% { transform: translateY(0) rotate(0deg); }
+  30% { transform: translateY(-10px) rotate(-6deg); }
+  60% { transform: translateY(-4px) rotate(4deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+@keyframes hero-lamp-flicker {
+  0%, 100% { opacity: 0.85; }
+  40% { opacity: 1; }
+  70% { opacity: 0.7; }
+}
+
+@keyframes hero-spark {
+  0% { opacity: 1; transform: translate(0, 0); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)); }
+}
+
+/* CTA + desk tiles share one column so arcade offsets never cover the tiles.
+   Gap 36px + CTA pad-bottom 16px = 52px border-box. Arcade hover shadow is
+   7px; magnetic Y is locked on the hero CTA. Visible air ≥16px. */
+.hero-play {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  max-width: 36rem;
+  margin-top: 2.25rem;
+  gap: 2.25rem;
+  padding: 0.25rem 0.5rem 0.5rem;
+}
+
+.hero-cta-row {
+  position: relative;
+  z-index: 13;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  padding: 0.25rem 0.5rem 1rem;
+}
+
+.hero-play .arcade-cta {
+  overflow: visible;
+}
+
+@media (min-width: 640px) {
+  .hero-cta-row {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  .hero-cta-row .arcade-cta,
+  .hero-cta-row > .hero-cta {
+    flex: 1 1 0;
+  }
+}
+
+.desk-diorama {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: stretch;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.25rem 0.25rem 0.35rem;
+}
+
+.desk-diorama .desk-prop {
+  flex: 1 1 calc(50% - 0.75rem);
+  min-width: 5.5rem;
+}
+
+@media (min-width: 640px) {
+  .desk-diorama .desk-prop {
+    flex: 1 1 0;
+  }
+}
+
+.desk-prop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  border: 2px solid color-mix(in srgb, var(--brass) 28%, transparent);
+  background: color-mix(in srgb, #121828 88%, var(--brass));
+  padding: 0.55rem 0.7rem 0.45rem;
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--brass) 35%, transparent);
+  color: var(--parchment);
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.16s steps(3), box-shadow 0.16s steps(3);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .desk-prop:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 color-mix(in srgb, var(--brass) 50%, transparent);
+  }
+  .desk-prop:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0 0 0 transparent;
+  }
+}
+
+.desk-prop[data-on="true"] {
+  border-color: color-mix(in srgb, var(--brass) 65%, transparent);
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--brass) 50%, transparent), 0 0 18px var(--glow-warm);
+}
+
+/* Two-state card swap. 3D rotateY mirrored through GSAP .reveal transforms. */
+.desk-swap {
+  display: block;
+  width: 100%;
+}
+
+.desk-swap-stage {
+  display: grid;
+  min-height: 10.5rem;
+}
+
+.desk-swap-front,
+.desk-swap-back {
+  grid-area: 1 / 1;
+}
+
+.desk-swap-front {
+  opacity: 1;
+  visibility: visible;
+  z-index: 1;
+}
+
+.desk-swap-back {
+  opacity: 0;
+  visibility: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.desk-swap[data-flipped="true"] .desk-swap-front {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.desk-swap[data-flipped="true"] .desk-swap-back {
+  opacity: 1;
+  visibility: visible;
+  z-index: 1;
+  animation: desk-swap-in 0.24s steps(4) both;
+}
+
+@keyframes desk-swap-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.landing-egg {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1.25rem + var(--sab));
+  z-index: 120;
+  translate: -50% 0;
+  max-width: min(28rem, calc(100vw - 2rem));
+  padding: 0.7rem 1rem;
+  border: 2px solid color-mix(in srgb, var(--brass) 50%, transparent);
+  background: color-mix(in srgb, #0b0f1a 92%, var(--brass));
+  color: var(--parchment);
+  font-family: var(--font-display);
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 5px 5px 0 color-mix(in srgb, var(--brass) 42%, transparent);
+  animation: egg-in 0.4s steps(5) both;
+}
+
+@keyframes egg-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.arcade-cta {
+  position: relative;
+  overflow: hidden;
+}
+
+.arcade-cta .spark-layer {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-landing-pixel="on"] .landing-scan,
+  html[data-landing-pixel="on"] .landing-ignite,
+  html[data-landing-pixel="on"] .hero-lamp-btn,
+  html[data-landing-pixel="on"] .hero-lamp-glow,
+  html[data-landing-pixel="on"] .hero-lamp-sparks,
+  html[data-landing-pixel="on"] .pixel-spark,
+  html[data-landing-pixel="on"] .landing-egg {
+    animation: none !important;
+  }
+  html[data-landing-pixel="on"] .landing-scan {
+    opacity: 0.05;
+  }
+  html[data-landing-pixel="on"] .landing-ignite,
+  html[data-landing-pixel="on"] .pixel-spark {
+    display: none;
+  }
+  html[data-landing-pixel="on"] .hero-lamp-btn {
+    transform: none;
+  }
+  html[data-landing-pixel="on"] .landing-hero-bloom,
+  html[data-landing-pixel="on"] .arcade-press,
+  html[data-landing-pixel="on"] .desk-prop {
+    transition: none;
+  }
+  html[data-landing-pixel="on"] .desk-swap[data-flipped="true"] .desk-swap-back {
+    animation: none;
+  }
+  html[data-landing-pixel="on"] .hero-lamp-speech,
+  html[data-landing-pixel="on"] .landing-egg,
+  html[data-landing-pixel="on"] .hero-anim,
+  html[data-landing-pixel="on"] .reveal,
+  html[data-landing-pixel="on"] .reveal-uc,
+  html[data-landing-pixel="on"] .reveal-loop,
+  html[data-landing-pixel="on"] .reveal-demo,
+  html[data-landing-pixel="on"] .reveal-why,
+  html[data-landing-pixel="on"] .reveal-faq,
+  html[data-landing-pixel="on"] .reveal-byok,
+  html[data-landing-pixel="on"] .reveal-ai,
+  html[data-landing-pixel="on"] .reveal-desk,
+  html[data-landing-pixel="on"] .stmt-word {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}

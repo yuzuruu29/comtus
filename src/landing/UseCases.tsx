@@ -71,8 +71,8 @@ export default function UseCases() {
           {
             opacity: 1,
             y: 0,
-            duration: 0.85,
-            ease: "power3.out",
+            duration: 0.5,
+            ease: "steps(6)",
             delay: (i % 3) * 0.07,
             scrollTrigger: { trigger: el, start: "top 88%", once: true },
           },

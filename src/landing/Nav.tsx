@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { scrollToSection } from "../lib/scroll";
 import { ComtusEmblem } from "../components/brand/ComtusLogo";
+import ArcadeCta from "./ArcadeCta";
+import { PIXEL_HOP } from "./pixelMotion";
 
 const LINKS = [
   { label: "Learning Loop", hash: "#learning-loop" },
@@ -37,8 +39,8 @@ export default function Nav({
     if (targets.length === 0) return;
     gsap.fromTo(
       targets,
-      { y: -28, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.9, ease: "power3.out", delay: 0.35, stagger: 0.06 },
+      { y: -24, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.55, ease: PIXEL_HOP, delay: 0.28, stagger: 0.05 },
     );
     const el = desktopRef.current;
     if (!el) return;
@@ -68,7 +70,7 @@ export default function Nav({
     <>
       <header
         ref={desktopRef}
-        className="fixed inset-x-0 top-5 z-[100] mx-auto hidden w-max items-center gap-1 rounded-full border border-white/10 bg-night/70 py-2 pl-6 pr-2 backdrop-blur-xl opacity-0 md:flex"
+        className="fixed inset-x-0 top-5 z-[100] mx-auto hidden w-max items-center gap-1 border-2 border-white/10 bg-night/70 py-2 pl-6 pr-2 backdrop-blur-xl opacity-0 md:flex arcade-press"
       >
         <Link
           to="/"
@@ -91,7 +93,7 @@ export default function Nav({
             key={l.hash}
             type="button"
             onClick={() => go(l.hash)}
-            className="group relative rounded-full px-3 py-1.5 text-[12.5px] font-medium text-faded transition-colors duration-300 hover:text-parchment cursor-pointer"
+            className="group relative px-3 py-1.5 text-[12px] font-medium text-faded transition-colors duration-300 hover:text-parchment cursor-pointer"
           >
             {l.label}
             <span className="absolute inset-x-3 -bottom-px h-px origin-left scale-x-0 grad-lamp transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100" />
@@ -100,40 +102,44 @@ export default function Nav({
 
         <div className="ml-2 flex items-center gap-2">
           {onStartStudying ? (
-            <button
-              type="button"
-              onClick={onStartStudying}
-              className="group flex items-center gap-1.5 rounded-full grad-lamp py-1.5 pl-4 pr-2 text-[12.5px] font-semibold text-night shadow-sm transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(227,176,75,0.28)] active:scale-[0.97] cursor-pointer"
-            >
-              <span>Start Studying</span>
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-night/15 transition-transform duration-500 group-hover:translate-x-0.5">
-                <svg width="10" height="10" viewBox="0 0 11 11" fill="none">
-                  <path
-                    d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
-                    stroke="#0B0F1A"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-            </button>
+            <ArcadeCta>
+              <button
+                type="button"
+                onClick={onStartStudying}
+                className="group flex items-center gap-1.5 arcade-press grad-lamp py-1.5 pl-4 pr-2 text-[12px] font-semibold text-night"
+              >
+                <span>Start Studying</span>
+                <span className="flex h-6 w-6 items-center justify-center bg-night/15 transition-transform duration-300 group-hover:translate-x-0.5">
+                  <svg width="10" height="10" viewBox="0 0 11 11" fill="none">
+                    <path
+                      d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
+                      stroke="#0B0F1A"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+              </button>
+            </ArcadeCta>
           ) : (
-            <Link
-              to="/studio"
-              className="group flex items-center gap-1.5 rounded-full grad-lamp py-1.5 pl-4 pr-2 text-[12.5px] font-semibold text-night shadow-sm transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(227,176,75,0.28)] active:scale-[0.97]"
-            >
-              <span>Start Studying</span>
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-night/15 transition-transform duration-500 group-hover:translate-x-0.5">
-                <svg width="10" height="10" viewBox="0 0 11 11" fill="none">
-                  <path
-                    d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
-                    stroke="#0B0F1A"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-            </Link>
+            <ArcadeCta>
+              <Link
+                to="/studio"
+                className="group flex items-center gap-1.5 arcade-press grad-lamp py-1.5 pl-4 pr-2 text-[12px] font-semibold text-night"
+              >
+                <span>Start Studying</span>
+                <span className="flex h-6 w-6 items-center justify-center bg-night/15 transition-transform duration-300 group-hover:translate-x-0.5">
+                  <svg width="10" height="10" viewBox="0 0 11 11" fill="none">
+                    <path
+                      d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
+                      stroke="#0B0F1A"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+              </Link>
+            </ArcadeCta>
           )}
         </div>
       </header>
@@ -141,7 +147,7 @@ export default function Nav({
       {/* Mobile bar */}
       <header
         ref={mobileRef}
-        className="fixed inset-x-4 top-[calc(1rem+var(--sat))] z-[100] flex items-center justify-between rounded-full border border-white/10 bg-night/60 py-2.5 pl-5 pr-2.5 backdrop-blur-xl opacity-0 md:hidden"
+        className="fixed inset-x-4 top-[calc(1rem+var(--sat))] z-[100] flex items-center justify-between border-2 border-white/10 bg-night/60 py-2.5 pl-5 pr-2.5 backdrop-blur-xl opacity-0 md:hidden arcade-press"
       >
         <Link to="/" className="flex items-center gap-2" aria-label="Comtus home">
           <img
@@ -155,7 +161,7 @@ export default function Nav({
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
-          className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 active:scale-95"
+          className="relative flex h-11 w-11 items-center justify-center border border-white/10 bg-white/5 active:translate-x-px active:translate-y-px"
         >
           <span
             className={`absolute left-1/2 top-1/2 h-px w-4 -translate-x-1/2 bg-parchment transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] ${

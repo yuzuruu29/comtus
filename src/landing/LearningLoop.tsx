@@ -97,13 +97,12 @@ export default function LearningLoop() {
       targets.forEach((el, i) => {
         gsap.fromTo(
           el,
-          { opacity: 0, y: 40, filter: "blur(6px)" },
+          { opacity: 0, y: 24 },
           {
             opacity: 1,
             y: 0,
-            filter: "blur(0px)",
-            duration: 0.9,
-            ease: "power3.out",
+            duration: 0.5,
+            ease: "steps(6)",
             delay: (i % 2) * 0.08,
             scrollTrigger: { trigger: el, start: "top 88%", once: true },
           },

@@ -20,6 +20,7 @@ import { panesFor } from "./layout";
 import { usePaneResize } from "./usePaneResize";
 import { db } from "../lib/db";
 import { LampPulse, Modal, btnGhost } from "./ui";
+import MilestonesButton from "./companion/MilestonesButton";
 
 type MobilePane = "sources" | "chat" | "studio";
 
@@ -172,7 +173,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             Drop onto this notebook
           </div>
         </div>
-        <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[38vh] bg-[radial-gradient(50%_90%_at_50%_0%,rgba(227,176,75,0.05),transparent_70%)]" />
+        <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[42vh] bg-[radial-gradient(55%_90%_at_50%_0%,rgba(227,176,75,0.13),transparent_68%),radial-gradient(40%_70%_at_88%_8%,rgba(127,168,201,0.10),transparent_62%)]" />
 
         <WorkspaceHeader
           notebook={desk.notebook}
@@ -463,6 +464,7 @@ function WorkspaceHeader({
           aria-label="Notebook name"
         />
         <div className="no-drag ml-auto flex items-center gap-1.5">
+          <MilestonesButton className="hidden sm:inline-flex" />
           {notebook && (
             <>
               <button

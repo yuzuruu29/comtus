@@ -21,6 +21,15 @@ export const RISE_2 = 8;
 export const RISE_3 = 14;
 export const DRIFT_X = 12;
 
+/** House stagger — mirrors `--stagger-step` / the 10-item cap in BRAND.md §5. */
+export const STAGGER_STEP_MS = 30;
+export const STAGGER_CAP = 10;
+
+/** Inline `--d` for `.anim-rise` / `.chip-in`. Caps at 10 items (300ms). */
+export function staggerDelay(index: number): string {
+  return `${Math.min(Math.max(index, 0), STAGGER_CAP) * STAGGER_STEP_MS}ms`;
+}
+
 /** BorderBeam orbit tempo, seconds — idle vs streaming. */
 export const BEAM_IDLE_S = 5;
 export const BEAM_STREAM_S = 3.4;

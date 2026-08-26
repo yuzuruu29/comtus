@@ -54,7 +54,7 @@ import type { ChatReply } from "../lib/llm";
 import { useSmoothText } from "../lib/useSmoothText";
 import { useSettings, useCallSettings } from "../lib/settings";
 import StudyGlyph from "../components/icons/StudyGlyph";
-import { Collapse, SOFT, SPRING, HOUSE, Spotlight, BorderBeam, DRIFT_X, RISE_1, BEAM_IDLE_S, BEAM_STREAM_S } from "./fx";
+import { Collapse, SOFT, SPRING, HOUSE, DRIFT_X, RISE_1 } from "./fx";
 import { Toast } from "./Toast";
 import { timeAgo } from "./ui";
 import { appendTranscript } from "../lib/voice";
@@ -772,8 +772,9 @@ export default function ChatPane({
       </div>
 
       {/* Composer — console deck. Three bands inside the lamp-lit
-          shell: context strip, textarea, action rail. Wakes on
-          focus with beam + lamplight as before. */}
+          shell: context strip, textarea, action rail. No orbiting
+          beam or spotlight wash — those read as a yellow bar on
+          click. The shell still wakes with a brass ring. */}
       <div className="relative shrink-0 px-4 pb-[0.9rem] pt-2 sm:px-5 sm:pb-[0.95rem] lg:pb-[calc(0.95rem+var(--sab))]">
         <div
           aria-hidden
@@ -806,7 +807,7 @@ export default function ChatPane({
             </motion.button>
           )}
         </AnimatePresence>
-        <Spotlight radius={230} className="mx-auto w-full max-w-3xl rounded-[var(--radius-dialog)]">
+        <div className="mx-auto w-full max-w-3xl rounded-[var(--radius-dialog)]">
           <motion.div
             data-focused={focused ? "" : undefined}
             data-streaming={streaming ? "" : undefined}
@@ -814,20 +815,6 @@ export default function ChatPane({
             transition={{ duration: 0.34, ease: HOUSE }}
             className="composer-shell relative"
           >
-            <AnimatePresence>
-              {(focused || streaming) && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.22 }}
-                  className="pointer-events-none absolute inset-0 rounded-[inherit] overflow-hidden"
-                >
-                  <BorderBeam size={84} duration={streaming ? BEAM_STREAM_S : BEAM_IDLE_S} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             <AnimatePresence>
               {streaming && (
                 <motion.div
@@ -1093,7 +1080,7 @@ export default function ChatPane({
               </div>
             </div>
           </motion.div>
-        </Spotlight>
+        </div>
 
         {/* Follow-up rail — only once there is an answer to follow up on and user has not dismissed */}
         <AnimatePresence>

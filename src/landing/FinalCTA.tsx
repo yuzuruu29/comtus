@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import ArcadeCta from "./ArcadeCta";
 import "./landing.css";
 
 const FOOTNOTES = [
@@ -22,25 +23,27 @@ export default function FinalCTA() {
           <em className="font-[420] text-lamp">Think tonight.</em>
         </h2>
         <div className="mt-10 flex justify-center">
-          <Link
-            to="/studio"
-            className="group flex items-center gap-2.5 rounded-full grad-lamp py-4 pl-8 pr-3 text-[15px] font-semibold text-night shadow-[0_12px_50px_rgba(227,176,75,0.25)] transition-shadow duration-500 hover:shadow-[0_16px_70px_rgba(227,176,75,0.4)] active:scale-[0.98]"
-          >
-            <span className="roll">
-              <span>Open the studio</span>
-              <span aria-hidden>Think tonight</span>
-            </span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-night/15 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px">
-              <svg width="13" height="13" viewBox="0 0 11 11" fill="none">
-                <path
-                  d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
-                  stroke="#0B0F1A"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </span>
-          </Link>
+          <ArcadeCta>
+            <Link
+              to="/studio"
+              className="group flex items-center gap-2.5 arcade-press grad-lamp py-4 pl-8 pr-3 text-[15px] font-semibold text-night shadow-[0_12px_50px_rgba(227,176,75,0.25)]"
+            >
+              <span className="roll">
+                <span>Open the studio</span>
+                <span aria-hidden>Think tonight</span>
+              </span>
+              <span className="flex h-9 w-9 items-center justify-center bg-night/15 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px">
+                <svg width="13" height="13" viewBox="0 0 11 11" fill="none">
+                  <path
+                    d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
+                    stroke="#0B0F1A"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+            </Link>
+          </ArcadeCta>
         </div>
         <div className="mt-16 grid grid-cols-1 gap-6 text-left sm:grid-cols-3">
           {FOOTNOTES.map(([tag, line]) => (

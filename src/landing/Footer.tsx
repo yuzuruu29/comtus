@@ -152,7 +152,7 @@ export default function Footer() {
               <li className="pt-2">
                 <Link
                   to="/studio"
-                  className="inline-flex items-center gap-1 text-brasspale font-semibold hover:underline"
+              className="inline-flex items-center gap-1 arcade-press border border-brass/30 bg-brass/[0.08] px-2 py-1 text-brasspale font-semibold"
                 >
                   Start Studying →
                 </Link>
@@ -174,7 +174,7 @@ export default function Footer() {
         className="pointer-events-none select-none whitespace-nowrap text-center font-display font-[500] leading-[0.78] text-transparent"
         style={{
           fontSize: "clamp(90px, 19vw, 300px)",
-          WebkitTextStroke: "1px rgba(242,237,227,0.05)",
+          WebkitTextStroke: "2px rgba(227,176,75,0.12)",
         }}
         aria-hidden
       >

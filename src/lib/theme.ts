@@ -23,6 +23,21 @@ export function applyResolvedTheme(resolved: ResolvedTheme): void {
   scheme?.setAttribute("content", resolved);
 }
 
+/** Studio-only pixel chrome. Landing uses html[data-landing-pixel] instead. DeskShell clears this on leave. */
+export function applyPixelDesk(on: boolean): void {
+  if (on) document.documentElement.dataset.pixel = "on";
+  else delete document.documentElement.dataset.pixel;
+}
+
+/** Pixelify on all desk text + arcade press while the desk is mounted. */
+export function usePixelDeskEffect() {
+  const pixelDesk = useSettings((s) => s.pixelDesk !== false);
+  useEffect(() => {
+    applyPixelDesk(pixelDesk);
+    return () => applyPixelDesk(false);
+  }, [pixelDesk]);
+}
+
 /** Sets html[data-theme] for app surfaces. The landing route is always dark. */
 export function useThemeEffect() {
   const theme = useSettings((s) => s.theme);

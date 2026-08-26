@@ -64,16 +64,18 @@ Glows become soft warm washes at lower opacity in Daylight.
 
 ## 4 · Typography
 
-All three families are self-hosted via `@fontsource` (Fraunces and Inter variable, JetBrains Mono static). No Google Fonts CDN.
+All families are self-hosted via `@fontsource`. No Google Fonts CDN.
 
 | Role | Family | Usage |
 |---|---|---|
-| Display | **Fraunces** (variable serif, optical size / `opsz` auto) | Headlines, notebook titles, big numbers. Weight 340–560. *Italics* for emphasized words. Tokens: `text-display`, `text-title`. |
-| Body | **Inter** | Paragraphs, UI text, chat. Tokens: `text-heading`, `text-body`. |
-| Label | **JetBrains Mono** | Eyebrows (`.label-mono`), indices, chips, stats. Token: `text-label`. |
+| Display (landing) | **Pixelify Sans Variable** | Every landing surface: hero, nav, body, captions, buttons, footer. Sized ≥12px labels, ≥14–16px body. Never Press Start 2P. |
+| Display (Pixel desk) | **Pixelify Sans Variable** | Every studio/desk line when Pixel is on: titles, chat, notes, markdown, settings, composer, buttons. Sized ≥14px body, ≥12px labels. |
+| Display (Scholar desk) | **Fraunces** (variable serif, optical size / `opsz` auto) | Scholar-mode notebook titles only. Weight 340–560. *Italics* for emphasized words. Tokens: `text-display`, `text-title`. |
+| Body (studio) | **Pixelify Sans Variable** (Pixel, default) · **Inter** (Scholar) | Pixel: chat, notes, markdown, settings, composer. Scholar restores Inter. Tokens: `text-heading`, `text-body`. |
+| Label (studio) | **Pixelify Sans Variable** (Pixel) · **JetBrains Mono** (Scholar) | Pixel restyles chrome labels to Pixelify at ≥12px. Scholar keeps JetBrains for code/IDs. Token: `text-label`. |
 
 Landing scale: hero `clamp(2.8rem, 7.5vw, 6.8rem)` · section titles `clamp(2.1rem, 4.6vw, 3.8rem)`
-· statement `clamp(2.4rem, 6vw, 5.2rem)` · body 16px.
+· statement `clamp(2.4rem, 6vw, 5.2rem)` · body 16px. Pixelify via `@fontsource-variable/pixelify-sans`.
 
 ## 5 · Motion — "Light Behaves Like Light"
 
@@ -83,9 +85,10 @@ silent at the end. Nothing bounces except where a lamp would flicker.
 - **House easings:** out `cubic-bezier(0.22, 1, 0.36, 1)` · in-out `cubic-bezier(0.76, 0, 0.24, 1)`
 - **Stack:** GSAP 3 + ScrollTrigger + Lenis (npm, not CDN), custom cursor (brass dot +
   lagging ring), magnetic buttons, velocity-reactive marquee, film grain at 4–5% opacity.
-- **Signature moves:** line-mask headline reveals · word-by-word scroll-scrubbed manifesto ·
-  gradient rules that draw in (`scaleX`) · glows that bloom with scroll · hero canvas of
-  motes drifting through a lamp cone with a pointer-reactive constellation of idea-nodes.
+- **Signature moves:** line-mask headline reveals · stepped pixel hops · brass ignite blooms ·
+  arcade press on cards and CTAs · word-by-word scroll-scrubbed manifesto ·
+  gradient rules that draw in (`scaleX`) · glows that bloom with scroll · pokeable hero lamp ·
+  hero canvas of motes drifting through a lamp cone with a pointer-reactive constellation.
 - **Reduced motion:** `prefers-reduced-motion` renders everything instantly — no parallax,
   no scrub, static canvas frame. Content is never hidden behind an animation.
 
@@ -95,9 +98,9 @@ The landing's cinematic toolkit stops at the studio door. App motion follows the
 soul with quieter means:
 
 - **Split of duties** — continuous/micro-state motion is tokenized CSS (`.anim-*`,
-  `.card-wake`, breathing loops); enter/exit orchestration is `motion/react`
+  `.card-wake`, breathing loops, stepped lamp hops); enter/exit orchestration is `motion/react`
   (`AnimatePresence` + house springs). GSAP stays landing-only, never imported by
-  studio or desk code.
+  studio or desk code. Pixel desk uses `steps()` for lamp and arcade press, not bounce easing.
 - **House springs** — `SPRING` (380/34) for placed-feeling moves (bubbles, morphs),
   `SOFT` (240/26) for popover/toast travel; both live in `src/studio/fx.tsx` next to
   distance constants `RISE_1/2/3`, `DRIFT_X` (mirrors `--rise-*`, `--drift-x`;
@@ -134,3 +137,26 @@ marks in product UI. Never "revolutionary", "supercharge", "unleash".
    the API key never leaves it.
 4. **Craft is the feature** — the tool should feel like a well-bound book: quiet, precise,
    warm under the hand.
+
+## 8 · Desk life — color, the lamp, milestones
+
+Study sits for hours. The studio should feel lit, not grey: brass, moon, sage, and rust
+carry tool kinds and states; dust motes and a warmer lamp wash keep the desk alive
+without turning it into a game.
+
+- **Pixel landing** (`/`) is always a lamp-arcade overlay: Pixelify on every font,
+  16px brass grid, scanlines, stepped hops, arcade press, pokeable lamp, desk diorama.
+  Scoped with `html[data-landing-pixel="on"]` in `src/landing/pixel-landing.css` so
+  studio Scholar/Pixel is untouched. GSAP stays landing-only.
+- **Pixel desk** (default) is the same overlay in the app: Pixelify on every desk
+  line (chat, notes, markdown, settings, composer), 16px brass grid, faint scanlines,
+  stepped CSS motion, arcade press on cards and chrome. **Scholar** in Settings
+  restores Fraunces + Inter and the quieter radii. Toggle is studio-only
+  (`html[data-pixel]` via DeskShell).
+- **The lamp** (pixel companion, bottom-right by default) hops on a stepped beat, sparks when
+  poked or celebrated, sleeps when the desk is idle about four minutes, and may
+  chime once. Drag it anywhere; double-click returns it to the corner. Placement
+  is stored on-device. Mute lives in Settings. Reduced-motion rests the loops.
+- **Milestones** are study-craft marks derived from the on-device library
+  ("The first page"), never XP. Existing work is seeded silently; only new marks toast.
+- Copy stays the warm scholar: no exclamation marks, skippable delight.

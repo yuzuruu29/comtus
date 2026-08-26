@@ -24,14 +24,38 @@ import Statement from "./Statement";
 import FinalCTA from "./FinalCTA";
 import Footer from "./Footer";
 import OnboardingModal from "./OnboardingModal";
+import { LandingPlayProvider, useLandingPlay } from "./LandingPlay";
+import LandingEgg from "./LandingEgg";
+import { applyLandingPixel } from "./pixelMotion";
+import "./pixel-landing.css";
 
 gsap.registerPlugin(ScrollTrigger);
+
+function IgniteFlash() {
+  const { pokeCount, lampLit } = useLandingPlay();
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    if (!lampLit) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    setShow(true);
+    const id = window.setTimeout(() => setShow(false), 700);
+    return () => window.clearTimeout(id);
+  }, [pokeCount, lampLit]);
+
+  if (!show) return null;
+  return <div className="landing-ignite" aria-hidden />;
+}
 
 export default function LandingPage() {
   const [ready, setReady] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
 
-  // Lenis smooth scroll, driven by GSAP's ticker.
+  useEffect(() => {
+    applyLandingPixel(true);
+    return () => applyLandingPixel(false);
+  }, []);
+
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const lenis = new Lenis({ lerp: 0.1 });
@@ -46,7 +70,6 @@ export default function LandingPage() {
     };
   }, []);
 
-  // While the preloader holds the page, keep the scroll locked.
   useEffect(() => {
     document.documentElement.style.overflow = ready ? "" : "hidden";
     return () => {
@@ -55,32 +78,37 @@ export default function LandingPage() {
   }, [ready]);
 
   return (
-    <div className="relative">
-      {!ready && <Preloader onDone={() => setReady(true)} />}
-      <CustomCursor />
-      <TorchLayer ready={ready} />
-      <div className="grain" aria-hidden />
-      <Nav ready={ready} onStartStudying={() => setOnboardingOpen(true)} />
-      <main>
-        <Hero ready={ready} onStartStudying={() => setOnboardingOpen(true)} />
-        <Marquee />
-        <ProductDemo />
-        <LearningLoop />
-        <UseCases />
-        <WhyComtus />
-        <OpenRouterByokSection />
-        <StudioShowcase />
-        <BringStack />
-        <Boards />
-        <DesktopApp />
-        <AcademicIntegrity />
-        <TrustPrivacy />
-        <FAQSection />
-        <Statement />
-        <FinalCTA />
-      </main>
-      <Footer />
-      <OnboardingModal isOpen={onboardingOpen} onClose={() => setOnboardingOpen(false)} />
-    </div>
+    <LandingPlayProvider>
+      <div className="relative">
+        {!ready && <Preloader onDone={() => setReady(true)} />}
+        <CustomCursor />
+        <TorchLayer ready={ready} />
+        <div className="grain" aria-hidden />
+        <div className="landing-scan" aria-hidden />
+        <IgniteFlash />
+        <Nav ready={ready} onStartStudying={() => setOnboardingOpen(true)} />
+        <main>
+          <Hero ready={ready} onStartStudying={() => setOnboardingOpen(true)} />
+          <Marquee />
+          <ProductDemo />
+          <LearningLoop />
+          <UseCases />
+          <WhyComtus />
+          <OpenRouterByokSection />
+          <StudioShowcase />
+          <BringStack />
+          <Boards />
+          <DesktopApp />
+          <AcademicIntegrity />
+          <TrustPrivacy />
+          <FAQSection />
+          <Statement />
+          <FinalCTA />
+        </main>
+        <Footer />
+        <LandingEgg />
+        <OnboardingModal isOpen={onboardingOpen} onClose={() => setOnboardingOpen(false)} />
+      </div>
+    </LandingPlayProvider>
   );
 }

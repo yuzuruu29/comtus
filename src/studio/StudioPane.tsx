@@ -50,6 +50,7 @@ import {
   SlideshowView,
 } from "./generators/AidsFlow";
 import { useDesk } from "./DeskContext";
+import { kindAccent } from "../lib/milestones";
 
 type Flow = "quiz" | "exam" | "essay" | "flashcards" | "presentation" | "aids" | null;
 type DeletedGenerationNotice = {
@@ -64,13 +65,26 @@ const QUICK_AID_PILLS: { kind: GenerationKind; icon: typeof BookOpen; name: stri
   { kind: "timeline", icon: ClockCounterClockwise, name: "Timeline" },
 ];
 
-const MORE_TOOLS: { flow: Exclude<Flow, null>; icon: typeof ListChecks; name: string; line: string }[] = [
-  { flow: "quiz", icon: ListChecks, name: "Practice Quiz", line: "Instant checks & rationales" },
-  { flow: "exam", icon: GraduationCap, name: "Mock Exam", line: "Timed simulation & board review" },
-  { flow: "essay", icon: PenNib, name: "Essay Coach", line: "Writing rubric feedback" },
-  { flow: "flashcards", icon: Stack, name: "Flashcards", line: "Spaced repetition deck" },
-  { flow: "presentation", icon: Presentation, name: "Slides & Deck", line: "Visual presentation outline" },
+const MORE_TOOLS: {
+  flow: Exclude<Flow, null>;
+  icon: typeof ListChecks;
+  name: string;
+  line: string;
+  kindVar: string;
+}[] = [
+  { flow: "quiz", icon: ListChecks, name: "Practice Quiz", line: "Instant checks & rationales", kindVar: "var(--brass)" },
+  { flow: "exam", icon: GraduationCap, name: "Mock Exam", line: "Timed simulation & board review", kindVar: "var(--rust)" },
+  { flow: "essay", icon: PenNib, name: "Essay Coach", line: "Writing rubric feedback", kindVar: "var(--moon)" },
+  { flow: "flashcards", icon: Stack, name: "Flashcards", line: "Spaced repetition deck", kindVar: "var(--sage)" },
+  { flow: "presentation", icon: Presentation, name: "Slides & Deck", line: "Visual presentation outline", kindVar: "var(--brasspale)" },
 ];
+
+const KIND_CSS: Record<ReturnType<typeof kindAccent>, string> = {
+  brass: "var(--brass)",
+  moon: "var(--moon)",
+  sage: "var(--sage)",
+  rust: "var(--rust)",
+};
 
 const FLOW_TITLES: Record<string, string> = {
   quiz: "Quiz",
@@ -287,9 +301,10 @@ export default function StudioPane({
               <button
                 key={t.kind}
                 onClick={() => openAid(t.kind)}
-                className="flex items-center justify-center gap-2 rounded-xl border border-hairline bg-surface/70 px-3 py-2 text-[12px] font-medium text-ink/90 transition-all duration-200 hover:-translate-y-0.5 hover:border-brass/40 hover:bg-raised hover:text-brasspale hover:shadow-[0_4px_14px_-2px_rgba(227,176,75,0.18)] active:scale-[0.98]"
+                className="kind-tile flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[12px] font-medium text-ink/90 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_14px_-2px_rgba(227,176,75,0.18)] active:scale-[0.98]"
+                style={{ ["--kind" as string]: KIND_CSS[kindAccent(t.kind)] }}
               >
-                <t.icon size={14} weight="light" className="text-muted shrink-0" />
+                <t.icon size={14} weight="light" className="kind-icon shrink-0" />
                 <span className="truncate">{t.name}</span>
               </button>
             ))}
@@ -306,9 +321,10 @@ export default function StudioPane({
                 onClick={() => {
                   setFlow(t.flow);
                 }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-all duration-200 hover:bg-brass/[0.08] hover:translate-x-1 hover:border-brass/30 active:scale-[0.99]"
+                className="kind-tile flex w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-all duration-200 hover:translate-x-1 active:scale-[0.99]"
+                style={{ ["--kind" as string]: t.kindVar }}
               >
-                <t.icon size={15} weight="light" className="text-brass shrink-0" />
+                <t.icon size={15} weight="light" className="kind-icon shrink-0" />
                 <div className="min-w-0">
                   <span className="block text-[12.5px] font-medium text-ink">{t.name}</span>
                   <span className="block text-[10.5px] text-muted">{t.line}</span>
@@ -335,10 +351,18 @@ export default function StudioPane({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -10, transition: { duration: 0.15 } }}
                       transition={SOFT}
-                      className="group flex items-start gap-3 rounded-xl border border-hairline bg-surface/70 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-brass/40 hover:bg-surface hover:shadow-[0_6px_20px_-4px_rgba(0,0,0,0.4),0_0_14px_-3px_rgba(227,176,75,0.14)]"
+                      className="desk-row group flex items-start gap-3 rounded-xl border border-hairline bg-surface/70 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-brass/40 hover:bg-surface hover:shadow-[0_6px_20px_-4px_rgba(0,0,0,0.4),0_0_14px_-3px_rgba(227,176,75,0.14)]"
                     >
                       {/* Note Icon (Yellow/Gold Notebook icon matching Screenshot 2) */}
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 mt-0.5">
+                      <div
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border mt-0.5"
+                        style={{
+                          ["--kind" as string]: KIND_CSS[kindAccent(g.kind)],
+                          background: "color-mix(in srgb, var(--kind) 14%, transparent)",
+                          color: "var(--kind)",
+                          borderColor: "color-mix(in srgb, var(--kind) 30%, transparent)",
+                        }}
+                      >
                         {isNote ? (
                           <NotePencil size={16} weight="fill" />
                         ) : (

@@ -15,6 +15,7 @@ import CaptionButtons from "../studio/Titlebar";
 import { LampPulse, Modal, btnGhost } from "../studio/ui";
 import { HOUSE } from "../studio/fx";
 import { useNotebookDesk } from "../studio/useNotebookDesk";
+import MilestonesButton from "../studio/companion/MilestonesButton";
 import LibraryRail from "./LibraryRail";
 import DeskHome from "./DeskHome";
 import NotebookDesk from "./NotebookDesk";
@@ -389,6 +390,7 @@ function AppHeader({
           </>
         )}
         <div className="no-drag ml-auto flex shrink-0 items-center gap-1.5 pr-1">
+          <MilestonesButton className="hidden sm:inline-flex" />
           {notebook && (
             <>
               <button

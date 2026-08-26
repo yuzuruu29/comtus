@@ -58,7 +58,7 @@ export default function BringStack() {
             opacity: 1,
             y: 0,
             duration: 0.85,
-            ease: "power3.out",
+            ease: "steps(6)",
             scrollTrigger: { trigger: el, start: "top 88%", once: true },
           },
         );

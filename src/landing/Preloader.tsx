@@ -28,7 +28,7 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
       tl.fromTo(
         ".pre-flame",
         { scale: 0, opacity: 0 },
-        { scale: 1, opacity: 1, duration: 0.55, ease: "back.out(1.8)" },
+        { scale: 1, opacity: 1, duration: 0.4, ease: "steps(5)" },
       )
         .fromTo(
           ".pre-glow",
@@ -39,7 +39,7 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
         .fromTo(
           ".pre-letter",
           { yPercent: 120 },
-          { yPercent: 0, duration: 0.8, stagger: 0.055 },
+          { yPercent: 0, duration: 0.55, stagger: 0.05, ease: "steps(6)" },
           "-=0.45",
         )
         .fromTo(

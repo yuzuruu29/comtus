@@ -1,7 +1,7 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useCountUp } from "./fx";
+import { staggerDelay, STAGGER_CAP, STAGGER_STEP_MS, useCountUp } from "./fx";
 
 function Probe({ target }: { target: number }) {
   const value = useCountUp(target);
@@ -28,6 +28,19 @@ function mockMatchMedia(matches: boolean) {
 afterEach(() => {
   cleanup();
   Reflect.deleteProperty(window, "matchMedia");
+});
+
+describe("staggerDelay", () => {
+  it("steps 30ms per item and caps at 10", () => {
+    expect(staggerDelay(0)).toBe("0ms");
+    expect(staggerDelay(1)).toBe(`${STAGGER_STEP_MS}ms`);
+    expect(staggerDelay(STAGGER_CAP)).toBe(`${STAGGER_CAP * STAGGER_STEP_MS}ms`);
+    expect(staggerDelay(STAGGER_CAP + 7)).toBe(`${STAGGER_CAP * STAGGER_STEP_MS}ms`);
+  });
+
+  it("treats negative indexes as the first slot", () => {
+    expect(staggerDelay(-4)).toBe("0ms");
+  });
 });
 
 describe("useCountUp", () => {

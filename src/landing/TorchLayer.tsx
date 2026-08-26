@@ -233,7 +233,7 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
               Interactive Torch
             </p>
             <p className="torch-hint-body">
-              Your cursor is a burning torch. Touch each section's sconce to rekindle its study light as you explore.
+              Your cursor is a brass torch. Hover a section sconce to rekindle it. Press L to light the lamp.
             </p>
             <p className="torch-hint-keys">
               <span className="font-mono torch-hint-key">T</span> or click the pill to toggle

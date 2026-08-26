@@ -16,36 +16,52 @@ export default function Statement() {
     const ctx = gsap.context(() => {
       const words = gsap.utils.toArray<HTMLElement>(".stmt-word");
       if (reduced) {
-        gsap.set(words, { opacity: 1 });
+        gsap.set(words, { opacity: 1, y: 0 });
+        gsap.set(".stmt-rule", { scaleX: 1 });
         return;
       }
       gsap.fromTo(
         words,
-        { opacity: 0.13 },
+        { opacity: 0.12, y: 8 },
         {
           opacity: 1,
-          stagger: 0.06,
-          ease: "none",
+          y: 0,
+          stagger: 0.05,
+          ease: "steps(4)",
           scrollTrigger: {
             trigger: rootRef.current,
-            start: "top 72%",
-            end: "center 45%",
-            scrub: 0.5,
+            start: "top 78%",
+            end: "center 40%",
+            scrub: 0.35,
           },
         },
       );
       gsap.fromTo(
         ".stmt-glow",
-        { scale: 0.55, opacity: 0.25 },
+        { scale: 0.45, opacity: 0.15 },
         {
-          scale: 1,
+          scale: 1.08,
           opacity: 1,
           ease: "none",
           scrollTrigger: {
             trigger: rootRef.current,
-            start: "top 80%",
+            start: "top 85%",
             end: "center center",
-            scrub: 0.5,
+            scrub: 0.4,
+          },
+        },
+      );
+      gsap.fromTo(
+        ".stmt-rule",
+        { scaleX: 0 },
+        {
+          scaleX: 1,
+          ease: "none",
+          scrollTrigger: {
+            trigger: rootRef.current,
+            start: "top 75%",
+            end: "center 50%",
+            scrub: 0.3,
           },
         },
       );
@@ -69,9 +85,9 @@ export default function Statement() {
       />
       <div className="relative mx-auto max-w-4xl px-6 text-center">
         <div className="label-mono mb-8 justify-center opacity-70">
-          <span className="h-px w-9 grad-lamp" />
+          <span className="stmt-rule h-px w-9 origin-left grad-lamp" />
           <span className="mx-4">The Point</span>
-          <span className="h-px w-9 grad-lamp" />
+          <span className="stmt-rule h-px w-9 origin-right grad-lamp" />
         </div>
         <p className="font-display text-[clamp(1.9rem,4.6vw,3.6rem)] font-[390] leading-[1.22] text-parchment">
           {TEXT.split(" ").map((w, i) => (

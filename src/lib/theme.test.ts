@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { resolveAppTheme } from "./theme";
+import { afterEach, describe, expect, it } from "vitest";
+import { applyPixelDesk, resolveAppTheme } from "./theme";
 
 describe("resolveAppTheme", () => {
   it("forces dark on the landing route", () => {
@@ -15,5 +15,18 @@ describe("resolveAppTheme", () => {
   it("follows prefers-color-scheme when set to system", () => {
     expect(resolveAppTheme("system", { landing: false, prefersLight: true })).toBe("light");
     expect(resolveAppTheme("system", { landing: false, prefersLight: false })).toBe("dark");
+  });
+});
+
+describe("applyPixelDesk", () => {
+  afterEach(() => {
+    delete document.documentElement.dataset.pixel;
+  });
+
+  it("sets and clears the studio pixel flag on html", () => {
+    applyPixelDesk(true);
+    expect(document.documentElement.dataset.pixel).toBe("on");
+    applyPixelDesk(false);
+    expect(document.documentElement.dataset.pixel).toBeUndefined();
   });
 });

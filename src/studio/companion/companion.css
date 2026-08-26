@@ -1,0 +1,332 @@
+/* Desk companion — pixel lamp in the corner. Motion is light: flicker,
+   a short hop, a sleepy droop. Reduced-motion rests the loops. */
+
+.desk-life {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+}
+
+.studio-motes {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.studio-motes span {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brasspale) 70%, white);
+  box-shadow: 0 0 8px var(--glow-warm);
+  opacity: 0.35;
+  animation: mote-drift var(--dur) linear infinite;
+  animation-delay: var(--d);
+  left: var(--x);
+  top: var(--y);
+}
+
+@keyframes mote-drift {
+  0% { transform: translate3d(0, 0, 0); opacity: 0; }
+  12% { opacity: 0.45; }
+  80% { opacity: 0.2; }
+  100% { transform: translate3d(18px, -46vh, 0); opacity: 0; }
+}
+
+.lamp-mascot {
+  pointer-events: auto;
+  position: fixed;
+  right: max(0.85rem, var(--sar));
+  bottom: calc(5.6rem + var(--sab));
+  z-index: 56;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.lamp-mascot[data-placed="true"] {
+  right: auto;
+  bottom: auto;
+}
+
+.lamp-mascot[data-dragging="true"] {
+  z-index: 80;
+}
+
+.lamp-mascot[data-dragging="true"] .lamp-stage {
+  animation: none;
+}
+
+.lamp-stage {
+  animation: lamp-bob 2.4s steps(4) infinite;
+}
+
+@media (min-width: 1024px) {
+  .lamp-mascot {
+    bottom: 1.35rem;
+  }
+}
+
+.lamp-speech {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.4rem);
+  max-width: 14.5rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 10px 10px 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--brass) 35%, var(--hairline));
+  background: color-mix(in srgb, var(--surface) 92%, var(--brass));
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.45;
+  box-shadow: var(--elev-card), 0 0 18px -6px var(--glow-warm);
+}
+
+.lamp-btn {
+  position: relative;
+  width: 96px;
+  height: 112px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: grab;
+  touch-action: none;
+  filter: drop-shadow(0 10px 22px rgba(8, 11, 20, 0.5)) drop-shadow(0 0 22px var(--glow-warm));
+}
+
+.lamp-mascot[data-dragging="true"] .lamp-btn {
+  cursor: grabbing;
+}
+
+.lamp-btn:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+  border-radius: 16px;
+}
+
+.lamp-glow {
+  position: absolute;
+  left: 50%;
+  top: 18%;
+  width: 78px;
+  height: 78px;
+  transform: translate(-50%, -40%);
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(227, 176, 75, 0.45) 0%, rgba(227, 176, 75, 0.12) 48%, transparent 72%);
+  animation: lamp-breathe var(--beat-slow) var(--ease-house-inout) infinite;
+  pointer-events: none;
+}
+
+.lamp-svg {
+  position: relative;
+  z-index: 1;
+  width: 96px;
+  height: 112px;
+  display: block;
+  shape-rendering: crispEdges;
+  image-rendering: pixelated;
+}
+
+.lamp-sparks {
+  position: absolute;
+  inset: 6% 8% 28%;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+}
+
+.lamp-sparks i {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #fff59d;
+  box-shadow: 0 0 6px #ff8f00;
+}
+
+.lamp-sparks i:nth-child(1) { left: 18%; top: 42%; --sx: -14px; --sy: -16px; }
+.lamp-sparks i:nth-child(2) { left: 72%; top: 28%; --sx: 16px; --sy: -22px; }
+.lamp-sparks i:nth-child(3) { left: 48%; top: 8%; --sx: 4px; --sy: -28px; }
+.lamp-sparks i:nth-child(4) { left: 8%; top: 18%; --sx: -18px; --sy: -10px; }
+.lamp-sparks i:nth-child(5) { left: 86%; top: 52%; --sx: 20px; --sy: -8px; }
+.lamp-sparks i:nth-child(6) { left: 62%; top: 6%; --sx: 8px; --sy: -24px; }
+.lamp-sparks i:nth-child(7) { left: 30%; top: 12%; --sx: -8px; --sy: -26px; }
+.lamp-sparks i:nth-child(8) { left: 78%; top: 14%; --sx: 14px; --sy: -18px; }
+
+.lamp-mascot[data-mood="idle"] .lamp-flame {
+  animation: lamp-flicker 1.8s steps(2) infinite;
+  transform-origin: 36px 18px;
+}
+
+.lamp-mascot[data-mood="cheer"] .lamp-sparks,
+.lamp-mascot[data-mood="celebrate"] .lamp-sparks,
+.lamp-mascot[data-mood="poke"] .lamp-sparks {
+  opacity: 1;
+}
+
+.lamp-mascot[data-mood="cheer"] .lamp-sparks i,
+.lamp-mascot[data-mood="celebrate"] .lamp-sparks i,
+.lamp-mascot[data-mood="poke"] .lamp-sparks i {
+  animation: spark-pop 0.7s steps(5) both;
+}
+
+.lamp-mascot[data-mood="cheer"] .lamp-sparks i:nth-child(odd) { animation-delay: 0.05s; }
+.lamp-mascot[data-mood="cheer"] .lamp-sparks i:nth-child(even) { animation-delay: 0.12s; }
+.lamp-mascot[data-mood="celebrate"] .lamp-sparks i:nth-child(3n) { animation-delay: 0.18s; }
+
+.lamp-mascot[data-mood="cheer"] .lamp-btn,
+.lamp-mascot[data-mood="celebrate"] .lamp-btn {
+  animation: lamp-hop 0.7s steps(6);
+}
+
+.lamp-mascot[data-mood="cheer"] .lamp-flame,
+.lamp-mascot[data-mood="celebrate"] .lamp-flame {
+  animation: lamp-flicker 0.32s steps(2) infinite;
+}
+
+.lamp-mascot[data-mood="celebrate"] .lamp-glow {
+  animation: lamp-flare 0.85s steps(5);
+}
+
+.lamp-mascot[data-mood="sleepy"] .lamp-stage {
+  animation: none;
+}
+
+.lamp-mascot[data-mood="sleepy"] .lamp-glow {
+  opacity: 0.35;
+  animation: none;
+}
+
+.lamp-mascot[data-mood="sleepy"] .lamp-flame {
+  opacity: 0.45;
+  animation: none;
+}
+
+.lamp-mascot[data-mood="poke"] .lamp-btn {
+  animation: lamp-wiggle 0.42s steps(5);
+}
+
+@keyframes lamp-flicker {
+  0% { transform: scaleY(1) translateY(0); }
+  50% { transform: scaleY(1.12) translateY(-1px); }
+  100% { transform: scaleY(0.94) translateY(1px); }
+}
+
+@keyframes lamp-breathe {
+  0%, 100% { opacity: 0.7; transform: translate(-50%, -40%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -40%) scale(1.08); }
+}
+
+@keyframes lamp-hop {
+  0% { transform: translateY(0); }
+  20% { transform: translateY(-14px); }
+  40% { transform: translateY(-4px); }
+  60% { transform: translateY(-16px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes lamp-bob {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-3px); }
+  50% { transform: translateY(0); }
+  75% { transform: translateY(-5px); }
+}
+
+@keyframes lamp-flare {
+  0% { opacity: 0.7; transform: translate(-50%, -40%) scale(1); }
+  40% { opacity: 1; transform: translate(-50%, -40%) scale(1.45); }
+  100% { opacity: 0.85; transform: translate(-50%, -40%) scale(1.1); }
+}
+
+@keyframes spark-pop {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--sx, 10px), var(--sy, -18px)) scale(0); opacity: 0; }
+}
+
+@keyframes lamp-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  30% { transform: rotate(-10deg); }
+  60% { transform: rotate(8deg); }
+}
+
+.milestone-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 32px;
+  padding: 0 0.7rem;
+  border-radius: var(--radius-control);
+  border: 1px solid color-mix(in srgb, var(--brass) 28%, var(--hairline));
+  background: color-mix(in srgb, var(--brass) 10%, transparent);
+  color: var(--brasspale);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+}
+
+.milestone-chip:hover {
+  border-color: color-mix(in srgb, var(--brass) 55%, transparent);
+  background: color-mix(in srgb, var(--brass) 16%, transparent);
+}
+
+.milestone-grid {
+  display: grid;
+  gap: 0.65rem;
+}
+
+@media (min-width: 640px) {
+  .milestone-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.milestone-card {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.85rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--hairline);
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  text-align: left;
+}
+
+.milestone-card[data-held="true"] {
+  border-color: color-mix(in srgb, var(--brass) 32%, var(--hairline));
+  box-shadow: 0 0 18px -8px var(--glow-warm);
+}
+
+.milestone-card[data-held="false"] {
+  opacity: 0.62;
+}
+
+.kind-tile {
+  border-color: color-mix(in srgb, var(--kind) 32%, var(--hairline));
+  background: color-mix(in srgb, var(--kind) 9%, var(--surface));
+}
+
+.kind-tile .kind-icon {
+  color: var(--kind);
+}
+
+html[data-theme="light"] .studio-motes span {
+  opacity: 0.22;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-motes span,
+  .lamp-glow,
+  .lamp-stage,
+  .lamp-sparks i,
+  .lamp-mascot[data-mood] .lamp-flame,
+  .lamp-mascot[data-mood] .lamp-btn {
+    animation: none !important;
+  }
+  .lamp-sparks {
+    opacity: 0 !important;
+  }
+}

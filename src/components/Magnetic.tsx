@@ -2,7 +2,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import gsap from "gsap";
 
 /** Magnetic pull wrapper — the element leans toward the pointer
- *  and springs back elastically on leave. */
+ *  and returns on house ease (never bounce/elastic). */
 export default function Magnetic({
   children,
   strength = 18,
@@ -31,7 +31,7 @@ export default function Magnetic({
       yTo((relY / r.height) * strength * 2);
     };
     const leave = () => {
-      gsap.to(el, { x: 0, y: 0, duration: 0.7, ease: "elastic.out(1, 0.35)" });
+      gsap.to(el, { x: 0, y: 0, duration: 0.45, ease: "power3.out" });
     };
 
     el.addEventListener("mousemove", move);

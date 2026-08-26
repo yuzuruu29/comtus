@@ -271,6 +271,13 @@
   from { transform: translateX(-100%); }
   to { transform: translateX(220%); }
 }
+/* Brass lamp-glint across a card's top rule — house ease in Scholar,
+   stepped in pixel-desk.css. Transform-only so it stays on the compositor. */
+@keyframes shelf-glint {
+  from { transform: translateX(-120%); opacity: 0; }
+  22% { opacity: 1; }
+  to { transform: translateX(280%); opacity: 0; }
+}
 @keyframes grow-x {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
@@ -298,6 +305,9 @@
   animation: chip-pop 0.34s var(--ease-house) both;
   animation-delay: var(--d, 0ms);
 }
+
+/* Pixel desk replaces chip-pop with stepped pixel-pop (no 1.06 overshoot)
+   in pixel-desk.css when html[data-pixel="on"]. */
 
 /* Citation chips arrive one after another. Scope this to a wrapper that
    contains ONLY chips — an icon sibling would consume the nth-child(1)
@@ -402,9 +412,9 @@
    styles — the CSS-only .flip-* classes were unreferenced and are gone. */
 
 /* ── Composer — the lamp-lit writing instrument ─────────────
-   A dialog-grade surface that wakes when engaged: hairline →
-   brass border, card shadow → lamplight lift, plus an ambient
-   pool of warm light pooling beneath it. */
+   A dialog-grade surface. Focus stays on the textarea's inset
+   brass ring — a shell brass border or offset shadow reads as
+   a popping yellow bar on the typing box. */
 .composer-shell {
   background: linear-gradient(
     180deg,
@@ -420,7 +430,6 @@
 }
 .composer-shell[data-focused],
 .composer-shell[data-streaming] {
-  border-color: color-mix(in srgb, var(--brass) 42%, transparent);
   box-shadow: var(--elev-lift);
 }
 
@@ -515,12 +524,13 @@ button[data-armed="true"] .send-halo {
   );
 }
 
-/* Composer textarea: suppress the browser's default focus rectangle —
-   the shell lights a brass ring via [data-focused], and keyboard users
-   still get an inset brass ring on the textarea itself. Every other
-   control keeps the global brass :focus-visible ring from index.css;
-   the old blanket `outline: none !important` on all inputs/buttons
-   silently broke keyboard navigation app-wide and is gone. */
+/* Composer textarea: suppress the browser default focus rectangle.
+   Keyboard and click-to-type both get an inset brass ring on the
+   textarea itself. Do not brass-ring the whole shell — that reads
+   as a yellow bar on the typing box. Every other control keeps the
+   global brass :focus-visible ring from index.css; the old blanket
+   `outline: none !important` on all inputs/buttons silently broke
+   keyboard navigation app-wide and is gone. */
 .composer-shell textarea {
   outline: none;
 }
@@ -725,7 +735,33 @@ html[data-theme="light"] .effort-thumb {
    as .hover-lift in index.css where hover is involved. */
 
 /* Canonical card wake — ONE house hover treatment for cards, pills
-   and tiles that previously each hand-rolled a variant. */
+   and tiles that previously each hand-rolled a variant.
+   `::after` is a thin brass glint on the top rule (does not use
+   overflow:hidden, so notebook overflow menus stay unclipped).
+   Entrance stagger lives on a parent `.anim-rise` so fill-mode
+   transforms never fight this hover. */
+.card-wake {
+  position: relative;
+}
+.card-wake::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 42%;
+  height: 3px;
+  z-index: 2;
+  border-radius: 2px 0 0 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--brasspale) 88%, #fff) 48%,
+    transparent 100%
+  );
+  transform: translateX(-120%);
+  opacity: 0;
+}
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .card-wake {
     transition:
@@ -733,15 +769,21 @@ html[data-theme="light"] .effort-thumb {
       border-color var(--dur-med) var(--ease-house),
       box-shadow var(--dur-med) var(--ease-house);
   }
-  .card-wake:hover {
-    transform: translateY(-2px);
-    border-color: color-mix(in srgb, var(--brass) 45%, transparent);
+  .card-wake:hover,
+  .card-wake:focus-visible,
+  .card-wake:focus-within {
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--brass) 55%, transparent);
     box-shadow:
-      0 12px 32px -8px rgba(8, 11, 20, 0.5),
-      0 0 22px -4px var(--glow-warm);
+      0 16px 36px -10px rgba(8, 11, 20, 0.55),
+      0 0 28px -4px var(--glow-warm);
   }
   .card-wake:active {
     transform: translateY(0) scale(0.985);
+  }
+  .card-wake:hover::after,
+  .card-wake:focus-visible::after {
+    animation: shelf-glint var(--dur-glow) var(--ease-house) both;
   }
 }
 

@@ -48,6 +48,10 @@ interface SettingsState {
   /* Shared */
   effort: Effort;
   theme: "system" | "dark" | "light";
+  companion: boolean;
+  companionSfx: boolean;
+  /** Studio pixel chrome (Pixelify on all desk text + arcade press). Scholar restores Fraunces + Inter. */
+  pixelDesk: boolean;
   lastBackupAt: number;
   setProvider: (p: ProviderId) => void;
   update: (patch: Partial<SettingsState>) => void;
@@ -95,6 +99,9 @@ export const useSettings = create<SettingsState>()(
       activePassCode: "",
       effort: "high",
       theme: "system",
+      companion: true,
+      companionSfx: true,
+      pixelDesk: true,
       lastBackupAt: 0,
       setProvider: (provider) => set({ provider }),
       update: (patch) => set(patch),
@@ -186,7 +193,7 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: "comtus-settings",
-      version: 9,
+      version: 11,
       migrate: (persisted, version) => {
         const old = persisted as Partial<SettingsState> & {
           apiKey?: string;
@@ -210,6 +217,9 @@ export const useSettings = create<SettingsState>()(
           tokensUsed: old.tokensUsed ?? 0,
           activePassCode: old.activePassCode ?? "",
           theme: old.theme ?? "system",
+          companion: old.companion ?? true,
+          companionSfx: old.companionSfx ?? true,
+          pixelDesk: old.pixelDesk ?? true,
           lastBackupAt: old.lastBackupAt ?? 0,
         };
         if (version < 2) {
