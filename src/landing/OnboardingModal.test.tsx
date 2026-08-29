@@ -43,11 +43,11 @@ describe("OnboardingModal - Interactive Pixel Desk Setup Flow", () => {
     // Modal dialog
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
-    // Step 1 Heading & RPG Narrative
-    expect(screen.getByText(/What are you studying right now\?/i)).toBeInTheDocument();
-    expect(screen.getByText(/Place your leather-bound tome on the desk/i)).toBeInTheDocument();
+    // Step 1 Heading & Narrative
+    expect(screen.getByText(/What discipline are you studying\?/i)).toBeInTheDocument();
+    expect(screen.getByText(/Select your academic discipline/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Step 1 of 3/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/The Empty Desk/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Discipline Domain/i).length).toBeGreaterThan(0);
 
     // 16-Bit Pixel Desk Scene Image
     const scene = screen.getByRole("img", { name: /16-bit Pixel Desk/i });
@@ -79,7 +79,7 @@ describe("OnboardingModal - Interactive Pixel Desk Setup Flow", () => {
     expect(scene.getAttribute("aria-label")).toContain("STEM & Engineering tome on desk");
   });
 
-  it("progresses to Step 2: Light the Lamp and ignites the brass lamp", () => {
+  it("progresses to Step 2: Calibrate Pedagogical Goal", () => {
     const onClose = vi.fn();
     render(
       <BrowserRouter>
@@ -91,11 +91,11 @@ describe("OnboardingModal - Interactive Pixel Desk Setup Flow", () => {
     const continueBtn = screen.getByRole("button", { name: /Continue/i });
     fireEvent.click(continueBtn);
 
-    // Step 2 Header & Lamp narrative
-    expect(screen.getByText(/What do you want help with first\?/i)).toBeInTheDocument();
-    expect(screen.getByText(/Kindle the brass lamp/i)).toBeInTheDocument();
+    // Step 2 Header
+    expect(screen.getByText(/What is your primary study objective\?/i)).toBeInTheDocument();
+    expect(screen.getByText(/Calibrate the cognitive workspace/i)).toBeInTheDocument();
     expect(screen.getByText(/Step 2 of 3/i)).toBeInTheDocument();
-    expect(screen.getByText(/Light the Lamp/i)).toBeInTheDocument();
+    expect(screen.getByText(/Pedagogical Objective/i)).toBeInTheDocument();
 
     // Scene preview reflects ignited lamp
     const scene = screen.getByRole("img", { name: /16-bit Pixel Desk/i });
@@ -132,15 +132,15 @@ describe("OnboardingModal - Interactive Pixel Desk Setup Flow", () => {
 
     // Go to step 2
     fireEvent.click(screen.getByRole("button", { name: /Continue/i }));
-    expect(screen.getByText(/Light the Lamp/i)).toBeInTheDocument();
+    expect(screen.getByText(/Pedagogical Objective/i)).toBeInTheDocument();
 
     // Go back to step 1
     const backBtn = screen.getByRole("button", { name: /Back/i });
     fireEvent.click(backBtn);
-    expect(screen.getAllByText(/The Empty Desk/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Discipline Domain/i).length).toBeGreaterThan(0);
   });
 
-  it("progresses to Step 3: Enter the Study, illuminates quill, and accepts prompt suggestions", () => {
+  it("progresses to Step 3: Workspace Seed, illuminates quill, and accepts prompt suggestions", () => {
     const onClose = vi.fn();
     render(
       <BrowserRouter>
@@ -155,9 +155,9 @@ describe("OnboardingModal - Interactive Pixel Desk Setup Flow", () => {
 
     // Step 3 UI
     expect(screen.getByText(/What topic or material are we tackling\?/i)).toBeInTheDocument();
-    expect(screen.getByText(/Inscribe your topic or paste lecture notes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Enter your topic or paste lecture notes/i)).toBeInTheDocument();
     expect(screen.getByText(/Step 3 of 3/i)).toBeInTheDocument();
-    expect(screen.getByText(/Enter the Study/i)).toBeInTheDocument();
+    expect(screen.getByText(/Workspace Seed/i)).toBeInTheDocument();
 
     // Scene preview reflects quill ready & illuminated study
     const scene = screen.getByRole("img", { name: /16-bit Pixel Desk/i });

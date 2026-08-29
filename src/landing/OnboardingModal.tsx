@@ -366,7 +366,7 @@ export function PixelDeskScene({ step, subject, goal, onSceneClick }: PixelDeskS
       {/* ── Overlay Badges & Stepped HUD ── */}
       <div className="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-none">
         <PixelBadge variant={isLampLit ? "brass" : "neutral"} size="sm">
-          {step === 1 ? "The Empty Desk" : step === 2 ? "Lamp Kindled" : "Study Illuminated"}
+          {step === 1 ? "Domain Setup" : step === 2 ? "Goal Calibrated" : "Workspace Initialized"}
         </PixelBadge>
         {isLampLit && (
           <span className="hidden sm:inline-flex text-[10px] font-mono text-[#F7D486] bg-[#080B12]/80 px-1.5 py-0.5 border border-[#E3B04B]/30">
@@ -466,10 +466,10 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
               <span className="text-[#33405F]">/</span>
               <span className="text-[#8E96AB]">
                 {step === 1
-                  ? "The Empty Desk"
+                  ? "Discipline Domain"
                   : step === 2
-                  ? "Light the Lamp"
-                  : "Enter the Study"}
+                  ? "Pedagogical Objective"
+                  : "Workspace Seed"}
               </span>
             </div>
             <div className="flex items-center gap-1">
@@ -492,16 +492,16 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
           </div>
 
           {/* ══════════════════════════════════════════════════════════════════════
-              STEP 1: THE EMPTY DESK (CHOOSE DOMAIN / PLACE TOME)
+              STEP 1: DISCIPLINE SELECTION
               ══════════════════════════════════════════════════════════════════════ */}
           {step === 1 && (
             <div className="space-y-3.5 animate-fadeIn">
               <div>
                 <h3 id={headingId} className="font-display text-[1.4rem] sm:text-[1.55rem] font-semibold text-[#F5F0E6] leading-tight">
-                  What are you studying right now?
+                  What discipline are you studying?
                 </h3>
                 <p className="text-[13px] text-[#9099B0] mt-1">
-                  Place your leather-bound tome on the desk to tailor Comtus’s blueprints and reasoning depth.
+                  Select your academic discipline to configure reasoning depth and curriculum blueprints.
                 </p>
               </div>
 
@@ -544,7 +544,7 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
 
               <div className="flex items-center justify-between pt-3 border-t border-[#33405F]/40">
                 <span className="text-[11.5px] font-mono text-[#9099B0]">
-                  Tome ready · Step 1 of 3
+                  Discipline set · Step 1 of 3
                 </span>
                 <PixelButton
                   variant="brass"
@@ -559,16 +559,16 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
           )}
 
           {/* ══════════════════════════════════════════════════════════════════════
-              STEP 2: LIGHT THE LAMP (CHOOSE LEARNING GOAL)
+              STEP 2: CALIBRATE PEDAGOGICAL GOAL
               ══════════════════════════════════════════════════════════════════════ */}
           {step === 2 && (
             <div className="space-y-3.5 animate-fadeIn">
               <div>
                 <h3 id={headingId} className="font-display text-[1.4rem] sm:text-[1.55rem] font-semibold text-[#F5F0E6] leading-tight">
-                  What do you want help with first?
+                  What is your primary study objective?
                 </h3>
                 <p className="text-[13px] text-[#9099B0] mt-1">
-                  Kindle the brass lamp to illuminate your primary objective for this session.
+                  Calibrate the cognitive workspace for active recall, exam simulations, or Socratic breakdown.
                 </p>
               </div>
 
@@ -638,7 +638,7 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
           )}
 
           {/* ══════════════════════════════════════════════════════════════════════
-              STEP 3: ENTER THE STUDY (SEED PROMPT / INSCRIBE NOTES)
+              STEP 3: INITIALIZE WORKSPACE
               ══════════════════════════════════════════════════════════════════════ */}
           {step === 3 && (
             <div className="space-y-3.5 animate-fadeIn">
@@ -647,7 +647,7 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
                   What topic or material are we tackling?
                 </h3>
                 <p className="text-[13px] text-[#9099B0] mt-1">
-                  Inscribe your topic or paste lecture notes. The illuminated study is ready for you.
+                  Enter your topic or paste lecture notes to seed the cognitive workspace.
                 </p>
               </div>
 

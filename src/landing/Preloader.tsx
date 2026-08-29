@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
+import { ComtusEmblem } from "../components/brand/ComtusLogo";
 
 const WORD = "COMTUS";
 
@@ -102,19 +103,9 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
       aria-hidden
     >
       <div className="pre-glow absolute h-[46vmin] w-[46vmin] rounded-full bg-[radial-gradient(circle,rgba(111,227,255,0.3),rgba(4,74,179,0.5)_45%,transparent_70%)]" />
-      <svg
-        viewBox="0 0 64 64"
-        className="pre-flame relative h-14 w-14 drop-shadow-[0_0_24px_rgba(111,227,255,0.6)]"
-      >
-        <path
-          d="M32 10 C 38 18, 42 23, 42 29 A 10 10 0 1 1 22 29 C 22 23, 26 18, 32 10 Z"
-          fill="#6FE3FF"
-        />
-        <path
-          d="M32 20 C 35 24, 37 26.5, 37 29.5 A 5 5 0 1 1 27 29.5 C 27 26.5, 29 24, 32 20 Z"
-          fill="#FFFFFF"
-        />
-      </svg>
+      <div className="pre-flame relative drop-shadow-[0_0_24px_rgba(111,227,255,0.7)]">
+        <ComtusEmblem size={56} className="text-[#6FE3FF]" />
+      </div>
       <div className="relative mt-7 overflow-hidden">
         <div className="flex font-display text-[clamp(2.2rem,6vw,4rem)] font-[600] tracking-[0.32em] text-white">
           {WORD.split("").map((l, i) => (

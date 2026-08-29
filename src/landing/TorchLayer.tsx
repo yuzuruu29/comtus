@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { Flame } from "lucide-react";
+import { Activity } from "lucide-react";
 import { torchManager } from "../lib/torchState";
 
 const STORE_KEY = "comtus-torch";
@@ -9,9 +9,8 @@ const LIGHT_RADIUS = 400;
 const REKINDLE_PROXIMITY = 90;
 
 /**
- * Torch layer — the page reads under a warm halo that follows the cursor.
- * Sections lift from dim to lit as the light reaches them; sconces stay lit
- * once rekindled. A reading light, not a weapon: nothing burns.
+ * Precision Raycast Layer — an interactive cognitive focus beam that follows
+ * the pointer. Provides subtle ambient illumination across sections.
  */
 
 function torchEligible(): boolean {
@@ -36,7 +35,6 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
   const [on, setOn] = useState(storedMode);
   const [hint, setHint] = useState(false);
   const [showOffHint, setShowOffHint] = useState(false);
-  const [counts, setCounts] = useState(() => torchManager.getCounts());
   const washRef = useRef<HTMLDivElement>(null);
   const coreRef = useRef<HTMLDivElement>(null);
   const pointerRef = useRef({ x: -1000, y: -1000 });
@@ -47,24 +45,18 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
   const prevOnRef = useRef(on);
   onRef.current = on;
 
-  useEffect(() => {
-    return torchManager.subscribe(() => {
-      setCounts(torchManager.getCounts());
-    });
-  }, []);
-
   const setMode = useCallback((next: boolean) => {
     setOn(next);
     try {
       localStorage.setItem(STORE_KEY, next ? "1" : "0");
     } catch {
-      /* private mode — the toggle still works this session */
+      /* private mode */
     }
   }, []);
 
   const toggle = useCallback(() => setMode(!onRef.current), [setMode]);
 
-  // Keyboard shortcut — T, outside of any field.
+  // Keyboard shortcut — T
   useEffect(() => {
     if (!eligible) return;
     const onKey = (e: KeyboardEvent) => {
@@ -79,7 +71,6 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [eligible, toggle]);
 
-  // The lighting engine — halo lag, per-section veil lift, and sconce ignition.
   useEffect(() => {
     if (!eligible || !ready) return;
     const wash = washRef.current;
@@ -111,7 +102,6 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
       const { x, y } = pointerRef.current;
       if (x < -500) return;
 
-      // Check sconce proximity for rekindling
       const sconces = sconcesRef.current;
       sconces.forEach((sc) => {
         const id = sc.getAttribute("data-torch-sconce");
@@ -120,68 +110,50 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
           const cx = r.left + r.width / 2;
           const cy = r.top + r.height / 2;
           const dist = Math.hypot(cx - x, cy - y);
-          if (dist <= REKINDLE_PROXIMITY) {
+          if (dist < REKINDLE_PROXIMITY) {
             torchManager.ignite(id);
           }
         }
       });
 
       const sections = sectionsRef.current;
-      const targets = sections.map((el) => {
-        // If the section's sconce is already lit, maintain illumination
-        const sconce = el.querySelector<HTMLElement>("[data-torch-sconce]");
-        const sconceId = sconce?.getAttribute("data-torch-sconce");
-        if (sconceId && torchManager.isLit(sconceId)) {
-          return 1.0;
+      sections.forEach((sec) => {
+        const r = sec.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > window.innerHeight) return;
+        const cx = Math.max(r.left, Math.min(x, r.right));
+        const cy = Math.max(r.top, Math.min(y, r.bottom));
+        const dist = Math.hypot(cx - x, cy - y);
+        const litVal = Math.max(0, Math.min(1, 1 - dist / LIGHT_RADIUS));
+        const prev = litRef.current.get(sec) ?? 0;
+        if (Math.abs(prev - litVal) > 0.02) {
+          litRef.current.set(sec, litVal);
+          sec.style.setProperty("--lit", litVal.toFixed(2));
         }
-
-        const r = el.getBoundingClientRect();
-        const dx = Math.max(r.left - x, 0, x - r.right);
-        const dy = Math.max(r.top - y, 0, y - r.bottom);
-        const d = Math.hypot(dx, dy);
-        return Math.max(0, Math.min(1, 1 - d / LIGHT_RADIUS));
-      });
-
-      sections.forEach((el, i) => {
-        const prev = litRef.current.get(el) ?? 1;
-        const next = prev + (targets[i] - prev) * 0.14;
-        litRef.current.set(el, next);
-        el.style.setProperty("--lit", next.toFixed(3));
       });
     };
+
     gsap.ticker.add(tick);
 
-    const litMap = litRef.current;
     return () => {
       window.removeEventListener("pointermove", move);
       gsap.ticker.remove(tick);
       document.body.classList.remove("torch-on");
-      sections.forEach((el) => el.style.removeProperty("--lit"));
-      litMap.clear();
     };
   }, [eligible, ready, on]);
 
-  // One-time whisper, after the preloader hands over the page.
   useEffect(() => {
-    if (!eligible || !ready || !on) return;
-    let seen = false;
+    if (!eligible || !ready) return;
     try {
-      seen = localStorage.getItem(HINT_KEY) === "1";
+      if (sessionStorage.getItem(HINT_KEY)) return;
+      sessionStorage.setItem(HINT_KEY, "1");
     } catch {
-      seen = false;
+      /* private */
     }
-    if (seen) return;
     setHint(true);
-    try {
-      localStorage.setItem(HINT_KEY, "1");
-    } catch {
-      /* shown again next visit — harmless */
-    }
     const id = window.setTimeout(() => setHint(false), 7000);
     return () => window.clearTimeout(id);
   }, [eligible, ready, on]);
 
-  // Brief "off" notice when the user toggles torch off.
   useEffect(() => {
     if (!eligible || !ready) return;
     if (prevOnRef.current && !on) {
@@ -193,8 +165,6 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
   }, [eligible, ready, on]);
 
   if (!eligible) return null;
-
-  const allLit = counts.lit > 0 && counts.lit >= counts.total;
 
   return (
     <>
@@ -211,15 +181,15 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
           aria-pressed={on}
           title={
             on
-              ? `Reading light on (${counts.lit}/${counts.total} lamps rekindled). Press T for the static view.`
-              : "Reading light off — press T or click to light the page."
+              ? "Precision Beam focus active. Press T for static view."
+              : "Precision Beam off — press T or click to activate."
           }
-          className="flex items-center gap-1.5 text-inherit transition-colors hover:text-parchment"
+          className="flex items-center gap-1.5 text-inherit transition-colors cursor-pointer"
         >
-          <Flame size={13} className={on ? "text-brass" : "text-faded"} strokeWidth={1.8} />
+          <Activity size={13} className={on ? "text-[#044AB3] animate-pulse" : "text-[#5A6A85]"} strokeWidth={2} />
           <span className="torch-pill-label">
             <span className="torch-pill-mode">
-              {on ? (allLit ? "All Lit" : `${counts.lit}/${counts.total}`) : "Static"}
+              {on ? "BEAM: ON" : "STATIC"}
             </span>
           </span>
         </button>
@@ -229,22 +199,21 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
         {hint && (
           <div className="torch-hint">
             <p className="torch-hint-title">
-              <Flame size={11} className="text-brass inline-block mr-1.5 -mt-px" strokeWidth={2} />
-              Reading Light
+              <Activity size={11} className="text-[#044AB3] inline-block mr-1.5 -mt-px" strokeWidth={2} />
+              Precision Beam Focus
             </p>
             <p className="torch-hint-body">
-              The page reads under a warm halo — sections brighten as your light reaches them.
-              Little sconces stay lit once you have passed them.
+              Sections dynamically track your cursor raycast for active reading focus.
             </p>
             <p className="torch-hint-keys">
-              <span className="font-mono torch-hint-key">T</span> toggle light
+              <span className="font-mono torch-hint-key">T</span> toggle raycast
             </p>
           </div>
         )}
         {showOffHint && (
           <div className="torch-hint torch-hint-off">
             <p className="torch-hint-body">
-              Interactive mode off — sections are fully visible.
+              Raycast focus off — sections are statically rendered.
             </p>
             <p className="torch-hint-keys">
               Press <span className="font-mono torch-hint-key">T</span> to re-enable

@@ -171,12 +171,12 @@ describe("OnboardingModal Component", () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText(/What are you studying right now\?/i)).toBeDefined();
+    expect(screen.getByText(/What discipline are you studying\?/i)).toBeDefined();
     expect(screen.getByText("Medicine & Nursing")).toBeDefined();
 
     // Proceed to Step 2
     fireEvent.click(screen.getByText("Continue"));
-    expect(screen.getByText(/What do you want help with first\?/i)).toBeDefined();
+    expect(screen.getByText(/What is your primary study objective\?/i)).toBeDefined();
 
     // Proceed to Step 3
     fireEvent.click(screen.getByText("Next Step"));
