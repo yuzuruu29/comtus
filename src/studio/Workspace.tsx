@@ -7,7 +7,7 @@ import { useCallSettings, useSettings } from "../lib/settings";
 import { effortLabelFor, modelLabelFor } from "../lib/llm";
 import { detectPlatform, isTauri } from "../lib/desktop";
 import StudyGlyph from "../components/icons/StudyGlyph";
-import { ProBadge } from "../components/brand/BrandControls";
+import { ByokBadge, ProBadge } from "../components/brand/BrandControls";
 import { SPRING, SOFT, deskPane, useCountUp } from "./fx";
 import SourcesPane from "./SourcesPane";
 import ChatPane from "./ChatPane";
@@ -502,10 +502,15 @@ function WorkspaceHeader({
           </button>
 
           {/* Plan Tier Status Badge (PRO only if Anthropic plan availed, else BYOK) */}
-          {isPro && (
+          {isPro ? (
             <ProBadge
               planTier="PRO"
               remainingTokens={remainingTokens}
+              onClick={onSettings}
+              className="hidden sm:flex"
+            />
+          ) : (
+            <ByokBadge
               onClick={onSettings}
               className="hidden sm:flex"
             />

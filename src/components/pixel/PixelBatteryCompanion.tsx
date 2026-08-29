@@ -523,8 +523,6 @@ export function PixelBatteryCompanion({
           frameWidth={BATTERY_WIDTH}
           frameHeight={BATTERY_HEIGHT}
           scale={scale}
-          width={BATTERY_WIDTH}
-          height={BATTERY_HEIGHT}
           className="drop-shadow-[0_4px_12px_rgba(4,74,179,0.35)]"
         />
       </div>

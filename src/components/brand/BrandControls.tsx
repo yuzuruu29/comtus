@@ -16,7 +16,7 @@ export function ByokBadge({
     <button
       type="button"
       onClick={onClick}
-      className={`group flex items-center gap-1.5 rounded-full border border-[rgba(4,74,179,0.18)] bg-white/90 px-3 py-1 font-mono text-[11px] font-semibold tracking-[0.06em] text-[#044AB3] hover:border-[#044AB3] hover:bg-[#044AB3]/10 hover:text-[#044AB3] transition-all shadow-sm ${className}`}
+      className={`group flex items-center gap-1.5 rounded-full border border-[rgba(111,227,255,0.25)] bg-[#044AB3]/20 px-3 py-1 font-mono text-[11px] font-semibold tracking-[0.06em] text-[#6FE3FF] hover:border-[#6FE3FF]/60 hover:bg-[#044AB3]/35 hover:text-[#A5F3FC] transition-all shadow-[0_0_10px_rgba(111,227,255,0.12)] ${className}`}
       title="BYOK Mode (Bring Your Own Key) — Click to configure API models & settings"
     >
       <span>BYOK</span>
