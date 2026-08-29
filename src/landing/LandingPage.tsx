@@ -8,6 +8,7 @@ import TorchLayer from "./TorchLayer";
 import Nav from "./Nav";
 import CantorShowcase from "./CantorShowcase";
 import CognitiveTelemetryGrid from "./CognitiveTelemetryGrid";
+import ScholarConsoleDeck from "./ScholarConsoleDeck";
 import OpenRouterByokSection from "./OpenRouterByokSection";
 import FAQSection from "./FAQSection";
 import Statement from "./Statement";
@@ -66,6 +67,7 @@ export default function LandingPage() {
           <section id="hero" aria-label="Comtus Cognitive Infrastructure Showcase">
             <CantorShowcase />
             <CognitiveTelemetryGrid />
+            <ScholarConsoleDeck />
           </section>
 
           <SectionDivider />
