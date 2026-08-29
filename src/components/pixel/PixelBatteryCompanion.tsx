@@ -7,8 +7,9 @@ import {
   type CSSProperties,
   type KeyboardEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from "react";
-import { Moon, Sun, BrainCircuit, Zap } from "lucide-react";
+import { Moon, Sun, BrainCircuit, Zap, ChevronUp } from "lucide-react";
 import { PixelSprite } from "./PixelSprite";
 import {
   COZY_PIXEL_BATTERY_ANIMATIONS,
@@ -66,6 +67,12 @@ export interface PixelBatteryCompanionProps {
   think?: boolean;
   /** Slight facing bias toward the pane the desk last touched */
   face?: "left" | "right" | null;
+  /** Co-pilot menu affordance: when set, a small chevron appears on hover/focus. */
+  onMenu?: () => void;
+  /** Menu open state — renders the co-pilot menu anchored above the sprite. */
+  menuOpen?: boolean;
+  /** Menu content, anchored above the sprite so it follows drags. */
+  menu?: ReactNode;
   /** Additional CSS class names */
   className?: string;
   /** Custom style overrides */
@@ -201,6 +208,9 @@ export function PixelBatteryCompanion({
   avoidRects,
   think = false,
   face = null,
+  onMenu,
+  menuOpen = false,
+  menu,
   className = "",
   style,
 }: PixelBatteryCompanionProps) {
@@ -459,6 +469,35 @@ export function PixelBatteryCompanion({
         ...style,
       }}
     >
+      {/* Co-pilot menu — anchored above the sprite so it follows drags */}
+      {menuOpen && menu && (
+        <div
+          className="absolute bottom-full left-1/2 z-[70] mb-2 -translate-x-1/2"
+          onPointerDown={(e) => e.stopPropagation()}
+          onDoubleClick={(e) => e.stopPropagation()}
+        >
+          {menu}
+        </div>
+      )}
+
+      {/* Co-pilot menu affordance — quietly appears on hover/focus */}
+      {onMenu && !menuOpen && (isHovered || isFocused) && (
+        <button
+          type="button"
+          aria-label="Open companion menu"
+          title="Companion menu"
+          onClick={(e) => {
+            e.stopPropagation();
+            onMenu();
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onDoubleClick={(e) => e.stopPropagation()}
+          className="absolute -top-7 left-1/2 z-[70] -translate-x-1/2 rounded-full border border-[#044AB3]/40 bg-[#0B132B]/90 p-1 text-[#6FE3FF] shadow-md backdrop-blur-sm transition-colors hover:bg-[#044AB3]/60"
+        >
+          <ChevronUp size={12} />
+        </button>
+      )}
+
       {/* Speech bubble */}
       {speech && (
         <div
@@ -474,8 +513,11 @@ export function PixelBatteryCompanion({
       {showControls && (isHovered || isFocused) && (
         <div
           className="absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full border border-[#044AB3]/40 bg-[#0B132B]/90 p-1 shadow-md backdrop-blur-sm"
-          onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+          role="toolbar"
+          aria-label="Companion mood controls"
         >
           <button
             type="button"

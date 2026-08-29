@@ -12,6 +12,7 @@ import {
 import { useSettings } from "../../lib/settings";
 import { Toast } from "../Toast";
 import MilestonesPanel from "./MilestonesPanel";
+import BatteryCopilotMenu, { copilotStatus } from "./BatteryCopilotMenu";
 import { PixelBatteryCompanion } from "../../components/pixel/PixelBatteryCompanion";
 import { playSfx, unlockSfx } from "./sfx";
 import { DEFAULT_IDLE_MS, useIdleWatch } from "./useIdleWatch";
@@ -44,6 +45,7 @@ export default function DeskLife({
   const [toast, setToast] = useState<MilestoneDef | null>(null);
   const [batteryThink, setBatteryThink] = useState(false);
   const [batteryFace, setBatteryFace] = useState<"left" | "right" | null>(null);
+  const [copilotOpen, setCopilotOpen] = useState(false);
   const moodTimer = useRef<number | undefined>(undefined);
   const recordRef = useRef(record);
   recordRef.current = record;
@@ -192,6 +194,17 @@ export default function DeskLife({
           think={batteryThink}
           face={batteryFace}
           avoidRects={batteryAvoidRects}
+          onMenu={() => setCopilotOpen((v) => !v)}
+          menuOpen={copilotOpen}
+          menu={
+            <BatteryCopilotMenu
+              onClose={() => setCopilotOpen(false)}
+              status={copilotStatus({
+                think: batteryThink,
+                milestones: Object.keys(record.unlockedAt).length,
+              })}
+            />
+          }
         />
       )}
       <div className="pointer-events-auto fixed bottom-[calc(5.5rem+var(--sab))] left-4 z-[57] lg:bottom-6">
