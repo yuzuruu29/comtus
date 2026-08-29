@@ -351,7 +351,8 @@ export function PixelBatteryCompanion({
     if (e.button !== 0) return;
     if ((e.target as HTMLElement).closest("button")) return;
 
-    e.currentTarget.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    e.stopPropagation();
 
     const startPos = position || { left: 0, top: 0 };
     dragStartRef.current = {
@@ -365,6 +366,7 @@ export function PixelBatteryCompanion({
 
     const onMove = (ev: PointerEvent) => {
       if (!dragStartRef.current) return;
+      ev.preventDefault();
       const dx = ev.clientX - dragStartRef.current.x;
       const dy = ev.clientY - dragStartRef.current.y;
       if (!dragStartRef.current.moved && Math.hypot(dx, dy) > DRAG_THRESHOLD_PX) {
@@ -385,6 +387,7 @@ export function PixelBatteryCompanion({
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
       const wasMoved = dragStartRef.current?.moved;
       dragStartRef.current = null;
       setIsDragging(false);
@@ -398,8 +401,9 @@ export function PixelBatteryCompanion({
       }
     };
 
-    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointermove", onMove, { passive: false });
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -441,7 +445,7 @@ export function PixelBatteryCompanion({
       onMouseLeave={() => setIsHovered(false)}
       onFocus={() => setIsFocused(true)}
       onBlur={() => setIsFocused(false)}
-      className={`cozy-pixel-battery-companion fixed z-[60] select-none outline-none touch-none transition-[box-shadow] duration-200 ${
+      className={`cozy-pixel-battery-companion pointer-events-auto fixed z-[60] select-none outline-none touch-none transition-[box-shadow] duration-200 ${
         isDragging ? "cursor-grabbing" : "cursor-grab"
       } ${className}`}
       style={{
@@ -450,6 +454,8 @@ export function PixelBatteryCompanion({
         width: `${spriteW}px`,
         height: `${spriteH}px`,
         visibility: position ? "visible" : "hidden",
+        pointerEvents: "auto",
+        touchAction: "none",
         ...style,
       }}
     >

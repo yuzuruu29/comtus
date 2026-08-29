@@ -8,6 +8,11 @@
   z-index: 55;
 }
 
+.cozy-pixel-battery-companion,
+.cozy-pixel-lamp-companion {
+  pointer-events: auto !important;
+}
+
 .studio-motes {
   position: fixed;
   inset: 0;

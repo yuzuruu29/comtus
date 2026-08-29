@@ -200,7 +200,7 @@ export default function NotebookList({
                 <div className="flex items-start gap-3.5">
                   <ComtusEmblem size={22} breathe className="mt-0.5 shrink-0" />
                   <div>
-                    <div className="text-[14px] font-semibold text-ink">Light the lamp</div>
+                    <div className="text-[14px] font-semibold text-ink">Power up your model</div>
                     <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted">
                       Connect OpenRouter with free models, Claude via PayPal, or run offline with Ollama / LM Studio.
                     </p>

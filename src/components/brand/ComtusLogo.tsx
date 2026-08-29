@@ -22,9 +22,9 @@ const SIZE_MAP = {
 };
 
 /**
- * High-Precision Illuminated Scholar's Emblem.
- * Multi-layered vector component with radial cyan light bloom, Royal Sapphire gradients,
- * inner brilliant white core highlight, and precision pedestal geometry.
+ * High-Precision Cantor8 16-Bit Blue Battery Prism Brand Emblem.
+ * Multi-layered vector component with radial cyan light bloom, Royal Sapphire casing,
+ * metallic positive terminal nub, recessed digital screen, and glowing cyan LED energy core.
  */
 export function ComtusEmblem({
   size = 22,
@@ -48,82 +48,115 @@ export function ComtusEmblem({
       <defs>
         {/* Ambient Backlight Bloom */}
         <radialGradient
-          id="c8LampBloom"
+          id="c8BatteryBloom"
           cx="50%"
-          cy="42%"
+          cy="48%"
           r="48%"
           fx="50%"
-          fy="40%"
+          fy="46%"
         >
-          <stop offset="0%" stopColor="#6FE3FF" stopOpacity="0.45" />
-          <stop offset="50%" stopColor="#044AB3" stopOpacity="0.2" />
+          <stop offset="0%" stopColor="#6FE3FF" stopOpacity="0.4" />
+          <stop offset="55%" stopColor="#044AB3" stopOpacity="0.18" />
           <stop offset="100%" stopColor="#044AB3" stopOpacity="0" />
         </radialGradient>
 
-        {/* Outer Flame Gradient */}
-        <linearGradient id="c8FlameGrad" x1="24" y1="6" x2="24" y2="34" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="28%" stopColor="#6FE3FF" />
-          <stop offset="72%" stopColor="#044AB3" />
-          <stop offset="100%" stopColor="#022354" />
+        {/* Sapphire Battery Casing Gradient */}
+        <linearGradient id="c8BatteryCasing" x1="11" y1="8" x2="37" y2="42" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#1D68D8" />
+          <stop offset="45%" stopColor="#044AB3" />
+          <stop offset="100%" stopColor="#021A3D" />
         </linearGradient>
 
-        {/* Inner Flame Core Highlight */}
-        <linearGradient id="c8CoreGrad" x1="24" y1="14" x2="24" y2="30" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="55%" stopColor="#E0F7FF" />
-          <stop offset="100%" stopColor="#6FE3FF" />
+        {/* Silver Terminal Nub Gradient */}
+        <linearGradient id="c8TerminalGrad" x1="19" y1="4" x2="29" y2="9" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#E2E8F0" />
+          <stop offset="45%" stopColor="#94A3B8" />
+          <stop offset="100%" stopColor="#334155" />
         </linearGradient>
 
-        {/* Precision Pedestal Gradient */}
-        <linearGradient id="c8PedestalGrad" x1="16" y1="32" x2="32" y2="42" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#6FE3FF" />
-          <stop offset="50%" stopColor="#044AB3" />
-          <stop offset="100%" stopColor="#021B47" />
-        </linearGradient>
-
-        {/* Laser Glow Filter */}
-        <filter id="c8Glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="1.8" result="blur" />
+        {/* Glow Core Filter */}
+        <filter id="c8CyanGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="1.2" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
       </defs>
 
       {/* Ambient Radiance Halo */}
-      <circle cx="24" cy="22" r="20" fill="url(#c8LampBloom)" />
+      <circle cx="24" cy="24" r="22" fill="url(#c8BatteryBloom)" />
 
-      {/* Outer Flame / Teardrop Ray */}
-      <path
-        d="M24 6.5C24 6.5 32.5 16.2 32.5 24C32.5 28.6944 28.6944 32.5 24 32.5C19.3056 32.5 15.5 28.6944 15.5 24C15.5 16.2 24 6.5 24 6.5Z"
-        fill="url(#c8FlameGrad)"
-        filter="url(#c8Glow)"
-      />
-
-      {/* Inner Pure Radiance Core */}
-      <path
-        d="M24 14.5C24 14.5 28.2 20.2 28.2 24.5C28.2 26.8196 26.3196 28.7 24 28.7C21.6804 28.7 19.8 26.8196 19.8 24.5C19.8 20.2 24 14.5 24 14.5Z"
-        fill="url(#c8CoreGrad)"
-        opacity="0.95"
-      />
-
-      {/* Base Geometric Plate */}
-      <path
-        d="M17 32C17 30.5 19.5 29.5 24 29.5C28.5 29.5 31 30.5 31 32C31 34.5 28 36 24 36C20 36 17 34.5 17 32Z"
-        fill="url(#c8PedestalGrad)"
-      />
-
-      {/* Pedestal Stem & Base Tier */}
-      <path
-        d="M22.5 35.5H25.5V38.5H22.5V35.5Z"
-        fill="url(#c8PedestalGrad)"
-      />
+      {/* Positive Terminal Cap */}
       <rect
-        x="18"
-        y="38.5"
-        width="12"
-        height="2.5"
-        rx="1.25"
-        fill="url(#c8PedestalGrad)"
+        x="19"
+        y="4"
+        width="10"
+        height="5"
+        rx="2"
+        fill="url(#c8TerminalGrad)"
+        stroke="#080E1E"
+        strokeWidth="1"
+      />
+      <rect x="20.5" y="4.5" width="4" height="1.2" rx="0.6" fill="#FFFFFF" opacity="0.85" />
+
+      {/* Main Sapphire Battery Body */}
+      <rect
+        x="11"
+        y="8"
+        width="26"
+        height="34"
+        rx="6"
+        fill="url(#c8BatteryCasing)"
+        stroke="#080E1E"
+        strokeWidth="1.2"
+      />
+
+      {/* Left Specular Glint */}
+      <rect x="13" y="10" width="2" height="30" rx="1" fill="#93C5FD" opacity="0.55" />
+      <rect x="13" y="10" width="1" height="26" rx="0.5" fill="#FFFFFF" opacity="0.75" />
+
+      {/* Recessed Digital LED Screen */}
+      <rect
+        x="15"
+        y="12"
+        width="18"
+        height="18"
+        rx="3.5"
+        fill="#05132B"
+        stroke="#0A1E3F"
+        strokeWidth="1"
+      />
+
+      {/* Glowing Cyan LED Digital Face */}
+      <g filter="url(#c8CyanGlow)">
+        {/* Left Eye */}
+        <rect x="18" y="17" width="3" height="3" rx="0.75" fill="#6FE3FF" />
+        <rect x="18.5" y="17.5" width="1" height="1" fill="#FFFFFF" />
+
+        {/* Right Eye */}
+        <rect x="27" y="17" width="3" height="3" rx="0.75" fill="#6FE3FF" />
+        <rect x="27.5" y="17.5" width="1" height="1" fill="#FFFFFF" />
+
+        {/* Smile Arc */}
+        <path
+          d="M21 23.5C22.2 25.2 25.8 25.2 27 23.5"
+          stroke="#6FE3FF"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
+      </g>
+
+      {/* Multi-Bar Power Gauge */}
+      <g opacity="0.9">
+        <rect x="15" y="32.5" width="3.5" height="2.5" rx="0.75" fill="#6FE3FF" />
+        <rect x="19.5" y="32.5" width="3.5" height="2.5" rx="0.75" fill="#6FE3FF" />
+        <rect x="24" y="32.5" width="3.5" height="2.5" rx="0.75" fill="#6FE3FF" />
+        <rect x="28.5" y="32.5" width="4.5" height="2.5" rx="0.75" fill="#6FE3FF" />
+      </g>
+
+      {/* Sparkle Accent */}
+      <path
+        d="M36 6L37 9L40 10L37 11L36 14L35 11L32 10L35 9L36 6Z"
+        fill="#6FE3FF"
+        opacity="0.85"
       />
     </svg>
   );
