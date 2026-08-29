@@ -9,7 +9,7 @@ export function resolveAppTheme(
   pref: ThemePref,
   opts: { landing: boolean; prefersLight: boolean },
 ): ResolvedTheme {
-  if (opts.landing) return "dark";
+  if (opts.landing) return "light";
   if (pref === "light") return "light";
   if (pref === "dark") return "dark";
   return opts.prefersLight ? "light" : "dark";

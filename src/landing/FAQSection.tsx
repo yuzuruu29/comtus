@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { AnimatePresence, motion } from "motion/react";
 import { ChevronDown } from "lucide-react";
 import SectionHead from "./SectionHead";
+import { SOFT } from "../studio/fx";
 import "./landing.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -62,7 +64,7 @@ export default function FAQSection() {
         gsap.set(targets, { opacity: 1, y: 0 });
         return;
       }
-      targets.forEach((el) => {
+      targets.forEach((el, i) => {
         gsap.fromTo(
           el,
           { opacity: 0, y: 35 },
@@ -70,7 +72,8 @@ export default function FAQSection() {
             opacity: 1,
             y: 0,
             duration: 0.5,
-            ease: "steps(6)",
+            ease: "power3.out",
+            delay: i * 0.05,
             scrollTrigger: { trigger: el, start: "top 88%", once: true },
           },
         );
@@ -84,19 +87,19 @@ export default function FAQSection() {
       ref={rootRef}
       id="faq"
       data-torch
-      className="relative mx-auto w-full max-w-4xl px-6 py-[clamp(6rem,14vh,10rem)]"
+      className="relative mx-auto w-full max-w-4xl px-6 py-[clamp(6rem,14vh,10rem)] text-[#0B132B]"
     >
       <div className="reveal-faq">
         <SectionHead
           center
-          index="09"
+          index="03"
           label="FAQ"
           title={
             <>
-              Frequently asked <em className="font-[420] text-lamp">questions.</em>
+              Frequently asked <em className="font-[500] text-[#044AB3]">questions.</em>
             </>
           }
-          sub="Everything you need to know about how Comtus works, privacy, model keys, and learning tools."
+          sub="Everything you need to know about how Comtus works, privacy, model keys, and study tools."
         />
       </div>
 
@@ -106,7 +109,11 @@ export default function FAQSection() {
           return (
             <div
               key={faq.q}
-              className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] transition-all duration-300 hover:border-white/15"
+              className={`overflow-hidden rounded-2xl border transition-all duration-300 ${
+                isOpen
+                  ? "border-[#044AB3] bg-white shadow-[0_6px_28px_rgba(4,74,179,0.1)]"
+                  : "border-[rgba(4,74,179,0.14)] bg-white hover:border-[#044AB3]/60 shadow-sm"
+              }`}
             >
               <button
                 type="button"
@@ -114,23 +121,35 @@ export default function FAQSection() {
                 aria-expanded={isOpen}
                 className="flex w-full items-center justify-between gap-4 p-5 text-left transition-colors cursor-pointer"
               >
-                <span className="font-display text-[1.15rem] font-[430] text-parchment">
+                <span className="font-display text-[1.15rem] font-[520] text-[#0B132B]">
                   {faq.q}
                 </span>
                 <span
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-faded transition-transform duration-300 ${
-                    isOpen ? "rotate-180 text-brasspale bg-brass/10 border-brass/30" : ""
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-transform duration-300 ${
+                    isOpen
+                      ? "rotate-180 text-white bg-[#044AB3] border-[#044AB3]"
+                      : "border-[rgba(4,74,179,0.2)] bg-[#044AB3]/5 text-[#044AB3]"
                   }`}
                 >
                   <ChevronDown size={14} />
                 </span>
               </button>
 
-              {isOpen && (
-                <div className="border-t border-white/[0.06] px-5 pb-5 pt-3 text-[14px] leading-relaxed text-faded">
-                  {faq.a}
-                </div>
-              )}
+              <AnimatePresence>
+                {isOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={SOFT}
+                    className="overflow-hidden"
+                  >
+                    <div className="border-t border-[rgba(4,74,179,0.08)] px-5 pb-5 pt-3 text-[14px] leading-relaxed text-[#5A6A85]">
+                      {faq.a}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}

@@ -43,6 +43,8 @@ export default function DeskShell({
   const compactViewport = useMediaQuery("(max-width: 1199px)");
   const compact = isDeskShell() && compactViewport;
   useThemeEffect();
+  // 16-bit Cozy Pixel Bookshop skin is active by default (html[data-pixel="on"]).
+  // Scholar Study mode can be toggled in Settings (data-pixel="off" / pixelDesk: false).
   usePixelDeskEffect();
 
   useEffect(() => {

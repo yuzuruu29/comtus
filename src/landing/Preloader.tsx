@@ -28,7 +28,7 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
       tl.fromTo(
         ".pre-flame",
         { scale: 0, opacity: 0 },
-        { scale: 1, opacity: 1, duration: 0.4, ease: "steps(5)" },
+        { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.7)" },
       )
         .fromTo(
           ".pre-glow",
@@ -39,7 +39,7 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
         .fromTo(
           ".pre-letter",
           { yPercent: 120 },
-          { yPercent: 0, duration: 0.55, stagger: 0.05, ease: "steps(6)" },
+          { yPercent: 0, duration: 0.55, stagger: 0.05, ease: "power3.out" },
           "-=0.45",
         )
         .fromTo(
@@ -98,25 +98,25 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
   return (
     <div
       ref={rootRef}
-      className="fixed inset-0 z-[400] flex flex-col items-center justify-center bg-night"
+      className="fixed inset-0 z-[400] flex flex-col items-center justify-center bg-[#044AB3] text-white"
       aria-hidden
     >
-      <div className="pre-glow absolute h-[46vmin] w-[46vmin] rounded-full bg-[radial-gradient(circle,rgba(227,176,75,0.16),rgba(42,54,84,0.12)_45%,transparent_70%)]" />
+      <div className="pre-glow absolute h-[46vmin] w-[46vmin] rounded-full bg-[radial-gradient(circle,rgba(111,227,255,0.3),rgba(4,74,179,0.5)_45%,transparent_70%)]" />
       <svg
         viewBox="0 0 64 64"
-        className="pre-flame relative h-14 w-14 drop-shadow-[0_0_24px_rgba(227,176,75,0.45)]"
+        className="pre-flame relative h-14 w-14 drop-shadow-[0_0_24px_rgba(111,227,255,0.6)]"
       >
         <path
           d="M32 10 C 38 18, 42 23, 42 29 A 10 10 0 1 1 22 29 C 22 23, 26 18, 32 10 Z"
-          fill="#E3B04B"
+          fill="#6FE3FF"
         />
         <path
           d="M32 20 C 35 24, 37 26.5, 37 29.5 A 5 5 0 1 1 27 29.5 C 27 26.5, 29 24, 32 20 Z"
-          fill="#F0CE8C"
+          fill="#FFFFFF"
         />
       </svg>
       <div className="relative mt-7 overflow-hidden">
-        <div className="flex font-display text-[clamp(2.2rem,6vw,4rem)] font-[420] tracking-[0.32em] text-parchment">
+        <div className="flex font-display text-[clamp(2.2rem,6vw,4rem)] font-[600] tracking-[0.32em] text-white">
           {WORD.split("").map((l, i) => (
             <span key={i} className="pre-letter inline-block will-change-transform">
               {l}
@@ -124,12 +124,12 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
           ))}
         </div>
       </div>
-      <div className="pre-rule grad-lamp mt-6 h-px w-44 origin-center" />
-      <div className="pre-count label-mono absolute bottom-[calc(1.5rem+var(--sab))] left-6 tabular-nums sm:bottom-10 sm:left-10">
+      <div className="pre-rule mt-6 h-px w-44 origin-center bg-[#6FE3FF]" />
+      <div className="pre-count label-mono absolute bottom-[calc(1.5rem+var(--sab))] left-6 tabular-nums sm:bottom-10 sm:left-10 text-[#6FE3FF] font-mono font-bold">
         000
       </div>
-      <div className="label-mono absolute bottom-[calc(1.5rem+var(--sab))] right-6 text-right normal-case tracking-[0.2em] opacity-60 sm:bottom-10 sm:right-10">
-        study in a warmer light
+      <div className="label-mono absolute bottom-[calc(1.5rem+var(--sab))] right-6 text-right uppercase tracking-[0.2em] text-white/80 sm:bottom-10 sm:right-10 font-mono">
+        COGNITIVE INFRASTRUCTURE · ACTIVE
       </div>
     </div>
   );

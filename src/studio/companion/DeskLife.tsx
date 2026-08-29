@@ -11,8 +11,8 @@ import {
 } from "../../lib/milestones";
 import { useSettings } from "../../lib/settings";
 import { Toast } from "../Toast";
-import LampMascot, { type LampMood } from "./LampMascot";
 import MilestonesPanel from "./MilestonesPanel";
+import { PixelLampCompanion } from "../../components/pixel/PixelLampCompanion";
 import { playSfx, unlockSfx } from "./sfx";
 import { DEFAULT_IDLE_MS, useIdleWatch } from "./useIdleWatch";
 import "./companion.css";
@@ -24,6 +24,8 @@ const MOTE_LAYOUT = [
   { x: "74%", y: "88%", d: "1.5s", dur: "20s" },
   { x: "88%", y: "80%", d: "5s", dur: "24s" },
 ] as const;
+
+export type DeskMood = "idle" | "sleepy" | "celebrate" | "cheer" | "poke";
 
 export default function DeskLife({
   panelOpen,
@@ -39,15 +41,15 @@ export default function DeskLife({
   const pixelOn = useSettings((s) => s.pixelDesk !== false);
   const [ignite, setIgnite] = useState(false);
   const [record, setRecord] = useState<MilestoneRecord>(() => loadMilestoneRecord());
-  const [mood, setMood] = useState<LampMood>("idle");
-  const [speech, setSpeech] = useState<string | null>(null);
+  const [mood, setMood] = useState<DeskMood>("idle");
   const [toast, setToast] = useState<MilestoneDef | null>(null);
-  const [lineTick, setLineTick] = useState(0);
+  const [lampThink, setLampThink] = useState(false);
+  const [lampFace, setLampFace] = useState<"left" | "right" | null>(null);
   const moodTimer = useRef<number | undefined>(undefined);
   const recordRef = useRef(record);
   recordRef.current = record;
 
-  const holdMood = useCallback((next: LampMood, ms: number) => {
+  const holdMood = useCallback((next: DeskMood, ms: number) => {
     if (moodTimer.current !== undefined) window.clearTimeout(moodTimer.current);
     setMood(next);
     if (next === "sleepy") return;
@@ -72,7 +74,6 @@ export default function DeskLife({
     if (unlocked[0]) {
       const latest = unlocked[unlocked.length - 1];
       setToast(latest);
-      setSpeech(latest.title);
       holdMood("celebrate", 2200);
       playSfx("unlock", sfxOn);
     }
@@ -124,8 +125,6 @@ export default function DeskLife({
         : DEFAULT_IDLE_MS,
     onIdle: () => {
       setMood("sleepy");
-      setSpeech(null);
-      setLineTick((n) => n + 1);
       playSfx("nudge", sfxOn);
     },
     onActive: (wasIdle) => {
@@ -134,23 +133,53 @@ export default function DeskLife({
     },
   });
 
-  const poke = () => {
-    unlockSfx();
-    setLineTick((n) => n + 1);
-    if (mood === "sleepy") {
-      holdMood("cheer", 1400);
-      playSfx("cheer", sfxOn);
-      setSpeech(null);
-      return;
-    }
-    holdMood("poke", 700);
-    playSfx("cheer", sfxOn);
-    setSpeech(null);
-  };
+  // Lamp "think": hold while an existing streaming/busy marker is in the
+  // tree (chat's typing beacon, or any surface that sets data-lamp-think).
+  // Reads the live DOM — no new global store.
+  useEffect(() => {
+    if (!companion) return;
+    if (typeof MutationObserver === "undefined") return;
+    const update = () => {
+      setLampThink(Boolean(document.querySelector(".stream-typing-beacon, [data-lamp-think]")));
+    };
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [companion]);
+
+  // Lamp glance: face the side of the desk the user last touched — a small
+  // lean, not a head-turn.
+  useEffect(() => {
+    if (!companion) return;
+    const onDown = (e: PointerEvent) => {
+      const lamp = document.querySelector<HTMLElement>(".cozy-pixel-lamp-companion");
+      if (!lamp) return;
+      const r = lamp.getBoundingClientRect();
+      const lampCx = r.left + r.width / 2;
+      if (Math.abs(e.clientX - lampCx) < 80) {
+        setLampFace(null);
+        return;
+      }
+      setLampFace(e.clientX < lampCx ? "left" : "right");
+    };
+    window.addEventListener("pointerdown", onDown, { passive: true });
+    return () => window.removeEventListener("pointerdown", onDown);
+  }, [companion]);
+
+  // Keep-out zones: the dock and the composer own their corners; the lamp
+  // rests beside them, never on top.
+  const lampAvoidRects = useCallback(() => {
+    const rects = [];
+    const dock = document.getElementById("study-focus-dock");
+    if (dock) rects.push(dock.getBoundingClientRect());
+    const composer = document.querySelector<HTMLElement>(".composer-shell");
+    if (composer) rects.push(composer.getBoundingClientRect());
+    return rects;
+  }, []);
 
   return (
     <div className="desk-life">
-      {pixelOn && <div className="pixel-crt" aria-hidden />}
       {ignite && <div className="desk-ignite" aria-hidden />}
       {mood === "celebrate" && <div className="desk-celebrate-flash" aria-hidden />}
       <div className="studio-motes" aria-hidden>
@@ -168,12 +197,12 @@ export default function DeskLife({
           />
         ))}
       </div>
-      {companion && (
-        <LampMascot
-          mood={mood}
-          speech={panelOpen ? null : speech}
-          onPoke={poke}
-          lineTick={lineTick}
+      {companion && pixelOn && (
+        <PixelLampCompanion
+          showControls={false}
+          think={lampThink}
+          face={lampFace}
+          avoidRects={lampAvoidRects}
         />
       )}
       <div className="pointer-events-auto fixed bottom-[calc(5.5rem+var(--sab))] left-4 z-[57] lg:bottom-6">

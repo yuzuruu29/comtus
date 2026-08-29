@@ -26,7 +26,7 @@ export default function Method() {
             opacity: 1,
             y: 0,
             duration: 0.5,
-            ease: "steps(6)",
+            ease: "power3.out",
             delay: (i % 2) * 0.08,
             scrollTrigger: { trigger: el, start: "top 86%", once: true },
           },

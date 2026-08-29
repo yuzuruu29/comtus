@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "Comtus",
+    "slug": "comtus",
+    "version": "0.3.1",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F1420"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.comtus.ai"
+    },
+    "android": {
+      "package": "com.comtus.ai",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0F1420"
+      },
+      "navigationBar": {
+        "backgroundColor": "#080B12",
+        "barStyle": "light-content"
+      },
+      "statusBar": {
+        "backgroundColor": "#080B12",
+        "barStyle": "light-content"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0F1420",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ]
+    ]
+  }
+}

@@ -3,6 +3,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Sparkles, Check, ArrowRight, Lightbulb, CheckCircle2, RefreshCw } from "lucide-react";
 import SectionHead from "./SectionHead";
+import { playProceduralSfx } from "../studio/companion/sfx";
 import "./landing.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -43,7 +44,7 @@ export default function ProductDemo() {
             opacity: 1,
             y: 0,
             duration: 0.5,
-            ease: "steps(6)",
+            ease: "power3.out",
             scrollTrigger: { trigger: el, start: "top 88%", once: true },
           },
         );
@@ -300,6 +301,11 @@ export default function ProductDemo() {
                         onClick={() => {
                           setSelectedAnswer(idx);
                           setShowRationale(true);
+                          if (isCorrect) {
+                            playProceduralSfx("correct");
+                          } else {
+                            playProceduralSfx("wrong");
+                          }
                         }}
                         className={`flex w-full items-start gap-3 rounded-xl border p-3.5 text-left text-[13px] transition-all cursor-pointer ${
                           isSelected

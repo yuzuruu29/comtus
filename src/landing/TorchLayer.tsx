@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { Flame, Sparkles } from "lucide-react";
+import { Flame } from "lucide-react";
 import { torchManager } from "../lib/torchState";
 
 const STORE_KEY = "comtus-torch";
 const HINT_KEY = "comtus-torch-hint";
 const LIGHT_RADIUS = 400;
-const IGNITION_PROXIMITY = 90;
+const REKINDLE_PROXIMITY = 90;
 
 /**
- * Torch mode — the cursor is an animated flame and the landing lights under it.
- * Touching or hovering near section sconces permanently rekindles each section's torch.
+ * Torch layer — the page reads under a warm halo that follows the cursor.
+ * Sections lift from dim to lit as the light reaches them; sconces stay lit
+ * once rekindled. A reading light, not a weapon: nothing burns.
  */
 
 function torchEligible(): boolean {
@@ -110,7 +111,7 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
       const { x, y } = pointerRef.current;
       if (x < -500) return;
 
-      // Check sconce proximity for automatic rekindling
+      // Check sconce proximity for rekindling
       const sconces = sconcesRef.current;
       sconces.forEach((sc) => {
         const id = sc.getAttribute("data-torch-sconce");
@@ -119,7 +120,7 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
           const cx = r.left + r.width / 2;
           const cy = r.top + r.height / 2;
           const dist = Math.hypot(cx - x, cy - y);
-          if (dist <= IGNITION_PROXIMITY) {
+          if (dist <= REKINDLE_PROXIMITY) {
             torchManager.ignite(id);
           }
         }
@@ -204,39 +205,39 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
         </>
       )}
 
-      <button
-        onClick={toggle}
-        aria-pressed={on}
-        title={
-          on
-            ? `Torch active (${counts.lit}/${counts.total} rekindled). Press T or click to toggle static view.`
-            : "Interactive torch mode off — press T or click to light the page."
-        }
-        className={`torch-pill ${allLit ? "border-brass bg-brass/15 text-parchment shadow-[0_0_20px_rgba(227,176,75,0.25)]" : ""}`}
-      >
-        <Flame size={13} className={on ? "text-brass" : "text-faded"} strokeWidth={1.8} />
-        <span className="torch-pill-label">
-          <span className="torch-pill-mode">
-            {on ? (allLit ? "All Torches Lit" : `${counts.lit}/${counts.total} Lit`) : "Static"}
+      <div className="torch-pill flex items-center gap-2">
+        <button
+          onClick={toggle}
+          aria-pressed={on}
+          title={
+            on
+              ? `Reading light on (${counts.lit}/${counts.total} lamps rekindled). Press T for the static view.`
+              : "Reading light off — press T or click to light the page."
+          }
+          className="flex items-center gap-1.5 text-inherit transition-colors hover:text-parchment"
+        >
+          <Flame size={13} className={on ? "text-brass" : "text-faded"} strokeWidth={1.8} />
+          <span className="torch-pill-label">
+            <span className="torch-pill-mode">
+              {on ? (allLit ? "All Lit" : `${counts.lit}/${counts.total}`) : "Static"}
+            </span>
           </span>
-          <span className="torch-pill-sep">·</span>
-          <span className={on ? "text-brasspale" : ""}>{on ? "On" : "Off"}</span>
-        </span>
-        {allLit && <Sparkles size={12} className="text-brass animate-pulse" />}
-      </button>
+        </button>
+      </div>
 
       <div className="torch-hint-zone" aria-live="polite">
         {hint && (
           <div className="torch-hint">
             <p className="torch-hint-title">
               <Flame size={11} className="text-brass inline-block mr-1.5 -mt-px" strokeWidth={2} />
-              Interactive Torch
+              Reading Light
             </p>
             <p className="torch-hint-body">
-              Your cursor is a brass torch. Hover a section sconce to rekindle it. Press L to light the lamp.
+              The page reads under a warm halo — sections brighten as your light reaches them.
+              Little sconces stay lit once you have passed them.
             </p>
             <p className="torch-hint-keys">
-              <span className="font-mono torch-hint-key">T</span> or click the pill to toggle
+              <span className="font-mono torch-hint-key">T</span> toggle light
             </p>
           </div>
         )}
@@ -246,7 +247,7 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
               Interactive mode off — sections are fully visible.
             </p>
             <p className="torch-hint-keys">
-              Press <span className="font-mono torch-hint-key">T</span> to re-enable the torch
+              Press <span className="font-mono torch-hint-key">T</span> to re-enable
             </p>
           </div>
         )}

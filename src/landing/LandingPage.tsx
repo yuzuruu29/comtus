@@ -6,46 +6,21 @@ import Preloader from "./Preloader";
 import CustomCursor from "../components/CustomCursor";
 import TorchLayer from "./TorchLayer";
 import Nav from "./Nav";
-import Hero from "./Hero";
+import CantorShowcase from "./CantorShowcase";
 import Marquee from "./Marquee";
-import ProductDemo from "./ProductDemo";
-import LearningLoop from "./LearningLoop";
-import UseCases from "./UseCases";
-import WhyComtus from "./WhyComtus";
 import OpenRouterByokSection from "./OpenRouterByokSection";
-import StudioShowcase from "./StudioShowcase";
-import BringStack from "./BringStack";
-import Boards from "./Boards";
-import DesktopApp from "./DesktopApp";
-import AcademicIntegrity from "./AcademicIntegrity";
-import TrustPrivacy from "./TrustPrivacy";
 import FAQSection from "./FAQSection";
 import Statement from "./Statement";
 import FinalCTA from "./FinalCTA";
 import Footer from "./Footer";
 import OnboardingModal from "./OnboardingModal";
-import { LandingPlayProvider, useLandingPlay } from "./LandingPlay";
-import LandingEgg from "./LandingEgg";
+import SectionDivider from "./SectionDivider";
+import { LandingPlayProvider } from "./LandingPlay";
 import { applyLandingPixel } from "./pixelMotion";
 import "./pixel-landing.css";
+import "./cantor-theme.css";
 
 gsap.registerPlugin(ScrollTrigger);
-
-function IgniteFlash() {
-  const { pokeCount, lampLit } = useLandingPlay();
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    if (!lampLit) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    setShow(true);
-    const id = window.setTimeout(() => setShow(false), 700);
-    return () => window.clearTimeout(id);
-  }, [pokeCount, lampLit]);
-
-  if (!show) return null;
-  return <div className="landing-ignite" aria-hidden />;
-}
 
 export default function LandingPage() {
   const [ready, setReady] = useState(false);
@@ -79,36 +54,48 @@ export default function LandingPage() {
 
   return (
     <LandingPlayProvider>
-      <div className="relative">
+      <div className="relative min-h-screen bg-[#F5F3EF] text-[#0B132B]">
         {!ready && <Preloader onDone={() => setReady(true)} />}
         <CustomCursor />
         <TorchLayer ready={ready} />
         <div className="grain" aria-hidden />
-        <div className="landing-scan" aria-hidden />
-        <IgniteFlash />
         <Nav ready={ready} onStartStudying={() => setOnboardingOpen(true)} />
+
         <main>
-          <Hero ready={ready} onStartStudying={() => setOnboardingOpen(true)} />
-          <Marquee />
-          <ProductDemo />
-          <LearningLoop />
-          <UseCases />
-          <WhyComtus />
-          <OpenRouterByokSection />
-          <StudioShowcase />
-          <BringStack />
-          <Boards />
-          <DesktopApp />
-          <AcademicIntegrity />
-          <TrustPrivacy />
-          <FAQSection />
-          <Statement />
-          <FinalCTA />
+          {/* Chapter 1: Cantor8 High-Precision Cognitive Infrastructure */}
+          <section id="hero" aria-label="Comtus Cognitive Infrastructure Showcase">
+            <CantorShowcase />
+            <Marquee />
+          </section>
+
+          <SectionDivider />
+
+          {/* Chapter 2: Free AI Models & BYOK Workbench */}
+          <section id="byok-guide" aria-label="Free AI Models & BYOK Guide">
+            <OpenRouterByokSection />
+          </section>
+
+          <SectionDivider />
+
+          {/* Chapter 3: Frequently Asked Questions */}
+          <section id="faq" aria-label="Frequently Asked Questions">
+            <FAQSection />
+          </section>
+
+          <SectionDivider />
+
+          {/* Chapter 4: Final Manifesto & Call to Action */}
+          <section id="manifesto-cta" aria-label="Manifesto & Call to Action">
+            <Statement />
+            <FinalCTA />
+          </section>
         </main>
+
         <Footer />
-        <LandingEgg />
+
         <OnboardingModal isOpen={onboardingOpen} onClose={() => setOnboardingOpen(false)} />
       </div>
     </LandingPlayProvider>
   );
 }
+

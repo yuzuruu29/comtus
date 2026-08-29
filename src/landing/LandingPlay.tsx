@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { playSfx } from "../studio/companion/sfx";
 
 export type LampMood = "idle" | "poke" | "cheer";
 
@@ -13,7 +14,7 @@ type LandingPlay = {
 
 const LandingPlayContext = createContext<LandingPlay | null>(null);
 
-const POKE_LINES = ["Here.", "Still burning.", "Ask when you are ready."] as const;
+const POKE_LINES = ["Here.", "Still burning.", "Ask when you are ready.", "Light the margins.", "Study in a warmer light."] as const;
 
 export function pokeLine(tick: number): string {
   return POKE_LINES[tick % POKE_LINES.length];
@@ -27,6 +28,7 @@ export function LandingPlayProvider({ children }: { children: ReactNode }) {
   const ignite = useCallback(() => {
     setLampLit(true);
     document.documentElement.dataset.lamp = "lit";
+    playSfx("lampClick", true);
   }, []);
 
   const poke = useCallback(() => {
@@ -34,6 +36,7 @@ export function LandingPlayProvider({ children }: { children: ReactNode }) {
     document.documentElement.dataset.lamp = "lit";
     setMood("poke");
     setPokeCount((n) => n + 1);
+    playSfx("lampClick", true);
     window.setTimeout(() => setMood("idle"), 700);
   }, []);
 
@@ -41,6 +44,7 @@ export function LandingPlayProvider({ children }: { children: ReactNode }) {
     setLampLit(true);
     document.documentElement.dataset.lamp = "lit";
     setMood("cheer");
+    playSfx("unlock", true);
     window.setTimeout(() => setMood("idle"), 1200);
   }, []);
 

@@ -1,6 +1,10 @@
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import ArcadeCta from "./ArcadeCta";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./landing.css";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const FOOTNOTES = [
   ["BYOK Privacy", "Free models run on your own OpenRouter key, smarter Claude models on our hosted key via PayPal pass, or fully local with Ollama. Keys stay strictly on-device."],
@@ -9,47 +13,73 @@ const FOOTNOTES = [
 ];
 
 export default function FinalCTA() {
+  const rootRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const ctx = gsap.context(() => {
+      const targets = gsap.utils.toArray<HTMLElement>(".reveal-final");
+      if (reduced) {
+        gsap.set(targets, { opacity: 1, y: 0 });
+        return;
+      }
+      targets.forEach((el, i) => {
+        gsap.fromTo(
+          el,
+          { opacity: 0, y: 35 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.85,
+            ease: "power3.out",
+            delay: i * 0.1,
+            scrollTrigger: { trigger: el, start: "top 88%", once: true },
+          },
+        );
+      });
+    }, rootRef);
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section data-torch className="relative overflow-hidden py-[clamp(7rem,16vh,11rem)]">
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[70vmin] w-[110vmin] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(227,176,75,0.10),rgba(42,54,84,0.14)_55%,transparent_75%)]" />
+    <section
+      ref={rootRef}
+      data-torch
+      className="relative overflow-hidden py-[clamp(7rem,16vh,11rem)] bg-[#044AB3] text-white"
+    >
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[70vmin] w-[110vmin] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(111,227,255,0.2),rgba(4,74,179,0.4)_55%,transparent_75%)]" />
       <div className="relative mx-auto max-w-3xl px-6 text-center">
-        <div className="label-mono justify-center opacity-70">
-          <span className="h-px w-9 grad-lamp" />
-          <span className="mx-4">The Desk Is Set</span>
-          <span className="h-px w-9 grad-lamp" />
+        <div className="reveal-final flex items-center justify-center gap-3 text-[#6FE3FF]">
+          <span className="h-px w-9 bg-[#6FE3FF]" />
+          <span className="font-mono text-[11.5px] uppercase tracking-widest font-bold text-[#6FE3FF]">The Desk Is Set</span>
+          <span className="h-px w-9 bg-[#6FE3FF]" />
         </div>
-        <h2 className="mt-7 font-display text-[clamp(2.6rem,6.5vw,5rem)] font-[390] leading-[1.03] text-parchment">
+        <h2 className="reveal-final mt-7 font-display text-[clamp(2.6rem,6.5vw,5rem)] font-[600] leading-[1.03] text-white">
           Open the studio.{" "}
-          <em className="font-[420] text-lamp">Think tonight.</em>
+          <em className="font-[600] text-[#6FE3FF] not-italic">Think tonight.</em>
         </h2>
-        <div className="mt-10 flex justify-center">
-          <ArcadeCta>
-            <Link
-              to="/studio"
-              className="group flex items-center gap-2.5 arcade-press grad-lamp py-4 pl-8 pr-3 text-[15px] font-semibold text-night shadow-[0_12px_50px_rgba(227,176,75,0.25)]"
-            >
-              <span className="roll">
-                <span>Open the studio</span>
-                <span aria-hidden>Think tonight</span>
+        <div className="reveal-final mt-10 flex justify-center">
+          <Link
+            to="/studio"
+            className="c8-btn c8-btn-light text-[16px] py-3.5 px-8 shadow-[0_8px_30px_rgba(0,0,0,0.25)]"
+          >
+            <span className="c8-line-reveal">
+              <span className="c8-line-inner" data-text="Open the Studio">
+                Open the Studio
               </span>
-              <span className="flex h-9 w-9 items-center justify-center bg-night/15 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px">
-                <svg width="13" height="13" viewBox="0 0 11 11" fill="none">
-                  <path
-                    d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
-                    stroke="#0B0F1A"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-            </Link>
-          </ArcadeCta>
+            </span>
+            <div className="c8-arrow-wrap">
+              <svg className="c8-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 17L17 7M17 7H7M17 7V17" />
+              </svg>
+            </div>
+          </Link>
         </div>
-        <div className="mt-16 grid grid-cols-1 gap-6 text-left sm:grid-cols-3">
+        <div className="reveal-final mt-16 grid grid-cols-1 gap-6 text-left sm:grid-cols-3">
           {FOOTNOTES.map(([tag, line]) => (
-            <div key={tag} className="border-t border-white/[0.08] pt-4">
-              <div className="label-mono !text-[10px] text-brass/80">{tag}</div>
-              <p className="mt-2 text-[13px] leading-relaxed text-faded">{line}</p>
+            <div key={tag} className="border-t border-white/[0.25] pt-4">
+              <div className="font-mono text-[11.5px] text-[#6FE3FF] font-bold uppercase tracking-wider">{tag}</div>
+              <p className="mt-2 text-[13.5px] leading-relaxed text-[#F8FAFC] font-normal">{line}</p>
             </div>
           ))}
         </div>

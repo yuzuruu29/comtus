@@ -1,0 +1,151 @@
+/* ==========================================================================
+   Comtus Studio Console Bezel Styles
+   High-Precision Cognitive Infrastructure Housing
+   ========================================================================== */
+
+.console-shell-root {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  width: 100vw;
+  background-color: #021B47;
+  padding: 6px;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+  font-family: var(--font-display, sans-serif);
+}
+
+@media (max-width: 768px) {
+  .console-shell-root {
+    padding: 0;
+  }
+}
+
+/* Outer Console Chassis */
+.console-chassis {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background-color: #F5F3EF;
+  border: 2px solid rgba(4, 74, 179, 0.35);
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 1px rgba(111, 227, 255, 0.25),
+    0 12px 32px rgba(2, 27, 71, 0.35);
+  overflow: hidden;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .console-chassis {
+    border: none;
+    border-radius: 0;
+  }
+}
+
+/* Console Header Status Strip */
+.console-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 30px;
+  background-color: #021B47;
+  border-bottom: 1px solid rgba(111, 227, 255, 0.25);
+  padding: 0 14px;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: #6FE3FF;
+  user-select: none;
+  z-index: 20;
+}
+
+.console-status-left,
+.console-status-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.console-live-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #6FE3FF;
+  box-shadow: 0 0 8px #6FE3FF;
+  animation: console-led-pulse 2s infinite ease-in-out;
+}
+
+@keyframes console-led-pulse {
+  0%, 100% { opacity: 0.7; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 12px #6FE3FF; }
+}
+
+.console-notebook-title {
+  color: #FFFFFF;
+  font-weight: 600;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* CRT Screen Workspace Bezel */
+.console-screen-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: #F5F3EF;
+  overflow: hidden;
+}
+
+/* Scanline Overlay over Studio Screen */
+.console-screen-scanlines {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    rgba(4, 74, 179, 0) 50%,
+    rgba(4, 74, 179, 0.02) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 40;
+  opacity: 0.4;
+}
+
+/* Console Footer Controller Strip */
+.console-controller-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 26px;
+  background-color: #021B47;
+  border-top: 1px solid rgba(111, 227, 255, 0.25);
+  padding: 0 14px;
+  font-family: var(--font-mono, monospace);
+  font-size: 10.5px;
+  color: #94A3B8;
+  user-select: none;
+  z-index: 20;
+}
+
+.console-keybind-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background-color: rgba(4, 74, 179, 0.3);
+  border: 1px solid rgba(111, 227, 255, 0.35);
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.console-brand-tag {
+  color: #6FE3FF;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+}

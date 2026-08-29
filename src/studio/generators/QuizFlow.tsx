@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, X, RotateCcw, Sparkles } from "lucide-react";
+import { Check, X, RotateCcw, Sparkles, Trophy } from "lucide-react";
 import type { QuizConfig, QuizPayload, QuizQuestion, QuizFormat, Generation, SolutionCheck } from "../../lib/types";
 import { generateJSON, checkSolution, friendlyError } from "../../lib/llm";
-import { useCallSettings } from "../../lib/settings";
+import { useCallSettings, useSettings } from "../../lib/settings";
 import { saveGeneration } from "../../lib/db";
 import { SOFT, SPRING, useCountUp } from "../fx";
+import { playSfx } from "../companion/sfx";
 import { GENERATOR_SYSTEM, buildSourceBlock, sanitizeQuestions, solutionCredit, fmtScore } from "./common";
 import {
   SolutionBin,
@@ -179,6 +180,7 @@ export function QuizTaker({
   onRegenerate?: () => void;
 }) {
   const cs = useCallSettings();
+  const sfxOn = useSettings((s) => s.companionSfx !== false);
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<(number | null)[]>(() => payload.questions.map(() => null));
   const [typed, setTyped] = useState<string[]>(() => payload.questions.map(() => ""));
@@ -210,10 +212,23 @@ export function QuizTaker({
       });
       setChecks((c) => c.map((v, j) => (j === i ? result : v)));
       setChecked((c) => c.map((v, j) => (j === i ? true : v)));
+      const isSolCorrect = result.verdict === "correct" || result.verdict === "partial";
+      if (!isSolCorrect) {
+        playSfx("wrong", sfxOn);
+      }
     } catch (e) {
       setCheckErrors((errs) => errs.map((v, j) => (j === i ? friendlyError(e) : v)));
     } finally {
       setCheckingIdx(null);
+    }
+  };
+
+  const handleCheckAnswer = (qIndex: number) => {
+    const q = payload.questions[qIndex];
+    setChecked((c) => c.map((v, i) => (i === qIndex ? true : v)));
+    const ok = isCorrect(q, picked[qIndex], typed[qIndex]);
+    if (!ok) {
+      playSfx("wrong", sfxOn);
     }
   };
 
@@ -252,7 +267,7 @@ export function QuizTaker({
       typed={typed}
       setTyped={setTyped}
       checked={checked}
-      setChecked={setChecked}
+      onCheckAnswer={handleCheckAnswer}
       subs={subs}
       setSubs={setSubs}
       checks={checks}
@@ -286,6 +301,7 @@ function QuizResults({
 }) {
   const pct = Math.round((score / payload.questions.length) * 100);
   const shownPct = useCountUp(pct, 1000);
+  const isMaster = pct >= 80;
   const byTopic = new Map<string, { c: number; t: number }>();
   payload.questions.forEach((qq, i) => {
     const t = byTopic.get(qq.topic) ?? { c: 0, t: 0 };
@@ -295,6 +311,7 @@ function QuizResults({
     } else if (isCorrect(qq, picked[i], typed[i])) t.c++;
     byTopic.set(qq.topic, t);
   });
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -302,6 +319,20 @@ function QuizResults({
       transition={SOFT}
       className="space-y-6"
     >
+      {isMaster && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={SPRING}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-brass/50 bg-gradient-to-r from-brass/[0.15] via-brass/[0.25] to-brass/[0.15] py-3 px-4 text-center shadow-[0_0_24px_rgba(227,176,75,0.2)]"
+        >
+          <Trophy size={18} className="text-brass" />
+          <span className="font-display text-[15px] font-semibold text-brasspale">
+            Strong pass — the lamp stays lit.
+          </span>
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, scale: 0.94 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -359,7 +390,7 @@ function QuizQuestionView({
   typed,
   setTyped,
   checked,
-  setChecked,
+  onCheckAnswer,
   subs,
   setSubs,
   checks,
@@ -377,7 +408,7 @@ function QuizQuestionView({
   typed: string[];
   setTyped: (fn: (t: string[]) => string[]) => void;
   checked: boolean[];
-  setChecked: (fn: (c: boolean[]) => boolean[]) => void;
+  onCheckAnswer: (i: number) => void;
   subs: (SolutionSubmission | null)[];
   setSubs: (fn: (s: (SolutionSubmission | null)[]) => (SolutionSubmission | null)[]) => void;
   checks: (SolutionCheck | null)[];
@@ -393,14 +424,16 @@ function QuizQuestionView({
   const isSolution = q.format === "solution";
   const checking = checkingIdx === idx;
   const correct = isCorrect(q, picked[idx], typed[idx]);
-  const check = () => setChecked((c) => c.map((v, i) => (i === idx ? true : v)));
+  const check = () => onCheckAnswer(idx);
   const next = () => (isLast ? onFinish() : setIdx((i) => i + 1));
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 relative">
       <div className="flex items-center justify-between">
-        <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-          Item {idx + 1} / {payload.questions.length} · {q.topic} · {q.difficulty}
+        <div className="flex items-center gap-2">
+          <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+            Item {idx + 1} / {payload.questions.length} · {q.topic}
+          </div>
         </div>
         <div className="whitespace-nowrap font-mono text-[11px] text-brasspale">{fmtScore(score)} correct</div>
       </div>
@@ -413,7 +446,7 @@ function QuizQuestionView({
         />
       </div>
 
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence initial={false}>
         <motion.div
           key={idx}
           initial={{ opacity: 0, x: 26 }}

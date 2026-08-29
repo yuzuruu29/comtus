@@ -5,7 +5,7 @@ import { liveQuery } from "dexie";
 import { db, deleteNotebook } from "../lib/db";
 import type { Notebook } from "../lib/types";
 import { SPRING, Spotlight } from "../studio/fx";
-import { timeAgo } from "../studio/ui";
+import { btnGhost, Modal, timeAgo } from "../studio/ui";
 import { useMediaQuery } from "../lib/useMediaQuery";
 
 const WIDE = 236;
@@ -47,7 +47,7 @@ export default function LibraryRail({
 }) {
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
   const [collapsed, setCollapsed] = useState<boolean>(loadCollapsed);
-  const [confirming, setConfirming] = useState<string | null>(null);
+  const [deletingNotebook, setDeletingNotebook] = useState<Notebook | null>(null);
   const [loadError, setLoadError] = useState(false);
   const compactWindow = useMediaQuery("(max-width: 1199px)");
 
@@ -186,11 +186,8 @@ export default function LibraryRail({
               <RailItemWide
                 notebook={nb}
                 active={nb.id === activeId}
-                confirming={confirming === nb.id}
                 onSelect={onSelect}
-                onConfirmToggle={() => setConfirming((c) => (c === nb.id ? null : nb.id))}
-                onCancelConfirm={() => setConfirming((c) => (c === nb.id ? null : c))}
-                onDelete={() => void remove(nb.id)}
+                onRequestDelete={() => setDeletingNotebook(nb)}
               />
             </div>
           ),
@@ -198,7 +195,7 @@ export default function LibraryRail({
         {!railCollapsed && loadError && (
           <div role="alert" className="mx-1 mt-2 flex gap-2 rounded-md border border-rust/25 bg-rust/[0.06] px-2.5 py-2 text-[11.5px] leading-relaxed text-rust">
             <WarningCircle size={14} weight="light" className="mt-0.5 shrink-0" />
-            Library unavailable. Your data has not been removed.
+            <span>Library unavailable. Your data has not been removed.</span>
           </div>
         )}
         {!railCollapsed && !loadError && notebooks.length === 0 && (
@@ -207,6 +204,40 @@ export default function LibraryRail({
           </p>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        open={deletingNotebook !== null}
+        onClose={() => setDeletingNotebook(null)}
+        title="Delete notebook"
+      >
+        <div className="space-y-4">
+          <p className="text-[13.5px] leading-relaxed text-muted">
+            Are you sure you want to remove/delete <strong className="font-medium text-ink">"{deletingNotebook?.name}"</strong>? All sources, notes, and study history inside it will be permanently deleted from this device.
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              className={btnGhost}
+              onClick={() => setDeletingNotebook(null)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (deletingNotebook) {
+                  void remove(deletingNotebook.id);
+                  setDeletingNotebook(null);
+                }
+              }}
+              className="rounded-[var(--radius-control)] bg-rust px-4 py-2 text-[13px] font-medium text-white hover:brightness-110 active:scale-95 transition-all"
+            >
+              Delete permanently
+            </button>
+          </div>
+        </div>
+      </Modal>
     </motion.aside>
   );
 }
@@ -223,22 +254,16 @@ function LetterTile({ name }: { name: string }) {
 function RailItemWide({
   notebook,
   active,
-  confirming,
   onSelect,
-  onConfirmToggle,
-  onCancelConfirm,
-  onDelete,
+  onRequestDelete,
 }: {
   notebook: Notebook;
   active: boolean;
-  confirming: boolean;
   onSelect: (id: string) => void;
-  onConfirmToggle: () => void;
-  onCancelConfirm: () => void;
-  onDelete: () => void;
+  onRequestDelete: () => void;
 }) {
   return (
-    <Spotlight className="group relative rounded-md" radius={180} onBlur={onCancelConfirm}>
+    <Spotlight className="group relative rounded-md" radius={180}>
       {active && (
         <span className="pointer-events-none absolute inset-y-[7px] left-0 w-[2px] rounded-full bg-brass shadow-[0_0_8px_rgba(227,176,75,0.45)]" />
       )}
@@ -261,11 +286,9 @@ function RailItemWide({
         </span>
       </button>
       <button
-        onClick={() => (confirming ? onDelete() : onConfirmToggle())}
-        className={`absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-control)] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 ${
-          confirming ? "!opacity-100 bg-rust/15 text-rust" : "text-muted/60 hover:text-rust"
-        }`}
-        aria-label={confirming ? "Confirm delete" : "Delete notebook"}
+        onClick={onRequestDelete}
+        className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-control)] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 text-muted/60 hover:bg-rust/10 hover:text-rust"
+        aria-label={`Delete ${notebook.name}`}
       >
         <Trash size={13} weight="light" />
       </button>

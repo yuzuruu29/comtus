@@ -74,7 +74,7 @@ export default function NotebookDesk({
         initial={false}
         animate={{ width: panes.sources ? SOURCES_W : RAIL_W }}
         transition={SPRING}
-        className="relative shrink-0 overflow-hidden border-r desk-split"
+        className="relative shrink-0 overflow-hidden border-r desk-split will-change-[width] [backface-visibility:hidden]"
       >
         {panes.sources ? (
           <div className={`${deskPane} flex flex-col`}>
@@ -122,7 +122,7 @@ export default function NotebookDesk({
         initial={false}
         animate={{ width: panes.studio ? STUDIO_W : RAIL_W }}
         transition={SPRING}
-        className="relative shrink-0 overflow-hidden border-l desk-split"
+        className="relative shrink-0 overflow-hidden border-l desk-split will-change-[width] [backface-visibility:hidden]"
       >
         {panes.studio ? (
           <div className={`${deskPane} flex flex-col`}>

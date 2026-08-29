@@ -301,7 +301,7 @@ export default function StudioPane({
               <button
                 key={t.kind}
                 onClick={() => openAid(t.kind)}
-                className="kind-tile flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[12px] font-medium text-ink/90 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_14px_-2px_rgba(227,176,75,0.18)] active:scale-[0.98]"
+                className="kind-tile flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[12px] font-medium text-ink/90 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)] active:translate-y-0.5 active:scale-[0.99]"
                 style={{ ["--kind" as string]: KIND_CSS[kindAccent(t.kind)] }}
               >
                 <t.icon size={14} weight="light" className="kind-icon shrink-0" />
@@ -311,7 +311,7 @@ export default function StudioPane({
           </div>
 
           {/* Extended Tools Drawer (Quiz, Exam, Essay, Flashcards, Slides) */}
-          <div className="mt-3 space-y-1 overflow-hidden border-t border-hairline pt-3">
+          <div className="mt-3 space-y-1 border-t border-hairline pt-3">
             <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brasspale mb-1 px-1 font-semibold">
               More Study Generators
             </div>
@@ -321,7 +321,7 @@ export default function StudioPane({
                 onClick={() => {
                   setFlow(t.flow);
                 }}
-                className="kind-tile flex w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-all duration-200 hover:translate-x-1 active:scale-[0.99]"
+                className="kind-tile flex w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)] active:translate-y-0.5 active:scale-[0.99]"
                 style={{ ["--kind" as string]: t.kindVar }}
               >
                 <t.icon size={15} weight="light" className="kind-icon shrink-0" />

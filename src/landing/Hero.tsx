@@ -2,11 +2,9 @@ import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import LampCanvas from "./LampCanvas";
 import { scrollToSection } from "../lib/scroll";
-import ArcadeCta from "./ArcadeCta";
-import HeroLamp from "./HeroLamp";
-import DeskDiorama from "./DeskDiorama";
+import PixelDeskHeroScene from "./PixelDeskHeroScene";
+import { PixelButton } from "../components/pixel/PixelUI";
 import { HOUSE_EASE, PIXEL_HOP, PIXEL_STEPS } from "./pixelMotion";
 import "./landing.css";
 
@@ -27,9 +25,10 @@ export default function Hero({
     const ctx = gsap.context(() => {
       if (reduced) {
         gsap.set(".hero-anim", { opacity: 1, yPercent: 0, y: 0 });
-        gsap.set(".hero-lamp, .desk-diorama", { opacity: 1, y: 0 });
+        gsap.set(".pixel-desk-hero-scene-wrap", { opacity: 1, y: 0 });
         return;
       }
+
       const tl = gsap.timeline({ defaults: { ease: HOUSE_EASE }, delay: 0.12 });
       tl.fromTo(
         ".hero-kicker",
@@ -55,15 +54,9 @@ export default function Hero({
           "-=0.35",
         )
         .fromTo(
-          ".hero-lamp",
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.5, ease: PIXEL_HOP },
-          "-=0.4",
-        )
-        .fromTo(
-          ".desk-diorama",
-          { opacity: 0, y: 12 },
-          { opacity: 1, y: 0, duration: 0.45, ease: PIXEL_HOP },
+          ".pixel-desk-hero-scene-wrap",
+          { opacity: 0, y: 22, scale: 0.97 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.65, ease: PIXEL_HOP },
           "-=0.3",
         )
         .fromTo(
@@ -73,150 +66,167 @@ export default function Hero({
           "-=0.2",
         );
 
-      // Scroll parallax — the lamp recedes as you leave (lighter on mobile).
+      // Smooth GSAP scroll transitions — viewpoint gently transitions from the ambient window into the desk workbench
       const isMobile = window.innerWidth < 768;
-      gsap.to(".hero-content", {
-        yPercent: isMobile ? -4 : -9,
-        opacity: 0.25,
+      gsap.to(".hero-header-block", {
+        yPercent: isMobile ? -5 : -10,
+        opacity: 0.35,
         ease: "none",
         scrollTrigger: {
           trigger: rootRef.current,
           start: "top top",
-          end: "bottom 35%",
+          end: "bottom 40%",
           scrub: true,
         },
       });
-      gsap.to(".hero-canvas-layer", {
-        opacity: 0.15,
+
+      gsap.to(".pixel-desk-hero-scene-wrap", {
+        yPercent: isMobile ? -3 : -7,
+        scale: isMobile ? 0.98 : 1.02,
         ease: "none",
         scrollTrigger: {
           trigger: rootRef.current,
           start: "top top",
-          end: "bottom top",
-          scrub: true,
+          end: "bottom 25%",
+          scrub: 0.7,
         },
       });
     }, rootRef);
+
     return () => ctx.revert();
   }, [ready]);
 
   return (
     <section
       ref={rootRef}
-      className="relative flex min-h-[100svh] flex-col overflow-hidden"
+      className="relative flex min-h-[100svh] flex-col overflow-hidden bg-transparent"
       aria-label="Introduction"
     >
-      <div className="hero-canvas-layer absolute inset-0">
-        <LampCanvas className="h-full w-full" />
-      </div>
-      <div className="landing-hero-bloom" aria-hidden />
-      <HeroLamp />
-      {/* Cool floor glow — the desk under the lamp */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[38vh] bg-[radial-gradient(60%_100%_at_50%_100%,rgba(42,54,84,0.5),rgba(42,54,84,0.12)_55%,transparent_80%)]" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,transparent,rgba(242,237,227,0.14),transparent)]" />
+      {/* Warm paper ambient glow */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[38vh] bg-[radial-gradient(60%_100%_at_50%_100%,rgba(74,46,27,0.06),transparent_75%)]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,transparent,rgba(92,61,30,0.14),transparent)]" />
 
-      <div className="hero-content relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-6 pt-28 pb-6 text-center">
-        <div className="hero-kicker label-mono flex items-center gap-3 sm:gap-4 opacity-0">
-          <span className="hidden h-px w-10 grad-lamp sm:block" />
-          <span className="arcade-press border border-brass/35 bg-brass/10 px-3 py-1 text-[12px] font-semibold tracking-[0.18em] text-brasspale">
-            AI STUDY COMPANION
-          </span>
-          <span className="hidden h-px w-10 grad-lamp sm:block" />
-        </div>
-
-        <h1 className="mt-8 font-display text-[clamp(2.9rem,8vw,6.8rem)] font-[380] leading-[1.02] tracking-[-0.015em] text-parchment">
-          <span className="hero-line block overflow-hidden pb-1">
-            <span className="hero-line-inner hero-anim block will-change-transform">
-              Study smarter with Comtus.
+      <div className="hero-content relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-4 pt-24 pb-8 text-center sm:px-6 sm:pt-28">
+        <div className="hero-header-block flex flex-col items-center">
+          {/* Kicker Eyebrow */}
+          <div className="hero-kicker label-mono flex items-center gap-3 sm:gap-4 opacity-0">
+            <span className="hidden h-px w-10 bg-px-brass/40 sm:block" />
+            <span className="btn-ink-press border border-px-brass/40 bg-px-brass/10 px-3.5 py-1 text-[12px] font-mono font-semibold tracking-[0.18em] text-px-brass shadow-[1px_1px_0_rgba(92,61,30,0.15)]">
+              AI STUDY COMPANION
             </span>
-          </span>
-          <span className="hero-line block overflow-hidden pb-3">
-            <span className="hero-line-inner hero-anim block font-[420] italic text-[clamp(2.1rem,5.5vw,4.5rem)] text-faded will-change-transform">
-              Rough thought, <span className="text-lamp">polished.</span>
-            </span>
-          </span>
-        </h1>
-
-        <p className="hero-sub hero-anim mt-6 max-w-2xl text-balance text-[15.5px] leading-relaxed text-faded opacity-0 sm:text-[17px]">
-          Comtus helps you understand difficult lessons, organize your study materials, practice what you've learned, and prepare with confidence.
-        </p>
-
-        {/* Learning Loop Pill Badges */}
-        <div className="hero-sub hero-anim mt-5 flex flex-wrap items-center justify-center gap-2 text-[12px] text-faded/90 opacity-0">
-          <span className="arcade-press flex items-center gap-1.5 border border-white/10 bg-white/[0.03] px-3 py-1">
-            <span className="h-1.5 w-1.5 bg-brass" /> Understand
-          </span>
-          <span className="arcade-press flex items-center gap-1.5 border border-white/10 bg-white/[0.03] px-3 py-1">
-            <span className="h-1.5 w-1.5 bg-moon" /> Organize
-          </span>
-          <span className="arcade-press flex items-center gap-1.5 border border-white/10 bg-white/[0.03] px-3 py-1">
-            <span className="h-1.5 w-1.5 bg-sage" /> Practice
-          </span>
-          <span className="arcade-press flex items-center gap-1.5 border border-white/10 bg-white/[0.03] px-3 py-1">
-            <span className="h-1.5 w-1.5 bg-brasspale" /> Master
-          </span>
-        </div>
-
-        <div className="hero-play">
-          <div className="hero-cta-row">
-            {onStartStudying ? (
-              <ArcadeCta className="hero-cta hero-anim opacity-0" magnetY={false}>
-                <button
-                  onClick={onStartStudying}
-                  className="arcade-press group flex min-h-[50px] w-full items-center justify-center gap-2.5 grad-lamp py-3.5 pl-7 pr-3 text-[15px] font-semibold text-night"
-                >
-                  <span>Start Studying</span>
-                  <span className="flex h-8 w-8 items-center justify-center bg-night/15 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px">
-                    <svg width="12" height="12" viewBox="0 0 11 11" fill="none">
-                      <path
-                        d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
-                        stroke="#0B0F1A"
-                        strokeWidth="1.4"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </ArcadeCta>
-            ) : (
-              <ArcadeCta className="hero-cta hero-anim opacity-0" magnetY={false}>
-                <Link
-                  to="/studio"
-                  className="arcade-press group flex min-h-[50px] w-full items-center justify-center gap-2.5 grad-lamp py-3.5 pl-7 pr-3 text-[15px] font-semibold text-night"
-                >
-                  <span>Start Studying</span>
-                  <span className="flex h-8 w-8 items-center justify-center bg-night/15 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px">
-                    <svg width="12" height="12" viewBox="0 0 11 11" fill="none">
-                      <path
-                        d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
-                        stroke="#0B0F1A"
-                        strokeWidth="1.4"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </span>
-                </Link>
-              </ArcadeCta>
-            )}
-            <button
-              onClick={() => scrollToSection("#learning-loop")}
-              className="hero-cta hero-anim arcade-press ghost-tint group flex min-h-[50px] items-center justify-center border border-white/12 bg-white/[0.03] px-7 py-3.5 text-[15px] font-medium text-parchment/90 backdrop-blur-sm opacity-0"
-            >
-              <span className="roll">
-                <span>See How Comtus Works</span>
-                <span aria-hidden>See How Comtus Works</span>
-              </span>
-            </button>
+            <span className="hidden h-px w-10 bg-px-brass/40 sm:block" />
           </div>
-          <DeskDiorama />
+
+          {/* Headline with smooth ink-bleed entrance */}
+          <h1 className="mt-7 font-display text-[clamp(2.7rem,7.5vw,6.4rem)] font-[420] leading-[1.02] tracking-[-0.015em] text-px-ink">
+            <span className="hero-line block overflow-hidden pb-1">
+              <span className="hero-line-inner hero-anim block will-change-transform">
+                Study smarter with Comtus.
+              </span>
+            </span>
+            <span className="hero-line block overflow-hidden pb-2">
+              <span className="hero-line-inner hero-anim block font-[480] italic text-[clamp(2.1rem,5.5vw,4.5rem)] text-px-brass will-change-transform">
+                Rough thought, <span className="text-px-brass-deep font-semibold">polished.</span>
+              </span>
+            </span>
+          </h1>
+
+          {/* Subtitle / Brand Line */}
+          <div className="hero-sub hero-anim mt-5 max-w-2xl text-balance text-[15.5px] leading-relaxed text-px-muted opacity-0 sm:text-[17px]">
+            <p className="font-semibold text-px-ink mb-1">
+              Study in a warmer light.
+            </p>
+            <p>
+              Comtus helps you understand difficult lessons, organize your study materials, practice what you've learned, and prepare with confidence.
+            </p>
+          </div>
+
+          {/* Learning Loop Pill Badges */}
+          <div className="hero-sub hero-anim mt-4 flex flex-wrap items-center justify-center gap-2 text-[12px] text-px-muted opacity-0 font-mono">
+            <span className="btn-ink-press flex items-center gap-1.5 border border-px-border bg-px-surface px-3 py-1 text-px-ink">
+              <span className="h-1.5 w-1.5 bg-px-brass" /> Understand
+            </span>
+            <span className="btn-ink-press flex items-center gap-1.5 border border-px-border bg-px-surface px-3 py-1 text-px-ink">
+              <span className="h-1.5 w-1.5 bg-px-moon" /> Organize
+            </span>
+            <span className="btn-ink-press flex items-center gap-1.5 border border-px-border bg-px-surface px-3 py-1 text-px-ink">
+              <span className="h-1.5 w-1.5 bg-px-sage" /> Practice
+            </span>
+            <span className="btn-ink-press flex items-center gap-1.5 border border-px-border bg-px-surface px-3 py-1 text-px-ink">
+              <span className="h-1.5 w-1.5 bg-px-candle" /> Master
+            </span>
+          </div>
+
+          {/* CTA Row with PixelButton and Ink-Press Physics */}
+          <div className="mt-8 flex flex-col items-center justify-center gap-3.5 sm:flex-row sm:gap-4 w-full max-w-md">
+            {onStartStudying ? (
+              <PixelButton
+                variant="brass"
+                size="lg"
+                onClick={onStartStudying}
+                className="hero-cta hero-anim opacity-0 w-full sm:w-auto min-h-[50px] px-7 text-[15px] font-semibold tracking-wide text-white bg-px-brass border-px-brass shadow-[2px_2px_0_rgba(92,61,30,0.3),inset_1px_1px_0_rgba(255,255,255,0.4)]"
+                rightIcon={
+                  <span className="flex h-6 w-6 items-center justify-center bg-black/15">
+                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                      <path
+                        d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
+                        stroke="#FFFFFF"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </span>
+                }
+              >
+                Open the Studio
+              </PixelButton>
+            ) : (
+              <Link to="/studio" className="w-full sm:w-auto">
+                <PixelButton
+                  variant="brass"
+                  size="lg"
+                  className="hero-cta hero-anim opacity-0 w-full min-h-[50px] px-7 text-[15px] font-semibold tracking-wide text-white bg-px-brass border-px-brass shadow-[2px_2px_0_rgba(92,61,30,0.3),inset_1px_1px_0_rgba(255,255,255,0.4)]"
+                  rightIcon={
+                    <span className="flex h-6 w-6 items-center justify-center bg-black/15">
+                      <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                        <path
+                          d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
+                          stroke="#FFFFFF"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </span>
+                  }
+                >
+                  Open the Studio
+                </PixelButton>
+              </Link>
+            )}
+
+            <PixelButton
+              variant="ghost"
+              size="lg"
+              onClick={() => scrollToSection("#learning-loop")}
+              className="hero-cta hero-anim opacity-0 w-full sm:w-auto min-h-[50px] border border-px-border bg-px-surface px-7 text-[15px] font-medium text-px-ink backdrop-blur-sm hover:border-px-brass/50 hover:bg-px-raised hover:text-px-brass"
+            >
+              Explore the Desk
+            </PixelButton>
+          </div>
+        </div>
+
+        {/* ── 16-Bit Cozy Pixel Desk Hero Scene Focal Piece ────────────── */}
+        <div className="pixel-desk-hero-scene-wrap hero-anim relative z-10 mt-10 w-full max-w-4xl opacity-0">
+          <PixelDeskHeroScene />
         </div>
       </div>
 
-      <div className="hero-cue hero-anim relative z-10 pb-9 pt-6 text-center opacity-0">
-        <div className="label-mono inline-flex flex-col items-center gap-3 opacity-80">
-          <span>Scroll</span>
-          <span className="relative block h-10 w-px overflow-hidden bg-white/10">
-            <span className="absolute left-0 top-0 h-3.5 w-px animate-[cue-drop_2.2s_var(--ease-house-inout)_infinite] grad-lamp" />
+      {/* Scroll Down Cue */}
+      <div className="hero-cue hero-anim relative z-10 pb-8 pt-4 text-center opacity-0">
+        <div className="label-mono inline-flex flex-col items-center gap-2.5 opacity-80">
+          <span className="text-[11px] font-mono tracking-widest text-px-muted">SCROLL TO EXPLORE</span>
+          <span className="relative block h-9 w-px overflow-hidden bg-px-border">
+            <span className="absolute left-0 top-0 h-3 w-px animate-[cue-drop_2.2s_var(--ease-house-inout)_infinite] bg-px-brass" />
           </span>
         </div>
       </div>

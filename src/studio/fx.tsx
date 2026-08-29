@@ -1,21 +1,30 @@
 import { useEffect, useRef, useState, type HTMLAttributes, type MouseEvent, type ReactNode } from "react";
 import { AnimatePresence, MotionConfig, animate, motion, useReducedMotion } from "motion/react";
+import { useSettings } from "../lib/settings";
+
+/** Hook to query the user's active motion mode with system fallback. */
+export function useMotionMode(): "none" | "minimal" | "full" {
+  const mode = useSettings((s) => s.motionMode) ?? "full";
+  const reduce = useReducedMotion();
+  if (reduce) return "none";
+  return mode;
+}
 
 /* ── Motion primitives for the studio ────────────────────────
    The 21st.dev-style vocabulary: spring physics everywhere,
-   AnimatePresence for enter/exit, mouse-tracked spotlights and
-   orbiting border beams for the expensive-feeling details.
+   AnimatePresence for enter/exit, mouse-tracked spotlights,
+   magnetic buttons, celebration particle emitters, and
+   orbiting border beams.
    Everything here respects prefers-reduced-motion. */
 
 /** House springs — one feel across the whole app. */
-export const SPRING = { type: "spring", stiffness: 380, damping: 34 } as const;
-export const SOFT = { type: "spring", stiffness: 240, damping: 26 } as const;
+export const SPRING = { type: "spring", stiffness: 350, damping: 32 } as const;
+export const SOFT = { type: "spring", stiffness: 220, damping: 26 } as const;
+export const CRISP = { type: "spring", stiffness: 420, damping: 36, mass: 0.8 } as const;
 /** Cubic approximation of the house ease, for non-spring tweens. */
-export const HOUSE = [0.22, 1, 0.36, 1] as const;
+export const HOUSE = [0.16, 1, 0.3, 1] as const;
 
-/** Distances for spring/tween keyframes — mirror --rise-* / --drift-x in
- *  index.css. motion/react cannot interpolate var()/calc() strings, so
- *  TSX reads these numbers; the CSS tokens serve CSS-declared animation. */
+/** Distances for spring/tween keyframes */
 export const RISE_1 = 4;
 export const RISE_2 = 8;
 export const RISE_3 = 14;
@@ -34,9 +43,7 @@ export function staggerDelay(index: number): string {
 export const BEAM_IDLE_S = 5;
 export const BEAM_STREAM_S = 3.4;
 
-/** Standard popover travel for AnimatePresence-wrapped menus (model picker,
- *  effort picker, sessions, focus menu). Spread onto a motion element:
- *  <motion.div {...POPOVER.initial} animate={POPOVER.animate} exit={POPOVER.exit}> */
+/** Standard popover travel for AnimatePresence-wrapped menus */
 export const POPOVER = {
   initial: { opacity: 0, y: -6, scale: 0.98 },
   animate: { opacity: 1, y: 0, scale: 1 },
@@ -45,15 +52,13 @@ export const POPOVER = {
 
 /** Bound desk pane — flush to the window, split by hairlines. */
 export const deskPane = "h-full min-h-0 bg-ground";
-/** @deprecated Use deskPane. Kept so older imports fail loudly in typecheck. */
 export const glassPane = deskPane;
 
-/** Wraps the studio in motion's reduced-motion awareness so every
- *  spring/tween collapses to an instant state change when asked. */
+/** Wraps the studio in motion's reduced-motion awareness */
 export function MotionPrefs({ children }: { children: ReactNode }) {
-  const reduce = useReducedMotion();
+  const mode = useMotionMode();
   return (
-    <MotionConfig reducedMotion={reduce ? "always" : "user"}>{children}</MotionConfig>
+    <MotionConfig reducedMotion={mode === "none" ? "always" : "user"}>{children}</MotionConfig>
   );
 }
 
@@ -71,7 +76,6 @@ export function Spotlight({
 } & HTMLAttributes<HTMLDivElement>) {
   const ref = useRef<HTMLDivElement>(null);
   const onMove = (e: MouseEvent) => {
-    // Only track cursor on fine hover-capable pointers
     if (typeof window !== "undefined" && window.matchMedia("(hover: none)").matches) return;
     const el = ref.current;
     if (!el) return;
@@ -159,19 +163,16 @@ export function Collapse({
   );
 }
 
-/* ── CountUp — numbers land with weight, not instantly ─────── */
+/* ── CountUp — numbers land with weight ─────────────────────── */
 
 export function useCountUp(target: number, durationMs = 900): number {
   const [value, setValue] = useState(0);
-  const reduce = useReducedMotion();
-  // Seed each sweep from wherever the last one ended — meters refresh
-  // periodically and replaying 0→X on every refresh reads as a glitch.
-  // The first mount still sweeps from 0 so entrances keep their weight.
+  const mode = useMotionMode();
   const lastRef = useRef(0);
   useEffect(() => {
     const from = lastRef.current;
     lastRef.current = target;
-    if (reduce || from === target) {
+    if (mode === "none" || from === target) {
       setValue(target);
       return;
     }
@@ -181,6 +182,140 @@ export function useCountUp(target: number, durationMs = 900): number {
       onUpdate: (v) => setValue(Math.round(v)),
     });
     return () => controls.stop();
-  }, [target, durationMs, reduce]);
+  }, [target, durationMs, mode]);
   return value;
+}
+
+/* ── Celebration Confetti & Spark Particle Emitter ─────────── */
+
+export function triggerConfettiCannon(originX = 0.5, originY = 0.6) {
+  if (typeof window === "undefined" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const canvas = document.createElement("canvas");
+  canvas.className = "pointer-events-none fixed inset-0 z-[999]";
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    canvas.remove();
+    return;
+  }
+
+  const colors = ["#FFD166", "#E3B04B", "#F7E0A3", "#5CE1E6", "#4EED88", "#FFF8DC"];
+  const particles: Array<{
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    w: number;
+    h: number;
+    color: string;
+    rotation: number;
+    vRot: number;
+    alpha: number;
+  }> = [];
+
+  const count = 48;
+  const startX = originX * window.innerWidth;
+  const startY = originY * window.innerHeight;
+
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * (180 + (Math.random() * 180 - 90))) / 180;
+    const speed = 7 + Math.random() * 12;
+    particles.push({
+      x: startX,
+      y: startY,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 4,
+      w: 6 + Math.random() * 6,
+      h: 4 + Math.random() * 5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      vRot: (Math.random() - 0.5) * 14,
+      alpha: 1,
+    });
+  }
+
+  const start = performance.now();
+
+  const draw = (now: number) => {
+    const elapsed = now - start;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let active = false;
+    particles.forEach((p) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.35; // gravity
+      p.rotation += p.vRot;
+      p.alpha = Math.max(0, 1 - elapsed / 1800);
+
+      if (p.alpha > 0.01) {
+        active = true;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+    });
+
+    if (active && elapsed < 2000) {
+      requestAnimationFrame(draw);
+    } else {
+      canvas.remove();
+    }
+  };
+
+  requestAnimationFrame(draw);
+}
+
+/* ── Magnetic Interactive Button (3D spring physics) ───────── */
+
+export function MagneticButton({
+  children,
+  className = "",
+  onClick,
+  ...rest
+}: {
+  children: ReactNode;
+  className?: string;
+  onClick?: () => void;
+} & HTMLAttributes<HTMLButtonElement>) {
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  const onMouseMove = (e: MouseEvent<HTMLButtonElement>) => {
+    if (typeof window !== "undefined" && window.matchMedia("(hover: none)").matches) return;
+    const el = btnRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - (rect.left + rect.width / 2);
+    const y = e.clientY - (rect.top + rect.height / 2);
+    setOffset({ x: x * 0.25, y: y * 0.25 });
+  };
+
+  const onMouseLeave = () => {
+    setOffset({ x: 0, y: 0 });
+  };
+
+  return (
+    <motion.button
+      ref={btnRef}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+      animate={{ x: offset.x, y: offset.y }}
+      transition={{ type: "spring", stiffness: 350, damping: 25 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onClick}
+      className={`relative cursor-pointer transition-colors ${className}`}
+      {...(rest as any)}
+    >
+      {children}
+    </motion.button>
+  );
 }

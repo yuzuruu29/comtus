@@ -1,48 +1,95 @@
-/* Pixel desk — studio-only skin (html[data-pixel="on"]).
-   Every line of desk copy uses Pixelify Sans Variable when Pixel is on.
-   Scholar (data-pixel off) restores Fraunces + Inter from index.css.
-   Landing never mounts this attribute; it has its own pixel-landing.css. */
+/* ── Comtus · 16-Bit Cozy Pixel Bookshop Studio Skin ──────────────────
+   Activates under html[data-pixel="on"].
+   Implements the 16-color master palette, warm paper dithering,
+   crisp 1px/2px bevel borders, wood-trim highlights, and tactile
+   ink-press & book-press physics across all studio chrome.
+   Scholar Study (data-pixel="off") restores Fraunces + Inter from index.css.
+   Landing uses html[data-landing-pixel="on"] via pixel-landing.css. ── */
 
 @import "@fontsource-variable/pixelify-sans";
 
+:root,
 html[data-pixel="on"] {
+  /* 16 Master Palette Tokens */
+  --px-void: #080B12;        /* Deepest shadow */
+  --px-ground: #0F1420;      /* Warm midnight ink */
+  --px-surface: #171F32;     /* Raised bookshop surface */
+  --px-raised: #222C44;      /* Hover states, active tiles */
+  --px-border: #33405F;      /* 16-bit bevel borders */
+  --px-leather: #4A2E1B;     /* Book-spine brown, warm wood trim */
+  --px-brass-deep: #B88428;  /* Antiqued brass edge */
+  --px-brass: #E3B04B;       /* Signature warm lamplight gold */
+  --px-brass-light: #F7D486; /* Flame highlight, glowing filaments */
+  --px-parchment: #E8DEC8;   /* Aged scholar parchment */
+  --px-ink: #F5F0E6;         /* Primary high-contrast text */
+  --px-muted: #9099B0;       /* Muted labels, metadata */
+  --px-moon: #6C98C2;        /* Midnight blue secondary accent */
+  --px-sage: #78B084;        /* Success, correct answers */
+  --px-rust: #C85848;        /* Error, warnings, alerts */
+  --px-candle: #FF9E43;      /* Amber hearth spark, milestone flares */
+
+  /* Legacy & semantic mapping for studio workspace */
+  --brass: var(--px-brass);
+  --brasspale: var(--px-brass-light);
+  --parchment: var(--px-parchment);
+  --faded: var(--px-muted);
+  --night: var(--px-void);
+  --study: var(--px-surface);
+  --moon: var(--px-moon);
+  --sage: var(--px-sage);
+  --rust: var(--px-rust);
+  --candle: var(--px-candle);
+  --ground: var(--px-ground);
+  --surface: var(--px-surface);
+  --raised: var(--px-raised);
+  --border: var(--px-border);
+  --hairline: var(--px-border);
+  --hairline-strong: color-mix(in srgb, var(--px-brass) 38%, var(--px-border));
+  --ink: var(--px-ink);
+  --muted: var(--px-muted);
+
   --font-display: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
   --font-body: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
   --font-mono: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
-  --radius-control: 2px;
-  --radius-field: 2px;
-  --radius-dialog: 2px;
+  --radius-control: 4px;
+  --radius-field: 4px;
+  --radius-dialog: 6px;
   --glow-warm: rgba(227, 176, 75, 0.34);
-  --text-body: 0.9375rem; /* 15px — Pixelify needs a hair more than Inter */
-  --text-label: 0.75rem; /* 12px floor for labels */
-  --ease-house: steps(5, end);
-  --ease-house-inout: steps(6, end);
-  --elev-card: 4px 4px 0 color-mix(in srgb, var(--brass) 28%, #0b0f1a);
-  --elev-lift: 6px 6px 0 color-mix(in srgb, var(--brass) 45%, transparent);
-  --elev-modal: 8px 8px 0 color-mix(in srgb, var(--brass) 40%, #000);
+  --text-body: 0.9375rem;
+  --text-label: 0.75rem;
+  --ease-house: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-house-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --elev-card: 4px 4px 0 color-mix(in srgb, var(--px-brass) 28%, var(--px-void));
+  --elev-lift: 6px 6px 0 color-mix(in srgb, var(--px-brass) 45%, transparent);
+  --elev-modal: 8px 8px 0 color-mix(in srgb, var(--px-brass) 40%, var(--px-void));
 }
 
 html[data-pixel="on"] body {
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.6;
+  color: var(--px-ink);
+  background-color: var(--px-ground);
   font-optical-sizing: none;
   font-variation-settings: "wght" 420;
   -webkit-font-smoothing: auto;
   -moz-osx-font-smoothing: unset;
   background-image:
-    linear-gradient(color-mix(in srgb, var(--brass) 7%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--brass) 7%, transparent) 1px, transparent 1px),
-    radial-gradient(ellipse 78% 52% at 86% 118%, color-mix(in srgb, var(--brass) 26%, transparent), transparent 60%);
-  background-size: 16px 16px, 16px 16px, auto;
+    linear-gradient(color-mix(in srgb, var(--px-brass) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--px-brass) 7%, transparent) 1px, transparent 1px),
+    radial-gradient(ellipse 78% 52% at 86% 118%, color-mix(in srgb, var(--px-brass) 22%, transparent), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 14% -10%, color-mix(in srgb, var(--px-leather) 24%, transparent), transparent 50%);
+  background-size: 16px 16px, 16px 16px, auto, auto;
   background-attachment: fixed;
 }
 
 html[data-theme="light"][data-pixel="on"] body {
+  background-color: var(--px-paper-ground, #F5F1E8);
+  color: var(--px-paper-ink, #1F1913);
   background-image:
-    linear-gradient(color-mix(in srgb, var(--brass) 10%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--brass) 10%, transparent) 1px, transparent 1px),
-    radial-gradient(ellipse 78% 52% at 86% 118%, color-mix(in srgb, var(--brass) 14%, transparent), transparent 60%);
+    linear-gradient(rgba(92, 61, 30, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(92, 61, 30, 0.04) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.55), transparent 80%);
   background-size: 16px 16px, 16px 16px, auto;
 }
 
@@ -88,6 +135,7 @@ html[data-pixel="on"] .md h2,
 html[data-pixel="on"] .md h3,
 html[data-pixel="on"] .md h4 {
   font-family: var(--font-display);
+  color: var(--px-brass-light);
 }
 
 html[data-pixel="on"] .label-mono,
@@ -108,370 +156,300 @@ html[data-pixel="on"] .font-mono {
   letter-spacing: 0.04em;
 }
 
-html[data-pixel="on"] .effort-chip,
-html[data-pixel="on"] .effort-advanced {
-  font-family: var(--font-body);
-  font-size: 13px;
+/* ── 16-Bit Tactile Ink-Press & Book-Press Button Physics ──────────── */
+html[data-pixel="on"] .btn-ink-press,
+html[data-pixel="on"] .arcade-press,
+html[data-pixel="on"] button.grad-lamp,
+html[data-pixel="on"] .grad-lamp {
+  position: relative;
+  border-radius: 4px;
+  border: 1px solid var(--px-border);
+  box-shadow:
+    0 2px 0 var(--px-void),
+    inset 0 1px 0 color-mix(in srgb, var(--px-brass-light) 24%, transparent);
+  transition:
+    transform 0.12s cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 0.12s cubic-bezier(0.2, 0, 0, 1),
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
-html[data-pixel="on"] .chip-in {
-  font-size: 14px;
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  html[data-pixel="on"] .btn-ink-press:hover,
+  html[data-pixel="on"] .arcade-press:hover,
+  html[data-pixel="on"] button.grad-lamp:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--px-brass) 60%, var(--px-border));
+    box-shadow:
+      0 3px 0 var(--px-void),
+      inset 0 1px 0 color-mix(in srgb, var(--px-brass-light) 38%, transparent),
+      0 0 12px color-mix(in srgb, var(--px-brass) 20%, transparent);
+  }
 }
 
-/* Hard corners — arcade chrome, not pills */
-html[data-pixel="on"] .rounded-full,
-html[data-pixel="on"] .rounded-lg,
-html[data-pixel="on"] .rounded-xl,
-html[data-pixel="on"] .rounded-2xl,
-html[data-pixel="on"] .rounded-3xl,
-html[data-pixel="on"] [class*="rounded-["] {
-  border-radius: 2px;
+/* ── Studio Workspace Chrome Alignment (16-Color Palette) ─────────── */
+html[data-pixel="on"] [data-shell="desktop"],
+html[data-pixel="on"] [data-shell="browser"] {
+  background-color: var(--px-ground);
+  color: var(--px-ink);
 }
 
-html[data-pixel="on"] .md code,
-html[data-pixel="on"] .md pre,
-html[data-pixel="on"] .effort-popover,
-html[data-pixel="on"] .effort-chip,
-html[data-pixel="on"] .effort-track::before,
-html[data-pixel="on"] .effort-fill,
-html[data-pixel="on"] .effort-dot,
-html[data-pixel="on"] .effort-thumb,
-html[data-pixel="on"] .phase-pill,
-html[data-pixel="on"] .phase-dot,
-html[data-pixel="on"] .kbd-chip,
-html[data-pixel="on"] .cite-flash,
-html[data-pixel="on"] .scroll-thin::-webkit-scrollbar-thumb {
-  border-radius: 2px;
+/* Workspace Panes & Sidebars */
+html[data-pixel="on"] aside,
+html[data-pixel="on"] .workspace-sidebar,
+html[data-pixel="on"] .pane-sidebar {
+  background-color: var(--px-surface);
+  border-color: var(--px-border);
 }
 
-.pixel-crt {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 54;
-  opacity: 0.11;
-  mix-blend-mode: multiply;
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0 2px,
-      rgba(8, 11, 20, 0.22) 2px 3px
-    );
-  animation: crt-roll 7s linear infinite;
+/* Pane Headers & Titlebar */
+html[data-pixel="on"] .pane-header,
+html[data-pixel="on"] [data-tauri-drag-region],
+html[data-pixel="on"] header,
+html[data-pixel="on"] .desk-header {
+  background-color: var(--px-ground);
+  border-bottom: 1px solid var(--px-border);
+  color: var(--px-ink);
 }
 
-html[data-theme="light"] .pixel-crt {
-  mix-blend-mode: multiply;
-  opacity: 0.05;
+/* Ensure Logo text is high-contrast white in dark pixel mode */
+html[data-pixel="on"] .desk-header span,
+html[data-pixel="on"] .shelf-header span {
+  color: var(--px-ink);
 }
 
-@keyframes crt-roll {
-  from { background-position: 0 0; }
-  to { background-position: 0 3px; }
+/* Pane Splitter Resizer */
+html[data-pixel="on"] [role="separator"] {
+  border-color: var(--px-border);
+  transition: border-color 0.15s ease;
 }
 
-.desk-ignite {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  background:
-    radial-gradient(circle at 82% 88%, rgba(255, 214, 120, 0.55), transparent 42%),
-    radial-gradient(circle at 50% 40%, rgba(227, 176, 75, 0.18), transparent 62%);
-  animation: desk-ignite 0.7s steps(6) both;
+html[data-pixel="on"] [role="separator"]:hover,
+html[data-pixel="on"] [role="separator"]:focus-visible {
+  border-color: var(--px-brass);
 }
 
-@keyframes desk-ignite {
-  0% { opacity: 0; }
-  28% { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-.desk-celebrate-flash {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 58;
-  background: radial-gradient(circle at 88% 86%, rgba(240, 206, 140, 0.42), transparent 38%);
-  animation: desk-celebrate 0.85s steps(6) both;
-}
-
-@keyframes desk-celebrate {
-  0% { opacity: 0; }
-  20% { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-html[data-pixel="on"] .studio-motes span {
-  width: 4px;
-  height: 4px;
-  border-radius: 0;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brasspale) 40%, transparent);
-  animation-timing-function: steps(8);
-}
-
-html[data-pixel="on"] .milestone-chip {
-  border-radius: 0;
-  border-width: 2px;
-  font-family: var(--font-display);
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  box-shadow: 3px 3px 0 color-mix(in srgb, var(--brass) 40%, transparent);
-  animation: chip-glint 2.8s steps(4) infinite;
-}
-
-html[data-pixel="on"] .milestone-chip:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 color-mix(in srgb, var(--brass) 55%, transparent);
-}
-
-html[data-pixel="on"] .milestone-chip:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 0 transparent;
-}
-
-@keyframes chip-glint {
-  0%, 70%, 100% { filter: brightness(1); }
-  78% { filter: brightness(1.28); }
-}
-
-html[data-pixel="on"] .milestone-card {
-  border-radius: 0;
-  border-width: 2px;
-}
-
-html[data-pixel="on"] .milestone-card[data-held="true"] {
-  box-shadow: 4px 4px 0 color-mix(in srgb, var(--brass) 42%, transparent);
-}
-
-html[data-pixel="on"] .kind-tile {
-  border-radius: 2px;
-  border-width: 2px;
-  box-shadow: 3px 3px 0 color-mix(in srgb, var(--kind) 45%, #0b0f1a);
-}
-
+/* Modals & Dialogs */
 html[data-pixel="on"] [role="dialog"] {
   border-width: 2px;
-  border-radius: 2px;
-  box-shadow: var(--elev-modal);
+  border-radius: 6px;
+  border-color: var(--px-border);
+  border-top: 2px solid var(--px-brass);
+  background-color: var(--px-surface);
+  box-shadow:
+    0 8px 0 var(--px-void),
+    0 16px 36px rgba(8, 11, 18, 0.85);
 }
 
+/* ── Chat Messages & Composer ─────────────────────────────────────── */
 html[data-pixel="on"] .composer-shell {
-  border-radius: 2px;
-  border-width: 2px;
-  transition:
-    border-color var(--dur-med) steps(4, end),
-    box-shadow var(--dur-med) steps(4, end);
+  border-radius: 6px;
+  border-width: 1px;
+  border-color: var(--px-border);
+  box-shadow: 0 2px 0 var(--px-void), inset 0 1px 0 color-mix(in srgb, var(--px-brass-light) 18%, transparent);
+  background: var(--px-surface);
+}
+
+html[data-pixel="on"] .composer-shell:hover {
+  border-color: color-mix(in srgb, var(--px-brass) 50%, var(--px-border));
+  box-shadow: 0 2px 0 var(--px-void);
 }
 
 html[data-pixel="on"] .composer-shell[data-focused],
 html[data-pixel="on"] .composer-shell[data-streaming] {
-  /* Pixel --elev-lift is a hard brass offset; that pops as a
-     yellow bar on the typing box. Keep the resting card shadow. */
-  box-shadow: var(--elev-card);
+  border-color: var(--px-brass);
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--px-brass) 45%, transparent);
 }
 
-html[data-pixel="on"] .stream-typing-beacon-core,
-html[data-pixel="on"] .typing-harmonic-dot {
-  border-radius: 0;
+html[data-pixel="on"] .composer-shell textarea,
+html[data-pixel="on"] .composer-shell textarea:focus,
+html[data-pixel="on"] .composer-shell textarea:focus-visible {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
-html[data-pixel="on"] .stream-typing-beacon-core {
-  animation: typing-beacon-pulse 0.7s steps(4) infinite;
-}
-
-html[data-pixel="on"] .send-halo {
-  border-radius: 2px;
-  filter: none;
-  animation-timing-function: steps(4);
-}
-
-html[data-pixel="on"] .phase-pill {
-  border-width: 2px;
-  box-shadow: 3px 3px 0 color-mix(in srgb, var(--brass) 40%, transparent);
-}
-
-html[data-pixel="on"] .phase-dot {
-  animation-timing-function: steps(4);
-}
-
-html[data-pixel="on"] .effort-popover {
-  border-width: 2px;
-  box-shadow: 5px 5px 0 color-mix(in srgb, var(--brass) 40%, transparent);
-}
-
-html[data-pixel="on"] .effort-chip {
-  border-width: 2px;
-  box-shadow: 2px 2px 0 color-mix(in srgb, var(--brass) 28%, transparent);
-}
-
-html[data-pixel="on"] .usage-limit-track,
-html[data-pixel="on"] .usage-limit-track .usage-fill {
-  border-radius: 0;
-}
-
-html[data-pixel="on"] .toast-card {
+/* ── Reasoning Process Drawer ─────────────────────────────────────── */
+html[data-pixel="on"] .think-rule {
   position: relative;
   overflow: hidden;
-  border: 2px solid var(--brass);
-  border-radius: 0;
-  background: var(--surface);
-  box-shadow: 6px 6px 0 color-mix(in srgb, var(--brass) 48%, #000);
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--px-moon) 40%, var(--px-border));
+  border-top: 2px solid var(--px-moon);
+  background: color-mix(in srgb, var(--px-surface) 92%, var(--px-ground));
+  box-shadow: 0 2px 0 var(--px-void);
 }
 
-html[data-pixel="on"] .desk-life .toast-card {
-  min-width: 14rem;
-  padding: 0.8rem 0.95rem 1rem;
+html[data-pixel="on"] .think-rule button {
+  color: var(--px-moon);
+  font-family: var(--font-display);
 }
 
-html[data-pixel="on"] .toast-fuse {
-  height: 3px;
-  animation-timing-function: steps(12, end);
+html[data-pixel="on"] .think-rule button:hover {
+  background-color: color-mix(in srgb, var(--px-moon) 12%, transparent);
 }
 
-html[data-pixel="on"] .card-wake::after {
-  height: 4px;
-  border-radius: 0;
+html[data-pixel="on"] .think-rule .thinking-live {
+  color: var(--px-moon);
+  animation: think-pulse-pixel 1.2s steps(4) infinite;
 }
 
-html[data-pixel="on"] .desk-row {
-  border-radius: 2px;
-  border-width: 2px;
+@keyframes think-pulse-pixel {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 
-html[data-pixel="on"] [role="listbox"] [role="option"] {
-  border-radius: 2px;
+html[data-pixel="on"] .think-gloss {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--px-moon) 15%, transparent), transparent);
+  animation: think-gloss-sweep 2.4s steps(8) infinite;
 }
 
-html[data-pixel="on"] [role="option"][aria-selected="true"] {
-  box-shadow: 3px 3px 0 color-mix(in srgb, var(--brass) 32%, transparent);
+@keyframes think-gloss-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
-/* Stepped pop — no overshoot (chip-pop's 1.06 scale is Scholar-only) */
-@keyframes pixel-pop {
-  from { opacity: 0; transform: scale(0.94); }
-  to { opacity: 1; transform: scale(1); }
+/* Citations & Quotes */
+html[data-pixel="on"] .cite-chip {
+  border: 1px solid var(--px-border);
+  background: var(--px-surface);
+  color: var(--px-parchment);
+  font-family: var(--font-display);
+  font-size: 11px;
+  box-shadow: 0 2px 0 var(--px-void);
+  transition: transform 0.12s ease, border-color 0.12s ease;
 }
 
-html[data-pixel="on"] .chip-in,
-html[data-pixel="on"] .cite-chip,
-html[data-pixel="on"] .anim-pop {
-  animation-name: pixel-pop;
-  animation-timing-function: steps(4, end);
+html[data-pixel="on"] .cite-chip:hover {
+  border-color: var(--px-brass);
+  color: var(--px-ink);
+  transform: translateY(-1px);
 }
 
-html[data-pixel="on"] .breathe {
-  animation-timing-function: steps(4);
+/* ── Sources List & Dropzones ─────────────────────────────────────── */
+html[data-pixel="on"] .source-card,
+html[data-pixel="on"] .source-item {
+  border-radius: 6px;
+  border: 1px solid var(--px-border);
+  background-color: var(--px-surface);
+  color: var(--px-ink);
+  box-shadow: 0 2px 0 var(--px-void);
+  transition: transform 0.14s ease, border-color 0.14s ease, background-color 0.14s ease;
+}
+
+html[data-pixel="on"] .source-card:hover,
+html[data-pixel="on"] .source-item:hover {
+  border-color: color-mix(in srgb, var(--px-brass) 50%, var(--px-border));
+  background-color: var(--px-raised);
+  transform: translateY(-1px);
+}
+
+/* ── Study Tools & Kind Tiles ─────────────────────────────────────── */
+html[data-pixel="on"] .kind-tile {
+  position: relative;
+  border-radius: 6px;
+  border: 1px solid var(--px-border);
+  border-top: 2px solid color-mix(in srgb, var(--kind, var(--px-brass)) 75%, var(--px-border));
+  background-color: var(--px-surface);
+  color: var(--px-ink);
+  box-shadow:
+    0 2px 0 var(--px-void),
+    inset 0 1px 0 color-mix(in srgb, var(--px-brass-light) 18%, transparent);
+  transition:
+    transform 0.16s cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 0.16s cubic-bezier(0.2, 0, 0, 1),
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  html[data-pixel="on"] .kind-tile:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--px-brass) 55%, var(--px-border));
+    background-color: var(--px-raised);
+    box-shadow:
+      0 3px 0 var(--px-void),
+      0 0 14px color-mix(in srgb, var(--kind, var(--px-brass)) 24%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--px-brass-light) 30%, transparent);
+  }
+}
+
+/* ── Dithered Card Textures & Warm Brass Bevel Borders ────────────── */
+html[data-pixel="on"] .card-wake,
+html[data-pixel="on"] .notebook-card,
+html[data-pixel="on"] .generator-card,
+html[data-pixel="on"] .doc-viewer,
+html[data-pixel="on"] .quiz-runner,
+html[data-pixel="on"] .exam-runner,
+html[data-pixel="on"] .flashcard-card,
+html[data-pixel="on"] .solution-bin {
+  position: relative;
+  border-radius: 6px;
+  border: 1px solid var(--px-border);
+  border-top: 2px solid color-mix(in srgb, var(--px-brass) 75%, var(--px-border));
+  background-color: var(--px-surface);
+  background-image:
+    radial-gradient(ellipse at 85% 15%, color-mix(in srgb, var(--px-brass) 6%, transparent), transparent 60%),
+    repeating-linear-gradient(
+      45deg,
+      color-mix(in srgb, var(--px-ground) 45%, transparent) 0px,
+      color-mix(in srgb, var(--px-ground) 45%, transparent) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+  box-shadow:
+    0 3px 0 var(--px-void),
+    0 8px 20px -4px rgba(8, 11, 18, 0.7),
+    inset 0 1px 0 color-mix(in srgb, var(--px-brass-light) 22%, transparent);
+  color: var(--px-ink);
+  transition:
+    transform 0.16s cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 0.16s cubic-bezier(0.2, 0, 0, 1),
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+/* Force readable light text inside pixel cards */
+html[data-pixel="on"] .card-wake h3,
+html[data-pixel="on"] .card-wake span,
+html[data-pixel="on"] .notebook-card h3,
+html[data-pixel="on"] .notebook-card span {
+  color: var(--px-ink) !important;
+}
+
+html[data-pixel="on"] .card-wake:hover h3,
+html[data-pixel="on"] .card-wake:hover span {
+  color: var(--px-brass-light) !important;
 }
 
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   html[data-pixel="on"] .card-wake:hover,
-  html[data-pixel="on"] .card-wake:focus-visible,
-  html[data-pixel="on"] .card-wake:focus-within {
-    transform: translate(-3px, -3px);
+  html[data-pixel="on"] .notebook-card:hover,
+  html[data-pixel="on"] .generator-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--px-brass) 55%, var(--px-border));
+    border-top-color: var(--px-brass-light);
+    background-color: var(--px-raised);
     box-shadow:
-      6px 6px 0 color-mix(in srgb, var(--brass) 50%, transparent),
-      0 0 22px -4px var(--glow-warm);
-  }
-  html[data-pixel="on"] .card-wake:active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 color-mix(in srgb, var(--brass) 35%, transparent);
-  }
-  html[data-pixel="on"] .card-wake:hover::after,
-  html[data-pixel="on"] .card-wake:focus-visible::after {
-    animation: shelf-glint var(--dur-glow) steps(6, end) both;
-  }
-
-  html[data-pixel="on"] .kind-tile:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 5px 5px 0 var(--kind);
-    outline: 2px solid var(--brasspale);
-    outline-offset: 2px;
-  }
-  html[data-pixel="on"] .kind-tile:active {
-    transform: translate(2px, 2px);
-    box-shadow: 0 0 0 transparent;
-  }
-
-  html[data-pixel="on"] .effort-chip:hover,
-  html[data-pixel="on"] .effort-chip.is-open {
-    transform: translate(-1px, -1px);
-    box-shadow: 3px 3px 0 color-mix(in srgb, var(--brass) 40%, transparent);
-  }
-  html[data-pixel="on"] .effort-chip:active {
-    transform: translate(1px, 1px);
-    box-shadow: 0 0 0 transparent;
-  }
-
-  html[data-pixel="on"] .desk-row:hover,
-  html[data-pixel="on"] .spotlight > .group:not(.card-wake):hover {
-    translate: -2px -2px;
-    box-shadow: 4px 4px 0 color-mix(in srgb, var(--brass) 38%, transparent);
-  }
-  html[data-pixel="on"] .desk-row:active,
-  html[data-pixel="on"] .spotlight > .group:not(.card-wake):active {
-    translate: 1px 1px;
-    box-shadow: 0 0 0 transparent;
+      0 4px 0 var(--px-void),
+      0 12px 28px -4px rgba(8, 11, 18, 0.8),
+      0 0 16px -2px color-mix(in srgb, var(--px-brass) 24%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--px-brass-light) 36%, transparent);
   }
 }
 
-html[data-pixel="on"] .lamp-btn,
-html[data-pixel="on"] .lamp-svg {
-  width: 120px;
-  height: 140px;
-}
-
-html[data-pixel="on"] .lamp-btn:focus-visible {
-  border-radius: 2px;
-}
-
-html[data-pixel="on"] .lamp-speech {
-  border-radius: 0;
-  border-width: 2px;
-  font-family: var(--font-display);
-  font-size: 13px;
-  line-height: 1.35;
-  box-shadow: 4px 4px 0 color-mix(in srgb, var(--brass) 45%, transparent);
-}
-
+/* Reduced motion overrides */
 @media (prefers-reduced-motion: reduce) {
-  .pixel-crt,
-  .desk-ignite,
-  .desk-celebrate-flash,
-  html[data-pixel="on"] .milestone-chip,
-  html[data-pixel="on"] .chip-in,
-  html[data-pixel="on"] .cite-chip,
-  html[data-pixel="on"] .anim-pop,
-  html[data-pixel="on"] .breathe,
-  html[data-pixel="on"] .send-halo,
-  html[data-pixel="on"] .phase-dot,
-  html[data-pixel="on"] .stream-typing-beacon-core,
-  html[data-pixel="on"] .studio-motes span {
-    animation: none !important;
-  }
   html[data-pixel="on"] {
     --ease-house: linear;
     --ease-house-inout: linear;
   }
-  .pixel-crt {
-    opacity: 0.06;
-  }
-  .desk-ignite,
-  .desk-celebrate-flash {
-    display: none;
-  }
   html[data-pixel="on"] .card-wake:hover,
-  html[data-pixel="on"] .card-wake:focus-visible,
-  html[data-pixel="on"] .card-wake:focus-within,
-  html[data-pixel="on"] .kind-tile:hover,
-  html[data-pixel="on"] .kind-tile:active,
-  html[data-pixel="on"] .milestone-chip:hover,
-  html[data-pixel="on"] .milestone-chip:active,
-  html[data-pixel="on"] .effort-chip:hover,
-  html[data-pixel="on"] .effort-chip:active,
-  html[data-pixel="on"] .desk-row:hover,
-  html[data-pixel="on"] .spotlight > .group:not(.card-wake):hover {
+  html[data-pixel="on"] .kind-tile:hover {
     transform: none;
-    translate: none;
   }
 }

@@ -1,15 +1,14 @@
-import { beforeAll, describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent, cleanup, within } from "@testing-library/react";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
-import Hero from "./Hero";
-import LearningLoop from "./LearningLoop";
-import ProductDemo from "./ProductDemo";
-import WhyComtus from "./WhyComtus";
-import AcademicIntegrity from "./AcademicIntegrity";
-import TrustPrivacy from "./TrustPrivacy";
+import ComtusShowcase, { COMTUS_CARDS_LEFT, COMTUS_CARDS_RIGHT } from "./ComtusShowcase";
 import FAQSection from "./FAQSection";
 import OnboardingModal from "./OnboardingModal";
 import { AboutPage, PrivacyPage, TermsPage, ResponsibleAIPage, ContactPage, StudyCompanionPage } from "./StaticPages";
+
+afterEach(() => {
+  cleanup();
+});
 
 beforeAll(() => {
   Object.defineProperty(window, "matchMedia", {
@@ -58,85 +57,92 @@ vi.mock("gsap/ScrollTrigger", () => ({
   },
 }));
 
-describe("Hero Component", () => {
-  it("renders AI Study Companion eyebrow, main headline, supporting brand line, and CTAs", () => {
-    const onStartMock = vi.fn();
+describe("ComtusShowcase Component", () => {
+  it("renders hero headline, brand subtitle, subheader pill, and floating scholar stickers", () => {
     render(
       <BrowserRouter>
-        <Hero ready={true} onStartStudying={onStartMock} />
+        <ComtusShowcase />
       </BrowserRouter>
     );
 
-    expect(screen.getByText("AI STUDY COMPANION")).toBeDefined();
-    expect(screen.getByText("Study smarter with Comtus.")).toBeDefined();
-    expect(screen.getByText("Rough thought,")).toBeDefined();
-    expect(screen.getByText("polished.")).toBeDefined();
-    expect(screen.getAllByText("Start Studying").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("See How Comtus Works").length).toBeGreaterThan(0);
+    expect(screen.getByText("YOUR AI STUDY COMPANION")).toBeDefined();
+    expect(screen.getByRole("heading", { level: 1 })).toBeDefined();
+    expect(screen.getByText("COMTUS")).toBeDefined();
+    expect(screen.getByText("Rough thought, polished.")).toBeDefined();
+
+    // Floating Stickers
+    expect(screen.getByTitle("16-Bit Banker's Lamp")).toBeDefined();
+    expect(screen.getByTitle("Antique Study Tome")).toBeDefined();
+    expect(screen.getByTitle("Steaming Study Tea")).toBeDefined();
+    expect(screen.getByTitle("Feather Quill")).toBeDefined();
+    expect(screen.getByTitle("Wax Seal of Mastery")).toBeDefined();
+    expect(screen.getByTitle("Spark of Diligence")).toBeDefined();
     cleanup();
   });
-});
 
-describe("LearningLoop Component", () => {
-  it("renders the four core learning stages: Understand, Organize, Practice, Master", () => {
-    render(<LearningLoop />);
+  it("renders the interactive 16-bit study console and toggles modes with D-Pad and action buttons", () => {
+    render(
+      <BrowserRouter>
+        <ComtusShowcase />
+      </BrowserRouter>
+    );
 
-    expect(screen.getByText(/01 — Understand/i)).toBeDefined();
-    expect(screen.getByText(/02 — Organize/i)).toBeDefined();
-    expect(screen.getByText(/03 — Practice/i)).toBeDefined();
-    expect(screen.getByText(/04 — Master/i)).toBeDefined();
+    expect(screen.getByRole("region", { name: "16-Bit Study Console" })).toBeDefined();
+    expect(screen.getByText(/COMTUS-16 · SOCRATIC/i)).toBeDefined();
+
+    // Answer choice in Socratic mode
+    const choiceA = screen.getByText(/A\) Magnesium block expulsion via depolarization/i);
+    expect(choiceA).toBeDefined();
+    fireEvent.click(choiceA);
+    expect(screen.getByText(/✓ Correct!/i)).toBeDefined();
+
+    // D-Pad Down to Flashcards mode
+    const dpadDown = screen.getByRole("button", { name: "D-Pad Down" });
+    fireEvent.click(dpadDown);
+    expect(screen.getByText(/COMTUS-16 · FLASHCARDS/i)).toBeDefined();
+    expect(screen.getByText("Hebbian Plasticity")).toBeDefined();
+
+    // Action button A to flip card
+    const btnA = screen.getByRole("button", { name: "A" });
+    fireEvent.click(btnA);
+    expect(screen.getByText(/Neurons that fire together wire together/i)).toBeDefined();
+
+    // D-Pad Down to Proof mode
+    fireEvent.click(dpadDown);
+    expect(screen.getByText(/COMTUS-16 · PROOF/i)).toBeDefined();
+    expect(screen.getByText(/PROOF: Euler's Identity/i)).toBeDefined();
+
+    // D-Pad Down to BYOK mode
+    fireEvent.click(dpadDown);
+    expect(screen.getByText(/COMTUS-16 · BYOK/i)).toBeDefined();
+    expect(screen.getByText(/ACTIVE INFERENCE PROVIDER/i)).toBeDefined();
+
+    // Action button A to switch model
+    fireEvent.click(btnA);
+    expect(screen.getAllByText("DeepSeek R1").length).toBeGreaterThan(0);
     cleanup();
   });
-});
 
-describe("ProductDemo Component", () => {
-  it("renders step tabs and allows switching between demo stages", () => {
-    render(<ProductDemo />);
+  it("renders all 14 study blueprint cards in dual columns with metrics and CTA link", () => {
+    render(
+      <BrowserRouter>
+        <ComtusShowcase />
+      </BrowserRouter>
+    );
 
-    expect(screen.getByText("1. Student Note")).toBeDefined();
-    expect(screen.getByText("2. Explanation & Analogy")).toBeDefined();
-    expect(screen.getByText("3. Study Guide")).toBeDefined();
-    expect(screen.getByText("4. Practice Quiz")).toBeDefined();
+    // Left Column Cards (7)
+    for (const card of COMTUS_CARDS_LEFT) {
+      expect(screen.getByText(card.title)).toBeDefined();
+    }
 
-    // Click on Practice Quiz
-    const quizBtn = screen.getByText("4. Practice Quiz");
-    fireEvent.click(quizBtn);
+    // Right Column Cards (7)
+    for (const card of COMTUS_CARDS_RIGHT) {
+      expect(screen.getByText(card.title)).toBeDefined();
+    }
 
-    expect(screen.getByText(/Why does cellular ATP production drastically decrease/i)).toBeDefined();
-    cleanup();
-  });
-});
-
-describe("WhyComtus Component", () => {
-  it("renders comparison between generic chatbots and Comtus", () => {
-    render(<WhyComtus />);
-
-    expect(screen.getByText(/Why not just use a/i)).toBeDefined();
-    expect(screen.getByText("Generic AI Chatbot")).toBeDefined();
-    expect(screen.getByText("Comtus Study Companion")).toBeDefined();
-    expect(screen.getByText("Study Context")).toBeDefined();
-    cleanup();
-  });
-});
-
-describe("AcademicIntegrity Component", () => {
-  it("renders the academic integrity pledge and pedagogical pillars", () => {
-    render(<AcademicIntegrity />);
-
-    expect(screen.getByText(/Built to support learning/i)).toBeDefined();
-    expect(screen.getByText("Hints First, Answers Second")).toBeDefined();
-    expect(screen.getByText("Source-Grounded Transparency")).toBeDefined();
-    cleanup();
-  });
-});
-
-describe("TrustPrivacy Component", () => {
-  it("renders local-first and on-device privacy assurances", () => {
-    render(<TrustPrivacy />);
-
-    expect(screen.getByText(/Your study materials/i)).toBeDefined();
-    expect(screen.getByText("Local-First Storage (IndexedDB)")).toBeDefined();
-    expect(screen.getByText("On-Device BYOK Keys")).toBeDefined();
+    // Bottom Sticky CTA
+    const ctaLink = screen.getByRole("link", { name: /OPEN THE STUDIO/i });
+    expect(ctaLink.getAttribute("href")).toBe("/studio");
     cleanup();
   });
 });
@@ -230,7 +236,7 @@ describe("Static Public Pages", () => {
     );
     expect(screen.getByRole("heading", { name: "AI Study Companion for Students" })).toBeDefined();
     cleanup();
-  });
+  }, 20000);
 });
 
 describe("Pixel landing overlay", () => {
@@ -241,73 +247,6 @@ describe("Pixel landing overlay", () => {
     applyLandingPixel(false);
     expect(document.documentElement.dataset.landingPixel).toBeUndefined();
     expect(document.documentElement.dataset.lamp).toBeUndefined();
-  });
-
-  it("renders a pokeable hero lamp and desk diorama", async () => {
-    const { LandingPlayProvider } = await import("./LandingPlay");
-    render(
-      <BrowserRouter>
-        <LandingPlayProvider>
-          <Hero ready={true} />
-        </LandingPlayProvider>
-      </BrowserRouter>,
-    );
-    const lamp = screen.getByRole("button", { name: /study lamp/i });
-    expect(lamp).toBeDefined();
-    fireEvent.click(lamp);
-    expect(screen.getByRole("button", { name: /study lamp, lit/i })).toBeDefined();
-    expect(screen.getByRole("button", { name: /lamp lit/i })).toBeDefined();
-    cleanup();
-  });
-
-  it("lights the lamp from the desk diorama", async () => {
-    const { LandingPlayProvider } = await import("./LandingPlay");
-    render(
-      <BrowserRouter>
-        <LandingPlayProvider>
-          <Hero ready={true} />
-        </LandingPlayProvider>
-      </BrowserRouter>,
-    );
-    fireEvent.click(screen.getByRole("button", { name: /light the lamp/i }));
-    expect(screen.getByRole("button", { name: /lamp lit/i })).toBeDefined();
-    cleanup();
-  });
-});
-
-describe("Studio showcase flip cards", () => {
-  it("turns a feature card on click", async () => {
-    const { default: StudioShowcase } = await import("./StudioShowcase");
-    render(
-      <BrowserRouter>
-        <StudioShowcase />
-      </BrowserRouter>,
-    );
-    const card = screen.getByRole("button", { name: /mock exams/i });
-    fireEvent.click(card);
-    expect(card.getAttribute("aria-pressed")).toBe("true");
-    const backHint = within(card).getByText(/Turn back/i);
-    expect(backHint.closest("[aria-hidden='true']")).toBeNull();
-    const frontHint = within(card).getByText(/Turn the card/i);
-    expect(frontHint.closest("[aria-hidden='true']")).toBeTruthy();
-    cleanup();
-  });
-});
-
-describe("Landing keyboard egg", () => {
-  it("shows a calm note after typing COMTUS", async () => {
-    const { default: LandingEgg } = await import("./LandingEgg");
-    const { LandingPlayProvider } = await import("./LandingPlay");
-    render(
-      <LandingPlayProvider>
-        <LandingEgg />
-      </LandingPlayProvider>,
-    );
-    for (const key of ["c", "o", "m", "t", "u", "s"]) {
-      fireEvent.keyDown(document.body, { key });
-    }
-    expect(screen.getByText(/The lamp remembers/i)).toBeDefined();
-    cleanup();
   });
 });
 

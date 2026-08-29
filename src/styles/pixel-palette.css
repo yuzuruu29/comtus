@@ -1,0 +1,349 @@
+/* ── Comtus · 16-Color Cozy Pixel Bookshop Design Tokens ── */
+
+:root {
+  /* Daylight Paper Master Palette Tokens (Default) */
+  --px-paper-ground: #F5F1E8;      /* Primary aged parchment ground */
+  --px-paper-surface: #FCFAF4;     /* Raised parchment card surface */
+  --px-paper-raised: #EAE4D6;      /* Hover states, active parchment tiles */
+  --px-paper-border: #D3C9B4;      /* Warm parchment bevel border */
+  --px-paper-ink: #1B2334;         /* High-contrast scholar ink text */
+  --px-paper-muted: #5A6274;       /* Muted labels, secondary metadata */
+  --px-paper-sepia: #5C3D1E;       /* Deep sepia accent, rubber-stamp shadows */
+  --px-paper-shadow: rgba(74, 46, 27, 0.16); /* Warm paper shadow */
+
+  /* Master Palette Tokens */
+  --px-void: #080B12;              /* Deepest shadow */
+  --px-ground: var(--px-paper-ground); /* Default ground */
+  --px-surface: var(--px-paper-surface); /* Default surface */
+  --px-raised: var(--px-paper-raised); /* Default raised */
+  --px-border: var(--px-paper-border); /* Default border */
+  --px-leather: #4A2E1B;           /* Book-spine brown, warm wood trim */
+  --px-brass-deep: #7D5312;        /* Antiqued brass edge */
+  --px-brass: #A5731C;             /* Signature warm brass gold on paper */
+  --px-brass-light: #E3B04B;       /* Golden highlight, active badge rim */
+  --px-parchment: #E8DEC8;         /* Aged scholar parchment */
+  --px-ink: var(--px-paper-ink);   /* High-contrast primary text */
+  --px-muted: var(--px-paper-muted); /* Muted labels, secondary captions */
+  --px-moon: #3D6E9E;              /* Scholar blue secondary accent */
+  --px-sage: #4F8A5A;              /* Success, verified marks */
+  --px-rust: #B2554A;              /* Error, warnings, alerts */
+  --px-candle: #D97724;            /* Amber hearth spark, milestone flares */
+}
+
+/* ── Lamplight Dark Mode Tokens ──────────────────────────── */
+html[data-theme="dark"] {
+  --px-ground: #0F1420;
+  --px-surface: #171F32;
+  --px-raised: #222C44;
+  --px-border: #33405F;
+  --px-ink: #F5F0E6;
+  --px-muted: #9099B0;
+  --px-brass: #E3B04B;
+  --px-brass-deep: #B88428;
+  --px-brass-light: #F7D486;
+  --px-moon: #6C98C2;
+  --px-sage: #78B084;
+  --px-rust: #C85848;
+  --px-candle: #FF9E43;
+}
+
+/* ── Tailwind v4 Theme Color Mapping ─────────────────────── */
+@theme {
+  --color-px-paper-ground: var(--px-paper-ground);
+  --color-px-paper-surface: var(--px-paper-surface);
+  --color-px-paper-raised: var(--px-paper-raised);
+  --color-px-paper-border: var(--px-paper-border);
+  --color-px-paper-ink: var(--px-paper-ink);
+  --color-px-paper-muted: var(--px-paper-muted);
+  --color-px-paper-sepia: var(--px-paper-sepia);
+  --color-px-void: var(--px-void);
+  --color-px-ground: var(--px-ground);
+  --color-px-surface: var(--px-surface);
+  --color-px-raised: var(--px-raised);
+  --color-px-border: var(--px-border);
+  --color-px-leather: var(--px-leather);
+  --color-px-brass-deep: var(--px-brass-deep);
+  --color-px-brass: var(--px-brass);
+  --color-px-brass-light: var(--px-brass-light);
+  --color-px-parchment: var(--px-parchment);
+  --color-px-ink: var(--px-ink);
+  --color-px-muted: var(--px-muted);
+  --color-px-moon: var(--px-moon);
+  --color-px-sage: var(--px-sage);
+  --color-px-rust: var(--px-rust);
+  --color-px-candle: var(--px-candle);
+}
+
+/* ── Dither Backdrops & Textured Utilities (CSS-Only) ─────── */
+
+/* Aged parchment fiber and grain texture */
+.bg-paper-parchment {
+  background-color: var(--px-paper-ground);
+  background-image:
+    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.45), transparent 75%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.36  0 0 0 0 0.24  0 0 0 0 0.12  0 0 0 0.045 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* 2x2 fine checkerboard pixel dither pattern (sepia on paper) */
+.bg-dither-sepia-fine {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath d='M1 3h1v1H1V3zm2-2h1v1H3V1z' fill='%235C3D1E' fill-opacity='0.12'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/* 4x4 coarse checkerboard pixel dither pattern (sepia on paper) */
+.bg-dither-sepia-coarse {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M0 0h2v2H0V0zm4 4h2v2H4V4zm4-4h2v2H8V0zm-4 4h2v2H4V4z' fill='%235C3D1E' fill-opacity='0.16'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/* 2x2 fine checkerboard pixel dither pattern */
+.bg-dither-fine {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath d='M1 3h1v1H1V3zm2-2h1v1H3V1z' fill='%235C3D1E' fill-opacity='0.12'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/* 4x4 coarse checkerboard pixel dither pattern */
+.bg-dither-coarse {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M0 0h2v2H0V0zm4 4h2v2H4V4zm4-4h2v2H8V0zm-4 4h2v2H4V4z' fill='%235C3D1E' fill-opacity='0.16'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+html[data-theme="dark"] .bg-dither-fine {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath d='M1 3h1v1H1V3zm2-2h1v1H3V1z' fill='%2333405F' fill-opacity='0.35'/%3E%3C/svg%3E");
+}
+
+html[data-theme="dark"] .bg-dither-coarse {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M0 0h2v2H0V0zm4 4h2v2H4V4zm4-4h2v2H8V0zm-4 4h2v2H4V4z' fill='%2333405F' fill-opacity='0.45'/%3E%3C/svg%3E");
+}
+
+/* 16-bit Cozy Wood Grain Background */
+.bg-wood-grain {
+  background-color: var(--px-surface);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      color-mix(in srgb, var(--px-leather) 24%, transparent) 3px,
+      color-mix(in srgb, var(--px-leather) 24%, transparent) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 7px,
+      color-mix(in srgb, var(--px-border) 20%, transparent) 7px,
+      color-mix(in srgb, var(--px-border) 20%, transparent) 8px
+    );
+}
+
+/* ── Tactile Rubber-Stamp Ink-Press & Paper-Curl Interactions ─ */
+
+/* Rubber-stamp ink-press button: physical depression with warm sepia shadow */
+.btn-ink-press {
+  position: relative;
+  border: 1px solid var(--px-border);
+  background-color: var(--px-surface);
+  color: var(--px-ink);
+  box-shadow:
+    0 2px 0 color-mix(in srgb, var(--px-paper-sepia, #5C3D1E) 65%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition:
+    transform 120ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 120ms cubic-bezier(0.2, 0, 0, 1),
+    background-color 120ms ease,
+    border-color 120ms ease;
+  will-change: transform, box-shadow;
+}
+
+html[data-theme="dark"] .btn-ink-press {
+  box-shadow:
+    0 2px 0 var(--px-void),
+    inset 0 1px 0 color-mix(in srgb, var(--px-brass-light) 22%, transparent);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .btn-ink-press:hover {
+    background-color: var(--px-raised);
+    border-color: color-mix(in srgb, var(--px-brass) 50%, var(--px-border));
+    box-shadow:
+      0 3px 0 color-mix(in srgb, var(--px-paper-sepia, #5C3D1E) 75%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    transform: translateY(-1px);
+  }
+
+  html[data-theme="dark"] .btn-ink-press:hover {
+    box-shadow:
+      0 3px 0 var(--px-void),
+      inset 0 1px 0 color-mix(in srgb, var(--px-brass-light) 36%, transparent);
+  }
+
+  .btn-ink-press:active {
+    background-color: var(--px-raised);
+    border-color: var(--px-brass-deep);
+    box-shadow:
+      0 0 0 transparent,
+      inset 0 1px 2px rgba(74, 46, 27, 0.28);
+    transform: translateY(1px);
+  }
+
+  html[data-theme="dark"] .btn-ink-press:active {
+    background-color: var(--px-ground);
+    box-shadow:
+      0 0 0 var(--px-void),
+      inset 0 1px 2px var(--px-void);
+  }
+}
+
+/* Paper-curl card: warm parchment bevel, asymmetric corner lift */
+.card-paper-curl,
+.card-book-press {
+  position: relative;
+  border: 1px solid var(--px-border);
+  background-color: var(--px-surface);
+  color: var(--px-ink);
+  box-shadow:
+    1px 2px 0 color-mix(in srgb, var(--px-paper-sepia, #5C3D1E) 24%, transparent),
+    0 4px 14px -3px rgba(74, 46, 27, 0.12);
+  transition:
+    transform 180ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 180ms cubic-bezier(0.2, 0, 0, 1),
+    border-color 180ms ease,
+    background-color 180ms ease;
+  will-change: transform, box-shadow;
+}
+
+html[data-theme="dark"] .card-paper-curl,
+html[data-theme="dark"] .card-book-press {
+  box-shadow:
+    0 3px 0 var(--px-void),
+    0 6px 18px -4px rgba(8, 11, 18, 0.65);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .card-paper-curl:hover,
+  .card-book-press:hover {
+    transform: translateY(-1.5px);
+    border-color: color-mix(in srgb, var(--px-brass) 55%, var(--px-border));
+    box-shadow:
+      2px 4px 0 color-mix(in srgb, var(--px-paper-sepia, #5C3D1E) 32%, transparent),
+      0 8px 20px -4px rgba(74, 46, 27, 0.18);
+  }
+
+  html[data-theme="dark"] .card-paper-curl:hover,
+  html[data-theme="dark"] .card-book-press:hover {
+    box-shadow:
+      0 4px 0 var(--px-void),
+      0 10px 24px -4px rgba(8, 11, 18, 0.75),
+      0 0 12px color-mix(in srgb, var(--px-brass) 16%, transparent);
+  }
+
+  .card-paper-curl:active,
+  .card-book-press:active {
+    transform: translateY(1px);
+    box-shadow:
+      0 1px 0 color-mix(in srgb, var(--px-paper-sepia, #5C3D1E) 20%, transparent),
+      0 2px 6px rgba(74, 46, 27, 0.08);
+  }
+
+  html[data-theme="dark"] .card-paper-curl:active,
+  html[data-theme="dark"] .card-book-press:active {
+    box-shadow:
+      0 1px 0 var(--px-void),
+      0 2px 8px rgba(8, 11, 18, 0.45);
+  }
+}
+
+/* ── Paper Craft & Stepped 16-Bit Animations ──────────────── */
+
+/* Smooth organic ink-bleed reveal */
+@keyframes ink-bleed {
+  0% {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(4px);
+  }
+  60% {
+    filter: blur(0.5px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+.anim-ink-bleed {
+  animation: ink-bleed 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Smooth quill-stroke draw */
+@keyframes quill-draw {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.anim-quill-draw {
+  stroke-dasharray: 100;
+  animation: quill-draw 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Hearth & bookshop ambient breathing */
+@keyframes px-breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.88;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 1;
+  }
+}
+
+.anim-px-breathe {
+  animation: px-breathe 2.8s steps(4, jump-none) infinite;
+}
+
+/* Warm candle & lamp filament flicker */
+@keyframes px-flicker {
+  0%, 100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.04, 0.98);
+  }
+  50% {
+    opacity: 0.76;
+    transform: scale(0.97, 1.02);
+  }
+  75% {
+    opacity: 0.96;
+    transform: scale(1.02, 0.99);
+  }
+}
+
+.anim-px-flicker {
+  animation: px-flicker 1.8s steps(6, jump-none) infinite;
+}
+
+/* ── Reduced Motion Directives ────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .anim-px-breathe,
+  .anim-px-flicker,
+  .anim-ink-bleed,
+  .anim-quill-draw {
+    animation: none !important;
+  }
+
+  .btn-ink-press,
+  .card-paper-curl,
+  .card-book-press {
+    transition: none !important;
+    transform: none !important;
+  }
+}

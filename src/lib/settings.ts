@@ -48,6 +48,8 @@ interface SettingsState {
   /* Shared */
   effort: Effort;
   theme: "system" | "dark" | "light";
+  /** Atmosphere & motion level: "none" (focus/static), "minimal" (quiet glow), "full" (tactile/arcade). */
+  motionMode: "none" | "minimal" | "full";
   companion: boolean;
   companionSfx: boolean;
   /** Studio pixel chrome (Pixelify on all desk text + arcade press). Scholar restores Fraunces + Inter. */
@@ -99,6 +101,7 @@ export const useSettings = create<SettingsState>()(
       activePassCode: "",
       effort: "high",
       theme: "system",
+      motionMode: "full",
       companion: true,
       companionSfx: true,
       pixelDesk: true,
@@ -193,7 +196,7 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: "comtus-settings",
-      version: 11,
+      version: 12,
       migrate: (persisted, version) => {
         const old = persisted as Partial<SettingsState> & {
           apiKey?: string;
@@ -217,6 +220,7 @@ export const useSettings = create<SettingsState>()(
           tokensUsed: old.tokensUsed ?? 0,
           activePassCode: old.activePassCode ?? "",
           theme: old.theme ?? "system",
+          motionMode: old.motionMode ?? "full",
           companion: old.companion ?? true,
           companionSfx: old.companionSfx ?? true,
           pixelDesk: old.pixelDesk ?? true,

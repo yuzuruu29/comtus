@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { applyPixelDesk, resolveAppTheme } from "./theme";
 
 describe("resolveAppTheme", () => {
-  it("forces dark on the landing route", () => {
-    expect(resolveAppTheme("light", { landing: true, prefersLight: true })).toBe("dark");
-    expect(resolveAppTheme("system", { landing: true, prefersLight: true })).toBe("dark");
+  it("defaults to light on the landing route", () => {
+    expect(resolveAppTheme("light", { landing: true, prefersLight: true })).toBe("light");
+    expect(resolveAppTheme("system", { landing: true, prefersLight: true })).toBe("light");
   });
 
   it("honors an explicit light or dark preference off the landing", () => {

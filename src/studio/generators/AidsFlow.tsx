@@ -27,9 +27,10 @@ import type {
 } from "../../lib/types";
 import { db } from "../../lib/db";
 import { generateJSON, generateMarkdown, friendlyError } from "../../lib/llm";
-import { useCallSettings } from "../../lib/settings";
+import { useCallSettings, useSettings } from "../../lib/settings";
 import { saveGeneration } from "../../lib/db";
 import { SPRING } from "../fx";
+import { playSfx } from "../companion/sfx";
 import { GENERATOR_SYSTEM, buildSourceBlock, sanitizeCards } from "./common";
 import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote, Modal } from "../ui";
 
@@ -305,6 +306,7 @@ export function FlashcardsView({
   gen: Generation;
   notebookId: string;
 }) {
+  const sfxOn = useSettings((s) => s.companionSfx !== false);
   const payload = gen.payload as FlashcardsPayload;
   const [cards, setCards] = useState<Flashcard[]>(payload.cards);
   const [pos, setPos] = useState(0);
@@ -322,6 +324,12 @@ export function FlashcardsView({
   useEffect(() => {
     void db.cardProgress.where("generationId").equals(genKey).count().then(setRatings);
   }, [genKey]);
+
+  useEffect(() => {
+    if (done) {
+      playSfx("unlock", sfxOn);
+    }
+  }, [done, sfxOn]);
 
   const addCustomCard = async () => {
     if (!customFront.trim() || !customBack.trim()) return;
@@ -346,32 +354,8 @@ export function FlashcardsView({
     setAddModalOpen(false);
   };
 
-  if (done) {
-    return (
-      <div className="space-y-5 text-center">
-        <div className="font-display text-[2rem] font-[420] text-lamp">Deck cleared.</div>
-        <p className="text-[13px] text-muted">
-          Ratings saved — the cards you rated hardest will come back sooner.
-        </p>
-        <div className="flex justify-center gap-3">
-          <button
-            className={btnGhost}
-            onClick={() => {
-              setPos(0);
-              setFlipped(false);
-            }}
-          >
-            <RotateCcw size={13} className="mr-1.5 inline" /> Run again
-          </button>
-          <button className={btnLamp} onClick={() => setAddModalOpen(true)}>
-            <Plus size={13} className="mr-1.5 inline" /> Add card
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const rate = async (quality: "again" | "hard" | "good" | "easy") => {
+    if (!card) return;
     const id = `${genKey}:${card.id}`;
     const existing = await db.cardProgress.get(id);
     const ease = existing?.ease ?? 2.5;
@@ -396,7 +380,67 @@ export function FlashcardsView({
     setRatings((r) => r + 1);
     setPos((p) => p + 1);
     setFlipped(false);
+    playSfx(quality === "again" ? "wrong" : "lampClick", sfxOn);
   };
+
+  const handleFlip = () => {
+    setFlipped((f) => !f);
+    playSfx("cardFlip", sfxOn);
+  };
+
+  // Keyboard shortcut support: Space to flip, 1-4 to rate
+  useEffect(() => {
+    if (done || addModalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && t.closest("input, textarea, [contenteditable]")) return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        handleFlip();
+      } else if (flipped) {
+        if (e.key === "1") {
+          e.preventDefault();
+          void rate("again");
+        } else if (e.key === "2") {
+          e.preventDefault();
+          void rate("hard");
+        } else if (e.key === "3") {
+          e.preventDefault();
+          void rate("good");
+        } else if (e.key === "4") {
+          e.preventDefault();
+          void rate("easy");
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [done, addModalOpen, flipped, sfxOn, card]);
+
+  if (done) {
+    return (
+      <div className="space-y-5 text-center relative py-6">
+        <div className="font-display text-[2.2rem] font-[420] text-lamp">Deck cleared.</div>
+        <p className="text-[13.5px] text-muted max-w-md mx-auto leading-relaxed">
+          All {cards.length} cards reviewed and stored to your spaced-repetition scheduler.
+        </p>
+        <div className="flex justify-center gap-3 pt-2">
+          <button
+            className={btnGhost}
+            onClick={() => {
+              setPos(0);
+              setFlipped(false);
+            }}
+          >
+            <RotateCcw size={13} className="mr-1.5 inline" /> Run again
+          </button>
+          <button className={btnLamp} onClick={() => setAddModalOpen(true)}>
+            <Plus size={13} className="mr-1.5 inline" /> Add card
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -405,7 +449,7 @@ export function FlashcardsView({
           Card {pos + 1} / {cards.length}
         </span>
         <div className="flex items-center gap-2">
-          <span>{card.topic}</span>
+          <span>{card?.topic}</span>
           <button
             onClick={() => setAddModalOpen(true)}
             className="flex items-center gap-1 rounded border border-hairline bg-ink/5 px-2 py-0.5 text-[10px] text-muted hover:text-ink"
@@ -415,9 +459,9 @@ export function FlashcardsView({
         </div>
       </div>
 
-      <div key={card.id} className="h-[260px] w-full sm:h-[280px]" style={{ perspective: 1400 }}>
+      <div key={card?.id} className="h-[260px] w-full sm:h-[280px]" style={{ perspective: 1400 }}>
         <motion.button
-          onClick={() => setFlipped((f) => !f)}
+          onClick={handleFlip}
           aria-label={flipped ? "Hide answer" : "Reveal answer"}
           initial={{ opacity: 0, scale: 0.94, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0, rotateY: flipped ? 180 : 0 }}
@@ -431,11 +475,12 @@ export function FlashcardsView({
           >
             <div className="my-auto max-h-full overflow-y-auto px-1 py-3">
               <span className="font-display text-[1.25rem] font-[430] leading-snug text-ink sm:text-[1.35rem]">
-                {card.front}
+                {card?.front}
               </span>
             </div>
-            <span className="shrink-0 font-mono text-[9.5px] uppercase tracking-[0.2em] text-muted/60">
-              tap to flip
+            <span className="shrink-0 font-mono text-[9.5px] uppercase tracking-[0.2em] text-muted/60 flex items-center gap-1">
+              <span>tap to flip</span>
+              <kbd className="rounded border border-hairline px-1 py-0.2 text-[8.5px] text-muted">Space</kbd>
             </span>
           </div>
           <div
@@ -443,10 +488,11 @@ export function FlashcardsView({
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
           >
             <div className="my-auto max-h-full overflow-y-auto px-1 py-3">
-              <span className="text-[13.5px] leading-relaxed text-ink/90 sm:text-[14px]">{card.back}</span>
+              <span className="text-[13.5px] leading-relaxed text-ink/90 sm:text-[14px]">{card?.back}</span>
             </div>
-            <span className="shrink-0 font-mono text-[9.5px] uppercase tracking-[0.2em] text-muted/60">
-              tap to flip
+            <span className="shrink-0 font-mono text-[9.5px] uppercase tracking-[0.2em] text-muted/60 flex items-center gap-1">
+              <span>tap to flip</span>
+              <kbd className="rounded border border-hairline px-1 py-0.2 text-[8.5px] text-muted">Space</kbd>
             </span>
           </div>
         </motion.button>
@@ -456,25 +502,26 @@ export function FlashcardsView({
         <div className="grid grid-cols-4 gap-2">
           {(
             [
-              ["again", "text-rust", "border-rust/40"],
-              ["hard", "text-brasspale", "border-brass/40"],
-              ["good", "text-sage", "border-sage/40"],
-              ["easy", "text-sage", "border-sage/40"],
+              ["again", "text-rust", "border-rust/40", "1"],
+              ["hard", "text-brasspale", "border-brass/40", "2"],
+              ["good", "text-sage", "border-sage/40", "3"],
+              ["easy", "text-sage", "border-sage/40", "4"],
             ] as const
-          ).map(([q, textCls, borderCls]) => (
+          ).map(([q, textCls, borderCls, keyLabel]) => (
             <button
               key={q}
               onClick={() => void rate(q)}
-              className={`flex min-h-[44px] items-center justify-center rounded-xl border ${borderCls} ${textCls} bg-ink/[0.02] py-2.5 font-mono text-[11px] uppercase tracking-[0.12em] transition-all hover:bg-ink/[0.06] active:scale-95`}
+              className={`flex min-h-[44px] flex-col items-center justify-center rounded-xl border ${borderCls} ${textCls} bg-ink/[0.02] py-2 font-mono text-[11px] uppercase tracking-[0.12em] transition-all hover:bg-ink/[0.06] active:scale-95`}
             >
-              {q}
+              <span>{q}</span>
+              <span className="text-[8.5px] text-muted opacity-60">[{keyLabel}]</span>
             </button>
           ))}
         </div>
       ) : (
         <div className="text-center">
-          <button className={btnLamp} onClick={() => setFlipped(true)}>
-            Reveal
+          <button className={btnLamp} onClick={handleFlip}>
+            Reveal <span className="text-[10px] opacity-70 ml-1">[Space]</span>
           </button>
         </div>
       )}

@@ -25,6 +25,7 @@ import DeskShell from "./DeskShell";
 import CaptionButtons from "./Titlebar";
 import { useSettings } from "../lib/settings";
 import MilestonesButton from "./companion/MilestonesButton";
+import ConsoleShell from "./ConsoleShell";
 
 type SortOption = "recent" | "az" | "oldest" | "sources";
 
@@ -187,24 +188,25 @@ export default function NotebookList({
 
   return (
     <DeskShell onSettings={() => setSettingsOpen(true)} onNewNotebook={openCreateModal}>
-      <div className="min-h-[100svh] bg-ground">
-        <div className="pointer-events-none fixed inset-x-0 top-0 h-[48vh] bg-[radial-gradient(75%_100%_at_50%_0%,rgba(227,176,75,0.12),transparent_78%),radial-gradient(35%_60%_at_90%_0%,rgba(127,168,201,0.10),transparent_70%)]" />
-        <div className="relative mx-auto w-full max-w-6xl px-6 pb-24 sm:px-10 lg:px-12">
+      <ConsoleShell notebookName="Course Notebooks Shelf" modelLabel="Local SQLite / Dexie">
+        <div className="min-h-[100svh] bg-ground overflow-y-auto">
+          <div className="pointer-events-none fixed inset-x-0 top-0 h-[48vh] bg-[radial-gradient(75%_100%_at_50%_0%,rgba(4,74,179,0.08),transparent_78%),radial-gradient(35%_60%_at_90%_0%,rgba(111,227,255,0.06),transparent_70%)]" />
+          <div className="relative mx-auto w-full max-w-6xl px-6 pb-24 sm:px-10 lg:px-12">
           <ShelfHeader onSettings={() => setSettingsOpen(true)} />
 
           {needsKey && (
-            <div className="mt-4 mb-6 rounded-[var(--radius-dialog)] border border-brass/30 bg-brass/[0.06] p-4">
+            <div className="mt-4 mb-6 rounded-[var(--radius-dialog)] border border-brass/30 bg-surface/70 p-4 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3.5">
                   <ComtusEmblem size={22} breathe className="mt-0.5 shrink-0" />
                   <div>
-                    <div className="text-[14px] font-medium text-ink">Light the lamp</div>
+                    <div className="text-[14px] font-semibold text-ink">Light the lamp</div>
                     <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted">
                       Connect OpenRouter with free models, Claude via PayPal, or run offline with Ollama / LM Studio.
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setSettingsOpen(true)} className={btnLamp}>
+                <button onClick={() => setSettingsOpen(true)} className="rounded-[var(--radius-control)] grad-lamp px-4 py-2 text-[13px] font-semibold text-night hover:brightness-105 transition-colors shadow-sm">
                   Configure key
                 </button>
               </div>
@@ -214,12 +216,12 @@ export default function NotebookList({
           {/* Filter & View Controls Toolbar */}
           <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
             {/* Left: Tab Pills */}
-            <div className="flex items-center gap-1.5 rounded-[var(--radius-control)] bg-surface/80 p-1 border border-hairline">
+            <div className="flex items-center gap-1.5 rounded-[var(--radius-control)] bg-surface/80 p-1 border border-hairline shadow-sm">
               <button
                 onClick={() => setActiveTab("all")}
                 className={`rounded-[var(--radius-control)] px-3.5 py-1 text-[13px] font-medium transition-all ${
                   activeTab === "all"
-                    ? "bg-brass/15 text-brasspale shadow-sm"
+                    ? "bg-brass/20 text-brasspale font-semibold shadow-sm"
                     : "text-muted hover:text-ink"
                 }`}
               >
@@ -229,7 +231,7 @@ export default function NotebookList({
                 onClick={() => setActiveTab("my")}
                 className={`rounded-[var(--radius-control)] px-3.5 py-1 text-[13px] font-medium transition-all ${
                   activeTab === "my"
-                    ? "bg-brass/15 text-brasspale shadow-sm"
+                    ? "bg-brass/20 text-brasspale font-semibold shadow-sm"
                     : "text-muted hover:text-ink"
                 }`}
               >
@@ -243,15 +245,15 @@ export default function NotebookList({
               <div className="relative hidden sm:block">
                 <MagnifyingGlass
                   size={14}
-                  weight="light"
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+                  weight="bold"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-brass"
                 />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search notebooks…"
-                  className="h-9 w-44 rounded-[var(--radius-control)] border border-hairline bg-surface/50 pl-8 pr-3 text-[12.5px] text-ink placeholder:text-muted/60 outline-none transition-all duration-200 hover:border-brass/35 focus:w-60 focus:border-brass/70 focus:bg-surface focus:shadow-[0_0_0_1px_rgba(227,176,75,0.4),0_0_16px_-2px_rgba(227,176,75,0.25)]"
+                  className="h-9 w-44 rounded-[var(--radius-control)] border border-hairline bg-surface/60 pl-8 pr-3 text-[12.5px] text-ink placeholder:text-muted/70 outline-none transition-all duration-200 hover:border-brass/40 focus:w-60 focus:border-brass focus:shadow-[0_0_0_1px_rgba(4,74,179,0.4),0_0_16px_-2px_rgba(111,227,255,0.25)] shadow-sm"
                 />
                 {searchQuery && (
                   <button
@@ -264,11 +266,11 @@ export default function NotebookList({
               </div>
 
               {/* View Mode Toggle */}
-              <div className="flex items-center rounded-[var(--radius-control)] border border-hairline bg-surface/60 p-0.5">
+              <div className="flex items-center rounded-[var(--radius-control)] border border-hairline bg-surface/60 p-0.5 shadow-sm">
                 <button
                   onClick={() => setViewMode("grid")}
                   className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] transition-colors ${
-                    viewMode === "grid" ? "bg-ink/[0.08] text-brasspale" : "text-muted hover:text-ink"
+                    viewMode === "grid" ? "bg-brass/20 text-brasspale" : "text-muted hover:text-ink"
                   }`}
                   title="Grid view"
                   aria-label="Grid view"
@@ -278,7 +280,7 @@ export default function NotebookList({
                 <button
                   onClick={() => setViewMode("list")}
                   className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] transition-colors ${
-                    viewMode === "list" ? "bg-ink/[0.08] text-brasspale" : "text-muted hover:text-ink"
+                    viewMode === "list" ? "bg-brass/20 text-brasspale" : "text-muted hover:text-ink"
                   }`}
                   title="List view"
                   aria-label="List view"
@@ -291,7 +293,7 @@ export default function NotebookList({
               <div ref={sortMenuRef} className="relative">
                 <button
                   onClick={() => setSortMenuOpen((v) => !v)}
-                  className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/60 px-3 text-[12.5px] font-medium text-muted hover:text-ink hover:border-brass/35 transition-all"
+                  className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/60 px-3 text-[12.5px] font-medium text-ink hover:border-brass/40 transition-all shadow-sm"
                 >
                   <span>
                     {sortOption === "recent"
@@ -328,7 +330,7 @@ export default function NotebookList({
                           }}
                           className={`flex w-full items-center px-3 py-2 text-left text-[12.5px] rounded-[var(--radius-control)] transition-colors ${
                             sortOption === opt.id
-                              ? "bg-brass/10 text-brasspale font-medium"
+                              ? "bg-brass/15 text-brasspale font-semibold"
                               : "text-muted hover:bg-ink/[0.04] hover:text-ink"
                           }`}
                         >
@@ -353,8 +355,8 @@ export default function NotebookList({
 
           {/* Section Heading */}
           <div className="mt-8 mb-5 flex items-baseline justify-between">
-            <h2 className="font-display text-[1.45rem] font-[450] text-ink">Recent notebooks</h2>
-            <span className="font-mono text-[11px] text-muted">
+            <h2 className="font-display text-[1.45rem] font-[550] text-ink">Recent notebooks</h2>
+            <span className="font-mono text-[11.5px] text-muted font-medium">
               {processedNotebooks.length} {processedNotebooks.length === 1 ? "notebook" : "notebooks"}
             </span>
           </div>
@@ -362,15 +364,14 @@ export default function NotebookList({
           {/* Grid View Mode */}
           {viewMode === "grid" ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {/* 1st Card: + Create new notebook — anim-rise on a wrapper
-                  so fill-mode transforms never fight .card-wake hover. */}
+              {/* 1st Card: + Create new notebook */}
               <div className="anim-rise h-full" style={{ ["--d" as string]: staggerDelay(0) }}>
                 <button
                   onClick={openCreateModal}
-                  className="card-wake group flex min-h-[175px] h-full w-full flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed border-hairline-strong bg-surface/30 p-5 text-center"
+                  className="card-wake group flex min-h-[175px] h-full w-full flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed border-hairline-strong bg-surface/40 p-5 text-center hover:border-brass hover:bg-surface shadow-sm transition-all"
                 >
                   <CreateNotebookEmblem />
-                  <span className="font-display text-[15px] font-[450] text-ink/90 group-hover:text-brasspale">
+                  <span className="font-display text-[15px] font-[500] text-ink group-hover:text-brasspale transition-colors">
                     Create new notebook
                   </span>
                 </button>
@@ -393,7 +394,7 @@ export default function NotebookList({
                         initial={false}
                         exit={{ opacity: 0, scale: 0.97 }}
                         transition={SOFT}
-                        className="card-wake group relative flex min-h-[175px] h-full flex-col justify-between rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-5 before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-1 before:rounded-t-[var(--radius-dialog)] before:bg-gradient-to-r before:from-brass/70 before:via-moon/40 before:to-sage/50"
+                        className="card-wake group relative flex min-h-[175px] h-full flex-col justify-between rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-5 shadow-sm hover:border-brass/60 transition-all before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-1 before:rounded-t-[var(--radius-dialog)] before:bg-gradient-to-r before:from-brass before:via-brasspale before:to-brass"
                       >
                         {/* Top Row: Study Glyph & 3-Dot Menu */}
                         <div className="flex items-start justify-between">
@@ -406,7 +407,7 @@ export default function NotebookList({
                                 e.stopPropagation();
                                 setMenuOpenId(isMenuOpen ? null : nb.id);
                               }}
-                              className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink transition-colors"
+                              className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/10 hover:text-ink transition-colors"
                               aria-label="Notebook options"
                             >
                               <DotsThreeVertical size={18} weight="bold" />
@@ -421,7 +422,6 @@ export default function NotebookList({
                                   transition={SOFT}
                                   className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-[var(--radius-control)] border border-hairline bg-surface p-1 shadow-modal"
                                 >
-                                  {/* Rows arrive on the 30ms house stagger (--stagger-step) */}
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -429,7 +429,7 @@ export default function NotebookList({
                                       setRenamingNotebook(nb);
                                       setRenameDraft(nb.name);
                                     }}
-                                    className="chip-in flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
+                                    className="chip-in flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/5 hover:text-brasspale"
                                     style={{ ["--d" as string]: "0ms" }}
                                   >
                                     <PencilSimple size={13} />
@@ -440,19 +440,19 @@ export default function NotebookList({
                                       e.stopPropagation();
                                       void handleExport(nb);
                                     }}
-                                    className="chip-in flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
+                                    className="chip-in flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/5 hover:text-brasspale"
                                     style={{ ["--d" as string]: "30ms" }}
                                   >
                                     <DownloadSimple size={13} />
                                     Export
                                   </button>
-                                  <div className="my-1 border-t border-hairline" />
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
+                                      setMenuOpenId(null);
                                       setDeletingId(nb.id);
                                     }}
-                                    className="chip-in flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-rust hover:bg-rust/10"
+                                    className="chip-in flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-rust hover:bg-rust/5"
                                     style={{ ["--d" as string]: "60ms" }}
                                   >
                                     <Trash size={13} />
@@ -464,20 +464,20 @@ export default function NotebookList({
                           </div>
                         </div>
 
-                        {/* Main Title & Open Action */}
+                        {/* Title Row */}
                         <button
                           onClick={() => onOpen(nb.id)}
-                          className="my-3 text-left outline-none"
+                          className="my-3 text-left outline-none cursor-pointer"
                         >
-                          <h3 className="line-clamp-2 font-display text-[16px] font-[450] leading-snug text-ink transition-colors group-hover:text-brasspale">
+                          <h3 className="line-clamp-2 font-display text-[16px] font-[520] leading-snug text-ink transition-colors group-hover:text-brasspale">
                             {nb.name}
                           </h3>
                         </button>
 
                         {/* Footer Meta Row */}
-                        <div className="flex items-center text-[11.5px] text-muted">
+                        <div className="flex items-center text-[11.5px] text-muted font-mono">
                           <span>{formatDate(nb.updatedAt)}</span>
-                          <span className="mx-1.5 text-muted/60">·</span>
+                          <span className="mx-1.5 text-muted/50">·</span>
                           <span>
                             {nb.sourceCount} {nb.sourceCount === 1 ? "source" : "sources"}
                           </span>
@@ -490,31 +490,31 @@ export default function NotebookList({
             </div>
           ) : (
             /* List View Mode */
-            <div className="divide-y divide-hairline rounded-[var(--radius-dialog)] border border-hairline bg-surface/50 overflow-hidden">
+            <div className="divide-y divide-hairline rounded-[var(--radius-dialog)] border border-hairline bg-surface/50 shadow-sm overflow-hidden">
               {processedNotebooks.map((nb, i) => {
                 return (
                   <div
                     key={nb.id}
-                    className="anim-rise group flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-ink/[0.025] transition-colors"
+                    className="anim-rise group flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-ink/[0.03] transition-colors"
                     style={{ ["--d" as string]: staggerDelay(i) }}
                   >
                     <button
                       onClick={() => onOpen(nb.id)}
-                      className="flex min-w-0 flex-1 items-center gap-3.5 text-left"
+                      className="flex min-w-0 flex-1 items-center gap-3.5 text-left cursor-pointer"
                     >
                       <StudyGlyph name={nb.name} size="sm" />
                       <div className="min-w-0">
-                        <span className="block truncate font-display text-[15px] font-[450] text-ink group-hover:text-brasspale">
+                        <span className="block truncate font-display text-[15px] font-[520] text-ink group-hover:text-brasspale transition-colors">
                           {nb.name}
                         </span>
                       </div>
                     </button>
 
                     <div className="flex items-center gap-6 text-[12px] text-muted">
-                      <span className="rounded-full bg-ink/[0.04] px-2.5 py-0.5 font-mono text-[11px]">
+                      <span className="rounded-full bg-ink/[0.05] text-ink px-2.5 py-0.5 font-mono text-[11px] font-semibold">
                         {nb.sourceCount} {nb.sourceCount === 1 ? "source" : "sources"}
                       </span>
-                      <span className="w-28 text-right">{timeAgo(nb.updatedAt)}</span>
+                      <span className="w-28 text-right font-mono">{timeAgo(nb.updatedAt)}</span>
 
                       <div className="flex items-center gap-1">
                         <button
@@ -522,14 +522,14 @@ export default function NotebookList({
                             setRenamingNotebook(nb);
                             setRenameDraft(nb.name);
                           }}
-                          className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
+                          className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/10 hover:text-ink transition-colors"
                           title="Rename"
                         >
                           <PencilSimple size={14} />
                         </button>
                         <button
                           onClick={() => setDeletingId(nb.id)}
-                          className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-rust/10 hover:text-rust"
+                          className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-rust/10 hover:text-rust transition-colors"
                           title="Delete"
                         >
                           <Trash size={14} />
@@ -628,7 +628,8 @@ export default function NotebookList({
         </Modal>
 
         <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      </div>
+        </div>
+      </ConsoleShell>
     </DeskShell>
   );
 }

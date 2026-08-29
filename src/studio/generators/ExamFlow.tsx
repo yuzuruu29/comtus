@@ -775,6 +775,7 @@ function ExamResults({
   });
   const verdict =
     pct >= 75 ? "Passing pace." : pct >= 60 ? "Getting close — drill the weak sections." : "The lamp stays on. Review, then retake.";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}

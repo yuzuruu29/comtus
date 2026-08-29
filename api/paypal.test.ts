@@ -91,35 +91,41 @@ describe("PayPal checkout", () => {
   });
 
   it("capture-order: issues deterministic pass for same order", async () => {
-    process.env.PASS_SIGNING_SECRET = SECRET;
-    process.env.PAYPAL_CLIENT_SECRET = "secret";
-    process.env.PAYPAL_CLIENT_ID = "BAAynutt7UG_TKFyejl9ht8OGDrlSrLtTkw7CY9sJtz88QPBBojk7Zq98tasmx4g2rhtyl4XaDTPpStcNY";
-    const fetchMock = vi.fn(async (input: string | URL | Request) => {
-      const u = String(input instanceof Request ? input.url : input);
-      if (u.includes("/oauth2/token")) {
-        return new Response(JSON.stringify({ access_token: "paypal-token" }), { status: 200 });
-      }
-      if (u.includes("/v2/checkout/orders/ORDER123")) {
-        return new Response(
-          JSON.stringify({
-            status: "COMPLETED",
-            purchase_units: [{ amount: { value: "6.99", currency_code: "USD" }, payments: { captures: [{ status: "COMPLETED" }] } }],
-          }),
-          { status: 200, headers: { "content-type": "application/json" } },
-        );
-      }
-      return new Response("{}", { status: 200 });
-    });
-    vi.stubGlobal("fetch", fetchMock);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(1798300000000));
+    try {
+      process.env.PASS_SIGNING_SECRET = SECRET;
+      process.env.PAYPAL_CLIENT_SECRET = "secret";
+      process.env.PAYPAL_CLIENT_ID = "BAAynutt7UG_TKFyejl9ht8OGDrlSrLtTkw7CY9sJtz88QPBBojk7Zq98tasmx4g2rhtyl4XaDTPpStcNY";
+      const fetchMock = vi.fn(async (input: string | URL | Request) => {
+        const u = String(input instanceof Request ? input.url : input);
+        if (u.includes("/oauth2/token")) {
+          return new Response(JSON.stringify({ access_token: "paypal-token" }), { status: 200 });
+        }
+        if (u.includes("/v2/checkout/orders/ORDER123")) {
+          return new Response(
+            JSON.stringify({
+              status: "COMPLETED",
+              purchase_units: [{ amount: { value: "6.99", currency_code: "USD" }, payments: { captures: [{ status: "COMPLETED" }] } }],
+            }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          );
+        }
+        return new Response("{}", { status: 200 });
+      });
+      vi.stubGlobal("fetch", fetchMock);
 
-    const res1 = await call(paypalReq("capture-order", { orderId: "ORDER123", planId: "scholar" }));
-    expect(res1.status).toBe(200);
-    const d1 = res1.json() as { passToken?: string };
-    expect(d1.passToken).toBeTruthy();
+      const res1 = await call(paypalReq("capture-order", { orderId: "ORDER123", planId: "scholar" }));
+      expect(res1.status).toBe(200);
+      const d1 = res1.json() as { passToken?: string };
+      expect(d1.passToken).toBeTruthy();
 
-    const res2 = await call(paypalReq("capture-order", { orderId: "ORDER123", planId: "scholar" }));
-    const d2 = res2.json() as { passToken?: string };
-    expect(d2.passToken).toBe(d1.passToken);
+      const res2 = await call(paypalReq("capture-order", { orderId: "ORDER123", planId: "scholar" }));
+      const d2 = res2.json() as { passToken?: string };
+      expect(d2.passToken).toBe(d1.passToken);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("mints passes verifiable with PASS_SIGNING_SECRET", async () => {

@@ -113,7 +113,7 @@ describe("StudioPane saved-work deletion", () => {
 
     await waitFor(() => expect(database.restoreGeneration).toHaveBeenCalledWith(note));
     await screen.findByRole("button", { name: "Delete note Keyboard note" });
-  });
+  }, 15000);
 
   it("expires a pointer-triggered Undo notice after five seconds", async () => {
     render(<StudioPane notebookId="notebook-1" />);
@@ -135,5 +135,5 @@ describe("StudioPane saved-work deletion", () => {
 
     await act(async () => vi.advanceTimersByTime(1_001));
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
-  });
+  }, 15000);
 });

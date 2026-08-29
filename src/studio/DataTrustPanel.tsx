@@ -6,7 +6,7 @@ import { isTauri } from "../lib/desktop";
 import { useSettings } from "../lib/settings";
 import { formatBytes, getStorageStats, type StorageStats } from "../lib/storageStats";
 import { ComtusEmblem } from "../components/brand/ComtusLogo";
-import { btnGhost, timeAgo } from "./ui";
+import { btnGhost, Modal, timeAgo } from "./ui";
 
 function formatBackupAt(ts: number): string {
   if (!ts) return "No backup on this device yet";
@@ -20,7 +20,7 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState(false);
-  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [deletingNb, setDeletingNb] = useState<StorageStats["notebooks"][number] | null>(null);
 
   const refresh = () => {
     void getStorageStats().then(setStats);
@@ -81,7 +81,7 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
 
   const remove = async (id: string) => {
     await deleteNotebook(id);
-    setConfirmId(null);
+    setDeletingNb(null);
     refresh();
   };
 
@@ -124,12 +124,9 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
               </span>
               <button
                 type="button"
-                onClick={() => (confirmId === nb.id ? void remove(nb.id) : setConfirmId(nb.id))}
-                onBlur={() => setConfirmId(null)}
-                className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] ${
-                  confirmId === nb.id ? "bg-rust/15 text-rust" : "text-muted/60 hover:text-rust"
-                }`}
-                aria-label={confirmId === nb.id ? `Confirm delete ${nb.name}` : `Delete ${nb.name}`}
+                onClick={() => setDeletingNb(nb)}
+                className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted/60 hover:bg-rust/10 hover:text-rust transition-colors"
+                aria-label={`Delete ${nb.name}`}
               >
                 <Trash size={13} weight="light" />
               </button>
@@ -137,6 +134,40 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
           ))}
         </ul>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        open={deletingNb !== null}
+        onClose={() => setDeletingNb(null)}
+        title="Delete notebook"
+      >
+        <div className="space-y-4">
+          <p className="text-[13.5px] leading-relaxed text-muted">
+            Are you sure you want to remove/delete <strong className="font-medium text-ink">"{deletingNb?.name}"</strong>? All {deletingNb?.sources} sources and study history inside it will be permanently deleted from this device.
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              className={btnGhost}
+              onClick={() => setDeletingNb(null)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (deletingNb) {
+                  void remove(deletingNb.id);
+                  setDeletingNb(null);
+                }
+              }}
+              className="rounded-[var(--radius-control)] bg-rust px-4 py-2 text-[13px] font-medium text-white hover:brightness-110 active:scale-95 transition-all"
+            >
+              Delete permanently
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button

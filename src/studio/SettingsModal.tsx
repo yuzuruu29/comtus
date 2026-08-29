@@ -16,12 +16,29 @@ import {
   Plus,
   Sliders,
   Sparkle,
+  SpeakerHigh,
+  SpeakerSimpleSlash,
   Trash,
   Warning,
 } from "@phosphor-icons/react";
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, LampPulse } from "./ui";
 import { BorderBeam } from "./fx";
 import { useSettings } from "../lib/settings";
+import {
+  startAmbient,
+  stopAmbient,
+  setAmbientVolume,
+  getAmbientVolume,
+  setSfxVolume,
+  getSfxVolume,
+  setMuted,
+  isMuted,
+  getActiveAmbient,
+  playSfx as playEngineSfx,
+  subscribeAudioEngine,
+  type AmbientSoundType,
+  type SfxType,
+} from "../lib/soundEngine";
 import {
   EFFORTS,
   COMPAT_PRESETS,
@@ -145,9 +162,25 @@ export default function SettingsModal({
   const closeAddKeyModal = useCallback(() => setShowAddKeyModal(false), []);
 
   const theme = useSettings((st) => st.theme) ?? "system";
+  const motionMode = useSettings((st) => st.motionMode) ?? "full";
   const companionOn = useSettings((st) => st.companion !== false);
   const sfxOn = useSettings((st) => st.companionSfx !== false);
   const pixelOn = useSettings((st) => st.pixelDesk !== false);
+
+  // Procedural Sound Engine state
+  const [audioMuted, setAudioMuted] = useState(() => isMuted());
+  const [ambientType, setAmbientType] = useState<AmbientSoundType | null>(() => getActiveAmbient());
+  const [ambientVol, setAmbientVol] = useState(() => getAmbientVolume());
+  const [sfxVol, setSfxVol] = useState(() => getSfxVolume());
+
+  useEffect(() => {
+    return subscribeAudioEngine((state) => {
+      setAudioMuted(state.muted);
+      setAmbientType(state.activeAmbient);
+      setAmbientVol(state.ambientVolume);
+      setSfxVol(state.sfxVolume);
+    });
+  }, []);
 
   // Live model sync for advanced mode
   useEffect(() => {
@@ -402,9 +435,9 @@ export default function SettingsModal({
           <div>
             <div className="label-mono !text-[10px] mb-2">Desk look</div>
             <p className="mb-3 text-[12.5px] leading-relaxed text-muted">
-              Pixel sets Pixelify on every line of the desk, with stepped motion and a brass grid. Scholar restores Fraunces and Inter.
+              Cozy Pixel Bookshop applies 16-bit Pixelify typography, tactile ink-press physics, and warm brass-bevel chrome across the entire studio. Scholar Study restores classic Fraunces and Inter serif typography.
             </p>
-            <div className="grid grid-cols-2 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
               <button
                 type="button"
                 onClick={() => useSettings.getState().update({ pixelDesk: true })}
@@ -414,7 +447,7 @@ export default function SettingsModal({
                     : "text-muted hover:text-ink"
                 }`}
               >
-                Pixel
+                Cozy Pixel Bookshop (Default)
               </button>
               <button
                 type="button"
@@ -425,8 +458,40 @@ export default function SettingsModal({
                     : "text-muted hover:text-ink"
                 }`}
               >
-                Scholar
+                Scholar Study (Classic Serif)
               </button>
+            </div>
+          </div>
+
+          <div>
+            <div className="label-mono !text-[10px] mb-2">Atmosphere & motion</div>
+            <p className="mb-3 text-[12.5px] leading-relaxed text-muted">
+              Choose your interaction intensity. Full Tactile provides book-press deals, warm spark motes, and milestone glints.
+            </p>
+            <div className="grid grid-cols-3 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
+              {(
+                [
+                  ["none", "None", "Focus / Static"],
+                  ["minimal", "Minimal", "Quiet Scholar"],
+                  ["full", "Full Tactile", "Tactile & Particles"],
+                ] as const
+              ).map(([id, label]) => {
+                const active = motionMode === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => useSettings.getState().update({ motionMode: id })}
+                    className={`flex min-h-[40px] flex-col items-center justify-center rounded-lg px-2 py-1.5 transition-all active:scale-[0.97] ${
+                      active
+                        ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
+                        : "text-muted hover:text-ink"
+                    }`}
+                  >
+                    <span className="text-body font-medium">{label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -458,6 +523,155 @@ export default function SettingsModal({
               >
                 Chime {sfxOn ? "on" : "off"}
               </button>
+            </div>
+          </div>
+
+          {/* Ambient Soundscape & Tactile Audio Section */}
+          <div className="rounded-2xl border border-hairline bg-surface/60 p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-brass/20 text-brass">
+                    {audioMuted ? <SpeakerSimpleSlash size={14} /> : <SpeakerHigh size={14} />}
+                  </span>
+                  <span className="font-display text-[14px] font-medium text-ink">
+                    Ambient Soundscape & Tactile Audio
+                  </span>
+                </div>
+                <p className="mt-0.5 text-[11.5px] text-muted">
+                  Procedural, zero-download audio synthesizers for deep study focus and tactile micro-interactions.
+                </p>
+              </div>
+
+              {/* Master Mute Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !audioMuted;
+                  setMuted(next);
+                  if (!next) {
+                    playEngineSfx("lampChime");
+                  }
+                }}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 font-mono text-[11px] font-semibold transition-all active:scale-[0.97] ${
+                  !audioMuted
+                    ? "border-sage/40 bg-sage/15 text-sage"
+                    : "border-hairline bg-ground/80 text-muted hover:text-ink"
+                }`}
+              >
+                {audioMuted ? <SpeakerSimpleSlash size={13} /> : <SpeakerHigh size={13} />}
+                <span>{audioMuted ? "Muted (Default)" : "Sound On"}</span>
+              </button>
+            </div>
+
+            {/* Ambient Sound Generator Picker */}
+            <div>
+              <div className="label-mono !text-[10px] mb-2 flex items-center justify-between">
+                <span>Ambient Generator</span>
+                {ambientType && (
+                  <span className="text-sage font-mono text-[9px] uppercase tracking-wider">
+                    ● Synthesizing {ambientType}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
+                {(
+                  [
+                    [null, "Off", "None"],
+                    ["rain", "Rain", "Pink Noise"],
+                    ["fireplace", "Fireplace", "Crackling"],
+                    ["lofi", "Lo-Fi", "Chords Pad"],
+                    ["all", "Hearth", "Full Mix"],
+                  ] as const
+                ).map(([type, label, sub]) => {
+                  const active = ambientType === type;
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => {
+                        if (type === null) {
+                          stopAmbient();
+                        } else {
+                          startAmbient(type as AmbientSoundType);
+                        }
+                      }}
+                      className={`flex flex-col items-center justify-center rounded-lg px-2 py-1.5 transition-all active:scale-[0.97] ${
+                        active
+                          ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
+                          : "text-muted hover:text-ink"
+                      }`}
+                    >
+                      <span className="text-body font-medium text-[12px]">{label}</span>
+                      <span className={`text-[9px] font-mono opacity-70 ${active ? "text-night" : "text-muted"}`}>{sub}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Volume Sliders Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <div className="flex items-center justify-between text-[11px] mb-1">
+                  <span className="font-mono text-muted">Ambient Volume</span>
+                  <span className="font-mono text-ink">{Math.round(ambientVol * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={ambientVol}
+                  onChange={(e) => setAmbientVolume(parseFloat(e.target.value))}
+                  className="w-full accent-amber-500 cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between text-[11px] mb-1">
+                  <span className="font-mono text-muted">Tactile SFX Volume</span>
+                  <span className="font-mono text-ink">{Math.round(sfxVol * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={sfxVol}
+                  onChange={(e) => setSfxVolume(parseFloat(e.target.value))}
+                  className="w-full accent-amber-500 cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {/* Tactile SFX Previews */}
+            <div className="pt-2 border-t border-hairline/60">
+              <div className="label-mono !text-[10px] mb-2">Tactile SFX Preview</div>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1">
+                {(
+                  [
+                    ["inkPress", "Ink Tap"],
+                    ["pageTurn", "Page Turn"],
+                    ["quillScratch", "Quill"],
+                    ["lampChime", "Lamp Bell"],
+                    ["sparkPop", "Spark Pop"],
+                    ["celebration", "Arpeggio"],
+                  ] as const
+                ).map(([sfxId, label]) => (
+                  <button
+                    key={sfxId}
+                    type="button"
+                    onClick={() => {
+                      if (audioMuted) setMuted(false);
+                      playEngineSfx(sfxId as SfxType);
+                    }}
+                    className="flex min-h-[32px] items-center justify-center rounded-lg border border-hairline bg-ground/40 px-2 py-1 text-[11px] font-mono text-muted hover:border-brass/40 hover:text-ink transition-all active:scale-[0.96]"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

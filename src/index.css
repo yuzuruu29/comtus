@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./styles/pixel-palette.css";
 @import "@fontsource-variable/fraunces";
 @import "@fontsource-variable/inter";
 @import "@fontsource/jetbrains-mono/400.css";
@@ -35,8 +36,8 @@
   --font-body: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
 
-  --ease-house: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-house-inout: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-house: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-house-inout: cubic-bezier(0.65, 0, 0.35, 1);
 
   --shadow-card: var(--elev-card);
   --shadow-lift: var(--elev-lift);
@@ -116,7 +117,53 @@
   --beat-med: 2.6s; /* send halo */
   --beat-slow: 3.2s; /* emblem breathe */
 
-  /* Lamplight (dark) — default */
+  /* Daylight Paper (light) — default */
+  --ground: #f5f1e8;
+  --surface: #fcfaf4;
+  --raised: #eae4d6;
+  --ink: #1b2334;
+  --muted: #5a6274;
+  --hairline: rgba(27, 35, 52, 0.12);
+  --hairline-strong: rgba(27, 35, 52, 0.22);
+  --brass: #a5731c;
+  --brassdeep: #7d5312;
+  --brasspale: #e3b04b;
+  --moon: #3d6e9e;
+  --moondeep: #2a4a6e;
+  --sage: #4f8a5a;
+  --rust: #b2554a;
+  --glow-warm: rgba(165, 115, 28, 0.14);
+  --glow-cool: rgba(61, 110, 158, 0.1);
+  --elev-card: 1px 2px 0 rgba(92, 61, 30, 0.14), 0 4px 14px -3px rgba(74, 46, 27, 0.12);
+  --elev-lift: 2px 4px 0 rgba(92, 61, 30, 0.2), 0 8px 20px -4px rgba(74, 46, 27, 0.18);
+  --elev-modal: 0 28px 64px -12px rgba(27, 35, 52, 0.28);
+  color-scheme: light;
+}
+
+html[data-theme="light"] {
+  --ground: #f5f1e8;
+  --surface: #fcfaf4;
+  --raised: #eae4d6;
+  --ink: #1b2334;
+  --muted: #5a6274;
+  --hairline: rgba(27, 35, 52, 0.12);
+  --hairline-strong: rgba(27, 35, 52, 0.22);
+  --brass: #a5731c;
+  --brassdeep: #7d5312;
+  --brasspale: #e3b04b;
+  --moon: #3d6e9e;
+  --moondeep: #2a4a6e;
+  --sage: #4f8a5a;
+  --rust: #b2554a;
+  --glow-warm: rgba(165, 115, 28, 0.14);
+  --glow-cool: rgba(61, 110, 158, 0.1);
+  --elev-card: 1px 2px 0 rgba(92, 61, 30, 0.14), 0 4px 14px -3px rgba(74, 46, 27, 0.12);
+  --elev-lift: 2px 4px 0 rgba(92, 61, 30, 0.2), 0 8px 20px -4px rgba(74, 46, 27, 0.18);
+  --elev-modal: 0 28px 64px -12px rgba(27, 35, 52, 0.28);
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
   --ground: #0b0f1a;
   --surface: #121828;
   --raised: #1a2136;
@@ -137,29 +184,6 @@
   --elev-lift: 0 4px 16px rgba(8, 11, 20, 0.4), 0 0 24px var(--glow-warm);
   --elev-modal: 0 40px 100px -20px rgba(0, 0, 0, 0.7);
   color-scheme: dark;
-}
-
-html[data-theme="light"] {
-  --ground: #f5f1e8;
-  --surface: #fcfaf4;
-  --raised: #eae4d6;
-  --ink: #1b2334;
-  --muted: #465064;
-  --hairline: rgba(27, 35, 52, 0.12);
-  --hairline-strong: rgba(27, 35, 52, 0.22);
-  --brass: #79510f;
-  --brassdeep: #664109;
-  --brasspale: #765018;
-  --moon: #3d6e9e;
-  --moondeep: #2a4a6e;
-  --sage: #4f8a5a;
-  --rust: #b2554a;
-  --glow-warm: rgba(165, 115, 28, 0.14);
-  --glow-cool: rgba(61, 110, 158, 0.1);
-  --elev-card: 0 1px 2px rgba(27, 35, 52, 0.06), 0 8px 24px rgba(27, 35, 52, 0.06);
-  --elev-lift: 0 6px 18px rgba(27, 35, 52, 0.1), 0 0 20px var(--glow-warm);
-  --elev-modal: 0 28px 64px -12px rgba(27, 35, 52, 0.28);
-  color-scheme: light;
 }
 
 html[data-shell="desktop"] {
@@ -283,10 +307,10 @@ html[data-shell] body {
 .label-mono {
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: inherit;
 }
 
 /* Film grain — fixed overlay, jittered */
@@ -705,9 +729,9 @@ a:focus-visible,
 [tabindex]:focus-visible,
 input:focus-visible,
 select:focus-visible,
-textarea:focus-visible,
+textarea:not(.composer-shell textarea):focus-visible,
 [contenteditable]:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--brass) 75%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--ink) 24%, transparent);
   outline-offset: 2px;
 }
 
@@ -720,9 +744,9 @@ html[data-theme="light"] a:focus-visible,
 html[data-theme="light"] [tabindex]:focus-visible,
 html[data-theme="light"] input:focus-visible,
 html[data-theme="light"] select:focus-visible,
-html[data-theme="light"] textarea:focus-visible,
+html[data-theme="light"] textarea:not(.composer-shell textarea):focus-visible,
 html[data-theme="light"] [contenteditable]:focus-visible {
-  outline-color: #765018;
+  outline-color: rgba(0, 0, 0, 0.22);
 }
 
 /* Pencil underline for text links / nav */
@@ -810,6 +834,20 @@ html[data-theme="light"] [contenteditable]:focus-visible {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ── Screen shake keyframes removed — the desk does not shake. ────── */
+
+/* Crisp rendering during transform transitions */
+.crisp-render,
+.desk-split,
+.lamp-mascot,
+.desk-row,
+.card-wake,
+.tilt-card {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 /* Scrollbars — thin, in-palette */

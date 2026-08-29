@@ -1,4 +1,12 @@
-export type SfxKind = "nudge" | "cheer" | "unlock";
+export type SfxKind =
+  | "nudge"
+  | "cheer"
+  | "unlock"
+  | "cardFlip"
+  | "lampClick"
+  | "wrong"
+  | "alarm"
+  | "focusResume";
 
 type AudioCtor = typeof AudioContext;
 
@@ -13,7 +21,7 @@ function audioCtor(): AudioCtor | null {
   return w.AudioContext ?? w.webkitAudioContext ?? null;
 }
 
-/** Resume after a user gesture so later AFK chimes are allowed to play. */
+/** Resume after a user gesture so later audio effects are allowed to play. */
 export function unlockSfx(): void {
   const Ctor = audioCtor();
   if (!Ctor) return;
@@ -43,8 +51,8 @@ function tone(
   osc.stop(t0 + duration + 0.02);
 }
 
-/** Soft brass pentatonic — a lamp chime, not a game ding. */
-export function playSfx(kind: SfxKind, enabled: boolean): void {
+/** Tactile clicks and lamp chimes — synthesized entirely on-device via Web Audio. */
+export function playSfx(kind: SfxKind, enabled = true): void {
   if (!enabled) return;
   unlockSfx();
   if (!ctx || ctx.state === "closed") return;
@@ -65,10 +73,65 @@ export function playSfx(kind: SfxKind, enabled: boolean): void {
       tone(523, 0.32, 0.36, "triangle", 0.08);
       tone(659, 0.5, 0.5, "sine", 0.05);
       break;
+    case "cardFlip":
+      tone(320, 0, 0.05, "triangle", 0.04);
+      tone(480, 0.03, 0.06, "sine", 0.035);
+      break;
+    case "lampClick":
+      tone(800, 0, 0.025, "triangle", 0.06);
+      tone(1400, 0.015, 0.03, "sine", 0.045);
+      break;
+    case "wrong":
+      tone(220, 0, 0.18, "sawtooth", 0.04);
+      tone(164, 0.08, 0.24, "triangle", 0.05);
+      break;
+    case "alarm":
+      tone(880, 0, 0.09, "sawtooth", 0.08);
+      tone(440, 0.09, 0.11, "square", 0.07);
+      tone(880, 0.2, 0.09, "sawtooth", 0.08);
+      tone(440, 0.29, 0.12, "square", 0.07);
+      break;
+    case "focusResume":
+      tone(523, 0, 0.1, "triangle", 0.06);
+      tone(659, 0.08, 0.12, "triangle", 0.07);
+      tone(784, 0.16, 0.14, "sine", 0.08);
+      tone(1046, 0.24, 0.35, "sine", 0.09);
+      break;
     default: {
       const _never: never = kind;
       return _never;
     }
+  }
+}
+
+/** Procedural UI SFX generator */
+export function playProceduralSfx(action: "click" | "ignite" | "milestone" | "flip" | "correct" | "wrong" | "pop"): void {
+  unlockSfx();
+  if (!ctx || ctx.state === "closed") return;
+
+  switch (action) {
+    case "click":
+      tone(900, 0, 0.02, "triangle", 0.04);
+      break;
+    case "ignite":
+      tone(440, 0, 0.08, "triangle", 0.05);
+      tone(880, 0.04, 0.15, "sine", 0.06);
+      break;
+    case "milestone":
+      playSfx("unlock", true);
+      break;
+    case "flip":
+      playSfx("cardFlip", true);
+      break;
+    case "correct":
+      playSfx("cheer", true);
+      break;
+    case "wrong":
+      playSfx("wrong", true);
+      break;
+    case "pop":
+      tone(620, 0, 0.04, "sine", 0.05);
+      break;
   }
 }
 

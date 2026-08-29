@@ -52,7 +52,7 @@ export default function StudioShowcase() {
             opacity: 1,
             y: 0,
             duration: 0.5,
-            ease: "steps(6)",
+            ease: "power3.out",
             scrollTrigger: { trigger: el, start: "top 87%", once: true },
           },
         );
@@ -109,7 +109,7 @@ export default function StudioShowcase() {
               <img
                 src="/images/studio-workspace.jpg"
                 alt="Comtus midnight lamplight study workspace"
-                className="h-full w-full object-cover object-center transition-transform duration-500 ease-[steps(6)] group-hover:scale-105"
+                className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
                 loading="lazy"
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-night/90 via-night/20 to-transparent" />
@@ -205,7 +205,7 @@ export default function StudioShowcase() {
                 >
                   <div className="desk-swap-stage">
                     <div
-                      className="desk-swap-front arcade-press border border-white/[0.06] bg-white/[0.02] p-6"
+                      className="desk-swap-front card-book-press border border-white/[0.06] bg-white/[0.02] p-6"
                       aria-hidden={isFlipped}
                     >
                       <div className="label-mono !text-[12px] text-brass/80">{f.tag}</div>
@@ -216,7 +216,7 @@ export default function StudioShowcase() {
                       <span className="mt-4 inline-block text-[12px] text-brasspale">Turn the card</span>
                     </div>
                     <div
-                      className="desk-swap-back arcade-press border border-brass/35 bg-brass/[0.08] p-6"
+                      className="desk-swap-back card-book-press border border-brass/35 bg-brass/[0.08] p-6"
                       aria-hidden={!isFlipped}
                     >
                       <div className="label-mono !text-[12px] text-brasspale">On the desk</div>

@@ -27,7 +27,7 @@ export default function Statement() {
           opacity: 1,
           y: 0,
           stagger: 0.05,
-          ease: "steps(4)",
+          ease: "power2.out",
           scrollTrigger: {
             trigger: rootRef.current,
             start: "top 78%",
@@ -73,27 +73,26 @@ export default function Statement() {
     <section
       ref={rootRef}
       data-torch
-      className="relative flex min-h-[92svh] items-center overflow-hidden border-y border-white/[0.06]"
+      className="relative flex min-h-[92svh] items-center overflow-hidden border-y border-white/[0.12] bg-[#044AB3] text-white"
       aria-label="Manifesto"
     >
       <div
         className="stmt-glow pointer-events-none absolute left-1/2 top-1/2 h-[80vmin] w-[80vmin] -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
           background:
-            "radial-gradient(circle, rgba(227,176,75,0.10), rgba(42,54,84,0.16) 45%, transparent 70%)",
+            "radial-gradient(circle, rgba(111,227,255,0.22), rgba(4,74,179,0.4) 45%, transparent 70%)",
         }}
       />
       <div className="relative mx-auto max-w-4xl px-6 text-center">
-        <div className="label-mono mb-8 justify-center opacity-70">
-          <span className="stmt-rule h-px w-9 origin-left grad-lamp" />
-          <span className="mx-4">The Point</span>
-          <span className="stmt-rule h-px w-9 origin-right grad-lamp" />
+        <div className="flex items-center justify-center gap-3 mb-8 text-[#6FE3FF]">
+          <span className="stmt-rule h-px w-9 origin-left bg-[#6FE3FF]" />
+          <span className="font-mono text-[11.5px] uppercase tracking-widest font-bold text-[#6FE3FF]">The Point</span>
+          <span className="stmt-rule h-px w-9 origin-right bg-[#6FE3FF]" />
         </div>
-        <p className="font-display text-[clamp(1.9rem,4.6vw,3.6rem)] font-[390] leading-[1.22] text-parchment">
+        <p className="font-display text-[clamp(1.9rem,4.6vw,3.6rem)] font-[600] leading-[1.28] text-white drop-shadow-sm flex flex-wrap justify-center">
           {TEXT.split(" ").map((w, i) => (
-            <span key={i} className="stmt-word inline-block">
+            <span key={i} className="stmt-word inline-block mr-[0.32em] last:mr-0">
               {w}
-              {" "}
             </span>
           ))}
         </p>

@@ -54,7 +54,7 @@ import type { ChatReply } from "../lib/llm";
 import { useSmoothText } from "../lib/useSmoothText";
 import { useSettings, useCallSettings } from "../lib/settings";
 import StudyGlyph from "../components/icons/StudyGlyph";
-import { Collapse, SOFT, SPRING, HOUSE, DRIFT_X, RISE_1 } from "./fx";
+import { Collapse, SOFT, SPRING, HOUSE, DRIFT_X, RISE_1, POPOVER } from "./fx";
 import { Toast } from "./Toast";
 import { timeAgo } from "./ui";
 import { appendTranscript } from "../lib/voice";
@@ -808,19 +808,17 @@ export default function ChatPane({
           )}
         </AnimatePresence>
         <div className="mx-auto w-full max-w-3xl rounded-[var(--radius-dialog)]">
-          <motion.div
+          <div
             data-focused={focused ? "" : undefined}
             data-streaming={streaming ? "" : undefined}
-            animate={{ y: focused || streaming ? -2 : 0 }}
-            transition={{ duration: 0.34, ease: HOUSE }}
             className="composer-shell relative"
           >
             <AnimatePresence>
               {streaming && (
                 <motion.div
-                  initial={{ opacity: 0, y: 4, scale: 0.92 }}
+                  initial={{ opacity: 0, y: 6, scale: 0.94 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 4, scale: 0.92, transition: { duration: 0.12 } }}
+                  exit={{ opacity: 0, y: 4, scale: 0.94, transition: { duration: 0.14 } }}
                   transition={SOFT}
                   className="phase-pill"
                   role="status"
@@ -1079,7 +1077,7 @@ export default function ChatPane({
                 </AnimatePresence>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Follow-up rail — only once there is an answer to follow up on and user has not dismissed */}
@@ -1218,42 +1216,63 @@ const MessageBubble = memo(function MessageBubble({
         <SearchStatusStrip meta={msg.webSearch} searching={phase === "searching" && !msg.webSearch} />
       )}
 
-      {/* Reasoning Process Drawer */}
+      {/* High-Precision Pixelated Reasoning Process Drawer */}
       {hasThinking && (
-        <div className="think-rule relative overflow-hidden rounded-xl border border-moon/25 bg-moon/[0.04]">
+        <div className="think-rule relative overflow-hidden rounded-xl border border-[rgba(4,74,179,0.22)] bg-white shadow-sm">
+          {isThinking && <span className="pixel-reasoning-laser-top" aria-hidden="true" />}
+
           <button
             onClick={() => (onToggleThinking ? onToggleThinking() : setOpen((v) => !v))}
-            className="flex w-full items-center gap-2 px-3.5 py-2 text-left transition-colors hover:bg-moon/[0.06]"
+            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left transition-colors hover:bg-[#044AB3]/[0.04] cursor-pointer"
           >
-            <Brain size={15} weight="light" className="text-moon" />
-            {/* thinking-live clips the color to a shimmer gradient, so it
-                replaces the static moon tint rather than stacking with it. */}
+            <div className="flex h-5 w-5 items-center justify-center rounded bg-[#044AB3]/10 text-[#044AB3]">
+              <Brain size={14} weight="bold" />
+            </div>
+
             <span
-              className={`text-[12px] font-medium ${
-                isThinking ? "thinking-live" : "text-moon/90"
+              className={`font-mono text-[12px] font-semibold tracking-wide ${
+                isThinking ? "thinking-live" : "text-[#044AB3]"
               }`}
             >
-              {isThinking ? "Thinking…" : "Reasoning process"}
+              {isThinking ? "COGNITIVE REASONING MATRIX ACTIVE…" : "Socratic Reasoning Process"}
             </span>
-            <CaretDown
-              size={13}
-              className={`ml-auto text-muted transition-transform duration-200 ${open ? "" : "-rotate-90"}`}
-            />
+
+            {/* Pixelated Equalizer Waves while reasoning */}
+            {isThinking && (
+              <div className="flex items-center gap-1 h-3.5 px-1.5 py-0.5 rounded bg-[#044AB3]/10 border border-[#044AB3]/20" title="Active inference stream">
+                <span className="pixel-eq-bar pixel-eq-bar-1" />
+                <span className="pixel-eq-bar pixel-eq-bar-2" />
+                <span className="pixel-eq-bar pixel-eq-bar-3" />
+                <span className="pixel-eq-bar pixel-eq-bar-4" />
+              </div>
+            )}
+
+            <div className="ml-auto flex items-center gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-[#5A6A85] bg-[#F5F3EF] px-2 py-0.5 rounded border border-[rgba(4,74,179,0.12)]">
+                {isThinking ? "STREAMING" : "TRACE"}
+              </span>
+              <CaretDown
+                size={13}
+                className={`text-[#5A6A85] transition-transform duration-200 ${open ? "" : "-rotate-90"}`}
+              />
+            </div>
           </button>
+
           <Collapse open={open}>
-            <div className="max-h-60 overflow-y-auto px-3.5 pb-3 text-[12.5px] leading-relaxed text-moon/80 whitespace-pre-wrap">
+            <div className="max-h-64 overflow-y-auto px-4 pb-3.5 pt-1 font-mono text-[12px] leading-relaxed text-[#0B132B]/90 whitespace-pre-wrap border-t border-[rgba(4,74,179,0.08)] bg-[#FCFAF4]/60">
               {msg.thinking}
+              {isThinking && <span className="pixel-thought-cursor" aria-hidden="true" />}
             </div>
           </Collapse>
-          {/* Light sweep while reasoning streams; the panel wrapper is the
-              positioned, non-scrolling ancestor the gloss requires. */}
+
+          {/* Glowing light sweep while reasoning streams */}
           {isThinking && <span aria-hidden className="think-gloss" />}
         </div>
       )}
 
       {/* Formatted Markdown Content */}
       {msg.content ? (
-        <div className="md text-[14.5px] leading-relaxed text-ink/90">
+        <div className="md text-[14.5px] leading-relaxed text-[#0B132B]">
           <ReactMarkdown
             remarkPlugins={[remarkGfm, ...mathRemarkPlugins]}
             rehypePlugins={[...mathRehypePlugins]}
@@ -1270,19 +1289,19 @@ const MessageBubble = memo(function MessageBubble({
         </div>
       ) : (
         streaming && (
-          <div className="flex items-center gap-2.5 text-[13px] py-2 font-mono">
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-brass/10 border border-brass/25 backdrop-blur-sm">
+          <div className="flex items-center gap-3 text-[13px] py-2.5 font-mono">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#044AB3]/10 border border-[rgba(4,74,179,0.22)] shadow-sm">
               <span className="typing-harmonic-dot" />
               <span className="typing-harmonic-dot" />
               <span className="typing-harmonic-dot" />
             </div>
-            <span className="text-[12px] tracking-wide text-brasspale">
+            <span className="text-[12px] font-semibold tracking-wide text-[#044AB3]">
               {phase === "thinking"
-                ? "Synthesizing deep reasoning…"
+                ? "Synthesizing deep reasoning & dialectic proofs…"
                 : phase === "answering"
-                  ? "Composing answer…"
+                  ? "Composing verified response…"
                   : phase === "searching"
-                    ? "Searching the web…"
+                    ? "Searching scholarly corpus…"
                     : "Indexing study sources…"}
             </span>
           </div>
@@ -1504,21 +1523,28 @@ function FocusMenu({
         aria-haspopup="listbox"
         aria-expanded={open}
         title="Choose which sources answers ground in"
-        className="flex min-w-0 items-center gap-1.5 rounded-full border border-hairline bg-ink/[0.03] px-2.5 py-1 font-mono text-[10px] tracking-[0.04em] text-muted transition-colors hover:border-brass/40 hover:text-brasspale"
+        className={`flex min-w-0 items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] tracking-[0.04em] transition-all active:scale-[0.97] ${
+          open
+            ? "border-brass/70 bg-brass/20 text-brasspale shadow-[0_0_12px_rgba(227,176,75,0.2)]"
+            : "border-hairline bg-ink/[0.03] text-muted hover:border-brass/40 hover:text-brasspale"
+        }`}
       >
         <Stack size={11} weight="light" className="shrink-0" />
         <span className="max-w-[10rem] truncate sm:max-w-none">{label}</span>
-        <CaretDown size={9} className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        <CaretDown
+          size={9}
+          className={`shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
       </button>
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98, transition: { duration: 0.12 } }}
+            initial={POPOVER.initial}
+            animate={POPOVER.animate}
+            exit={POPOVER.exit}
             transition={SOFT}
             role="listbox"
-            className="absolute left-0 top-[calc(100%+8px)] z-50 w-72 overflow-hidden rounded-[var(--radius-dialog)] border border-hairline bg-surface p-1 shadow-modal"
+            className="absolute bottom-full left-0 z-50 mb-2 w-72 overflow-hidden rounded-2xl border border-hairline-strong bg-surface/95 p-1 text-ink shadow-[0_16px_40px_rgba(0,0,0,0.55)] backdrop-blur-xl"
           >
             <div className="max-h-60 overflow-y-auto py-1">
               {sources.length === 0 && (
@@ -1534,7 +1560,7 @@ function FocusMenu({
                     role="option"
                     aria-selected={checked}
                     onClick={() => toggle(s.id)}
-                    className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12.5px] text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
+                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left text-[12.5px] text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
                   >
                     <span
                       className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border ${

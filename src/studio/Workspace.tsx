@@ -21,6 +21,7 @@ import { usePaneResize } from "./usePaneResize";
 import { db } from "../lib/db";
 import { LampPulse, Modal, btnGhost } from "./ui";
 import MilestonesButton from "./companion/MilestonesButton";
+import ConsoleShell from "./ConsoleShell";
 
 type MobilePane = "sources" | "chat" | "studio";
 
@@ -113,12 +114,16 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
       onSettings={() => setSettingsOpen(true)}
       onImport={desk.requestImport}
     >
-      <div
-        className="relative flex h-[100svh] flex-col overflow-hidden bg-ground text-ink"
-        onDragEnter={(e) => {
-          e.preventDefault();
-          desk.setDropping((n) => n + 1);
-        }}
+      <ConsoleShell
+        notebookName={desk.notebook?.name || "Course Notebook"}
+        modelLabel={modelLabel}
+      >
+        <div
+          className="relative flex h-full flex-col overflow-hidden bg-ground text-ink"
+          onDragEnter={(e) => {
+            e.preventDefault();
+            desk.setDropping((n) => n + 1);
+          }}
         onDragOver={(e) => e.preventDefault()}
         onDragLeave={() => desk.setDropping((n) => Math.max(0, n - 1))}
         onDrop={(e) => {
@@ -196,7 +201,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               [PANE_WIDTH_VAR]: `${panes.sources ? sourcesResize.width : RAIL_W}px`,
               width: `var(${PANE_WIDTH_VAR})`,
             } as CSSProperties}
-            className="relative shrink-0 overflow-visible border-r desk-split transition-[width] duration-med ease-house data-[resizing=true]:transition-none motion-reduce:transition-none"
+            className="relative shrink-0 overflow-visible border-r desk-split transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] data-[resizing=true]:transition-none motion-reduce:transition-none will-change-[width] [backface-visibility:hidden]"
           >
             {panes.sources ? (
               <div id="workspace-sources-content" className={`${deskPane} flex flex-col anim-fade anim-fade--fast`}>
@@ -262,7 +267,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               [PANE_WIDTH_VAR]: `${panes.studio ? studioResize.width : RAIL_W}px`,
               width: `var(${PANE_WIDTH_VAR})`,
             } as CSSProperties}
-            className="relative shrink-0 overflow-visible border-l desk-split transition-[width] duration-med ease-house data-[resizing=true]:transition-none motion-reduce:transition-none"
+            className="relative shrink-0 overflow-visible border-l desk-split transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] data-[resizing=true]:transition-none motion-reduce:transition-none will-change-[width] [backface-visibility:hidden]"
           >
             {panes.studio ? (
               <div id="workspace-studio-content" className={`${deskPane} flex flex-col anim-fade anim-fade--fast`}>
@@ -362,7 +367,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
         </div>
 
         <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      </div>
+        </div>
+      </ConsoleShell>
     </DeskShell>
   );
 }
