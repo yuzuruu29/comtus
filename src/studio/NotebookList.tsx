@@ -42,6 +42,8 @@ export default function NotebookList({
 }) {
   const [notebooks, setNotebooks] = useState<NotebookWithCount[]>([]);
   const [creating, setCreating] = useState(false);
+  const [createPending, setCreatePending] = useState(false);
+  const [createError, setCreateError] = useState("");
   const [name, setName] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(needsKey);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -75,6 +77,7 @@ export default function NotebookList({
   };
 
   useEffect(() => {
+    let cancelled = false;
     const handleKickstart = async () => {
       try {
         const raw = sessionStorage.getItem("comtus_kickstart");
@@ -85,13 +88,16 @@ export default function NotebookList({
             ? `${parsed.subject} · ${parsed.prompt.slice(0, 30)}`
             : `${parsed.subject} (${parsed.goal})`;
           const nb = await createNotebook(title);
-          onOpen(nb.id);
+          if (!cancelled) onOpen(nb.id);
           return;
         }
       } catch {}
-      void refresh();
+      if (!cancelled) void refresh();
     };
     void handleKickstart();
+    return () => {
+      cancelled = true;
+    };
   }, [onOpen]);
 
   useEffect(() => {
@@ -132,15 +138,28 @@ export default function NotebookList({
 
   const openCreateModal = () => {
     setName("");
+    setCreateError("");
     setCreating(true);
   };
 
   const create = async () => {
     const trimmed = name.trim();
-    if (!trimmed) return;
-    const nb = await createNotebook(trimmed);
+    if (!trimmed || createPending) return;
+    setCreatePending(true);
+    setCreateError("");
+
+    let nb: Notebook;
+    try {
+      nb = await createNotebook(trimmed);
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : "The notebook could not be created.");
+      setCreatePending(false);
+      return;
+    }
+
     setCreating(false);
     setName("");
+    setCreatePending(false);
     onOpen(nb.id);
   };
 
@@ -549,24 +568,49 @@ export default function NotebookList({
         </div>
 
         {/* Create Notebook Modal */}
-        <Modal open={creating} onClose={() => setCreating(false)} title="New notebook">
+        <Modal
+          open={creating}
+          onClose={() => {
+            if (!createPending) setCreating(false);
+          }}
+          title="New notebook"
+        >
           <div className="space-y-5">
             <Field label="Name" hint="e.g. Comparison of Android 15 and iOS 18">
               <input
                 autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && void create()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void create();
+                  }
+                }}
                 placeholder="Name this notebook"
                 className={inputCls}
+                disabled={createPending}
               />
             </Field>
+            {createError && (
+              <p role="alert" className="text-[13px] leading-relaxed text-rust">
+                {createError}
+              </p>
+            )}
             <div className="flex justify-end gap-3">
-              <button className={btnGhost} onClick={() => setCreating(false)}>
+              <button
+                className={btnGhost}
+                onClick={() => setCreating(false)}
+                disabled={createPending}
+              >
                 Cancel
               </button>
-              <button className={btnLamp} onClick={() => void create()} disabled={!name.trim()}>
-                Create
+              <button
+                className={btnLamp}
+                onClick={() => void create()}
+                disabled={createPending || !name.trim()}
+              >
+                {createPending ? "Creating…" : "Create"}
               </button>
             </div>
           </div>

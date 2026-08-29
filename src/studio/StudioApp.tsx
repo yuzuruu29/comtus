@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import NotebookList from "./NotebookList";
 import Workspace from "./Workspace";
@@ -11,6 +11,7 @@ import "./studio.css";
 export default function StudioApp() {
   const { notebookId } = useParams();
   const navigate = useNavigate();
+  const openNotebook = useCallback((id: string) => navigate(`/studio/${id}`), [navigate]);
   const hasKey = useSettings((s) => s.hasKey());
 
   useEffect(() => {
@@ -33,10 +34,7 @@ export default function StudioApp() {
   return (
     <MotionPrefs>
       {!notebookId ? (
-        <NotebookList
-          onOpen={(id) => navigate(`/studio/${id}`, { flushSync: true })}
-          needsKey={!hasKey}
-        />
+        <NotebookList onOpen={openNotebook} needsKey={!hasKey} />
       ) : (
         <Workspace notebookId={notebookId} />
       )}

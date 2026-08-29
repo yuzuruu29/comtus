@@ -60,6 +60,8 @@ export default function DeskHome({
 
   // Dialog states
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createPending, setCreatePending] = useState(false);
+  const [createError, setCreateError] = useState("");
   const [newNotebookName, setNewNotebookName] = useState("");
   const [renamingNotebook, setRenamingNotebook] = useState<Notebook | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
@@ -137,15 +139,28 @@ export default function DeskHome({
 
   const openCreateModal = () => {
     setNewNotebookName("");
+    setCreateError("");
     setCreateModalOpen(true);
   };
 
   const handleCreate = async () => {
     const trimmed = newNotebookName.trim();
-    if (!trimmed) return;
-    const nb = await createNotebook(trimmed);
+    if (!trimmed || createPending) return;
+    setCreatePending(true);
+    setCreateError("");
+
+    let nb: Notebook;
+    try {
+      nb = await createNotebook(trimmed);
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : "The notebook could not be created.");
+      setCreatePending(false);
+      return;
+    }
+
     setCreateModalOpen(false);
     setNewNotebookName("");
+    setCreatePending(false);
     onOpenResume(nb.id);
   };
 
@@ -561,7 +576,9 @@ export default function DeskHome({
       {/* Create Notebook Modal */}
       <Modal
         open={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
+        onClose={() => {
+          if (!createPending) setCreateModalOpen(false);
+        }}
         title="Create new notebook"
       >
         <div className="space-y-5">
@@ -570,21 +587,36 @@ export default function DeskHome({
               autoFocus
               value={newNotebookName}
               onChange={(e) => setNewNotebookName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && void handleCreate()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void handleCreate();
+                }
+              }}
               placeholder="Enter notebook title"
               className={inputCls}
+              disabled={createPending}
             />
           </Field>
+          {createError && (
+            <p role="alert" className="text-[13px] leading-relaxed text-rust">
+              {createError}
+            </p>
+          )}
           <div className="flex justify-end gap-3">
-            <button className={btnGhost} onClick={() => setCreateModalOpen(false)}>
+            <button
+              className={btnGhost}
+              onClick={() => setCreateModalOpen(false)}
+              disabled={createPending}
+            >
               Cancel
             </button>
             <button
               className={btnLamp}
               onClick={() => void handleCreate()}
-              disabled={!newNotebookName.trim()}
+              disabled={createPending || !newNotebookName.trim()}
             >
-              Create notebook
+              {createPending ? "Creating…" : "Create notebook"}
             </button>
           </div>
         </div>
