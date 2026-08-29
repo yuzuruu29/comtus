@@ -12,6 +12,7 @@ import {
 import { useSettings } from "../../lib/settings";
 import { Toast } from "../Toast";
 import MilestonesPanel from "./MilestonesPanel";
+import { PixelBatteryCompanion } from "../../components/pixel/PixelBatteryCompanion";
 import { playSfx, unlockSfx } from "./sfx";
 import { DEFAULT_IDLE_MS, useIdleWatch } from "./useIdleWatch";
 import "./companion.css";
@@ -35,11 +36,15 @@ export default function DeskLife({
   onPanelOpenChange: (open: boolean) => void;
   onCount: (count: number) => void;
 }) {
+  const companion = useSettings((s) => s.companion !== false);
   const sfxOn = useSettings((s) => s.companionSfx !== false);
+  const pixelOn = useSettings((s) => s.pixelDesk !== false);
   const [ignite, setIgnite] = useState(false);
   const [record, setRecord] = useState<MilestoneRecord>(() => loadMilestoneRecord());
   const [mood, setMood] = useState<DeskMood>("idle");
   const [toast, setToast] = useState<MilestoneDef | null>(null);
+  const [batteryThink, setBatteryThink] = useState(false);
+  const [batteryFace, setBatteryFace] = useState<"left" | "right" | null>(null);
   const moodTimer = useRef<number | undefined>(undefined);
   const recordRef = useRef(record);
   recordRef.current = record;
@@ -121,6 +126,47 @@ export default function DeskLife({
     },
   });
 
+  // Battery "think": hold while an existing streaming/busy marker is in the DOM
+  useEffect(() => {
+    if (!companion) return;
+    if (typeof MutationObserver === "undefined") return;
+    const update = () => {
+      setBatteryThink(Boolean(document.querySelector(".stream-typing-beacon, [data-lamp-think], [data-battery-think]")));
+    };
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [companion]);
+
+  // Battery glance: face the side of the desk the user last touched
+  useEffect(() => {
+    if (!companion) return;
+    const onDown = (e: PointerEvent) => {
+      const el = document.querySelector<HTMLElement>(".cozy-pixel-battery-companion");
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      if (Math.abs(e.clientX - cx) < 80) {
+        setBatteryFace(null);
+        return;
+      }
+      setBatteryFace(e.clientX < cx ? "left" : "right");
+    };
+    window.addEventListener("pointerdown", onDown, { passive: true });
+    return () => window.removeEventListener("pointerdown", onDown);
+  }, [companion]);
+
+  // Keep-out zones: avoid overlapping the dock and the composer
+  const batteryAvoidRects = useCallback(() => {
+    const rects = [];
+    const dock = document.getElementById("study-focus-dock");
+    if (dock) rects.push(dock.getBoundingClientRect());
+    const composer = document.querySelector<HTMLElement>(".composer-shell");
+    if (composer) rects.push(composer.getBoundingClientRect());
+    return rects;
+  }, []);
+
   return (
     <div className="desk-life">
       {ignite && <div className="desk-ignite" aria-hidden />}
@@ -140,6 +186,15 @@ export default function DeskLife({
           />
         ))}
       </div>
+      {companion && pixelOn && (
+        <PixelBatteryCompanion
+          mood={mood === "celebrate" ? "celebrate" : mood === "sleepy" ? "sleep" : mood === "cheer" ? "cheer" : undefined}
+          showControls={false}
+          think={batteryThink}
+          face={batteryFace}
+          avoidRects={batteryAvoidRects}
+        />
+      )}
       <div className="pointer-events-auto fixed bottom-[calc(5.5rem+var(--sab))] left-4 z-[57] lg:bottom-6">
         <Toast
           open={Boolean(toast)}

@@ -42,7 +42,7 @@ const BEACON_THEMES: Record<
   { label: string; ring: string; glow: string; text: string; bg: string; border: string }
 > = {
   gold: {
-    label: "Lamplight",
+    label: "Amber Glow",
     ring: "#FFD166",
     glow: "rgba(255, 209, 102, 0.45)",
     text: "text-amber-300",

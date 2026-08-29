@@ -160,7 +160,7 @@ html[data-pixel="on"] .font-mono {
 html[data-pixel="on"] .btn-ink-press,
 html[data-pixel="on"] .arcade-press,
 html[data-pixel="on"] button.grad-lamp,
-html[data-pixel="on"] .grad-lamp {
+html[data-pixel="on"] a.grad-lamp {
   position: relative;
   border-radius: 4px;
   border: 1px solid var(--px-border);

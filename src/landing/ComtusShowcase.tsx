@@ -125,7 +125,7 @@ export const COMTUS_CARDS_RIGHT: StudyCardData[] = [
   {
     id: "card-10",
     title: "16-BIT COZY SCHOLAR DESK",
-    desc: "Draggable brass lamp companion, ambient lofi study soundscapes, and focus tracking on warm daylight parchment.",
+    desc: "Draggable blue battery companion, ambient lofi study soundscapes, and focus tracking on warm daylight parchment.",
     metric: "Delight Score (99.9%) · Offline-Safe",
     tag: "Focus Atmosphere",
     icon: Sparkle,
@@ -542,14 +542,18 @@ export default function ComtusShowcase() {
           </h1>
 
           {/* Floating Pixel Retro Scholar Stickers */}
-          <div className="cs-sticker cs-sticker-lamp" title="16-Bit Banker's Lamp">
+          <div className="cs-sticker cs-sticker-battery" title="16-Bit Blue Battery">
             <svg viewBox="0 0 48 48" className="w-full h-full drop-shadow">
-              <path d="M18 6h12v4H18z" fill="#79510F" />
-              <path d="M12 10h24v8H12z" fill="#4B8A5A" />
-              <path d="M16 14h16v4H16z" fill="#78B084" />
-              <path d="M22 18h4v16h-4z" fill="#A5731C" />
-              <path d="M14 34h20v6H14z" fill="#79510F" />
-              <path d="M10 40h28v4H10z" fill="#5C3D1E" />
+              <path d="M20 4h8v4h-8z" fill="#94A3B8" />
+              <path d="M22 4h4v2h-4z" fill="#E2E8F0" />
+              <path d="M12 8h24v34H12z" fill="#080E1E" />
+              <path d="M14 10h20v30H14z" fill="#044AB3" />
+              <path d="M14 10h3v30h-3z" fill="#4F93F7" />
+              <path d="M17 14h14v16H17z" fill="#05132B" />
+              <path d="M19 18h2v3h-2zM27 18h2v3h-2z" fill="#6FE3FF" />
+              <path d="M20 18h1v1h-1zM28 18h1v1h-1z" fill="#FFFFFF" />
+              <path d="M22 24h4v1h-4zM21 23h1v1h-1zM26 23h1v1h-1z" fill="#6FE3FF" />
+              <path d="M18 33h3v3h-3zM23 33h3v3h-3zM28 33h3v3h-3z" fill="#6FE3FF" />
             </svg>
           </div>
 
