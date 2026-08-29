@@ -1,7 +1,9 @@
 # Comtus — Brand Kit
 
 > The essential brand kit. Every design decision in the product defers to this file.
-> 16-bit Cozy Pixel Bookshop aesthetic with scholarly craft, aged parchment paper, warm brass accents, rubber-stamp ink-press physics, and organic paper motion.
+> Precision-instrument tech console with scholarly craft — Cantor8 royal sapphire on the
+> marketing surface, a calibrated study desk in the Studio, warm brass accents, and
+> 16-bit pixel texture used as an accent, never as the default reading voice.
 
 ---
 
@@ -88,13 +90,20 @@ The master palette is a curated 16-color system calibrated for high readability 
 
 All families are self-hosted via `@fontsource`. No Google Fonts CDN.
 
-| Role | Family | Usage |
-|---|---|---|
-| Display (landing) | **Pixelify Sans Variable** | Every landing surface: hero, nav, body, captions, buttons, footer. Sized ≥12px labels, ≥14–16px body. Never Press Start 2P. |
-| Display (Pixel desk) | **Pixelify Sans Variable** | Every studio/desk line when Pixel is on: titles, chat, notes, markdown, settings, composer, buttons. Sized ≥14px body, ≥12px labels. |
-| Display (Scholar desk) | **Fraunces** (variable serif, optical size / `opsz` auto) | Scholar-mode notebook titles only. Weight 340–560. *Italics* for emphasized words. Tokens: `text-display`, `text-title`. |
-| Body (studio) | **Pixelify Sans Variable** (Pixel, default) · **Inter** (Scholar) | Pixel: chat, notes, markdown, settings, composer. Scholar restores Inter. Tokens: `text-heading`, `text-body`. |
-| Label (studio) | **Pixelify Sans Variable** (Pixel) · **JetBrains Mono** (Scholar) | Pixel restyles chrome labels to Pixelify at ≥12px. Scholar keeps JetBrains for code/IDs. Token: `text-label`. |
+Studio typography is a **curated preset system** (`src/lib/fontPresets.ts` + `src/styles/font-presets.css`),
+owned by `html[data-font-preset]` and selected in Settings → Typography. Presets are whole
+systems — never mix-and-match. Pixelify appears only as the Pixel Signal preset's display
+accent, never as body text.
+
+| Preset | Display | Body | Mono | Role |
+|---|---|---|---|---|
+| **Instrument** (default) | Instrument Serif | Instrument Sans | JetBrains Mono | Calibrated default — serif display, clean body |
+| **Pixel Signal** | Pixelify Sans Variable | Inter | JetBrains Mono | 16-bit display accents over readable body |
+| **Scholar** | Fraunces | Inter | JetBrains Mono | Classic study desk |
+| **Console** | JetBrains Mono | Inter | JetBrains Mono | Mono-forward terminal instrumentation |
+
+The landing owns its own type: Pixelify Sans Variable as display accent over the Cantor8
+console chrome. Never Press Start 2P.
 
 Landing scale: hero `clamp(2.8rem, 7.5vw, 6.8rem)` · section titles `clamp(2.1rem, 4.6vw, 3.8rem)` · statement `clamp(2.4rem, 6vw, 5.2rem)` · body 16px.
 
@@ -154,15 +163,21 @@ A warm scholar, not a hype startup. Second person. Plain, precise words. No excl
 
 ## 8 · Desk Life & Landing Specifications
 
-- **Landing Page**:
-  - Always rendered on Daylight Paper ground (`#F5F1E8`) with subtle paper fiber texture.
-  - Floating parchment navigation bar with paper-curl shadow.
-  - Ink-nib custom cursor without bright glow trails.
-  - Thin sepia hairline section dividers (pencil margin rules).
-  - Leather-bound footer with `#4A2E1B` top binding border.
-  - Lamp companion is quiet and rests in the Studio only.
-- **Studio & Desk**:
-  - Defaults to Daylight Paper workspace following OS preference.
-  - Full dark Lamplight mode toggle preserved in Settings.
-  - Interactive companion lamp rests in bottom-right corner with position persistence (`comtus-lamp-pos`).
+- **Landing Page** (marketing spectacle — the high-motion surface):
+  - Cantor8 royal sapphire console (`#044AB3` family) with paper-light interludes.
+  - Continuous scroll choreography: circuit pulse streams, pixel-matrix dissolves,
+    telemetry grid. Scrubbed transitions must fully resolve inside their section's
+    entrance — nothing rests half-transitioned mid-scroll.
+  - Precision Beam (raycast focus) de-emphasizes sections away from the cursor
+    gently — a reading aid, never a wash-out.
+  - Thin beam section dividers; Cantor8 prism emblem; leather-bound footer.
+  - The battery companion is quiet and rests in the Studio only.
+- **Studio & Desk** (fast and tactile — the instrument, not the show):
+  - Console chassis (`ConsoleShell`) frames the three-pane workspace.
+  - Typography from the curated preset system (Instrument default); pixel chrome
+    (brass-bevel palette, ink-press physics) is a separate Desk-chrome toggle.
+  - Blue battery companion rests bottom-right with position persistence
+    (`comtus:battery_pos`); its co-pilot menu reuses real desk actions and
+    reports real study state — quietly reactive, rare nudges, never interrupting.
   - Study-craft milestones celebrate real progress without arcade gamification.
+  - Full dark Lamplight mode toggle preserved in Settings.
