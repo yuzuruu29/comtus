@@ -38,7 +38,6 @@ export default function DeskLife({
 }) {
   const companion = useSettings((s) => s.companion !== false);
   const sfxOn = useSettings((s) => s.companionSfx !== false);
-  const pixelOn = useSettings((s) => s.pixelDesk !== false);
   const [ignite, setIgnite] = useState(false);
   const [record, setRecord] = useState<MilestoneRecord>(() => loadMilestoneRecord());
   const [mood, setMood] = useState<DeskMood>("idle");
@@ -186,7 +185,7 @@ export default function DeskLife({
           />
         ))}
       </div>
-      {companion && pixelOn && (
+      {companion && (
         <PixelBatteryCompanion
           mood={mood === "celebrate" ? "celebrate" : mood === "sleepy" ? "sleep" : mood === "cheer" ? "cheer" : undefined}
           showControls={false}

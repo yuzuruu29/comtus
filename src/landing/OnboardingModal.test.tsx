@@ -52,7 +52,7 @@ describe("OnboardingModal - Interactive Pixel Desk Setup Flow", () => {
     // 16-Bit Pixel Desk Scene Image
     const scene = screen.getByRole("img", { name: /16-bit Pixel Desk/i });
     expect(scene).toBeInTheDocument();
-    expect(scene.getAttribute("aria-label")).toContain("lamp is dark");
+    expect(scene.getAttribute("aria-label")).toContain("battery in standby");
 
     // Renders all subjects
     SUBJECTS.forEach((sub) => {
@@ -97,9 +97,9 @@ describe("OnboardingModal - Interactive Pixel Desk Setup Flow", () => {
     expect(screen.getByText(/Step 2 of 3/i)).toBeInTheDocument();
     expect(screen.getByText(/Pedagogical Objective/i)).toBeInTheDocument();
 
-    // Scene preview reflects ignited lamp
+    // Scene preview reflects ignited battery
     const scene = screen.getByRole("img", { name: /16-bit Pixel Desk/i });
-    expect(scene.getAttribute("aria-label")).toContain("lamp is lit");
+    expect(scene.getAttribute("aria-label")).toContain("battery fully charged");
 
     // Goals rendered
     GOALS.forEach((goal) => {

@@ -14,7 +14,13 @@ type LandingPlay = {
 
 const LandingPlayContext = createContext<LandingPlay | null>(null);
 
-const POKE_LINES = ["Here.", "Still burning.", "Ask when you are ready.", "Light the margins.", "Study in a warmer light."] as const;
+const POKE_LINES = [
+  "100% Charged.",
+  "Ready to drill.",
+  "Full battery, clear focus.",
+  "Ask when you are ready.",
+  "Powering your study session.",
+] as const;
 
 export function pokeLine(tick: number): string {
   return POKE_LINES[tick % POKE_LINES.length];

@@ -242,18 +242,18 @@ export default function PixelDeskHeroScene({ className = "" }: { className?: str
         shapeRendering="crispEdges"
       >
         <defs>
-          {/* Radial Light Cone from Brass Lamp */}
+          {/* Radial Light Cone from Blue Battery Companion */}
           <radialGradient
             id={`lampGlow-${filterId}`}
-            cx="72%"
-            cy="32%"
+            cx="76%"
+            cy="45%"
             r="55%"
-            fx="72%"
-            fy="32%"
+            fx="76%"
+            fy="45%"
           >
-            <stop offset="0%" stopColor="#F7D486" stopOpacity={lampLit || lampHovered ? "0.6" : "0.35"} />
-            <stop offset="25%" stopColor="#E3B04B" stopOpacity={lampLit || lampHovered ? "0.38" : "0.22"} />
-            <stop offset="55%" stopColor="#B88428" stopOpacity={lampLit || lampHovered ? "0.18" : "0.09"} />
+            <stop offset="0%" stopColor="#6FE3FF" stopOpacity={lampLit || lampHovered ? "0.55" : "0.3"} />
+            <stop offset="28%" stopColor="#044AB3" stopOpacity={lampLit || lampHovered ? "0.35" : "0.18"} />
+            <stop offset="60%" stopColor="#022354" stopOpacity={lampLit || lampHovered ? "0.18" : "0.08"} />
             <stop offset="100%" stopColor="#080B12" stopOpacity="0" />
           </radialGradient>
 
@@ -576,10 +576,10 @@ export default function PixelDeskHeroScene({ className = "" }: { className?: str
           </g>
         </g>
 
-        {/* ── GLOWING BRASS SCHOLAR'S LAMP (Desk Right) ────────────────── */}
+        {/* ── 16-BIT BLUE BATTERY COMPANION (Desk Right Mascot) ─────────── */}
         <g
-          transform="translate(630, 130)"
-          className="cursor-pointer"
+          transform="translate(620, 210)"
+          className="cursor-pointer transition-transform duration-150 hover:-translate-y-2 active:scale-95"
           onClick={handleLampClick}
           onMouseEnter={() => {
             setLampHovered(true);
@@ -587,65 +587,91 @@ export default function PixelDeskHeroScene({ className = "" }: { className?: str
           }}
           onMouseLeave={() => setLampHovered(false)}
           role="button"
-          aria-label={lampLit ? "Brass desk lamp, lit. Click to flare." : "Light the brass desk lamp."}
+          aria-label={lampLit ? "16-Bit Blue Battery Companion, fully charged! Click to poke." : "Click to wake Blue Battery Companion."}
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") handleLampClick();
           }}
         >
-          {/* Stepped Heavy Brass Base */}
-          <rect x="18" y="248" width="68" height="12" fill="#B88428" stroke="#080B12" strokeWidth="1.5" />
-          <rect x="22" y="244" width="60" height="4" fill="#E3B04B" />
-          <rect x="28" y="240" width="48" height="4" fill="#F7D486" />
-          <rect x="36" y="234" width="32" height="6" fill="#B88428" />
+          {/* Ground Contact Shadow */}
+          <ellipse cx="55" cy="182" rx="46" ry="10" fill="#080B12" opacity="0.65" />
 
-          {/* Curved Brass Armature Goose-Neck */}
-          <path
-            d="M52,234 L52,110 Q52,48 10,48 L-6,48"
-            stroke="#B88428"
-            strokeWidth="7"
-            fill="none"
-            strokeLinecap="square"
-          />
-          <path
-            d="M54,234 L54,110 Q54,50 12,50 L-4,50"
-            stroke="#E3B04B"
-            strokeWidth="3"
-            fill="none"
-            strokeLinecap="square"
-          />
-          <rect x="46" y="112" width="14" height="6" fill="#E3B04B" />
+          {/* ── Silver Terminal Cap ────────────────────────── */}
+          <rect x="42" y="0" width="26" height="12" fill="#94A3B8" stroke="#080E1E" strokeWidth="2" />
+          <rect x="46" y="2" width="18" height="3" fill="#E2E8F0" />
+          <rect x="44" y="5" width="22" height="4" fill="#CBD5E1" />
 
-          {/* Banker's / Scholar's Lamp Hood */}
-          {/* Outer Brass Hood */}
-          <path
-            d="M-36,52 L16,52 L26,78 L-46,78 Z"
-            fill="#B88428"
-            stroke="#080B12"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M-34,54 L14,54 L22,76 L-42,76 Z"
-            fill="#E3B04B"
-          />
-          <rect x="-30" y="54" width="40" height="3" fill="#F7D486" />
+          {/* ── Main Battery Chassis Outline ────────────────── */}
+          <rect x="15" y="10" width="80" height="168" rx="8" fill="#080E1E" />
 
-          {/* Glowing Inner Filament & Golden Core */}
-          <rect x="-36" y="78" width="56" height="8" fill="#FF9E43" />
-          <rect x="-28" y="80" width="40" height="6" fill="#F7D486" className="anim-px-flicker" />
-          <circle cx="-8" cy="84" r="8" fill="#FFFFFF" opacity={lampLit || lampHovered ? "0.9" : "0.7"} />
+          {/* ── Royal Sapphire Blue Casing ──────────────────── */}
+          <rect x="19" y="14" width="72" height="160" rx="6" fill="#044AB3" />
+          {/* High Voltage Left Highlight */}
+          <rect x="21" y="16" width="6" height="156" fill="#4F93F7" />
+          <rect x="23" y="18" width="2" height="152" fill="#94C5FF" opacity="0.8" />
+          {/* Darker Right Shadow Bevel */}
+          <rect x="83" y="16" width="6" height="156" fill="#022354" />
+          <rect x="21" y="164" width="68" height="8" fill="#021B47" />
 
-          {/* Hanging Pull-Chain Bead with Tassel */}
-          <line x1="-2" y1="84" x2="-2" y2="134" stroke="#E3B04B" strokeWidth="1.5" strokeDasharray="3 2" />
-          <circle cx="-2" cy="136" r="3.5" fill="#F7D486" />
+          {/* ── Digital LED Face Screen ─────────────────────── */}
+          <rect x="29" y="32" width="52" height="60" rx="4" fill="#05132B" stroke="#022354" strokeWidth="2" />
+          <rect x="31" y="34" width="48" height="56" fill="#040F22" />
 
-          {/* Interactive Poke Sparks */}
-          {(mood === "poke" || pokeCount > 0) && (
-            <g className="lamp-spark-burst" opacity="0.9">
-              <rect x="-14" y="60" width="3" height="3" fill="#F7D486" />
-              <rect x="4" y="56" width="3" height="3" fill="#FF9E43" />
-              <rect x="-24" y="92" width="4" height="4" fill="#F7D486" />
-              <rect x="18" y="96" width="3" height="3" fill="#E3B04B" />
+          {/* LED Glowing Eyes & Smile */}
+          {mood === "poke" || pokeCount > 0 ? (
+            /* Surprised / Poke Happy Face [ > ‿ < ] */
+            <g className="anim-poke-jump">
+              {/* Eye Left > */}
+              <path d="M36,48 L44,53 L36,58" stroke="#6FE3FF" strokeWidth="3" fill="none" strokeLinecap="square" />
+              <path d="M38,50 L42,53 L38,56" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+              {/* Eye Right < */}
+              <path d="M74,48 L66,53 L74,58" stroke="#6FE3FF" strokeWidth="3" fill="none" strokeLinecap="square" />
+              <path d="M72,50 L68,53 L72,56" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
+              {/* Open Cheerful Smile */}
+              <rect x="47" y="70" width="16" height="8" rx="2" fill="#6FE3FF" />
+              <rect x="50" y="72" width="10" height="4" fill="#FFFFFF" />
+            </g>
+          ) : (
+            /* Normal Cheerful Idle Face [ ^ ‿ ^ ] */
+            <g>
+              {/* Left Eye */}
+              <rect x="37" y="46" width="9" height="12" rx="2" fill="#6FE3FF" className="anim-px-flicker" />
+              <rect x="39" y="48" width="3" height="4" fill="#FFFFFF" />
+              {/* Right Eye */}
+              <rect x="64" y="46" width="9" height="12" rx="2" fill="#6FE3FF" className="anim-px-flicker" />
+              <rect x="66" y="48" width="3" height="4" fill="#FFFFFF" />
+              {/* Cute Pixel Smile */}
+              <path d="M47,68 Q55,76 63,68" stroke="#6FE3FF" strokeWidth="3" fill="none" strokeLinecap="round" />
+            </g>
+          )}
+
+          {/* ── Multi-Bar Charging Battery Gauge ─────────────── */}
+          <g transform="translate(29, 102)">
+            {/* Gauge Background Plate */}
+            <rect x="0" y="0" width="52" height="24" rx="3" fill="#021B47" stroke="#044AB3" strokeWidth="1.5" />
+            {/* Charging Level Bars */}
+            <rect x="4" y="4" width="8" height="16" rx="1" fill="#4EED88" className="anim-px-flicker" />
+            <rect x="14" y="4" width="8" height="16" rx="1" fill="#4EED88" className="anim-px-flicker" />
+            <rect x="24" y="4" width="8" height="16" rx="1" fill="#6FE3FF" className="anim-px-flicker" />
+            <rect x="34" y="4" width="8" height="16" rx="1" fill="#6FE3FF" opacity={lampLit || lampHovered ? "1" : "0.5"} />
+            <rect x="44" y="4" width="4" height="16" rx="1" fill="#6FE3FF" opacity={lampLit || lampHovered ? "1" : "0.2"} />
+          </g>
+
+          {/* ── 100% Fully Charged Status Stamp ─────────────── */}
+          <rect x="33" y="136" width="44" height="16" rx="3" fill="#05132B" stroke="#044AB3" strokeWidth="1" />
+          <text x="55" y="148" textAnchor="middle" fill="#6FE3FF" fontSize="9" fontFamily="monospace" fontWeight="bold" letterSpacing="0.5">
+            100%
+          </text>
+
+          {/* ── Interactive Electric Sparkles on Poke/Hover ─── */}
+          {(mood === "poke" || pokeCount > 0 || lampHovered) && (
+            <g className="battery-spark-burst" opacity="0.95">
+              {/* Electric Sparks */}
+              <rect x="0" y="24" width="6" height="6" fill="#6FE3FF" className="anim-px-flicker" />
+              <rect x="94" y="40" width="7" height="7" fill="#FDE047" className="anim-px-flicker" />
+              <rect x="-8" y="90" width="5" height="5" fill="#4EED88" />
+              <rect x="98" y="120" width="6" height="6" fill="#6FE3FF" />
+              <polygon points="55,-12 50,-2 57,-2 52,8 64,-4 57,-4" fill="#FDE047" />
             </g>
           )}
         </g>

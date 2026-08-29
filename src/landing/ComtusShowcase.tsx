@@ -309,16 +309,19 @@ function CardPreviewGraphic({ type, tag, icon: Icon }: { type: string; tag: stri
         <div className="flex items-center justify-center gap-3">
           <div className="w-10 h-10">
             <svg viewBox="0 0 48 48" className="w-full h-full drop-shadow">
-              <path d="M18 6h12v4H18z" fill="#79510F" />
-              <path d="M12 10h24v8H12z" fill="#4B8A5A" />
-              <path d="M16 14h16v4H16z" fill="#78B084" />
-              <path d="M22 18h4v16h-4z" fill="#A5731C" />
-              <path d="M14 34h20v6H14z" fill="#79510F" />
+              <path d="M20 4h8v4h-8z" fill="#94A3B8" />
+              <path d="M12 8h24v34H12z" fill="#080E1E" />
+              <path d="M14 10h20v30H14z" fill="#044AB3" />
+              <path d="M14 10h3v30h-3z" fill="#4F93F7" />
+              <path d="M17 14h14v16H17z" fill="#05132B" />
+              <path d="M19 18h2v3h-2zM27 18h2v3h-2z" fill="#6FE3FF" />
+              <path d="M22 24h4v1h-4z" fill="#6FE3FF" />
+              <path d="M18 33h3v3h-3zM23 33h3v3h-3zM28 33h3v3h-3z" fill="#6FE3FF" />
             </svg>
           </div>
-          <div className="font-mono text-xs text-[#5C3D1E]">
-            <div>16-Bit Desk Lamp</div>
-            <div className="text-[10px] text-[#A5731C]">Daylight Paper · Lofi Ambient</div>
+          <div className="font-mono text-xs text-[#044AB3]">
+            <div>16-Bit Blue Battery</div>
+            <div className="text-[10px] text-[#4F93F7]">Fully Charged · Study Companion</div>
           </div>
         </div>
       );

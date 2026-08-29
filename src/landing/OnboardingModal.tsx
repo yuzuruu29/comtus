@@ -182,7 +182,7 @@ export function PixelDeskScene({ step, subject, goal, onSceneClick }: PixelDeskS
       onClick={handleSceneClick}
       role="img"
       aria-label={`16-bit Pixel Desk: ${subject.label} tome on desk, ${
-        isLampLit ? "lamp is lit" : "lamp is dark"
+        isLampLit ? "battery fully charged" : "battery in standby"
       }, ${hasQuill ? "quill ready" : "awaiting quill"}`}
       className="relative w-full h-[120px] sm:h-[135px] overflow-hidden border border-[#33405F]/60 bg-[#080B12] select-none cursor-pointer group shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)]"
       style={{ imageRendering: "pixelated" }}
@@ -195,12 +195,12 @@ export function PixelDeskScene({ step, subject, goal, onSceneClick }: PixelDeskS
         style={{ shapeRendering: "crispEdges" }}
       >
         <defs>
-          {/* Lamplight Ambient Glow Gradient */}
-          <radialGradient id="lampGlow" cx="240" cy="38" r="95" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#FFF2B2" stopOpacity="0.75" />
-            <stop offset="25%" stopColor="#FFD034" stopOpacity="0.45" />
-            <stop offset="60%" stopColor="#E3B04B" stopOpacity="0.18" />
-            <stop offset="100%" stopColor="#FF9E43" stopOpacity="0" />
+          {/* Battery Ambient Glow Gradient */}
+          <radialGradient id="lampGlow" cx="240" cy="58" r="75" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#6FE3FF" stopOpacity="0.75" />
+            <stop offset="35%" stopColor="#044AB3" stopOpacity="0.4" />
+            <stop offset="70%" stopColor="#022354" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#080B12" stopOpacity="0" />
           </radialGradient>
 
           {/* Dither pattern for wall texture */}
@@ -288,52 +288,65 @@ export function PixelDeskScene({ step, subject, goal, onSceneClick }: PixelDeskS
           <path d="M 95 85 L 98 96 L 95 94 L 92 96 Z" fill="#C85848" />
         </g>
 
-        {/* ── Dynamic Layer 2: Brass Study Lamp ── */}
+        {/* ── Dynamic Layer 2: 16-Bit Blue Battery Companion ── */}
         <g id="sceneLamp">
-          {/* Heavy Brass Base on Desk */}
-          <rect x="226" y="82" width="28" height="4" fill="#1A1108" />
-          <rect x="228" y="80" width="24" height="3" fill="#6E4C0F" />
-          <rect x="230" y="78" width="20" height="2" fill="#E3B04B" />
+          {/* Contact Shadow on Desk */}
+          <ellipse cx="240" cy="85" rx="20" ry="4" fill="#080B12" fillOpacity="0.75" />
 
-          {/* Arched Gooseneck Arm */}
-          <rect x="238" y="44" width="4" height="34" fill="#996A19" />
-          <rect x="239" y="44" width="2" height="34" fill="#E3B04B" />
-          <rect x="235" y="40" width="8" height="4" fill="#996A19" />
-          <rect x="232" y="36" width="6" height="4" fill="#C99728" />
+          {/* Terminal Cap */}
+          <rect x="234" y="36" width="12" height="4" fill="#94A3B8" stroke="#080E1E" strokeWidth="1" />
+          <rect x="236" y="37" width="8" height="1" fill="#E2E8F0" />
 
-          {/* Antique Brass Lamp Hood / Shade */}
-          <polygon points="222,38 258,38 252,24 228,24" fill="#6E4C0F" />
-          <polygon points="224,37 256,37 250,26 230,26" fill="#E3B04B" />
-          <rect x="232" y="22" width="16" height="3" fill="#F5D76E" />
-          <rect x="237" y="19" width="6" height="3" fill="#E3B04B" />
+          {/* Chassis Outline */}
+          <rect x="222" y="40" width="36" height="44" rx="4" fill="#080E1E" />
 
-          {/* Glass Chimney & Filament */}
+          {/* Sapphire Blue Body */}
+          <rect x="224" y="42" width="32" height="40" rx="3" fill="#044AB3" />
+          <rect x="225" y="43" width="3" height="38" fill="#4F93F7" />
+          <rect x="252" y="43" width="3" height="38" fill="#022354" />
+
+          {/* Digital LED Screen */}
+          <rect x="229" y="47" width="22" height="16" rx="2" fill="#05132B" stroke="#021B47" strokeWidth="1" />
+
           {isLampLit ? (
             <>
-              {/* Illuminated Glass */}
-              <rect x="230" y="38" width="20" height="14" fill="#FFF2B2" fillOpacity="0.85" />
-              <rect x="234" y="40" width="12" height="10" fill="#FFFFFF" />
-              <rect x="238" y="43" width="4" height="4" fill="#FFAA00" />
-              {/* Filament Hot Core */}
-              <rect x="239" y="44" width="2" height="2" fill="#FFFFFF" />
+              {/* Active / Glowing Face */}
+              <rect x="232" y="51" width="4" height="4" fill="#6FE3FF" className="anim-px-flicker" />
+              <rect x="244" y="51" width="4" height="4" fill="#6FE3FF" className="anim-px-flicker" />
+              <rect x="236" y="58" width="8" height="2" rx="1" fill="#6FE3FF" />
+
+              {/* Charging Level Bars */}
+              <g transform="translate(229, 67)">
+                <rect x="0" y="0" width="22" height="8" rx="1" fill="#021B47" />
+                <rect x="2" y="2" width="4" height="4" fill="#4EED88" className="anim-px-flicker" />
+                <rect x="7" y="2" width="4" height="4" fill="#4EED88" className="anim-px-flicker" />
+                <rect x="12" y="2" width="4" height="4" fill="#6FE3FF" className="anim-px-flicker" />
+                <rect x="17" y="2" width="3" height="4" fill="#6FE3FF" />
+              </g>
 
               {/* Radiant Light Cone */}
-              <circle cx="240" cy="45" r="85" fill="url(#lampGlow)" className="anim-px-flicker" />
+              <circle cx="240" cy="58" r="65" fill="url(#lampGlow)" className="anim-px-flicker" />
 
-              {/* Desk Amber Reflection */}
-              <ellipse cx="240" cy="85" rx="55" ry="12" fill="#E3B04B" fillOpacity="0.25" />
-              <ellipse cx="240" cy="85" rx="28" ry="6" fill="#F7D486" fillOpacity="0.4" />
+              {/* Desk Cyan/Sapphire Reflection */}
+              <ellipse cx="240" cy="85" rx="36" ry="8" fill="#6FE3FF" fillOpacity="0.25" />
 
-              {/* Floating Sparks */}
-              <rect x="215" y="30" width="2" height="2" fill="#FFE066" className="anim-px-breathe" />
-              <rect x="260" y="48" width="2" height="2" fill="#FF9E43" className="anim-px-flicker" />
-              <rect x="180" y="65" width="2" height="2" fill="#FFE066" opacity="0.8" />
+              {/* Electric Sparks */}
+              <rect x="218" y="44" width="2" height="2" fill="#6FE3FF" className="anim-px-breathe" />
+              <rect x="262" y="52" width="2" height="2" fill="#FDE047" className="anim-px-flicker" />
+              <rect x="246" y="32" width="2" height="2" fill="#6FE3FF" opacity="0.8" />
             </>
           ) : (
             <>
-              {/* Dark Chimney Glass & Unlit Filament */}
-              <rect x="230" y="38" width="20" height="14" fill="#1A2136" fillOpacity="0.5" stroke="#33405F" strokeWidth="1" />
-              <rect x="238" y="42" width="4" height="6" fill="#4A3622" />
+              {/* Standby Dim Face */}
+              <rect x="233" y="52" width="3" height="2" fill="#173158" />
+              <rect x="244" y="52" width="3" height="2" fill="#173158" />
+              <rect x="238" y="58" width="4" height="1" fill="#173158" />
+
+              {/* Single Standby Bar */}
+              <g transform="translate(229, 67)">
+                <rect x="0" y="0" width="22" height="8" rx="1" fill="#021B47" />
+                <rect x="2" y="2" width="4" height="4" fill="#173158" />
+              </g>
             </>
           )}
         </g>
