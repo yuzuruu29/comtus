@@ -193,8 +193,8 @@ export function PixelBatteryCompanion({
   onPlaySfx,
   idleTimeoutMs = FOUR_MINUTES_MS,
   storageKey = COMTUS_BATTERY_POS_KEY,
-  size = 112,
-  scale = 3,
+  size = 190,
+  scale = 5,
   speech,
   showControls = false,
   restingOffset = { right: 28, bottom: 28 },
@@ -346,17 +346,12 @@ export function PixelBatteryCompanion({
     }, 700);
   }, [handleMoodTransition, onPoke, onPlaySfx]);
 
-  // Pointer Drag Handlers
+  // Pointer Drag Handlers — window-level listeners for rock-solid tracking
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     if ((e.target as HTMLElement).closest("button")) return;
 
-    const target = e.currentTarget;
-    try {
-      target.setPointerCapture(e.pointerId);
-    } catch {
-      /* jsdom */
-    }
+    e.currentTarget.setPointerCapture(e.pointerId);
 
     const startPos = position || { left: 0, top: 0 };
     dragStartRef.current = {
@@ -367,49 +362,44 @@ export function PixelBatteryCompanion({
       moved: false,
     };
     setIsDragging(true);
-  };
 
-  const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!dragStartRef.current || !isDragging) return;
+    const onMove = (ev: PointerEvent) => {
+      if (!dragStartRef.current) return;
+      const dx = ev.clientX - dragStartRef.current.x;
+      const dy = ev.clientY - dragStartRef.current.y;
+      if (!dragStartRef.current.moved && Math.hypot(dx, dy) > DRAG_THRESHOLD_PX) {
+        dragStartRef.current.moved = true;
+      }
+      if (dragStartRef.current.moved) {
+        const vp = { width: window.innerWidth, height: window.innerHeight };
+        const dims = { width: spriteW, height: spriteH };
+        const clamped = clampCoordinates(
+          { left: dragStartRef.current.startLeft + dx, top: dragStartRef.current.startTop + dy },
+          dims,
+          vp
+        );
+        setPosition(clamped);
+      }
+    };
 
-    const dx = e.clientX - dragStartRef.current.x;
-    const dy = e.clientY - dragStartRef.current.y;
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      const wasMoved = dragStartRef.current?.moved;
+      dragStartRef.current = null;
+      setIsDragging(false);
+      if (wasMoved) {
+        setPosition((p) => {
+          if (p) persistBatteryPos(p, storageKey);
+          return p;
+        });
+      } else {
+        triggerPoke();
+      }
+    };
 
-    if (!dragStartRef.current.moved && Math.hypot(dx, dy) > DRAG_THRESHOLD_PX) {
-      dragStartRef.current.moved = true;
-    }
-
-    if (dragStartRef.current.moved) {
-      const vp = { width: window.innerWidth, height: window.innerHeight };
-      const dims = { width: spriteW, height: spriteH };
-      const nextPos: BatteryPosition = {
-        left: dragStartRef.current.startLeft + dx,
-        top: dragStartRef.current.startTop + dy,
-      };
-
-      const clamped = clampCoordinates(nextPos, dims, vp);
-      setPosition(clamped);
-    }
-  };
-
-  const handlePointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch {
-      /* jsdom */
-    }
-
-    const wasMoved = dragStartRef.current?.moved;
-    dragStartRef.current = null;
-    setIsDragging(false);
-
-    if (wasMoved && position) {
-      persistBatteryPos(position, storageKey);
-    } else if (!wasMoved) {
-      triggerPoke();
-    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -445,8 +435,6 @@ export function PixelBatteryCompanion({
       aria-label="16-bit Blue Battery Companion"
       aria-describedby={speech ? speechId : undefined}
       onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
       onDoubleClick={handleDoubleClick}
       onKeyDown={handleKeyDown}
       onMouseEnter={() => setIsHovered(true)}
