@@ -53,9 +53,11 @@ export default function CantorPixelTransition({
     const ctx = gsap.context(() => {
       ScrollTrigger.create({
         trigger: containerRef.current,
-        start: "top 90%",
-        end: "bottom 30%",
-        scrub: 0.5,
+        // Compressed range: the dissolve resolves while the divider enters the
+        // viewport, so it never rests half-flipped mid-scroll.
+        start: "top 92%",
+        end: "top 45%",
+        scrub: 0.4,
         onUpdate: (self) => {
           const progress = self.progress;
           const cutoff = Math.floor(progress * totalCells);
