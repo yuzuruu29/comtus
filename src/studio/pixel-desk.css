@@ -48,9 +48,8 @@ html[data-pixel="on"] {
   --ink: var(--px-ink);
   --muted: var(--px-muted);
 
-  --font-display: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
-  --font-body: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
-  --font-mono: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
+  /* Font tokens are owned by the typography preset (styles/font-presets.css);
+     the pixel skin only contributes chrome: radii, glow, motion. */
   --radius-control: 4px;
   --radius-field: 4px;
   --radius-dialog: 6px;

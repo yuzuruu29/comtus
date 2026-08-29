@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useNavigate } from "react-router-dom";
 import { createNotebook } from "../lib/db";
 import { detectPlatform, isDeskShell, isTauri } from "../lib/desktop";
-import { usePixelDeskEffect, useThemeEffect } from "../lib/theme";
+import { useFontPresetEffect, usePixelDeskEffect, useThemeEffect } from "../lib/theme";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { DeskContext, defaultDeskActions, type DeskActions } from "./DeskContext";
 import CommandPalette from "./CommandPalette";
@@ -46,6 +46,8 @@ export default function DeskShell({
   // 16-bit Cozy Pixel Bookshop skin is active by default (html[data-pixel="on"]).
   // Scholar Study mode can be toggled in Settings (data-pixel="off" / pixelDesk: false).
   usePixelDeskEffect();
+  // Curated typography system (html[data-font-preset]) — owns all font tokens.
+  useFontPresetEffect();
 
   useEffect(() => {
     document.documentElement.dataset.shell = isDeskShell() ? "desktop" : "browser";

@@ -24,6 +24,7 @@ import {
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, LampPulse } from "./ui";
 import { BorderBeam } from "./fx";
 import { useSettings } from "../lib/settings";
+import { FONT_PRESETS } from "../lib/fontPresets";
 import {
   startAmbient,
   stopAmbient,
@@ -166,6 +167,7 @@ export default function SettingsModal({
   const companionOn = useSettings((st) => st.companion !== false);
   const sfxOn = useSettings((st) => st.companionSfx !== false);
   const pixelOn = useSettings((st) => st.pixelDesk !== false);
+  const fontPreset = useSettings((st) => st.fontPreset);
 
   // Procedural Sound Engine state
   const [audioMuted, setAudioMuted] = useState(() => isMuted());
@@ -433,9 +435,43 @@ export default function SettingsModal({
           </div>
 
           <div>
-            <div className="label-mono !text-[10px] mb-2">Desk look</div>
+            <div className="label-mono !text-[10px] mb-2">Typography</div>
             <p className="mb-3 text-[12.5px] leading-relaxed text-muted">
-              Cozy Pixel Bookshop applies 16-bit Pixelify typography, tactile ink-press physics, and warm brass-bevel chrome across the entire studio. Scholar Study restores classic Fraunces and Inter serif typography.
+              Curated font systems for the studio — each pairs a display, body, and mono face. Pixelify appears only as display accents in Pixel Signal, never as body text.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
+              {FONT_PRESETS.map((preset) => {
+                const active = (fontPreset ?? "instrument") === preset.id;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => useSettings.getState().update({ fontPreset: preset.id })}
+                    className={`flex min-h-[52px] flex-col items-start justify-center rounded-lg px-3 py-2 text-left transition-all active:scale-[0.97] ${
+                      active
+                        ? "grad-lamp shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
+                        : "hover:bg-surface/60"
+                    }`}
+                  >
+                    <span
+                      className={`text-[15px] leading-tight ${active ? "font-semibold text-night" : "text-ink"}`}
+                      style={{ fontFamily: preset.previewFamily }}
+                    >
+                      {preset.label}
+                    </span>
+                    <span className={`text-[11px] leading-tight ${active ? "text-night/70" : "text-muted"}`}>
+                      {preset.tagline}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <div className="label-mono !text-[10px] mb-2">Desk chrome</div>
+            <p className="mb-3 text-[12.5px] leading-relaxed text-muted">
+              Cozy Pixel Bookshop applies 16-bit tactile ink-press physics and warm brass-bevel chrome across the studio. Scholar Study restores classic paper surfaces.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
               <button

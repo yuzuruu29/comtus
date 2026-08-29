@@ -29,6 +29,22 @@ export function applyPixelDesk(on: boolean): void {
   else delete document.documentElement.dataset.pixel;
 }
 
+/** Typography preset ownership lives on html[data-font-preset]; CSS maps each
+ *  preset to its display/body/mono tokens. Undefined clears back to Scholar defaults. */
+export function applyFontPreset(id: string | undefined): void {
+  if (id) document.documentElement.dataset.fontPreset = id;
+  else delete document.documentElement.dataset.fontPreset;
+}
+
+/** Curated font systems (see fontPresets.ts). Studio-only; the landing owns its own type. */
+export function useFontPresetEffect() {
+  const fontPreset = useSettings((s) => s.fontPreset ?? "instrument");
+  useEffect(() => {
+    applyFontPreset(fontPreset);
+    return () => applyFontPreset(undefined);
+  }, [fontPreset]);
+}
+
 /** Pixelify on all desk text + arcade press while the desk is mounted. */
 export function usePixelDeskEffect() {
   const pixelDesk = useSettings((s) => s.pixelDesk !== false);

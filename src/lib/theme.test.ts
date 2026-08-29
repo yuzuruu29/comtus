@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { applyPixelDesk, resolveAppTheme } from "./theme";
+import { applyFontPreset, applyPixelDesk, resolveAppTheme } from "./theme";
 
 describe("resolveAppTheme", () => {
   it("defaults to light on the landing route", () => {
@@ -28,5 +28,18 @@ describe("applyPixelDesk", () => {
     expect(document.documentElement.dataset.pixel).toBe("on");
     applyPixelDesk(false);
     expect(document.documentElement.dataset.pixel).toBeUndefined();
+  });
+});
+
+describe("applyFontPreset", () => {
+  afterEach(() => {
+    applyFontPreset(undefined);
+  });
+
+  it("sets and clears the typography preset on html", () => {
+    applyFontPreset("pixel-signal");
+    expect(document.documentElement.dataset.fontPreset).toBe("pixel-signal");
+    applyFontPreset(undefined);
+    expect(document.documentElement.dataset.fontPreset).toBeUndefined();
   });
 });

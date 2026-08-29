@@ -6,10 +6,10 @@ import { describe, expect, it } from "vitest";
 const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "pixel-desk.css"), "utf8");
 
 describe("pixel desk skin", () => {
-  it("sets Pixelify on display, body, and mono tokens", () => {
-    expect(css).toMatch(/--font-display:\s*"Pixelify Sans Variable"/);
-    expect(css).toMatch(/--font-body:\s*"Pixelify Sans Variable"/);
-    expect(css).toMatch(/--font-mono:\s*"Pixelify Sans Variable"/);
+  it("leaves font tokens to the typography preset system", () => {
+    expect(css).not.toMatch(/--font-display:/);
+    expect(css).not.toMatch(/--font-body:/);
+    expect(css).not.toMatch(/--font-mono:/);
   });
 
   it("does not pin chat or notes back to Inter", () => {

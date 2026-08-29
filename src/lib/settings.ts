@@ -52,8 +52,10 @@ interface SettingsState {
   motionMode: "none" | "minimal" | "full";
   companion: boolean;
   companionSfx: boolean;
-  /** Studio pixel chrome (Pixelify on all desk text + arcade press). Scholar restores Fraunces + Inter. */
+  /** Studio pixel chrome (brass-bevel palette + arcade press). Fonts are owned by fontPreset. */
   pixelDesk: boolean;
+  /** Curated typography system: "instrument" (default) | "pixel-signal" | "scholar" | "console". */
+  fontPreset: "instrument" | "pixel-signal" | "scholar" | "console";
   lastBackupAt: number;
   setProvider: (p: ProviderId) => void;
   update: (patch: Partial<SettingsState>) => void;
@@ -105,6 +107,7 @@ export const useSettings = create<SettingsState>()(
       companion: true,
       companionSfx: true,
       pixelDesk: true,
+      fontPreset: "instrument",
       lastBackupAt: 0,
       setProvider: (provider) => set({ provider }),
       update: (patch) => set(patch),
@@ -196,7 +199,7 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: "comtus-settings",
-      version: 12,
+      version: 13,
       migrate: (persisted, version) => {
         const old = persisted as Partial<SettingsState> & {
           apiKey?: string;
@@ -224,6 +227,7 @@ export const useSettings = create<SettingsState>()(
           companion: old.companion ?? true,
           companionSfx: old.companionSfx ?? true,
           pixelDesk: old.pixelDesk ?? true,
+          fontPreset: old.fontPreset ?? (old.pixelDesk === false ? "scholar" : "pixel-signal"),
           lastBackupAt: old.lastBackupAt ?? 0,
         };
         if (version < 2) {
