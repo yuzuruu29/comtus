@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { detectPlatform } from "../lib/desktop";
+import { modLabel } from "./shortcuts";
 import "./console-shell.css";
 
 export interface ConsoleShellProps {
@@ -12,6 +14,11 @@ export default function ConsoleShell({
   notebookName = "Course Notebook",
   modelLabel = "Claude 3.7 Sonnet",
 }: ConsoleShellProps) {
+  const [mod, setMod] = useState("Ctrl");
+  useEffect(() => {
+    setMod(modLabel(detectPlatform()));
+  }, []);
+
   return (
     <div className="console-shell-root" data-testid="console-shell-root">
       <div className="console-chassis">
@@ -38,9 +45,9 @@ export default function ConsoleShell({
         {/* Bottom Controller Strip */}
         <footer className="console-controller-bar" aria-label="Console Controller Bar">
           <div className="flex items-center gap-3">
-            <span><kbd className="console-keybind-pill">Ctrl+K</kbd> COMMANDS</span>
-            <span><kbd className="console-keybind-pill">Ctrl+S</kbd> SOURCES</span>
-            <span><kbd className="console-keybind-pill">Ctrl+D</kbd> STUDIO</span>
+            <span><kbd className="console-keybind-pill">{mod}+K</kbd> COMMANDS</span>
+            <span><kbd className="console-keybind-pill">{mod}+1</kbd> SOURCES</span>
+            <span><kbd className="console-keybind-pill">{mod}+3</kbd> STUDIO</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="console-brand-tag">COMTUS · COGNITIVE WORKSPACE</span>

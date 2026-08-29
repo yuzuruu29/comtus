@@ -82,6 +82,12 @@
   50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 12px #6FE3FF; }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .console-live-led {
+    animation: none;
+  }
+}
+
 .console-notebook-title {
   color: #FFFFFF;
   font-weight: 600;
