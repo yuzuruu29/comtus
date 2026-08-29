@@ -4,7 +4,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
-/** Igniting brass rule that draws in and blooms with ambient light as you scroll. */
 export default function SectionDivider({ className = "" }: { className?: string }) {
   const lineRef = useRef<HTMLDivElement>(null);
 
@@ -17,7 +16,7 @@ export default function SectionDivider({ className = "" }: { className?: string 
     }
     const trigger = ScrollTrigger.create({
       trigger: el,
-      start: "top 85%",
+      start: "top 88%",
       onEnter: () => el.classList.add("is-ignited"),
       once: true,
     });
@@ -25,8 +24,13 @@ export default function SectionDivider({ className = "" }: { className?: string 
   }, []);
 
   return (
-    <div className={`mx-auto w-full max-w-6xl px-6 ${className}`} aria-hidden>
-      <div ref={lineRef} className="section-divider-beam" />
+    <div className={`relative mx-auto w-full max-w-6xl px-6 py-6 ${className}`} aria-hidden>
+      <div className="relative flex items-center justify-center">
+        <div ref={lineRef} className="section-divider-beam w-full" />
+        <div className="absolute flex items-center justify-center">
+          <span className="h-2 w-2 rotate-45 border border-[#044AB3]/40 bg-white shadow-[0_0_8px_rgba(111,227,255,0.5)] transition-transform duration-500 hover:scale-150" />
+        </div>
+      </div>
     </div>
   );
 }

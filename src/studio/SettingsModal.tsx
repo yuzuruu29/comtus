@@ -163,8 +163,6 @@ export default function SettingsModal({
 
   const theme = useSettings((st) => st.theme) ?? "system";
   const motionMode = useSettings((st) => st.motionMode) ?? "full";
-  const companionOn = useSettings((st) => st.companion !== false);
-  const sfxOn = useSettings((st) => st.companionSfx !== false);
   const pixelOn = useSettings((st) => st.pixelDesk !== false);
 
   // Procedural Sound Engine state
@@ -495,36 +493,7 @@ export default function SettingsModal({
             </div>
           </div>
 
-          <div>
-            <div className="label-mono !text-[10px] mb-2">Desk companion</div>
-            <p className="mb-3 text-[12.5px] leading-relaxed text-muted">
-              A small lamp in the corner that cheers at a milestone, and a quiet brass chime if the desk sits idle. Drag it anywhere. Double-click to return it to the corner.
-            </p>
-            <div className="grid grid-cols-2 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
-              <button
-                type="button"
-                onClick={() => useSettings.getState().update({ companion: !companionOn })}
-                className={`flex min-h-[40px] items-center justify-center rounded-lg px-3 py-2 text-body font-medium transition-all active:scale-[0.97] ${
-                  companionOn
-                    ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
-                    : "text-muted hover:text-ink"
-                }`}
-              >
-                Lamp {companionOn ? "on" : "off"}
-              </button>
-              <button
-                type="button"
-                onClick={() => useSettings.getState().update({ companionSfx: !sfxOn })}
-                className={`flex min-h-[40px] items-center justify-center rounded-lg px-3 py-2 text-body font-medium transition-all active:scale-[0.97] ${
-                  sfxOn
-                    ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
-                    : "text-muted hover:text-ink"
-                }`}
-              >
-                Chime {sfxOn ? "on" : "off"}
-              </button>
-            </div>
-          </div>
+
 
           {/* Ambient Soundscape & Tactile Audio Section */}
           <div className="rounded-2xl border border-hairline bg-surface/60 p-4 space-y-4">

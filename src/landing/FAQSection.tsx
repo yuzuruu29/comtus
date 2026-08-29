@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ChevronDown } from "lucide-react";
 import SectionHead from "./SectionHead";
 import { SOFT } from "../studio/fx";
+import { playProceduralSfx } from "../studio/companion/sfx";
 import "./landing.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -48,7 +49,7 @@ const FAQS = [
   },
   {
     q: "How is Comtus different from ChatGPT?",
-    a: "ChatGPT operates as a general-purpose chat interface without subject structure or active recall pedagogy. Comtus provides a persistent course workspace, strict page-level source citations, interactive exam testing, essay rubric grading, and a distraction-free Lamplight study environment.",
+    a: "ChatGPT operates as a general-purpose chat interface without subject structure or active recall pedagogy. Comtus provides a persistent course workspace, strict page-level source citations, interactive exam testing, essay rubric grading, and a distraction-free cognitive study environment.",
   },
 ];
 
@@ -117,9 +118,19 @@ export default function FAQSection() {
             >
               <button
                 type="button"
-                onClick={() => setOpenIndex(isOpen ? null : idx)}
+                onClick={() => {
+                  setOpenIndex(isOpen ? null : idx);
+                  try {
+                    playProceduralSfx("click");
+                  } catch {}
+                }}
+                onMouseEnter={() => {
+                  try {
+                    playProceduralSfx("click");
+                  } catch {}
+                }}
                 aria-expanded={isOpen}
-                className="flex w-full items-center justify-between gap-4 p-5 text-left transition-colors cursor-pointer"
+                className="faq-item flex w-full items-center justify-between gap-4 p-5 text-left transition-colors cursor-pointer"
               >
                 <span className="font-display text-[1.15rem] font-[520] text-[#0B132B]">
                   {faq.q}

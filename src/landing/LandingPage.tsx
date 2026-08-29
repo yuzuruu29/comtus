@@ -7,7 +7,7 @@ import CustomCursor from "../components/CustomCursor";
 import TorchLayer from "./TorchLayer";
 import Nav from "./Nav";
 import CantorShowcase from "./CantorShowcase";
-import Marquee from "./Marquee";
+import CognitiveTelemetryGrid from "./CognitiveTelemetryGrid";
 import OpenRouterByokSection from "./OpenRouterByokSection";
 import FAQSection from "./FAQSection";
 import Statement from "./Statement";
@@ -65,7 +65,7 @@ export default function LandingPage() {
           {/* Chapter 1: Cantor8 High-Precision Cognitive Infrastructure */}
           <section id="hero" aria-label="Comtus Cognitive Infrastructure Showcase">
             <CantorShowcase />
-            <Marquee />
+            <CognitiveTelemetryGrid />
           </section>
 
           <SectionDivider />

@@ -15,6 +15,7 @@ import {
 import CantorStringsCanvas from "./CantorStringsCanvas";
 import CantorCircuitStream from "./CantorCircuitStream";
 import CantorPixelTransition from "./CantorPixelTransition";
+import { playProceduralSfx } from "../studio/companion/sfx";
 import "./cantor-theme.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -174,17 +175,26 @@ export default function CantorShowcase() {
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    card.style.setProperty("--mouse-x", `${x}px`);
+    card.style.setProperty("--mouse-y", `${y}px`);
+
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
-    const rotateX = ((y - centerY) / centerY) * -5;
-    const rotateY = ((x - centerX) / centerX) * 5;
+    const rotateX = ((y - centerY) / centerY) * -4;
+    const rotateY = ((x - centerX) / centerX) * 4;
 
-    card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
+    card.style.transform = `perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
+  };
+
+  const handleCardMouseEnter = () => {
+    try {
+      playProceduralSfx("click");
+    } catch {}
   };
 
   const handleCardMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
     const card = e.currentTarget;
-    card.style.transform = `perspective(800px) rotateX(0deg) rotateY(0deg) translateY(0px)`;
+    card.style.transform = `perspective(900px) rotateX(0deg) rotateY(0deg) translateY(0px)`;
   };
 
   return (
@@ -264,6 +274,7 @@ export default function CantorShowcase() {
                 <article
                   key={prod.id}
                   onMouseMove={handleCardMouseMove}
+                  onMouseEnter={handleCardMouseEnter}
                   onMouseLeave={handleCardMouseLeave}
                   className={`c8-bento-card ${prod.span === 2 ? "span-2" : ""}`}
                 >
@@ -307,7 +318,11 @@ export default function CantorShowcase() {
 
             <div ref={curriculaGridRef} className="c8-curricula-grid">
               {CURRICULA.map((curr) => (
-                <div key={curr.name} className="c8-curriculum-item">
+                <div
+                  key={curr.name}
+                  className="c8-curriculum-item"
+                  onMouseEnter={handleCardMouseEnter}
+                >
                   <div className="text-[11.5px] font-mono text-[#044AB3] font-bold uppercase tracking-wider mb-1">
                     {curr.tag}
                   </div>

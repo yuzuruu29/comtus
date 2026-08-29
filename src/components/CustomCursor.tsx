@@ -46,7 +46,7 @@ export default function CustomCursor() {
       const t = e.target as HTMLElement;
       if (!t) return;
       const isInteractive = !!t.closest(
-        "a, button, [role='button'], input, textarea, select, .c8-bento-card, .c8-btn, .c8-curriculum-item, [data-cursor]"
+        "a, button, [role='button'], input, textarea, select, .c8-bento-card, .c8-btn, .c8-curriculum-item, [data-cursor], article, .faq-item, .model-card, .tab-btn"
       );
       setHovered(isInteractive);
     };
