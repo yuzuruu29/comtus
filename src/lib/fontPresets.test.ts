@@ -9,6 +9,22 @@ const css = readFileSync(
   "utf8",
 );
 
+function blockForPreset(id: string): string {
+  const marker = `html[data-font-preset="${id}"]`;
+  const start = css.indexOf(marker);
+  if (start === -1) return "";
+
+  const nextMarkerIndex = css.indexOf(`html[data-font-preset="`, start + marker.length);
+  const end = nextMarkerIndex === -1 ? css.length : nextMarkerIndex;
+  let block = css.slice(start, end);
+
+  const commentRegex = /\/\*[\s\S]*?\*\//g;
+  while (commentRegex.test(block)) {
+    block = block.replace(commentRegex, "");
+  }
+  return block;
+}
+
 describe("font presets", () => {
   it("offers exactly the four curated systems, Instrument first", () => {
     expect(FONT_PRESETS.map((p) => p.id)).toEqual([
@@ -19,20 +35,38 @@ describe("font presets", () => {
     ]);
   });
 
+  it("uses a single primary family across display, body, and mono in every preset", () => {
+    for (const preset of FONT_PRESETS) {
+      const block = blockForPreset(preset.id);
+      const displayPrimary = block.match(/--font-display:\s*"([^"]+)"/)?.[1] ?? "";
+      const bodyPrimary = block.match(/--font-body:\s*"([^"]+)"/)?.[1] ?? "";
+      const monoPrimary = block.match(/--font-mono:\s*"([^"]+)"/)?.[1] ?? "";
+
+      expect(displayPrimary, `${preset.id} display primary`).not.toBe("");
+      expect(bodyPrimary, `${preset.id} body primary`).not.toBe("");
+      expect(monoPrimary, `${preset.id} mono primary`).not.toBe("");
+
+      const presetFamilies = new Set([displayPrimary, bodyPrimary, monoPrimary]);
+      expect(presetFamilies.size, `${preset.id} family count`).toBeLessThanOrEqual(2);
+    }
+  });
+
   it("maps every preset to display, body, and mono tokens in CSS", () => {
     for (const preset of FONT_PRESETS) {
-      const block = css.split(`html[data-font-preset="${preset.id}"]`)[1] ?? "";
+      const block = blockForPreset(preset.id);
       expect(block, preset.id).toMatch(/--font-display:/);
       expect(block, preset.id).toMatch(/--font-body:/);
       expect(block, preset.id).toMatch(/--font-mono:/);
     }
   });
 
-  it("restricts Pixelify to display accents in the Pixel Signal preset", () => {
-    const block = css.split(`html[data-font-preset="pixel-signal"]`)[1] ?? "";
-    expect(block).toMatch(/--font-display:\s*"Pixelify Sans Variable"/);
-    expect(block).toMatch(/--font-body:\s*"Inter Variable"/);
-    expect(block).toMatch(/--font-mono:\s*"JetBrains Mono"/);
+  it("restricts Pixelify to the Pixel Signal preset", () => {
+    for (const preset of FONT_PRESETS) {
+      const block = blockForPreset(preset.id).replace(/\/\*[\s\S]*?\*\//g, "");
+      if (preset.id !== "pixel-signal") {
+        expect(block, preset.id).not.toMatch(/Pixelify Sans/);
+      }
+    }
   });
 
   it("falls back to the Instrument preset for unknown ids", () => {

@@ -4,30 +4,30 @@
    Each preset maps the three font tokens; nothing else may set them.
    ========================================================================== */
 
-/* Instrument — calibrated default: serif display, clean grotesque body. */
+/* Instrument — unified Inter system; JetBrains Mono as the single mono fallback. */
 html[data-font-preset="instrument"] {
-  --font-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
-  --font-body: "Instrument Sans Variable", "Instrument Sans", system-ui, -apple-system, sans-serif;
+  --font-display: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
+  --font-body: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
 }
 
-/* Pixel Signal — 16-bit display accents only; body stays readable Inter. */
+/* Pixel Signal — unified pixel system; JetBrains Mono as the single mono fallback. */
 html[data-font-preset="pixel-signal"] {
   --font-display: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
-  --font-body: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
+  --font-body: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
 }
 
-/* Scholar — the classic Fraunces + Inter study desk. */
+/* Scholar — unified Fraunces system; JetBrains Mono as the single mono fallback. */
 html[data-font-preset="scholar"] {
   --font-display: "Fraunces Variable", "Fraunces", "Iowan Old Style", Georgia, serif;
-  --font-body: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
+  --font-body: "Fraunces Variable", "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
 }
 
-/* Console — mono-forward instrumentation. */
+/* Console — unified JetBrains Mono system; JetBrains Mono as the single mono fallback. */
 html[data-font-preset="console"] {
   --font-display: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
-  --font-body: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
+  --font-body: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
 }
