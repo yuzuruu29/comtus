@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { GearSix } from "@phosphor-icons/react";
 import { createNotebook, db } from "../lib/db";
 import type { Notebook as NotebookRow } from "../lib/types";
@@ -15,6 +15,7 @@ import CaptionButtons from "../studio/Titlebar";
 import { LampPulse, Modal, btnGhost } from "../studio/ui";
 import { HOUSE } from "../studio/fx";
 import { useNotebookDesk } from "../studio/useNotebookDesk";
+import { studioNotebookIdFromPath } from "../studio/studioPath";
 import MilestonesButton from "../studio/companion/MilestonesButton";
 import LibraryRail from "./LibraryRail";
 import DeskHome from "./DeskHome";
@@ -25,9 +26,9 @@ import NotebookDesk from "./NotebookDesk";
     one app-wide chrome strip carries the window. Shares product logic
     with the web studio underneath (db, llm, panes, generators). */
 export default function DeskApp() {
-  const { notebookId } = useParams();
-  const navigate = useNavigate();
   const location = useLocation();
+  const notebookId = studioNotebookIdFromPath(location.pathname);
+  const navigate = useNavigate();
   const tauri = isTauri();
 
   const desk = useNotebookDesk(notebookId);

@@ -1,17 +1,22 @@
 import { useCallback, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import NotebookList from "./NotebookList";
 import Workspace from "./Workspace";
 import DeskApp from "../desk/DeskApp";
 import { MotionPrefs } from "./fx";
 import { isDeskShell } from "../lib/desktop";
 import { useSettings } from "../lib/settings";
+import { studioNotebookIdFromPath } from "./studioPath";
 import "./studio.css";
 
 export default function StudioApp() {
-  const { notebookId } = useParams();
+  const { pathname } = useLocation();
+  const notebookId = studioNotebookIdFromPath(pathname);
   const navigate = useNavigate();
-  const openNotebook = useCallback((id: string) => navigate(`/studio/${id}`), [navigate]);
+  const openNotebook = useCallback(
+    (id: string) => navigate(`/studio/${id}`, { flushSync: true }),
+    [navigate],
+  );
   const hasKey = useSettings((s) => s.hasKey());
 
   useEffect(() => {
@@ -36,7 +41,7 @@ export default function StudioApp() {
       {!notebookId ? (
         <NotebookList onOpen={openNotebook} needsKey={!hasKey} />
       ) : (
-        <Workspace notebookId={notebookId} />
+        <Workspace key={notebookId} notebookId={notebookId} />
       )}
     </MotionPrefs>
   );

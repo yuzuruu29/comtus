@@ -39,7 +39,8 @@ export default function App() {
             path="/"
             element={deskShell ? <Navigate to="/studio" replace /> : <LandingPage />}
           />
-          <Route path="/studio/:notebookId?" element={<StudioApp />} />
+          <Route path="/studio" element={<StudioApp />} />
+          <Route path="/studio/:notebookId" element={<StudioApp />} />
           <Route
             path="/checkout"
             element={deskShell ? <Navigate to="/studio" replace /> : <HostedCheckout />}

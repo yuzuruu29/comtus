@@ -47,7 +47,8 @@ describe("notebook create → studio navigation", () => {
     render(
       <MemoryRouter initialEntries={["/studio"]}>
         <Routes>
-          <Route path="/studio/:notebookId?" element={<StudioApp />} />
+          <Route path="/studio" element={<StudioApp />} />
+          <Route path="/studio/:notebookId" element={<StudioApp />} />
         </Routes>
         <LocationProbe />
       </MemoryRouter>,
