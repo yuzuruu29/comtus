@@ -5,3 +5,4 @@ ts	phase	decision	why	evidence	result
 2026-09-01T11:35:45Z	test	vitest hung because PixelSprite and companion timers stayed open after each file	prove-it-works on the real suite, not a guess	src/test/setup.ts vitest.config.ts testTimeout	329 passed in 20s
 2026-09-01T11:35:45Z	test	battery mobile scale test expected 2.75x, code uses 2.5x	test drifted from the component, keep the code	PixelBatteryCompanion.test.tsx	tests green
 2026-09-01T11:35:45Z	verify	pnpm build exits 0, StudioApp chunk warns at 1240 kB	predicate requires a production build, not only tsc	/tmp/build.txt	build 0
+2026-09-01T11:54:47Z	verify	browser: landing hero, flashcard flip, studio shelf, create dialog. Create navigates to /studio/:id rather than staying on the list.	prove-it-works on the running app at 127.0.0.1:5199	/opt/cursor/artifacts/landing_flashcard_flip_and_studio_create_dialog.mp4	VERIFIED landing and studio boot
