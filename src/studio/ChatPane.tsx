@@ -849,7 +849,9 @@ export default function ChatPane({
             <div className="relative z-[2]">
               {/* Context strip */}
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar px-3 sm:px-3.5 pb-2 pt-2 sm:pt-2.5">
-                <ModelPickerMenu modelLabel={modelLabel} onOpenSettings={onOpenSettings} />
+                <div className="relative shrink-0">
+                  <ModelPickerMenu modelLabel={modelLabel} onOpenSettings={onOpenSettings} />
+                </div>
                 {notebook && <FocusMenu notebook={notebook} sourcesVersion={sourcesVersion} />}
                 <span className="flex-1 min-w-1 sm:min-w-2" />
                 <ComposerSideRailDock onOpenSettings={onOpenSettings} />
