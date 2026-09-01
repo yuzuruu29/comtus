@@ -91,7 +91,11 @@ export default function NotebookList({
           if (!cancelled) onOpen(nb.id);
           return;
         }
-      } catch {}
+      } catch (error) {
+        if (!cancelled) {
+          setCreateError(error instanceof Error ? error.message : "The kickstart notebook could not be created.");
+        }
+      }
       if (!cancelled) void refresh();
     };
     void handleKickstart();
@@ -379,6 +383,12 @@ export default function NotebookList({
               {processedNotebooks.length} {processedNotebooks.length === 1 ? "notebook" : "notebooks"}
             </span>
           </div>
+
+          {createError && !creating && (
+            <p className="mb-4 text-[12.5px] text-rust" role="alert">
+              {createError}
+            </p>
+          )}
 
           {/* Grid View Mode */}
           {viewMode === "grid" ? (
