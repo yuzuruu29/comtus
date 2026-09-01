@@ -24,13 +24,13 @@ export default function ConsoleShell({
       <div className="console-chassis">
         {/* Top Status Strip */}
         <header className="console-status-bar" aria-label="Console Status Bar">
-          <div className="console-status-left">
+          <div className="console-status-left flex items-center gap-2">
             <span className="console-live-led" aria-hidden="true" />
             <span className="font-bold tracking-wider text-[#6FE3FF]">COMTUS</span>
             <span className="text-white/40">·</span>
             <span className="console-notebook-title">{notebookName}</span>
           </div>
-          <div className="console-status-right hidden sm:flex">
+          <div className="console-status-right hidden sm:flex items-center gap-2">
             <span className="text-[10px] text-[#94A3B8]">INFERENCE:</span>
             <span className="text-[#6FE3FF] font-semibold">{modelLabel}</span>
           </div>
@@ -43,7 +43,7 @@ export default function ConsoleShell({
         </div>
 
         {/* Bottom Controller Strip — hidden on mobile touch devices where bottom nav tabs exist */}
-        <footer className="console-controller-bar hidden md:flex" aria-label="Console Controller Bar">
+        <footer className="console-controller-bar hidden md:flex items-center justify-between" aria-label="Console Controller Bar">
           <div className="flex items-center gap-3">
             <span><kbd className="console-keybind-pill">{mod}+K</kbd> COMMANDS</span>
             <span><kbd className="console-keybind-pill">{mod}+1</kbd> SOURCES</span>

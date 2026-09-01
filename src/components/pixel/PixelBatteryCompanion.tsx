@@ -217,14 +217,14 @@ export function PixelBatteryCompanion({
   const [internalMood, setInternalMood] = useState<BatteryAnimationMood>(initialMood);
   const currentMood = controlledMood ?? internalMood;
 
-  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 640);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener("resize", checkMobile, { passive: true });
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const scale = propScale ?? (isMobile ? 2.75 : 5);
+  const scale = propScale ?? (isMobile ? 2.5 : 5);
   const restingOffset = propRestingOffset ?? (isMobile ? { right: 14, bottom: 84 } : { right: 28, bottom: 28 });
 
   const [position, setPosition] = useState<BatteryPosition | null>(null);
