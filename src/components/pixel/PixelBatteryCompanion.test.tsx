@@ -99,7 +99,7 @@ describe("PixelBatteryCompanion", () => {
     window.innerWidth = 375;
     const { unmount } = render(<PixelBatteryCompanion />);
     let companion = screen.getByLabelText("16-bit Blue Battery Companion");
-    expect(companion.style.width).toBe(`${36 * 2.75}px`);
+    expect(companion.style.width).toBe(`${36 * 2.5}px`);
     unmount();
 
     window.innerWidth = 1024;
