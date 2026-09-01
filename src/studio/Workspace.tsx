@@ -336,7 +336,10 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               </div>
             )}
           </div>
-          <nav className="flex h-[calc(4.25rem+var(--sab))] shrink-0 items-center justify-around border-t border-hairline bg-ground/95 px-3 pb-[var(--sab)] pt-1">
+          <nav
+            id="mobile-bottom-nav"
+            className="flex h-[calc(4.25rem+var(--sab))] shrink-0 items-center justify-around border-t border-hairline bg-ground/95 px-3 pb-[var(--sab)] pt-1"
+          >
             {(
               [
                 ["sources", Notebook, "Sources"],
@@ -466,11 +469,13 @@ function WorkspaceHeader({
           key={notebook?.name}
           onBlur={(e) => onRename(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-          className="no-drag min-w-0 max-w-[38vw] flex-none truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-1 font-display text-[15px] font-[450] outline-none hover:border-hairline focus:border-brass/40 sm:max-w-xs sm:text-[16px]"
+          className="no-drag min-w-0 max-w-[42vw] flex-none truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-1 font-display text-[15px] font-[450] outline-none hover:border-hairline focus:border-brass/40 sm:max-w-xs sm:text-[16px]"
           aria-label="Notebook name"
         />
         <div className="no-drag ml-auto flex items-center gap-1.5">
-          <MilestonesButton className="hidden sm:inline-flex" />
+          <div className="hidden sm:inline-flex">
+            <MilestonesButton />
+          </div>
           {notebook && (
             <>
               <button

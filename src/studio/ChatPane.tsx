@@ -848,13 +848,13 @@ export default function ChatPane({
 
             <div className="relative z-[2]">
               {/* Context strip */}
-              <div className="flex flex-wrap items-center gap-1.5 px-3.5 pb-2 pt-2.5">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar px-3 sm:px-3.5 pb-2 pt-2 sm:pt-2.5">
                 <ModelPickerMenu modelLabel={modelLabel} onOpenSettings={onOpenSettings} />
                 {notebook && <FocusMenu notebook={notebook} sourcesVersion={sourcesVersion} />}
-                <span className="flex-1" />
+                <span className="flex-1 min-w-1 sm:min-w-2" />
                 <ComposerSideRailDock onOpenSettings={onOpenSettings} />
               </div>
-              <div className="mx-3.5 border-t border-hairline" />
+              <div className="mx-3 sm:mx-3.5 border-t border-hairline" />
 
               {/* Textarea band */}
               <div className="px-3.5 pb-1.5 pt-2.5">
@@ -938,7 +938,7 @@ export default function ChatPane({
                           ? "Deep Reasoning active — Step-by-step logic, edge cases & verification"
                           : "Enable Deep Reasoning"
                       }
-                      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10.5px] transition-all active:scale-[0.96] ${
+                      className={`flex items-center gap-1 sm:gap-1.5 rounded-full border px-2 sm:px-2.5 py-1 font-mono text-[10px] sm:text-[10.5px] transition-all active:scale-[0.96] ${
                         reasoningEnabled
                           ? "border-brass/60 bg-brass/15 text-brasspale shadow-[0_0_10px_rgba(227,176,75,0.2)] font-medium"
                           : "border-hairline bg-ink/[0.03] text-muted hover:border-brass/30 hover:text-ink"
@@ -949,7 +949,8 @@ export default function ChatPane({
                         weight={reasoningEnabled ? "fill" : "regular"}
                         className={reasoningEnabled ? "text-brass" : "text-muted"}
                       />
-                      <span>Reasoning</span>
+                      <span className="hidden xs:inline">Reasoning</span>
+                      <span className="xs:hidden">Think</span>
                     </button>
 
                     {/* Web Search Toggle */}
@@ -962,7 +963,7 @@ export default function ChatPane({
                           ? "Web Search active — Searches live web summaries & external knowledge"
                           : "Enable Web Search (useful when no sources are attached)"
                       }
-                      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10.5px] transition-all active:scale-[0.96] ${
+                      className={`flex items-center gap-1 sm:gap-1.5 rounded-full border px-2 sm:px-2.5 py-1 font-mono text-[10px] sm:text-[10.5px] transition-all active:scale-[0.96] ${
                         webSearchEnabled
                           ? "border-cyan-500/60 bg-cyan-500/15 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)] font-medium"
                           : "border-hairline bg-ink/[0.03] text-muted hover:border-cyan-500/30 hover:text-ink"
@@ -973,7 +974,8 @@ export default function ChatPane({
                         weight={webSearchEnabled ? "fill" : "regular"}
                         className={webSearchEnabled ? "text-cyan-400" : "text-muted"}
                       />
-                      <span>Web Search</span>
+                      <span className="hidden xs:inline">Web Search</span>
+                      <span className="xs:hidden">Web</span>
                     </button>
                   </div>
                 </div>

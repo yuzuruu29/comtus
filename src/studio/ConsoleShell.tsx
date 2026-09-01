@@ -30,7 +30,7 @@ export default function ConsoleShell({
             <span className="text-white/40">·</span>
             <span className="console-notebook-title">{notebookName}</span>
           </div>
-          <div className="console-status-right">
+          <div className="console-status-right hidden sm:flex">
             <span className="text-[10px] text-[#94A3B8]">INFERENCE:</span>
             <span className="text-[#6FE3FF] font-semibold">{modelLabel}</span>
           </div>
@@ -42,8 +42,8 @@ export default function ConsoleShell({
           {children}
         </div>
 
-        {/* Bottom Controller Strip */}
-        <footer className="console-controller-bar" aria-label="Console Controller Bar">
+        {/* Bottom Controller Strip — hidden on mobile touch devices where bottom nav tabs exist */}
+        <footer className="console-controller-bar hidden md:flex" aria-label="Console Controller Bar">
           <div className="flex items-center gap-3">
             <span><kbd className="console-keybind-pill">{mod}+K</kbd> COMMANDS</span>
             <span><kbd className="console-keybind-pill">{mod}+1</kbd> SOURCES</span>

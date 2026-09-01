@@ -158,13 +158,17 @@ export default function DeskLife({
     return () => window.removeEventListener("pointerdown", onDown);
   }, [companion]);
 
-  // Keep-out zones: avoid overlapping the dock and the composer
+  // Keep-out zones: avoid overlapping the dock, composer, and mobile navigation bar
   const batteryAvoidRects = useCallback(() => {
     const rects = [];
     const dock = document.getElementById("study-focus-dock");
     if (dock) rects.push(dock.getBoundingClientRect());
     const composer = document.querySelector<HTMLElement>(".composer-shell");
     if (composer) rects.push(composer.getBoundingClientRect());
+    const mobileNav =
+      document.getElementById("mobile-bottom-nav") ||
+      document.querySelector<HTMLElement>("nav.border-t");
+    if (mobileNav) rects.push(mobileNav.getBoundingClientRect());
     return rects;
   }, []);
 

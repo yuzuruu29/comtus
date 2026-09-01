@@ -21,8 +21,8 @@ export class ErrorBoundary extends Component<
           className="flex min-h-[100svh] flex-col items-center justify-center gap-4 bg-ground px-6 text-center"
         >
           <p className="max-w-sm text-body leading-relaxed text-muted">
-            The lamp flickered — this page couldn't load, likely because the
-            app just updated while it was open.
+            Comtus encountered a brief sync issue loading this view, likely because
+            the app updated while it was open.
           </p>
           <button
             onClick={() => window.location.reload()}

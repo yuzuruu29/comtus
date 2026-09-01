@@ -210,7 +210,7 @@ export default function NotebookList({
       <ConsoleShell notebookName="Course Notebooks Shelf" modelLabel="Local SQLite / Dexie">
         <div className="min-h-[100svh] bg-ground overflow-y-auto">
           <div className="pointer-events-none fixed inset-x-0 top-0 h-[48vh] bg-[radial-gradient(75%_100%_at_50%_0%,rgba(4,74,179,0.08),transparent_78%),radial-gradient(35%_60%_at_90%_0%,rgba(111,227,255,0.06),transparent_70%)]" />
-          <div className="relative mx-auto w-full max-w-6xl px-6 pb-24 sm:px-10 lg:px-12">
+          <div className="relative mx-auto w-full max-w-6xl px-3 sm:px-8 lg:px-12 pb-24">
           <ShelfHeader onSettings={() => setSettingsOpen(true)} />
 
           {needsKey && (
@@ -233,7 +233,7 @@ export default function NotebookList({
           )}
 
           {/* Filter & View Controls Toolbar */}
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
             {/* Left: Tab Pills */}
             <div className="flex items-center gap-1.5 rounded-[var(--radius-control)] bg-surface/80 p-1 border border-hairline shadow-sm">
               <button
@@ -259,7 +259,7 @@ export default function NotebookList({
             </div>
 
             {/* Right: Controls & Actions */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               {/* Search Input */}
               <div className="relative hidden sm:block">
                 <MagnifyingGlass
@@ -364,7 +364,7 @@ export default function NotebookList({
               {/* + Create New Button */}
               <button
                 onClick={openCreateModal}
-                className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] grad-lamp px-4 text-[13px] font-semibold text-night shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
+                className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] grad-lamp px-3 sm:px-4 text-[12px] sm:text-[13px] font-semibold text-night shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
               >
                 <Plus size={15} weight="bold" />
                 <span>Create new</span>
@@ -703,7 +703,7 @@ function ShelfHeader({ onSettings }: { onSettings: () => void }) {
           <ComtusLogo variant="full" size="sm" />
         </Link>
       )}
-      <div className="no-drag flex items-center gap-2.5">
+      <div className="no-drag flex items-center gap-1.5 sm:gap-2.5">
         <MilestonesButton />
         <SettingsButton onClick={onSettings} />
 

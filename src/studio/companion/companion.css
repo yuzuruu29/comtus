@@ -42,7 +42,7 @@
   100% { transform: translate3d(18px, -46vh, 0); opacity: 0; }
 }
 
-.milestone-chip {
+:where(.milestone-chip) {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -57,7 +57,7 @@
   letter-spacing: 0.06em;
 }
 
-.milestone-chip:hover {
+:where(.milestone-chip):hover {
   border-color: color-mix(in srgb, var(--brass) 55%, transparent);
   background: color-mix(in srgb, var(--brass) 16%, transparent);
 }

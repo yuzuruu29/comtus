@@ -94,4 +94,33 @@ describe("PixelBatteryCompanion", () => {
     const saved = loadSavedBatteryPos(COMTUS_BATTERY_POS_KEY);
     expect(saved).toEqual({ left: 150, top: 200 });
   });
+
+  it("adapts scale for mobile viewports vs desktop", () => {
+    window.innerWidth = 375;
+    const { unmount } = render(<PixelBatteryCompanion />);
+    let companion = screen.getByLabelText("16-bit Blue Battery Companion");
+    expect(companion.style.width).toBe(`${36 * 2.75}px`);
+    unmount();
+
+    window.innerWidth = 1024;
+    render(<PixelBatteryCompanion />);
+    companion = screen.getByLabelText("16-bit Blue Battery Companion");
+    expect(companion.style.width).toBe(`${36 * 5}px`);
+  });
+
+  it("supports touch pointer drag without throwing", () => {
+    const setPointerCapture = vi.fn();
+    const releasePointerCapture = vi.fn();
+    render(<PixelBatteryCompanion />);
+    const companion = screen.getByLabelText("16-bit Blue Battery Companion");
+    companion.setPointerCapture = setPointerCapture;
+    companion.releasePointerCapture = releasePointerCapture;
+
+    fireEvent.pointerDown(companion, { pointerId: 2, pointerType: "touch", clientX: 50, clientY: 50, button: -1 });
+    expect(setPointerCapture).toHaveBeenCalledWith(2);
+
+    fireEvent.pointerMove(window, { pointerId: 2, clientX: 75, clientY: 85 });
+    fireEvent.pointerUp(window, { pointerId: 2 });
+    expect(releasePointerCapture).toHaveBeenCalledWith(2);
+  });
 });

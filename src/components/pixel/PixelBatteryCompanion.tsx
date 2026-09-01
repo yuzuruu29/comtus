@@ -201,10 +201,10 @@ export function PixelBatteryCompanion({
   idleTimeoutMs = FOUR_MINUTES_MS,
   storageKey = COMTUS_BATTERY_POS_KEY,
   size = 190,
-  scale = 5,
+  scale: propScale,
   speech,
   showControls = false,
-  restingOffset = { right: 28, bottom: 28 },
+  restingOffset: propRestingOffset,
   avoidRects,
   think = false,
   face = null,
@@ -216,6 +216,16 @@ export function PixelBatteryCompanion({
 }: PixelBatteryCompanionProps) {
   const [internalMood, setInternalMood] = useState<BatteryAnimationMood>(initialMood);
   const currentMood = controlledMood ?? internalMood;
+
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 640);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", checkMobile, { passive: true });
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  const scale = propScale ?? (isMobile ? 2.75 : 5);
+  const restingOffset = propRestingOffset ?? (isMobile ? { right: 14, bottom: 84 } : { right: 28, bottom: 28 });
 
   const [position, setPosition] = useState<BatteryPosition | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -358,8 +368,17 @@ export function PixelBatteryCompanion({
 
   // Pointer Drag Handlers — window-level listeners for rock-solid tracking
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
     if ((e.target as HTMLElement).closest("button")) return;
+
+    const currentTarget = e.currentTarget;
+    if (typeof currentTarget.setPointerCapture === "function") {
+      try {
+        currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        /* Ignore if capture is not supported */
+      }
+    }
 
     e.preventDefault();
     e.stopPropagation();
@@ -394,7 +413,14 @@ export function PixelBatteryCompanion({
       }
     };
 
-    const onUp = () => {
+    const onUp = (ev: PointerEvent) => {
+      if (typeof currentTarget.releasePointerCapture === "function") {
+        try {
+          currentTarget.releasePointerCapture(ev.pointerId);
+        } catch {
+          /* Ignore */
+        }
+      }
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
@@ -449,6 +475,11 @@ export function PixelBatteryCompanion({
       aria-label="16-bit Blue Battery Companion"
       aria-describedby={speech ? speechId : undefined}
       onPointerDown={handlePointerDown}
+      onTouchStart={(e) => {
+        if (!(e.target as HTMLElement).closest("button")) {
+          e.stopPropagation();
+        }
+      }}
       onDoubleClick={handleDoubleClick}
       onKeyDown={handleKeyDown}
       onMouseEnter={() => setIsHovered(true)}

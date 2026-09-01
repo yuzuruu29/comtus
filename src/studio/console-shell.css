@@ -91,10 +91,16 @@
 .console-notebook-title {
   color: #FFFFFF;
   font-weight: 600;
-  max-width: 280px;
+  max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .console-notebook-title {
+    max-width: 320px;
+  }
 }
 
 /* CRT Screen Workspace Bezel */
@@ -136,6 +142,12 @@
   color: #94A3B8;
   user-select: none;
   z-index: 20;
+}
+
+@media (max-width: 768px) {
+  .console-controller-bar {
+    display: none !important;
+  }
 }
 
 .console-keybind-pill {
