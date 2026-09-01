@@ -852,9 +852,15 @@ export default function ChatPane({
                 <div className="relative shrink-0">
                   <ModelPickerMenu modelLabel={modelLabel} onOpenSettings={onOpenSettings} />
                 </div>
-                {notebook && <FocusMenu notebook={notebook} sourcesVersion={sourcesVersion} />}
+                {notebook && (
+                  <div className="relative shrink-0">
+                    <FocusMenu notebook={notebook} sourcesVersion={sourcesVersion} />
+                  </div>
+                )}
                 <span className="flex-1 min-w-1 sm:min-w-2" />
-                <ComposerSideRailDock onOpenSettings={onOpenSettings} />
+                <div className="relative shrink-0">
+                  <ComposerSideRailDock onOpenSettings={onOpenSettings} />
+                </div>
               </div>
               <div className="mx-3 sm:mx-3.5 border-t border-hairline" />
 
