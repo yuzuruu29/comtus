@@ -16,7 +16,7 @@
  * Requests without a bearer are refused so the relay can't be used as an
  * open forwarder.
  *
- * Routes (via vercel.json rewrite):
+ * Routes (via vercel.json rewrite `?path=`):
  *   POST /api/codex/responses → chatgpt.com/backend-api/codex/responses
  *   GET  /api/codex/models    → chatgpt.com/backend-api/codex/models
  */
@@ -66,6 +66,13 @@ function corsHeaders(origin?: string | string[] | null): Array<[string, string]>
   ];
 }
 
+/** Map a relay URL onto the Codex backend path. Rewrites use `path` (and historically `p`). */
+export function codexSubPath(url: URL): string {
+  const viaRewrite = url.searchParams.get("path") ?? url.searchParams.get("p");
+  if (viaRewrite) return `/${viaRewrite.replace(/^\/+/, "")}`;
+  return url.pathname.replace(/^\/api\/codex\/?/, "/") || "/";
+}
+
 function sendJson(res: ServerResponse, status: number, body: Record<string, string>, origin?: string | null): void {
   res.statusCode = status;
   res.setHeader("content-type", "application/json");
@@ -93,11 +100,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   }
 
   const url = new URL(req.url ?? "/", "https://comtus.local");
-  // Rewrites carry the subpath as ?path=; direct hits fall back to the URL.
-  const viaRewrite = url.searchParams.get("path");
-  const subPath = viaRewrite !== null
-    ? `/${viaRewrite.replace(/^\/+/, "")}`
-    : url.pathname.replace(/^\/api\/codex\/?/, "/");
+  const subPath = codexSubPath(url);
   const upstream = `${UPSTREAM_ORIGIN}/backend-api/codex${subPath.startsWith("/") ? subPath : `/${subPath}`}`;
 
   const headers: Record<string, string> = {

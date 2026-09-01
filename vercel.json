@@ -5,7 +5,7 @@
     { "source": "/api/anthropic/paypal/:path*", "destination": "/api/paypal?p=paypal/:path*" },
     { "source": "/api/anthropic/:path*", "destination": "/api/anthropic?p=:path*" },
     { "source": "/api/compat/:provider/:path*", "destination": "/api/compat?p=:provider&path=:path*" },
-    { "source": "/api/codex/:path*", "destination": "/api/codex?p=:path*" },
+    { "source": "/api/codex/:path*", "destination": "/api/codex?path=:path*" },
     { "source": "/((?!assets/).*)", "destination": "/index.html" }
   ],
   "headers": [
