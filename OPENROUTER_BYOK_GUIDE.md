@@ -83,13 +83,13 @@ For high-stakes study where you need the world's most capable reasoning models:
 
 - **Anthropic BYOK is Disabled**: You don't need an Anthropic developer account or credit card commitments.
 - **Hosted Managed Key**: Claude Opus 5 & Sonnet 5 run directly on our managed key.
-- **Realistic PayPal Pricing**: Pay only for your actual usage:
+- **Realistic PayPal Pricing**: Pay only for your actual usage. Passes are metered in **hosted requests**, not tokens.
 
-| Study Pass | Price (USD) | Tokens | Output Capacity |
-| :--- | :--- | :--- | :--- |
-| **⚡ Sprint Pass** | **$2.99** | **~500,000 Tokens** | ~25–35 Full 100-item exams or deep study chats |
-| **🎓 Scholar Pass** *(Most Popular)* | **$6.99** | **~1,500,000 Tokens** | ~80–100 Full mock exams with adaptive reasoning |
-| **👑 Mastery Pass** | **$14.99** | **~3,500,000 Tokens** | Exhaustive Opus 5 deep synthesis & full semester review |
+| Study Pass | Price (USD) | Hosted requests | Window | What it covers |
+| :--- | :--- | :--- | :--- | :--- |
+| **Sprint Pass** | **$2.99** | **60** | 60 days | A short burst of Opus/Sonnet chats and mock exams |
+| **Scholar Pass** *(Most Popular)* | **$6.99** | **200** | 120 days | A term of adaptive reasoning and full mock exams |
+| **Mastery Pass** | **$14.99** | **500** | 180 days | Opus 5 deep synthesis and a full semester review |
 
 ---
 

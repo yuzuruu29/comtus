@@ -1,5 +1,7 @@
 # Comtus Mobile (Expo React Native · Android & iOS)
 
+This folder is a **UI prototype**, not a launchable app. There is no Expo entry file, no `assets/`, and no lockfile. Do not list iOS or Android in launch copy until those exist.
+
 > Standalone mobile companion for **Comtus** — "Rough thought, polished."
 > Powered by Expo SDK 52, React Native, TypeScript, and the 16-color Cozy Pixel Bookshop design system.
 
