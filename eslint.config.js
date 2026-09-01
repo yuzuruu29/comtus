@@ -15,6 +15,8 @@ export default tseslint.config(
       "dist/**",
       "node_modules/**",
       "src-tauri/target/**",
+      "mobile/src/test/**",
+      "mobile/src/types/**",
     ],
   },
   {

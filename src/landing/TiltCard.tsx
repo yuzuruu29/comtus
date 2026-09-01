@@ -55,7 +55,7 @@ export default function TiltCard({
       });
   };
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = (e: React.PointerEvent) => {
     setLit((v) => !v);
     const outer = outerRef.current;
     if (!outer) return;
@@ -79,7 +79,7 @@ export default function TiltCard({
       ref={outerRef}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
-      onClick={handleClick}
+      onPointerDown={handleClick}
       data-lit={lit}
       className={`tilt-card group relative border-2 border-white/[0.08] bg-white/[0.03] p-1.5 transition-shadow duration-300 hover:border-brass/40 ${className}`}
     >

@@ -218,8 +218,6 @@ console.log(`    IndexedDB notebooks: ${dbCheck}`);
 
 await screenshot("07-final");
 
-// Summary
-const finalUrl = await evalJs("location.href");
 const finalPath = await evalJs("location.pathname");
 const navigatedSuccessfully = /\/studio\/.+/.test(String(finalPath));
 const bouncedBack = urlHistory.some(e => /\/studio\/.+/.test(e.path)) && 

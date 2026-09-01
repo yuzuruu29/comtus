@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type HTMLAttributes, type MouseEvent, type ReactNode } from "react";
-import { AnimatePresence, MotionConfig, animate, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, MotionConfig, animate, motion, useReducedMotion, type HTMLMotionProps } from "motion/react";
 import { useSettings } from "../lib/settings";
 
 /** Hook to query the user's active motion mode with system fallback. */
@@ -281,11 +281,7 @@ export function MagneticButton({
   className = "",
   onClick,
   ...rest
-}: {
-  children: ReactNode;
-  className?: string;
-  onClick?: () => void;
-} & HTMLAttributes<HTMLButtonElement>) {
+}: HTMLMotionProps<"button">) {
   const btnRef = useRef<HTMLButtonElement>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
@@ -313,7 +309,7 @@ export function MagneticButton({
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
       className={`relative cursor-pointer transition-colors ${className}`}
-      {...(rest as any)}
+      {...rest}
     >
       {children}
     </motion.button>

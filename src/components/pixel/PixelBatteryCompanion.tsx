@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -225,7 +226,10 @@ export function PixelBatteryCompanion({
   }, []);
 
   const scale = propScale ?? (isMobile ? 2.5 : 5);
-  const restingOffset = propRestingOffset ?? (isMobile ? { right: 14, bottom: 84 } : { right: 28, bottom: 28 });
+  const restingOffset = useMemo(
+    () => propRestingOffset ?? (isMobile ? { right: 14, bottom: 84 } : { right: 28, bottom: 28 }),
+    [propRestingOffset, isMobile],
+  );
 
   const [position, setPosition] = useState<BatteryPosition | null>(null);
   const [isDragging, setIsDragging] = useState(false);

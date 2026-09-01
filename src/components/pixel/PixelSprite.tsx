@@ -209,14 +209,13 @@ export function PixelSprite({
     }
 
     let isSubscribed = true;
-    let timerId: number | undefined;
 
     const currentFrame = frames[frameIndex];
     const duration = currentFrame?.durationMs ?? defaultDuration;
 
     const activeLoop = activeAnimation.loop ?? loop;
 
-    timerId = window.setTimeout(() => {
+    const timerId = window.setTimeout(() => {
       if (!isSubscribed) return;
 
       setFrameIndex((prevIndex) => {
@@ -271,9 +270,12 @@ export function PixelSprite({
       ? Math.min(Math.max(0, controlledFrameIndex), Math.max(0, frameCount - 1))
       : Math.min(Math.max(0, frameIndex), Math.max(0, frameCount - 1));
 
-  const currentFrame = frames[effectiveFrameIndex] || frames[0] || {};
-  const offsetX = currentFrame.offsetX ?? 0;
-  const offsetY = currentFrame.offsetY ?? 0;
+  const currentFrame = useMemo(
+    () => frames[effectiveFrameIndex] ?? frames[0],
+    [frames, effectiveFrameIndex],
+  );
+  const offsetX = currentFrame?.offsetX ?? 0;
+  const offsetY = currentFrame?.offsetY ?? 0;
 
   // Compute final dimensions
   const computedWidth = size ?? width ?? frameWidth * scale;
@@ -293,12 +295,11 @@ export function PixelSprite({
     ctx.translate(offsetX, offsetY);
 
     // Custom draw function if provided
-    if (currentFrame.draw) {
+    if (currentFrame?.draw) {
       currentFrame.draw(ctx, frameWidth, frameHeight);
     }
 
-    // Draw runs
-    if (currentFrame.runs) {
+    if (currentFrame?.runs) {
       for (const run of currentFrame.runs) {
         const [rx, ry, rw, rhOrColor, possibleColor] = run as [number, number, number, number | string, string | undefined];
         const rh = typeof rhOrColor === "number" ? rhOrColor : 1;
@@ -309,7 +310,7 @@ export function PixelSprite({
     }
 
     // Draw pixels
-    if (currentFrame.pixels) {
+    if (currentFrame?.pixels) {
       for (const p of currentFrame.pixels) {
         ctx.fillStyle = p.color;
         ctx.fillRect(p.x, p.y, p.width ?? 1, p.height ?? 1);

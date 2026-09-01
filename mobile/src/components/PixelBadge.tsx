@@ -7,7 +7,7 @@ import {
   TextStyle,
   Platform,
 } from 'react-native';
-import { pixelColors, pixelTypography } from '../theme/colors';
+import { pixelColors } from '../theme/colors';
 
 export type PixelBadgeVariant = 'brass' | 'moon' | 'sage' | 'rust' | 'neutral';
 export type PixelBadgeSize = 'sm' | 'md';

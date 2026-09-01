@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createNativeStackNavigator, type NativeStackScreenProps } from '@react-navigation/native-stack';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { pixelColors, pixelTypography } from '../theme/colors';
+import { pixelColors } from '../theme/colors';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ChatScreen } from '../screens/ChatScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
@@ -27,7 +27,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation }) => {
   return (
     <View style={styles.tabBarContainer}>
-      {state.routes.map((route: any, index: number) => {
+      {state.routes.map((route, index: number) => {
         const { options } = descriptors[route.key];
         const isFocused = state.index === index;
 
@@ -122,7 +122,7 @@ export const RootNavigator: React.FC<RootNavigatorProps> = ({
         initialRouteName={hasCompletedOnboarding ? 'Main' : 'Onboarding'}
       >
         <Stack.Screen name="Onboarding">
-          {(props: any) => (
+          {(props: NativeStackScreenProps<RootStackParamList, 'Onboarding'>) => (
             <OnboardingScreen
               {...props}
               onComplete={() => {

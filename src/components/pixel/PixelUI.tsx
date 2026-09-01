@@ -323,9 +323,18 @@ PixelBadge.displayName = "PixelBadge";
 
 export type PixelTooltipPosition = "top" | "bottom" | "left" | "right";
 
+type TooltipTriggerProps = {
+  onMouseEnter?: (event: React.MouseEvent) => void;
+  onMouseLeave?: (event: React.MouseEvent) => void;
+  onFocus?: (event: React.FocusEvent) => void;
+  onBlur?: (event: React.FocusEvent) => void;
+  onKeyDown?: (event: React.KeyboardEvent) => void;
+  "aria-describedby"?: string;
+};
+
 export interface PixelTooltipProps {
   text: ReactNode;
-  children: ReactElement;
+  children: ReactElement<TooltipTriggerProps>;
   position?: PixelTooltipPosition;
   delayMs?: number;
   className?: string;
@@ -402,19 +411,32 @@ export function PixelTooltip({
     }
   };
 
+  const triggerProps = children.props;
+
   return (
-    <div
-      className={`relative inline-flex ${className}`}
-      onMouseEnter={show}
-      onMouseLeave={hide}
-      onFocus={show}
-      onBlur={hide}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") hide();
-      }}
-    >
-      {React.cloneElement<any>(children, {
+    <div className={`relative inline-flex ${className}`}>
+      {React.cloneElement(children, {
         "aria-describedby": visible ? tooltipId : undefined,
+        onMouseEnter: (event) => {
+          triggerProps.onMouseEnter?.(event);
+          show();
+        },
+        onMouseLeave: (event) => {
+          triggerProps.onMouseLeave?.(event);
+          hide();
+        },
+        onFocus: (event) => {
+          triggerProps.onFocus?.(event);
+          show();
+        },
+        onBlur: (event) => {
+          triggerProps.onBlur?.(event);
+          hide();
+        },
+        onKeyDown: (event) => {
+          triggerProps.onKeyDown?.(event);
+          if (event.key === "Escape") hide();
+        },
       })}
 
       {visible && (

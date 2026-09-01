@@ -280,9 +280,11 @@ export default function ScholarConsoleDeck() {
 
                   {activeMode === "leitner" && (
                     <div className="mt-3">
-                      <div
+                      <button
+                        type="button"
                         onClick={handleFlipCard}
-                        className="cursor-pointer rounded-xl border border-[#6FE3FF]/30 bg-white/[0.06] p-4 text-center hover:border-[#6FE3FF] transition-all shadow-inner"
+                        aria-pressed={flashcardFlipped}
+                        className="w-full cursor-pointer rounded-xl border border-[#6FE3FF]/30 bg-white/[0.06] p-4 text-center hover:border-[#6FE3FF] transition-all shadow-inner"
                       >
                         <div className="font-mono text-[10.5px] text-[#6FE3FF] uppercase tracking-wider mb-2">
                           {flashcardFlipped ? "— FLASHCARD ANSWER (CLICK TO FLIP BACK) —" : "— FLASHCARD PROMPT (CLICK TO FLIP) —"}
@@ -290,7 +292,7 @@ export default function ScholarConsoleDeck() {
                         <p className="text-[14px] font-medium leading-relaxed text-white">
                           {flashcardFlipped ? selectedRom.flashcard.a : selectedRom.flashcard.q}
                         </p>
-                      </div>
+                      </button>
                     </div>
                   )}
 
@@ -321,10 +323,13 @@ export default function ScholarConsoleDeck() {
           <div className="lg:col-span-4 flex flex-col justify-between space-y-5">
             {/* 1. Mode Select Buttons (Pierre-Louis 3D Tactile Buttons) */}
             <div>
-              <label className="font-mono text-[10.5px] uppercase font-bold tracking-wider text-white/70 block mb-2">
+              <p
+                id="cognitive-mode-heading"
+                className="font-mono text-[10.5px] uppercase font-bold tracking-wider text-white/70 mb-2"
+              >
                 1. SELECT COGNITIVE MODE
-              </label>
-              <div className="grid grid-cols-3 gap-2">
+              </p>
+              <div className="grid grid-cols-3 gap-2" role="group" aria-labelledby="cognitive-mode-heading">
                 <button
                   type="button"
                   onClick={() => handleSetMode("socratic")}
@@ -388,9 +393,11 @@ export default function ScholarConsoleDeck() {
                 {CARTRIDGES.map((c) => {
                   const isInserted = selectedRom.id === c.id;
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={c.id}
                       onClick={() => handleSelectRom(c)}
+                      aria-pressed={isInserted}
                       className={`deck-rom-chip ${isInserted ? "is-inserted" : ""}`}
                     >
                       <div className="flex items-center gap-2">
@@ -398,7 +405,7 @@ export default function ScholarConsoleDeck() {
                         <span className="font-bold">{c.romName}</span>
                       </div>
                       <span className="text-[10px] text-white/50">{c.discipline.split(" ")[0]}</span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>

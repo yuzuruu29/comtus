@@ -157,7 +157,6 @@ interface PixelDeskSceneProps {
   step: number;
   subject: SubjectOption;
   goal: GoalOption;
-  onSceneClick?: () => void;
 }
 
 /**
@@ -167,24 +166,19 @@ interface PixelDeskSceneProps {
  * Step 2: Brass lamp ignites with warm amber light cone & filament flares.
  * Step 3: Scholar's quill & inkwell appear with illuminated study ambiance.
  */
-export function PixelDeskScene({ step, subject, goal, onSceneClick }: PixelDeskSceneProps) {
+export function PixelDeskScene({ step, subject, goal }: PixelDeskSceneProps) {
   const isLampLit = step >= 2;
   const hasQuill = step >= 3;
   const sceneRef = useRef<HTMLDivElement>(null);
 
-  const handleSceneClick = () => {
-    onSceneClick?.();
-  };
-
   return (
     <div
       ref={sceneRef}
-      onClick={handleSceneClick}
       role="img"
       aria-label={`16-bit Pixel Desk: ${subject.label} tome on desk, ${
         isLampLit ? "battery fully charged" : "battery in standby"
       }, ${hasQuill ? "quill ready" : "awaiting quill"}`}
-      className="relative w-full h-[120px] sm:h-[135px] overflow-hidden border border-[#33405F]/60 bg-[#080B12] select-none cursor-pointer group shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)]"
+      className="relative w-full h-[120px] sm:h-[135px] overflow-hidden border border-[#33405F]/60 bg-[#080B12] select-none group shadow-[inset_0_2px_8px_rgba(0,0,0,0.8)]"
       style={{ imageRendering: "pixelated" }}
     >
       {/* 16-Bit SVG Scene */}
@@ -467,7 +461,6 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
           step={step}
           subject={currentSubject}
           goal={currentGoal}
-          onSceneClick={() => {}}
         />
 
         {/* ── Modal Content Container ── */}

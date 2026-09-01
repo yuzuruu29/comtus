@@ -150,7 +150,7 @@ describe("PixelUI Primitives", () => {
       const trigger = screen.getByText("Hover Me");
       expect(screen.queryByRole("tooltip")).toBeNull();
 
-      fireEvent.mouseEnter(trigger.parentElement!);
+      fireEvent.mouseEnter(trigger);
       act(() => {
         vi.advanceTimersByTime(150);
       });
@@ -159,7 +159,7 @@ describe("PixelUI Primitives", () => {
       expect(tooltip).toBeDefined();
       expect(tooltip.textContent).toContain("Study Note Tooltip");
 
-      fireEvent.mouseLeave(trigger.parentElement!);
+      fireEvent.mouseLeave(trigger);
       act(() => {
         vi.advanceTimersByTime(50);
       });
@@ -174,14 +174,14 @@ describe("PixelUI Primitives", () => {
       );
 
       const trigger = screen.getByText("Focus Me");
-      fireEvent.focus(trigger.parentElement!);
+      fireEvent.focus(trigger);
       act(() => {
         vi.advanceTimersByTime(150);
       });
 
       expect(screen.getByRole("tooltip")).toBeDefined();
 
-      fireEvent.keyDown(trigger.parentElement!, { key: "Escape" });
+      fireEvent.keyDown(trigger, { key: "Escape" });
       expect(screen.queryByRole("tooltip")).toBeNull();
     });
   });

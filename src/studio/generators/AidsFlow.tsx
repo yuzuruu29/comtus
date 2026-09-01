@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { mathRemarkPlugins, mathRehypePlugins } from "../../lib/markdownMath";
@@ -354,7 +354,7 @@ export function FlashcardsView({
     setAddModalOpen(false);
   };
 
-  const rate = async (quality: "again" | "hard" | "good" | "easy") => {
+  const rate = useCallback(async (quality: "again" | "hard" | "good" | "easy") => {
     if (!card) return;
     const id = `${genKey}:${card.id}`;
     const existing = await db.cardProgress.get(id);
@@ -381,12 +381,12 @@ export function FlashcardsView({
     setPos((p) => p + 1);
     setFlipped(false);
     playSfx(quality === "again" ? "wrong" : "lampClick", sfxOn);
-  };
+  }, [card, genKey, notebookId, sfxOn]);
 
-  const handleFlip = () => {
+  const handleFlip = useCallback(() => {
     setFlipped((f) => !f);
     playSfx("cardFlip", sfxOn);
-  };
+  }, [sfxOn]);
 
   // Keyboard shortcut support: Space to flip, 1-4 to rate
   useEffect(() => {
@@ -415,7 +415,7 @@ export function FlashcardsView({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [done, addModalOpen, flipped, sfxOn, card]);
+  }, [done, addModalOpen, flipped, card, handleFlip, rate]);
 
   if (done) {
     return (

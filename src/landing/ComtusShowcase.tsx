@@ -684,12 +684,14 @@ export default function ComtusShowcase() {
 
                   {/* Mode 2: Flashcards */}
                   {activeMode === "flashcards" && (
-                    <div
+                    <button
+                      type="button"
                       onClick={() => {
                         playRetroClick(500);
                         setFlashcardFlipped(!flashcardFlipped);
                       }}
-                      className="flex flex-col items-center justify-center min-h-[140px] text-center cursor-pointer p-2 relative z-10"
+                      aria-pressed={flashcardFlipped}
+                      className="flex w-full flex-col items-center justify-center min-h-[140px] text-center cursor-pointer p-2 relative z-10 bg-transparent border-0"
                     >
                       <div className="text-[10px] font-mono text-[#E3B04B] mb-1">
                         CARD 04/28 · CLICK OR PRESS A TO FLIP
@@ -706,7 +708,7 @@ export default function ComtusShowcase() {
                           </div>
                         </div>
                       )}
-                    </div>
+                    </button>
                   )}
 
                   {/* Mode 3: Proof Engine */}
