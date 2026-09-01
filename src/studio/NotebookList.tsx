@@ -93,7 +93,8 @@ export default function NotebookList({
         }
       } catch (error) {
         if (!cancelled) {
-          setCreateError(error instanceof Error ? error.message : "The kickstart notebook could not be created.");
+          const fromCreate = error instanceof Error && !(error instanceof SyntaxError) ? error.message : "";
+          setCreateError(fromCreate || "The kickstart notebook could not be created.");
         }
       }
       if (!cancelled) void refresh();
