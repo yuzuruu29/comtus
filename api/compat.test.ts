@@ -32,6 +32,17 @@ describe("compat relay", () => {
     expect(res.headers.get("access-control-allow-origin")).toBe(origin);
   });
 
+  it("allows the custom production domain", async () => {
+    const origin = "https://www.comtus-ai.xyz";
+    const res = await handler(
+      new Request("http://localhost:3000/api/compat/zen/v1/models", {
+        method: "OPTIONS",
+        headers: { origin },
+      }),
+    );
+    expect(res.headers.get("access-control-allow-origin")).toBe(origin);
+  });
+
   it("404s unknown providers", async () => {
     const res = await handler(req("/api/compat/nope/v1/models"));
     expect(res.status).toBe(404);

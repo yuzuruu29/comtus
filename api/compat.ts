@@ -30,6 +30,7 @@ const UPSTREAMS: Record<string, string> = {
    shells, and local dev servers — mirrors api/anthropic.ts. */
 const ALLOWED_ORIGINS = new Set([
   "https://comtus-ai.vercel.app",
+  "https://www.comtus-ai.xyz",
   "http://tauri.localhost",
   "tauri://localhost",
   "http://localhost:5173",

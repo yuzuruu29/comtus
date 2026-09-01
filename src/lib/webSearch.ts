@@ -10,8 +10,11 @@ export interface WebSearchResult {
   snippet: string;
 }
 
-/** Hosted relay lives on the production site; the desktop app has no same-origin /api. */
-const PROD_SEARCH_ORIGIN = "https://www.comtus-ai.xyz";
+/** Hosted relay for desktop/Tauri, which has no same-origin /api. Follows VITE_API_ORIGIN. */
+export function hostedSearchOrigin(): string {
+  const fromEnv = String(import.meta.env.VITE_API_ORIGIN ?? "").replace(/\/+$/, "");
+  return fromEnv || "https://comtus-ai.vercel.app";
+}
 
 /* Words that turn a conversational question into a poor search query. */
 const STOPWORDS = new Set([
@@ -72,9 +75,10 @@ export async function searchWeb(question: string, signal?: AbortSignal): Promise
     }
 
     // 2. Hosted relay — desktop builds have no /api of their own.
-    if (window.location.origin !== PROD_SEARCH_ORIGIN) {
+    const hosted = hostedSearchOrigin();
+    if (window.location.origin !== hosted) {
       try {
-        const hits = await fetchRelay(PROD_SEARCH_ORIGIN, cleanQuery, signal);
+        const hits = await fetchRelay(hosted, cleanQuery, signal);
         if (hits) return hits;
       } catch (err) {
         if (isAbortError(err)) throw err;

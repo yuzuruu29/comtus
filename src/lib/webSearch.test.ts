@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { buildSearchQuery, searchWeb } from "./webSearch";
+import { buildSearchQuery, hostedSearchOrigin, searchWeb } from "./webSearch";
 
 describe("buildSearchQuery", () => {
   it("strips conversational filler and keeps content words", () => {
@@ -14,6 +14,12 @@ describe("buildSearchQuery", () => {
 
   it("falls back to the raw question when only stopwords remain", () => {
     expect(buildSearchQuery("Why?")).toBe("Why?");
+  });
+});
+
+describe("hostedSearchOrigin", () => {
+  it("returns a production https origin", () => {
+    expect(hostedSearchOrigin()).toMatch(/^https:\/\/(comtus-ai\.vercel\.app|www\.comtus-ai\.xyz)$/);
   });
 });
 
