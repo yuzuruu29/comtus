@@ -64,9 +64,9 @@ export default function CantorCircuitStream() {
       <svg className="c8-circuit-svg" viewBox="0 0 1440 460" fill="none" preserveAspectRatio="xMidYMid meet">
         <defs>
           <linearGradient id="c8GradPulse" x1="0" y1="0" x2="1440" y2="460" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#044AB3" stopOpacity="0.2" />
-            <stop offset="0.5" stopColor="#6FE3FF" />
-            <stop offset="1" stopColor="#044AB3" stopOpacity="0.9" />
+            <stop stopColor="var(--brass)" stopOpacity="0.2" />
+            <stop offset="0.5" stopColor="var(--brasspale)" />
+            <stop offset="1" stopColor="var(--brass)" stopOpacity="0.9" />
           </linearGradient>
           <filter id="c8Glow" x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur stdDeviation="4" result="blur" />
@@ -94,8 +94,8 @@ export default function CantorCircuitStream() {
           [360, 190], [760, 310], [1160, 420]
         ].map(([x, y], i) => (
           <g key={i}>
-            <circle cx={x} cy={y} r="4" fill="#044AB3" fillOpacity="0.3" />
-            <circle cx={x} cy={y} r="2" fill="#6FE3FF" />
+            <circle cx={x} cy={y} r="4" fill="var(--brass)" fillOpacity="0.3" />
+            <circle cx={x} cy={y} r="2" fill="var(--brasspale)" />
           </g>
         ))}
 
@@ -112,13 +112,13 @@ export default function CantorCircuitStream() {
           ref={pulseMainRef}
           d="M 40 30 H 320 V 170 H 720 V 290 H 1120 V 400 H 1400"
           className="c8-circuit-path-pulse"
-          stroke="#044AB3"
+          stroke="var(--brass)"
           strokeWidth="3.5"
           pathLength={1000}
         />
 
         {/* Dynamic Flying Spark Photons */}
-        <circle ref={spark1Ref} cx="40" cy="30" r="5" fill="#6FE3FF" filter="url(#c8Glow)" />
+        <circle ref={spark1Ref} cx="40" cy="30" r="5" fill="var(--brasspale)" filter="url(#c8Glow)" />
         <circle ref={spark2Ref} cx="80" cy="50" r="4" fill="#FFFFFF" filter="url(#c8Glow)" />
       </svg>
     </div>

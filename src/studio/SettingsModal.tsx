@@ -162,7 +162,7 @@ export default function SettingsModal({
   const [quickSaveName, setQuickSaveName] = useState("");
   const closeAddKeyModal = useCallback(() => setShowAddKeyModal(false), []);
 
-  const theme = useSettings((st) => st.theme) ?? "system";
+  const theme = useSettings((st) => st.theme) ?? "light";
   const motionMode = useSettings((st) => st.motionMode) ?? "full";
   const companionOn = useSettings((st) => st.companion !== false);
   const sfxOn = useSettings((st) => st.companionSfx !== false);
@@ -662,7 +662,7 @@ export default function SettingsModal({
                   step="0.05"
                   value={ambientVol}
                   onChange={(e) => setAmbientVolume(parseFloat(e.target.value))}
-                  className="w-full accent-amber-500 cursor-pointer"
+                  className="w-full accent-brass cursor-pointer"
                 />
               </div>
 
@@ -678,7 +678,7 @@ export default function SettingsModal({
                   step="0.05"
                   value={sfxVol}
                   onChange={(e) => setSfxVolume(parseFloat(e.target.value))}
-                  className="w-full accent-amber-500 cursor-pointer"
+                  className="w-full accent-brass cursor-pointer"
                 />
               </div>
             </div>
@@ -1505,7 +1505,7 @@ export default function SettingsModal({
           {err && <ErrorNote>{err}</ErrorNote>}
 
           {/* AI Accuracy Disclaimer */}
-          <div className="rounded-xl border border-brass/20 bg-amber-500/[0.04] p-3.5 text-ink/90">
+          <div className="rounded-xl border border-brass/20 bg-brass/[0.04] p-3.5 text-ink/90">
             <div className="flex items-start gap-2.5">
               <Warning size={16} className="text-brass shrink-0 mt-0.5" />
               <div className="text-[12px] leading-relaxed text-muted">

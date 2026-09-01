@@ -248,7 +248,7 @@ export default function CantorShowcase() {
       </section>
 
       {/* ── Dynamic Pixel Matrix Transition 1 ──────────────────────────────── */}
-      <CantorPixelTransition fromColor="#044AB3" toColor="#F5F3EF" accentColor="#6FE3FF" />
+      <CantorPixelTransition />
 
       {/* ── 2. Foundations Section with Circuit Pulse Stream ───────────────── */}
       <section id="foundations" className="c8-section">
@@ -284,7 +284,7 @@ export default function CantorShowcase() {
                         <span className="c8-cube-tag" />
                         <span>{prod.tag}</span>
                       </span>
-                      <Icon className="w-5 h-5 text-[#044AB3]" />
+                      <Icon className="w-5 h-5 text-brass" />
                     </div>
 
                     <h3 className="c8-card-h3">{prod.title}</h3>
@@ -293,7 +293,7 @@ export default function CantorShowcase() {
 
                   <div className="c8-card-footer">
                     <span className="c8-card-status">
-                      <Sparkles className="w-3.5 h-3.5 text-[#044AB3]" />
+                      <Sparkles className="w-3.5 h-3.5 text-brass" />
                       <span>{prod.status}</span>
                     </span>
 
@@ -323,10 +323,10 @@ export default function CantorShowcase() {
                   className="c8-curriculum-item"
                   onMouseEnter={handleCardMouseEnter}
                 >
-                  <div className="text-[11.5px] font-mono text-[#044AB3] font-bold uppercase tracking-wider mb-1">
+                  <div className="text-[11.5px] font-mono text-brass font-bold uppercase tracking-wider mb-1">
                     {curr.tag}
                   </div>
-                  <div className="text-sm font-semibold text-[#0B132B] mb-2">{curr.name}</div>
+                  <div className="text-sm font-semibold text-ink mb-2">{curr.name}</div>
                   <div className="text-xs text-[#334155] font-mono font-medium">{curr.rate}</div>
                 </div>
               ))}
@@ -336,7 +336,7 @@ export default function CantorShowcase() {
       </section>
 
       {/* ── Dynamic Pixel Matrix Transition 2 ──────────────────────────────── */}
-      <CantorPixelTransition fromColor="#F5F3EF" toColor="#044AB3" accentColor="#6FE3FF" />
+      <CantorPixelTransition />
     </div>
   );
 }

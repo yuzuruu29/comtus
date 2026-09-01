@@ -47,7 +47,7 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     id: "openrouter/free",
     name: "OpenRouter Auto Free",
     badge: "✨ Best Available Free Router",
-    badgeColor: "text-amber-300 border-amber-500/40 bg-amber-500/15 shadow-[0_0_14px_rgba(245,158,11,0.25)]",
+    badgeColor: "text-brasspale border-brass/40 bg-brass/15 shadow-[0_0_14px_rgba(245,158,11,0.25)]",
     category: "frontier",
     modality: "multimodal",
     modalityNote: "🖼️ Multimodal (Vision + Text)",
@@ -64,7 +64,7 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     id: "dots-studio/dots-3-note-preview:free",
     name: "Dots3-Note Preview",
     badge: "Top Study & Note Synthesizer",
-    badgeColor: "text-emerald-300 border-emerald-500/40 bg-emerald-500/15",
+    badgeColor: "text-sage border-sage/40 bg-sage/15",
     category: "vision",
     modality: "multimodal",
     modalityNote: "🖼️ Multimodal (Vision + Text)",
@@ -81,7 +81,7 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     id: "thinkingmachines/inkling:free",
     name: "Inkling Omni",
     badge: "Omni-Modal Vision",
-    badgeColor: "text-purple-300 border-purple-500/40 bg-purple-500/15",
+    badgeColor: "text-moon border-moon/40 bg-moon/15",
     category: "vision",
     modality: "multimodal",
     modalityNote: "🖼️ Omni-Modal (Vision + Audio + Text)",
@@ -115,7 +115,7 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     id: "poolside/laguna-s-2.1:free",
     name: "Poolside Laguna S 2.1",
     badge: "Coding & Math Proofs",
-    badgeColor: "text-indigo-300 border-indigo-500/40 bg-indigo-500/15",
+    badgeColor: "text-moondeep border-moondeep/40 bg-moondeep/15",
     category: "reasoning",
     modality: "text",
     modalityNote: "📄 Text-Only · Coding & Proofs",
@@ -132,7 +132,7 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     id: "liquid/lfm-2.5-2.6b:free",
     name: "LiquidAI LFM 2.5",
     badge: "Ultra-Lightweight & Agile",
-    badgeColor: "text-teal-300 border-teal-500/40 bg-teal-500/15",
+    badgeColor: "text-candle border-candle/40 bg-candle/15",
     category: "instant",
     modality: "text",
     modalityNote: "📄 Text-Only · Liquid Neural Net",
@@ -234,10 +234,10 @@ export default function OpenRouterByokSection() {
       ref={rootRef}
       id="byok-guide"
       data-torch
-      className="relative border-y border-[rgba(4,74,179,0.12)] bg-[#F5F3EF] py-[clamp(5.5rem,13vh,9.5rem)] text-[#0B132B]"
+      className="relative border-y border-hairline bg-ground py-[clamp(5.5rem,13vh,9.5rem)] text-ink"
     >
       {/* Subtle backdrop glow */}
-      <div className="pointer-events-none absolute left-1/2 top-12 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-[#044AB3]/[0.035] blur-[120px]" />
+      <div className="pointer-events-none absolute left-1/2 top-12 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-brass/[0.035] blur-[120px]" />
 
       <div className="mx-auto w-full max-w-6xl px-6">
         <div className="reveal-byok">
@@ -246,7 +246,7 @@ export default function OpenRouterByokSection() {
             label="Zero Setup · 100% Free"
             title={
               <>
-                Connect Free AI in <em className="font-[500] text-[#044AB3]">1 Click</em>. Zero Setup.
+                Connect Free AI in <em className="font-[500] text-brass">1 Click</em>. Zero Setup.
               </>
             }
             sub="No copy-pasting API keys, base URLs, or credit cards. Click Connect with Google or GitHub, and Comtus auto-configures your access to free models instantly."
@@ -256,29 +256,29 @@ export default function OpenRouterByokSection() {
         {/* 3-Step Visual Setup Flow (1-Click Zero Copy-Paste) */}
         <div className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-3">
           {/* Step 1 */}
-          <div className="reveal-byok group relative flex flex-col justify-between rounded-2xl border border-[#044AB3]/30 bg-white p-6 transition-all duration-300 hover:border-[#044AB3] hover:shadow-[0_8px_30px_rgba(4,74,179,0.12)]">
+          <div className="reveal-byok group relative flex flex-col justify-between rounded-2xl border border-brass/30 bg-surface p-6 transition-all duration-300 hover:border-brass hover:shadow-[0_8px_30px_rgba(165,115,28,0.12)]">
             <div>
               <div className="flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#044AB3]/40 bg-[#044AB3]/10 font-mono text-[13px] font-bold text-[#044AB3]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-brass/40 bg-brass/10 font-mono text-[13px] font-bold text-brass">
                   1
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-[#044AB3] bg-[#044AB3]/10 border border-[#044AB3]/25 px-2.5 py-0.5 rounded-full font-semibold">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-brass bg-brass/10 border border-brass/25 px-2.5 py-0.5 rounded-full font-semibold">
                   1-Click Connect
                 </span>
               </div>
-              <h3 className="mt-4 font-display text-[1.3rem] font-[520] text-[#0B132B]">
+              <h3 className="mt-4 font-display text-[1.3rem] font-[520] text-ink">
                 Sign in with 1 Click
               </h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-[#5A6A85]">
+              <p className="mt-2 text-[13px] leading-relaxed text-muted">
                 Click below to authorize securely with Google or GitHub. No credit cards, billing forms, or passwords to remember.
               </p>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-[rgba(4,74,179,0.08)]">
+            <div className="mt-6 pt-4 border-t border-[rgba(165,115,28,0.08)]">
               <button
                 type="button"
                 onClick={() => void startOpenRouterOAuth()}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#044AB3] py-3 font-mono text-[12px] font-semibold text-white shadow-[0_4px_16px_rgba(4,74,179,0.25)] transition-all hover:bg-[#033CA0] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brass py-3 font-mono text-[12px] font-semibold text-white shadow-[0_4px_16px_rgba(165,115,28,0.25)] transition-all hover:bg-brassdeep hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
               >
                 <Sparkles size={14} className="shrink-0" />
                 <span>Connect with OpenRouter (1-Click)</span>
@@ -287,65 +287,65 @@ export default function OpenRouterByokSection() {
           </div>
 
           {/* Step 2 */}
-          <div className="reveal-byok group relative flex flex-col justify-between rounded-2xl border border-[rgba(4,74,179,0.14)] bg-white p-6 transition-all duration-300 hover:border-[#044AB3] hover:shadow-[0_8px_30px_rgba(4,74,179,0.08)]">
+          <div className="reveal-byok group relative flex flex-col justify-between rounded-2xl border border-hairline bg-surface p-6 transition-all duration-300 hover:border-brass hover:shadow-[0_8px_30px_rgba(165,115,28,0.08)]">
             <div>
               <div className="flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(4,74,179,0.2)] bg-[#044AB3]/5 font-mono text-[13px] font-bold text-[#044AB3]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(165,115,28,0.2)] bg-brass/5 font-mono text-[13px] font-bold text-brass">
                   2
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-[#044AB3] bg-[#044AB3]/10 border border-[#044AB3]/20 px-2.5 py-0.5 rounded-full font-semibold">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-brass bg-brass/10 border border-brass/20 px-2.5 py-0.5 rounded-full font-semibold">
                   Auto-Configured
                 </span>
               </div>
-              <h3 className="mt-4 font-display text-[1.3rem] font-[520] text-[#0B132B]">
+              <h3 className="mt-4 font-display text-[1.3rem] font-[520] text-ink">
                 Zero Copy-Paste Setup
               </h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-[#5A6A85]">
+              <p className="mt-2 text-[13px] leading-relaxed text-muted">
                 Comtus automatically generates and verifies your key in the background. You never have to manually copy keys, endpoints, or base URLs.
               </p>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-[rgba(4,74,179,0.08)] text-[11.5px] font-mono text-[#5A6A85] flex items-center gap-1.5">
-              <ShieldCheck size={14} className="text-[#044AB3] shrink-0" />
+            <div className="mt-6 pt-4 border-t border-[rgba(165,115,28,0.08)] text-[11.5px] font-mono text-muted flex items-center gap-1.5">
+              <ShieldCheck size={14} className="text-brass shrink-0" />
               <span>Zero manual copy-paste needed</span>
             </div>
           </div>
 
           {/* Step 3 */}
-          <div className="reveal-byok group relative flex flex-col justify-between rounded-2xl border border-[rgba(4,74,179,0.14)] bg-white p-6 transition-all duration-300 hover:border-[#044AB3] hover:shadow-[0_8px_30px_rgba(4,74,179,0.08)]">
+          <div className="reveal-byok group relative flex flex-col justify-between rounded-2xl border border-hairline bg-surface p-6 transition-all duration-300 hover:border-brass hover:shadow-[0_8px_30px_rgba(165,115,28,0.08)]">
             <div>
               <div className="flex items-center justify-between">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(4,74,179,0.2)] bg-[#044AB3]/5 font-mono text-[13px] font-bold text-[#044AB3]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[rgba(165,115,28,0.2)] bg-brass/5 font-mono text-[13px] font-bold text-brass">
                   3
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full font-semibold">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-sage bg-sage/10 border border-sage/30 px-2.5 py-0.5 rounded-full font-semibold">
                   Ready Instantly
                 </span>
               </div>
-              <h3 className="mt-4 font-display text-[1.3rem] font-[520] text-[#0B132B]">
+              <h3 className="mt-4 font-display text-[1.3rem] font-[520] text-ink">
                 Start Studying Right Away
               </h3>
-              <p className="mt-2 text-[13px] leading-relaxed text-[#5A6A85]">
+              <p className="mt-2 text-[13px] leading-relaxed text-muted">
                 You are taken straight into the studio workspace. Verified free models like <strong>Dots3-Note</strong> and <strong>Nemotron 3.5</strong> are active and ready.
               </p>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-[rgba(4,74,179,0.08)] text-[11.5px] font-mono text-[#044AB3] font-semibold flex items-center gap-1.5">
-              <Sparkles size={14} className="text-[#044AB3] shrink-0" />
+            <div className="mt-6 pt-4 border-t border-[rgba(165,115,28,0.08)] text-[11.5px] font-mono text-brass font-semibold flex items-center gap-1.5">
+              <Sparkles size={14} className="text-brass shrink-0" />
               <span>100% Free Grounded Learning</span>
             </div>
           </div>
         </div>
 
         {/* Free Tier Daily Limit & Fair Use Advisory */}
-        <div className="reveal-byok mt-5 rounded-2xl border border-amber-500/30 bg-amber-500/[0.06] p-4.5 sm:p-5">
+        <div className="reveal-byok mt-5 rounded-2xl border border-brass/30 bg-brass/[0.06] p-4.5 sm:p-5">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-start sm:items-center gap-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/15 text-[14px]">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-brass/40 bg-brass/15 text-[14px]">
                 ⚠️
               </span>
-              <div className="text-[12.5px] leading-relaxed text-[#5A6A85]">
-                <strong className="font-semibold text-[#0B132B]">Free Tier Daily Limit Advisory:</strong>{" "}
+              <div className="text-[12.5px] leading-relaxed text-muted">
+                <strong className="font-semibold text-ink">Free Tier Daily Limit Advisory:</strong>{" "}
                 OpenRouter free models share public compute pools with an estimated daily limit per model (resetting at 00:00 UTC). If you hit a temporary queue or daily cap, Comtus alerts you instantly so you can switch to another free model (or Groq 500 tok/s) in 1 click, or continue with dedicated Smarter Models passes.
               </div>
             </div>
@@ -353,8 +353,8 @@ export default function OpenRouterByokSection() {
         </div>
 
         {/* Free key providers — any OpenAI-compatible endpoint works */}
-        <div className="reveal-byok mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-[rgba(4,74,179,0.14)] bg-white px-6 py-4 shadow-sm">
-          <span className="font-mono text-[11px] uppercase tracking-wider font-semibold text-[#044AB3] shrink-0">
+        <div className="reveal-byok mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-hairline bg-surface px-6 py-4 shadow-sm">
+          <span className="font-mono text-[11px] uppercase tracking-wider font-semibold text-brass shrink-0">
             Get a Free Key
           </span>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -364,7 +364,7 @@ export default function OpenRouterByokSection() {
                 href={p.url}
                 target="_blank"
                 rel="noreferrer"
-                className="group flex items-center gap-1.5 font-mono text-[11.5px] text-[#5A6A85] transition-colors duration-300 hover:text-[#044AB3]"
+                className="group flex items-center gap-1.5 font-mono text-[11.5px] text-muted transition-colors duration-300 hover:text-brass"
               >
                 {p.name}
                 <ExternalLink
@@ -374,7 +374,7 @@ export default function OpenRouterByokSection() {
               </a>
             ))}
           </div>
-          <span className="ml-auto hidden font-mono text-[10.5px] text-[#5A6A85] lg:block">
+          <span className="ml-auto hidden font-mono text-[10.5px] text-muted lg:block">
             Any OpenAI-compatible endpoint works · or run fully local with Ollama
           </span>
         </div>
@@ -384,17 +384,17 @@ export default function OpenRouterByokSection() {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[11px] uppercase tracking-wider text-[#044AB3] font-semibold">Model Decision Guide</span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[9px] text-emerald-700 font-semibold">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-mono text-[11px] uppercase tracking-wider text-brass font-semibold">Model Decision Guide</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-sage/30 bg-sage/100/10 px-2 py-0.5 font-mono text-[9px] text-sage font-semibold">
+                  <span className="h-1.5 w-1.5 rounded-full bg-sage/100 animate-pulse" />
                   {liveStatus.lastChecked}
                 </span>
               </div>
-              <h3 className="mt-2 font-display text-[1.6rem] font-[520] text-[#0B132B]">
+              <h3 className="mt-2 font-display text-[1.6rem] font-[520] text-ink">
                 Which free model should you choose?
               </h3>
             </div>
-            <p className="text-[13px] text-[#5A6A85] max-w-md">
+            <p className="text-[13px] text-muted max-w-md">
               Ranked dynamically by live benchmark performance and community resonance. Switch anytime inside Settings:
             </p>
           </div>
@@ -414,8 +414,8 @@ export default function OpenRouterByokSection() {
                 onClick={() => setSelectedFilter(tab.id)}
                 className={`rounded-full border px-3 py-1 font-mono text-[11px] transition-all cursor-pointer ${
                   selectedFilter === tab.id
-                    ? "border-[#044AB3] bg-[#044AB3] text-white font-semibold shadow-[0_2px_10px_rgba(4,74,179,0.25)]"
-                    : "border-[rgba(4,74,179,0.15)] bg-white text-[#5A6A85] hover:border-[#044AB3] hover:text-[#0B132B]"
+                    ? "border-brass bg-brass text-white font-semibold shadow-[0_2px_10px_rgba(165,115,28,0.25)]"
+                    : "border-[rgba(165,115,28,0.15)] bg-surface text-muted hover:border-brass hover:text-ink"
                 }`}
               >
                 {tab.label}
@@ -428,7 +428,7 @@ export default function OpenRouterByokSection() {
             {displayedModels.map((m) => {
               const isCopied = copiedId === m.id;
               return (
-                <TiltCard key={m.id} innerClassName="p-5 flex flex-col justify-between h-full group bg-white border border-[rgba(4,74,179,0.14)] rounded-xl shadow-[0_4px_16px_rgba(4,74,179,0.03)] hover:border-[#044AB3] hover:shadow-[0_8px_24px_rgba(4,74,179,0.1)] transition-all">
+                <TiltCard key={m.id} innerClassName="p-5 flex flex-col justify-between h-full group bg-surface border border-hairline rounded-xl shadow-[0_4px_16px_rgba(165,115,28,0.03)] hover:border-brass hover:shadow-[0_8px_24px_rgba(165,115,28,0.1)] transition-all">
                   <div className="flex h-full flex-col">
                     {/* Top Row: Category Badge + Limited Preview Pill */}
                     <div className="flex flex-wrap items-center justify-between gap-1.5">
@@ -438,47 +438,47 @@ export default function OpenRouterByokSection() {
                         {m.badge}
                       </span>
                       {m.isExpiringSoon && (
-                        <span className="rounded-full border border-amber-500/40 bg-amber-500/20 px-2 py-0.5 font-mono text-[8.5px] text-amber-700 font-semibold animate-pulse">
+                        <span className="rounded-full border border-brass/40 bg-brass/20 px-2 py-0.5 font-mono text-[8.5px] text-brassdeep font-semibold animate-pulse">
                           ⚡ Limited Preview
                         </span>
                       )}
                     </div>
 
                     {/* Model Name & Architecture */}
-                    <h4 className="mt-3 font-display text-[1.2rem] font-[520] leading-snug text-[#0B132B] group-hover:text-[#044AB3] transition-colors">
+                    <h4 className="mt-3 font-display text-[1.2rem] font-[520] leading-snug text-ink group-hover:text-brass transition-colors">
                       {m.name}
                     </h4>
-                    <div className="font-mono text-[10px] text-[#5A6A85]">
+                    <div className="font-mono text-[10px] text-muted">
                       {m.architecture}
                     </div>
 
                     {/* Modality Tag */}
-                    <div className="mt-2 inline-flex items-center gap-1 self-start rounded-md border border-[rgba(4,74,179,0.15)] bg-[#044AB3]/5 px-2 py-0.5 font-mono text-[10px] text-[#044AB3] font-medium">
+                    <div className="mt-2 inline-flex items-center gap-1 self-start rounded-md border border-[rgba(165,115,28,0.15)] bg-brass/5 px-2 py-0.5 font-mono text-[10px] text-brass font-medium">
                       {m.modalityNote}
                     </div>
 
                     {/* Speed, Context & Benchmark */}
-                    <div className="mt-2.5 flex flex-wrap items-center gap-x-2 font-mono text-[10px] leading-relaxed text-[#5A6A85]">
-                      <span className="text-[#0B132B] font-semibold">{m.speed}</span>
-                      <span aria-hidden className="text-[rgba(4,74,179,0.3)]">·</span>
+                    <div className="mt-2.5 flex flex-wrap items-center gap-x-2 font-mono text-[10px] leading-relaxed text-muted">
+                      <span className="text-ink font-semibold">{m.speed}</span>
+                      <span aria-hidden className="text-[rgba(165,115,28,0.3)]">·</span>
                       <span>{m.context}</span>
                     </div>
 
-                    <div className="mt-2 rounded-lg bg-[#F5F3EF] border border-[rgba(4,74,179,0.08)] px-2.5 py-1.5 font-mono text-[9.5px] text-[#5A6A85] flex items-center gap-1.5">
+                    <div className="mt-2 rounded-lg bg-raised border border-[rgba(165,115,28,0.08)] px-2.5 py-1.5 font-mono text-[9.5px] text-muted flex items-center gap-1.5">
                       <span>🏆</span>
-                      <span className="text-[#0B132B] font-medium">{m.benchmarkScore}</span>
+                      <span className="text-ink font-medium">{m.benchmarkScore}</span>
                     </div>
 
                     {/* Best For */}
-                    <p className="mt-3 text-[12px] leading-relaxed text-[#5A6A85]">
-                      <strong className="font-semibold text-[#0B132B]">Best for:</strong>{" "}
+                    <p className="mt-3 text-[12px] leading-relaxed text-muted">
+                      <strong className="font-semibold text-ink">Best for:</strong>{" "}
                       {m.bestFor}
                     </p>
 
                     {/* Tags */}
                     <div className="mt-2.5 flex flex-wrap gap-1">
                       {m.tags.map((t) => (
-                        <span key={t} className="rounded bg-[#F5F3EF] border border-[rgba(4,74,179,0.08)] px-1.5 py-0.5 font-mono text-[9px] text-[#5A6A85]">
+                        <span key={t} className="rounded bg-raised border border-[rgba(165,115,28,0.08)] px-1.5 py-0.5 font-mono text-[9px] text-muted">
                           {t}
                         </span>
                       ))}
@@ -486,7 +486,7 @@ export default function OpenRouterByokSection() {
 
                     {/* Grounded Why */}
                     <div className="mt-auto pt-4">
-                      <div className="border-t border-[rgba(4,74,179,0.08)] pt-3 text-[11px] leading-snug text-[#5A6A85]">
+                      <div className="border-t border-[rgba(165,115,28,0.08)] pt-3 text-[11px] leading-snug text-muted">
                         {m.why}
                       </div>
 
@@ -496,8 +496,8 @@ export default function OpenRouterByokSection() {
                         onClick={() => handleCopyModelId(m.id)}
                         className={`mt-3 w-full flex items-center justify-between rounded-lg border px-2.5 py-1.5 font-mono text-[10.5px] transition-all duration-200 cursor-pointer ${
                           isCopied
-                            ? "border-emerald-500/50 bg-emerald-50 text-emerald-700"
-                            : "border-[rgba(4,74,179,0.15)] bg-[#F5F3EF] text-[#5A6A85] hover:border-[#044AB3] hover:bg-[#044AB3]/5 hover:text-[#044AB3]"
+                            ? "border-sage/50 bg-sage/10 text-sage"
+                            : "border-[rgba(165,115,28,0.15)] bg-raised text-muted hover:border-brass hover:bg-brass/5 hover:text-brass"
                         }`}
                       >
                         <span className="truncate max-w-[170px] text-[10px] text-left opacity-80">{m.id}</span>
@@ -517,7 +517,7 @@ export default function OpenRouterByokSection() {
             <button
               type="button"
               onClick={() => setShowMatrix((prev) => !prev)}
-              className="inline-flex items-center gap-2 rounded-xl border border-[rgba(4,74,179,0.2)] bg-white px-4 py-2 font-mono text-[11.5px] text-[#044AB3] font-semibold transition-colors hover:border-[#044AB3] hover:bg-[#044AB3]/5 cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-2 rounded-xl border border-[rgba(165,115,28,0.2)] bg-surface px-4 py-2 font-mono text-[11.5px] text-brass font-semibold transition-colors hover:border-brass hover:bg-brass/5 cursor-pointer shadow-sm"
             >
               <span>{showMatrix ? "▲ Hide Benchmark Matrix" : "📊 View Full Model Comparison & Spec Matrix"}</span>
             </button>
@@ -525,10 +525,10 @@ export default function OpenRouterByokSection() {
 
           {/* Collapsible Full Spec Matrix Table */}
           {showMatrix && (
-            <div className="mt-4 overflow-x-auto rounded-2xl border border-[rgba(4,74,179,0.14)] bg-white p-4 shadow-xl">
+            <div className="mt-4 overflow-x-auto rounded-2xl border border-hairline bg-surface p-4 shadow-xl">
               <table className="w-full text-left font-mono text-[11.5px]">
                 <thead>
-                  <tr className="border-b border-[rgba(4,74,179,0.1)] text-[#5A6A85] text-[10px] uppercase tracking-wider">
+                  <tr className="border-b border-[rgba(165,115,28,0.1)] text-muted text-[10px] uppercase tracking-wider">
                     <th className="pb-3 pr-4 font-semibold">Model Name & ID</th>
                     <th className="pb-3 px-3 font-semibold">Modality</th>
                     <th className="pb-3 px-3 font-semibold">Context</th>
@@ -537,28 +537,28 @@ export default function OpenRouterByokSection() {
                     <th className="pb-3 pl-3 font-semibold text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[rgba(4,74,179,0.06)] text-[#0B132B]">
+                <tbody className="divide-y divide-[rgba(165,115,28,0.06)] text-ink">
                   {BENCHMARK_MODELS.map((m) => (
-                    <tr key={m.id} className="hover:bg-[#F5F3EF]/60 transition-colors">
+                    <tr key={m.id} className="hover:bg-raised/60 transition-colors">
                       <td className="py-3 pr-4">
-                        <div className="font-semibold text-[#0B132B]">{m.name}</div>
-                        <div className="text-[10px] text-[#5A6A85] truncate max-w-[220px]">{m.id}</div>
+                        <div className="font-semibold text-ink">{m.name}</div>
+                        <div className="text-[10px] text-muted truncate max-w-[220px]">{m.id}</div>
                       </td>
                       <td className="py-3 px-3 whitespace-nowrap">
                         <span className={`inline-block px-2 py-0.5 rounded text-[9.5px] font-medium ${
-                          m.modality === "multimodal" ? "bg-sky-50 text-sky-700 border border-sky-200" : "bg-gray-50 text-[#5A6A85] border border-gray-200"
+                          m.modality === "multimodal" ? "bg-moon/10 text-moon border border-moon/30" : "bg-raised text-muted border border-hairline"
                         }`}>
                           {m.modality === "multimodal" ? "🖼️ Multimodal (Vision)" : "📄 Text-Only"}
                         </span>
                       </td>
-                      <td className="py-3 px-3 whitespace-nowrap text-[#044AB3] font-semibold">{m.context}</td>
-                      <td className="py-3 px-3 whitespace-nowrap text-[#5A6A85]">{m.speed}</td>
-                      <td className="py-3 px-3 max-w-xs text-[#5A6A85] text-[11px] leading-snug">{m.bestFor}</td>
+                      <td className="py-3 px-3 whitespace-nowrap text-brass font-semibold">{m.context}</td>
+                      <td className="py-3 px-3 whitespace-nowrap text-muted">{m.speed}</td>
+                      <td className="py-3 px-3 max-w-xs text-muted text-[11px] leading-snug">{m.bestFor}</td>
                       <td className="py-3 pl-3 text-right whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => handleCopyModelId(m.id)}
-                          className="rounded border border-[rgba(4,74,179,0.15)] bg-white px-2.5 py-1 text-[10px] text-[#044AB3] font-medium hover:border-[#044AB3] hover:bg-[#044AB3]/5 transition-colors cursor-pointer"
+                          className="rounded border border-[rgba(165,115,28,0.15)] bg-surface px-2.5 py-1 text-[10px] text-brass font-medium hover:border-brass hover:bg-brass/5 transition-colors cursor-pointer"
                         >
                           {copiedId === m.id ? "✓ Copied" : "Copy ID"}
                         </button>
@@ -571,53 +571,53 @@ export default function OpenRouterByokSection() {
           )}
 
           {/* Modality Advisory & Image Input Guidance */}
-          <div className="mt-6 rounded-2xl border border-sky-500/25 bg-sky-50/70 p-4 sm:p-5">
+          <div className="mt-6 rounded-2xl border border-moon/25 bg-moon/[0.07] p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-sky-400/40 bg-sky-500/20 text-[14px]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-moon/40 bg-moon/100/20 text-[14px]">
                 💡
               </div>
-              <div className="text-[12.5px] leading-relaxed text-[#5A6A85]">
-                <strong className="font-semibold text-[#0B132B]">Understanding Model Modality:</strong>{" "}
-                <span className="text-sky-700 font-semibold">Multimodal models (like Ox Alpha, Dots3-Note, Inkling)</span> directly parse raw image attachments, anatomical diagrams, handwritten formulas, and lecture slides.{" "}
-                <span className="text-amber-700 font-semibold">Text-only models (like Nemotron 3.5 Lightning, Laguna S 2.1)</span> excel at pure logic, coding, and reasoning proofs. When you upload PDFs or slides in Comtus, Comtus automatically extracts the text locally on your device before sending so you get clean answers on any model.
+              <div className="text-[12.5px] leading-relaxed text-muted">
+                <strong className="font-semibold text-ink">Understanding Model Modality:</strong>{" "}
+                <span className="text-moon font-semibold">Multimodal models (like Ox Alpha, Dots3-Note, Inkling)</span> directly parse raw image attachments, anatomical diagrams, handwritten formulas, and lecture slides.{" "}
+                <span className="text-brassdeep font-semibold">Text-only models (like Nemotron 3.5 Lightning, Laguna S 2.1)</span> excel at pure logic, coding, and reasoning proofs. When you upload PDFs or slides in Comtus, Comtus automatically extracts the text locally on your device before sending so you get clean answers on any model.
               </div>
             </div>
           </div>
         </div>
 
         {/* Troubleshooting & Unresponsive Models Guide (Prevent User Scare) */}
-        <div className="reveal-byok mt-12 overflow-hidden rounded-2xl border border-[rgba(4,74,179,0.14)] bg-white p-6 sm:p-8 shadow-sm">
+        <div className="reveal-byok mt-12 overflow-hidden rounded-2xl border border-hairline bg-surface p-6 sm:p-8 shadow-sm">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10">
-              <AlertTriangle size={15} className="text-amber-600" />
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-brass/30 bg-brass/10">
+              <AlertTriangle size={15} className="text-brassdeep" />
             </span>
             <div className="max-w-2xl">
-              <h3 className="font-display text-[1.45rem] font-[520] leading-snug text-[#0B132B]">
+              <h3 className="font-display text-[1.45rem] font-[520] leading-snug text-ink">
                 What if a free model is slow or unresponsive?
               </h3>
-              <p className="mt-2.5 text-[13.5px] leading-relaxed text-[#5A6A85]">
+              <p className="mt-2.5 text-[13.5px] leading-relaxed text-muted">
                 Free community models occasionally queue requests during worldwide traffic peaks.{" "}
-                <strong className="font-semibold text-[#0B132B]">Don't panic — your study data is 100% safe.</strong>{" "}
+                <strong className="font-semibold text-ink">Don't panic — your study data is 100% safe.</strong>{" "}
                 If an endpoint stalls, two quick fixes:
               </p>
             </div>
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-[rgba(4,74,179,0.12)] bg-[#F5F3EF] p-4">
-              <div className="flex items-center gap-2 text-[13px] font-semibold text-[#0B132B]">
-                <RefreshCw size={13} className="shrink-0 text-[#044AB3]" /> Switch free model
+            <div className="rounded-xl border border-[rgba(165,115,28,0.12)] bg-raised p-4">
+              <div className="flex items-center gap-2 text-[13px] font-semibold text-ink">
+                <RefreshCw size={13} className="shrink-0 text-brass" /> Switch free model
               </div>
-              <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#5A6A85]">
+              <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
                 Open Settings and pick Dots3-Note or Nemotron 3.5 Lightning — switching takes two seconds.
               </p>
             </div>
 
-            <div className="rounded-xl border border-[rgba(4,74,179,0.12)] bg-[#F5F3EF] p-4">
-              <div className="flex items-center gap-2 text-[13px] font-semibold text-[#0B132B]">
-                <Zap size={13} className="shrink-0 text-emerald-600" /> Use Groq fast free
+            <div className="rounded-xl border border-[rgba(165,115,28,0.12)] bg-raised p-4">
+              <div className="flex items-center gap-2 text-[13px] font-semibold text-ink">
+                <Zap size={13} className="shrink-0 text-sage" /> Use Groq fast free
               </div>
-              <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#5A6A85]">
+              <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
                 Groq's dedicated LPUs serve 500+ tok/s with virtually zero queue latency.
               </p>
             </div>
@@ -625,74 +625,74 @@ export default function OpenRouterByokSection() {
         </div>
 
         {/* Exclusive Anthropic Smarter Tier & PPT / Slideshow Maker Feature Callout */}
-        <div className="reveal-byok mt-14 overflow-hidden rounded-3xl border border-[#044AB3]/30 bg-gradient-to-b from-[#044AB3]/[0.06] to-white p-7 sm:p-10 shadow-[0_12px_40px_rgba(4,74,179,0.08)]">
+        <div className="reveal-byok mt-14 overflow-hidden rounded-3xl border border-brass/30 bg-gradient-to-b from-brass/[0.06] to-surface p-7 sm:p-10 shadow-[0_12px_40px_rgba(165,115,28,0.08)]">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7 space-y-4">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 rounded-full border border-[#044AB3]/30 bg-[#044AB3]/10 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-[#044AB3] font-semibold">
-                  <Crown size={12} className="text-[#044AB3]" /> Smarter Models Exclusive
+                <span className="inline-flex items-center gap-1 rounded-full border border-brass/30 bg-brass/10 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-brass font-semibold">
+                  <Crown size={12} className="text-brass" /> Smarter Models Exclusive
                 </span>
-                <span className="font-mono text-[11px] text-[#5A6A85]">Claude Opus 5 & Sonnet 5</span>
+                <span className="font-mono text-[11px] text-muted">Claude Opus 5 & Sonnet 5</span>
               </div>
 
-              <h3 className="font-display text-[1.85rem] sm:text-[2.2rem] font-[520] text-[#0B132B] leading-tight">
+              <h3 className="font-display text-[1.85rem] sm:text-[2.2rem] font-[520] text-ink leading-tight">
                 PPT Maker & Interactive Slideshows.
               </h3>
 
-              <p className="text-[14.5px] leading-relaxed text-[#5A6A85] max-w-xl">
+              <p className="text-[14.5px] leading-relaxed text-muted max-w-xl">
                 Turn entire textbooks, medical chapters, and lecture notes into structured <strong>presentation decks with speaker notes</strong> and an <strong>interactive fullscreen slide viewer</strong>. Exclusively powered by Claude Opus 5 & Sonnet 5 for unmatched structural reasoning.
               </p>
 
               <div className="flex flex-wrap gap-2 pt-2">
                 {["Structured Deck Outlines", "Presenter Speaker Notes", "Interactive Slide Deck Viewer", "Export to PowerPoint / Markdown", "Adaptive Thinking"].map((f) => (
-                  <span key={f} className="flex items-center gap-1.5 rounded-full border border-[rgba(4,74,179,0.15)] bg-white px-3 py-1 font-mono text-[11px] text-[#0B132B] font-medium shadow-sm">
-                    <CheckCircle2 size={12} className="text-[#044AB3]" /> {f}
+                  <span key={f} className="flex items-center gap-1.5 rounded-full border border-[rgba(165,115,28,0.15)] bg-surface px-3 py-1 font-mono text-[11px] text-ink font-medium shadow-sm">
+                    <CheckCircle2 size={12} className="text-brass" /> {f}
                   </span>
                 ))}
               </div>
             </div>
 
-            <div className="lg:col-span-5 flex flex-col justify-between rounded-2xl border border-[rgba(4,74,179,0.2)] bg-white p-6 space-y-4 shadow-md">
+            <div className="lg:col-span-5 flex flex-col justify-between rounded-2xl border border-[rgba(165,115,28,0.2)] bg-surface p-6 space-y-4 shadow-md">
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="font-mono text-[10.5px] uppercase tracking-wider text-[#044AB3] font-semibold">
+                  <div className="font-mono text-[10.5px] uppercase tracking-wider text-brass font-semibold">
                     Available via PayPal study passes:
                   </div>
-                  <span className="rounded-full border border-emerald-500/25 bg-emerald-50 px-2 py-0.5 font-mono text-[9px] font-semibold text-emerald-700">
+                  <span className="rounded-full border border-sage/25 bg-sage/10 px-2 py-0.5 font-mono text-[9px] font-semibold text-sage">
                     −40% launch offer
                   </span>
                 </div>
                 <div className="mt-3 space-y-2 text-[12.5px]">
-                  <div className="flex items-center justify-between border-b border-[rgba(4,74,179,0.08)] pb-2">
-                    <span className="text-[#0B132B] font-semibold">Sprint Pass</span>
+                  <div className="flex items-center justify-between border-b border-[rgba(165,115,28,0.08)] pb-2">
+                    <span className="text-ink font-semibold">Sprint Pass</span>
                     <span className="flex items-baseline gap-1.5 font-mono">
-                      <span className="text-[11px] text-[#5A6A85]/60 line-through">$4.99</span>
-                      <span className="font-bold text-[#044AB3]">$2.99</span>
-                      <span className="text-[10px] font-normal text-[#5A6A85]">(60 hosted requests)</span>
+                      <span className="text-[11px] text-muted/60 line-through">$4.99</span>
+                      <span className="font-bold text-brass">$2.99</span>
+                      <span className="text-[10px] font-normal text-muted">(60 hosted requests)</span>
                     </span>
                   </div>
-                  <div className="flex items-center justify-between border-b border-[rgba(4,74,179,0.08)] pb-2">
-                    <span className="text-[#0B132B] font-semibold flex items-center gap-1">
-                      Scholar Pass <span className="rounded bg-[#044AB3]/10 px-1 py-0.2 font-mono text-[9px] text-[#044AB3] uppercase font-semibold">Popular</span>
+                  <div className="flex items-center justify-between border-b border-[rgba(165,115,28,0.08)] pb-2">
+                    <span className="text-ink font-semibold flex items-center gap-1">
+                      Scholar Pass <span className="rounded bg-brass/10 px-1 py-0.2 font-mono text-[9px] text-brass uppercase font-semibold">Popular</span>
                     </span>
                     <span className="flex items-baseline gap-1.5 font-mono">
-                      <span className="text-[11px] text-[#5A6A85]/60 line-through">$11.99</span>
-                      <span className="font-bold text-[#044AB3]">$6.99</span>
-                      <span className="text-[10px] font-normal text-[#5A6A85]">(200 hosted requests)</span>
+                      <span className="text-[11px] text-muted/60 line-through">$11.99</span>
+                      <span className="font-bold text-brass">$6.99</span>
+                      <span className="text-[10px] font-normal text-muted">(200 hosted requests)</span>
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[#0B132B] font-semibold">Mastery Pass</span>
+                    <span className="text-ink font-semibold">Mastery Pass</span>
                     <span className="flex items-baseline gap-1.5 font-mono">
-                      <span className="text-[11px] text-[#5A6A85]/60 line-through">$24.99</span>
-                      <span className="font-bold text-[#044AB3]">$14.99</span>
-                      <span className="text-[10px] font-normal text-[#5A6A85]">(500 hosted requests)</span>
+                      <span className="text-[11px] text-muted/60 line-through">$24.99</span>
+                      <span className="font-bold text-brass">$14.99</span>
+                      <span className="text-[10px] font-normal text-muted">(500 hosted requests)</span>
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-[rgba(4,74,179,0.08)] text-[11px] text-[#5A6A85] leading-snug">
+              <div className="pt-3 border-t border-[rgba(165,115,28,0.08)] text-[11px] text-muted leading-snug">
                 Anthropic BYOK is disabled for simplicity. Pay directly through PayPal inside Comtus Settings to activate instant Claude access.
               </div>
             </div>

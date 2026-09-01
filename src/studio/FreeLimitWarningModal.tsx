@@ -48,16 +48,16 @@ export default function FreeLimitWarningModal({
       open={open}
       onClose={() => setOpen(false)}
       title={
-        <div className="flex items-center gap-2 text-amber-300">
-          <Warning size={20} weight="fill" className="text-amber-400" />
+        <div className="flex items-center gap-2 text-brass">
+          <Warning size={20} weight="fill" className="text-brass" />
           <span>Estimated Free Daily Limit Reached</span>
         </div>
       }
       wide
     >
       <div className="space-y-5">
-        <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-4 text-[13px] leading-relaxed text-ink/90">
-          <p className="font-medium text-amber-200">
+        <div className="rounded-xl border border-brass/25 bg-brass/[0.06] p-4 text-[13px] leading-relaxed text-ink/90">
+          <p className="font-medium text-brasspale">
             OpenRouter's free tier has an estimated daily request limit per model during peak hours.
           </p>
           <p className="mt-1.5 text-muted text-[12px]">

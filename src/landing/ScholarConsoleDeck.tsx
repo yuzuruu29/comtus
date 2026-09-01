@@ -178,21 +178,21 @@ export default function ScholarConsoleDeck() {
       {/* ── Section Header ─────────────────────────────────────────────────── */}
       <div className="mb-8 text-center sm:text-left flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#044AB3]/30 bg-[#044AB3]/10 px-3.5 py-1 text-[11px] font-mono font-bold text-[#044AB3] uppercase tracking-widest mb-3">
-            <Radio size={12} className="text-[#044AB3] animate-pulse" />
+          <div className="label-mono inline-flex items-center gap-2 rounded-full border border-brass/30 bg-brass/10 px-3.5 py-1 text-brass mb-3">
+            <Radio size={12} className="text-brass animate-pulse" />
             <span>INTERACTIVE HARDWARE SIMULATOR</span>
           </div>
-          <h2 className="font-display text-[clamp(1.75rem,3.5vw,2.5rem)] font-[600] text-[#0B132B] tracking-tight">
+          <h2 className="font-display text-[clamp(1.75rem,3.5vw,2.5rem)] font-[600] text-ink tracking-tight">
             The Comtus Cognitive Console Deck
           </h2>
-          <p className="mt-2 max-w-xl text-[14px] leading-relaxed text-[#5A6A85]">
+          <p className="mt-2 max-w-xl text-[14px] leading-relaxed text-muted">
             Tactile, hardware-inspired cognitive learning interface. Switch curriculum ROMs, adjust dialectic reasoning depth, and test active recall directly.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 self-center sm:self-auto font-mono text-[11px] text-[#5A6A85]">
+        <div className="flex items-center gap-3 self-center sm:self-auto font-mono text-[11px] text-muted">
           <span className="flex items-center gap-1.5">
-            <span className={`h-2 w-2 rounded-full ${powerOn ? "bg-emerald-500 shadow-[0_0_8px_#10B981]" : "bg-gray-400"}`} />
+            <span className={`h-2 w-2 rounded-full ${powerOn ? "bg-sage shadow-[0_0_8px_var(--sage)]" : "bg-muted"}`} />
             <span>{powerOn ? "POWER: ONLINE" : "POWER: STANDBY"}</span>
           </span>
         </div>
@@ -209,7 +209,7 @@ export default function ScholarConsoleDeck() {
         {/* Chassis Top Bar */}
         <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
           <div className="flex items-center gap-3">
-            <span className="font-mono text-[12px] font-extrabold tracking-[0.25em] text-[#6FE3FF]">
+            <span className="font-mono text-[12px] font-extrabold tracking-[0.25em] text-[var(--deck-brass)]">
               COMTUS · DECK MK-IV
             </span>
             <span className="rounded bg-white/10 px-2 py-0.5 font-mono text-[10px] text-white/70">
@@ -223,8 +223,8 @@ export default function ScholarConsoleDeck() {
             onClick={togglePower}
             className={`flex items-center gap-2 rounded-lg border px-3 py-1 font-mono text-[11px] font-bold transition-all cursor-pointer ${
               powerOn
-                ? "border-emerald-400/40 bg-emerald-500/20 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.3)]"
-                : "border-gray-600 bg-gray-800/60 text-gray-400"
+                ? "border-sage/40 bg-sage/20 text-sage shadow-[0_0_12px_color-mix(in_srgb,var(--sage)_30%,transparent)]"
+                : "border-hairline-strong bg-night/60 text-muted"
             }`}
           >
             <Power size={12} />
@@ -239,9 +239,9 @@ export default function ScholarConsoleDeck() {
             <div className="crt-bezel">
               <div className={`crt-screen-glass ${!powerOn ? "is-off" : ""}`}>
                 {/* Screen Header Telemetry */}
-                <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3 font-mono text-[10.5px] text-[#6FE3FF]">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3 font-mono text-[10.5px] text-[var(--deck-brass)]">
                   <div className="flex items-center gap-2">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#6FE3FF] animate-pulse" />
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--deck-brass)] animate-pulse" />
                     <span>ROM: {selectedRom.romName}</span>
                   </div>
                   <span>MODE: {activeMode.toUpperCase()} // LVL.{rotaryLevel}</span>
@@ -250,27 +250,27 @@ export default function ScholarConsoleDeck() {
                 {/* Main Screen Content based on Active Mode */}
                 <div className="min-h-[200px] text-white">
                   <div className="mb-2">
-                    <span className="font-mono text-[10px] uppercase text-[#6FE3FF]/80 tracking-wider">
+                    <span className="font-mono text-[10px] uppercase text-[var(--deck-brass)]/80 tracking-wider">
                       {selectedRom.discipline} · {selectedRom.sourceDoc}
                     </span>
-                    <h3 className="font-display text-[17px] font-[550] text-[#6FE3FF] mt-0.5">
+                    <h3 className="font-display text-[17px] font-[550] text-[var(--deck-brass)] mt-0.5">
                       {selectedRom.topic}
                     </h3>
                   </div>
 
                   {activeMode === "socratic" && (
                     <div className="space-y-2.5 mt-3">
-                      <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-[12.5px] leading-relaxed text-gray-200">
-                        <strong className="text-[#6FE3FF] font-mono text-[11px] block mb-1">
+                      <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3 text-[12.5px] leading-relaxed text-parchment">
+                        <strong className="text-[var(--deck-brass)] font-mono text-[11px] block mb-1">
                           [SOCRATIC CLINICAL PROMPT]
                         </strong>
                         {selectedRom.socraticPrompt}
                       </div>
 
-                      <div className="space-y-1.5 font-mono text-[11.5px] text-gray-300">
+                      <div className="space-y-1.5 font-mono text-[11.5px] text-faded">
                         {selectedRom.socraticSteps.slice(0, rotaryLevel).map((st, idx) => (
-                          <div key={idx} className="flex items-start gap-2 bg-[#044AB3]/20 border border-[#044AB3]/30 p-2 rounded">
-                            <span className="text-[#6FE3FF] font-bold">›</span>
+                          <div key={idx} className="flex items-start gap-2 bg-[var(--deck-moon)]/20 border border-[var(--deck-moon)]/30 p-2 rounded">
+                            <span className="text-[var(--deck-brass)] font-bold">›</span>
                             <span>{st}</span>
                           </div>
                         ))}
@@ -284,9 +284,9 @@ export default function ScholarConsoleDeck() {
                         type="button"
                         onClick={handleFlipCard}
                         aria-pressed={flashcardFlipped}
-                        className="w-full cursor-pointer rounded-xl border border-[#6FE3FF]/30 bg-white/[0.06] p-4 text-center hover:border-[#6FE3FF] transition-all shadow-inner"
+                        className="w-full cursor-pointer rounded-xl border border-[var(--deck-brass)]/30 bg-white/[0.06] p-4 text-center hover:border-[var(--deck-brass)] transition-all shadow-inner"
                       >
-                        <div className="font-mono text-[10.5px] text-[#6FE3FF] uppercase tracking-wider mb-2">
+                        <div className="font-mono text-[10.5px] text-[var(--deck-brass)] uppercase tracking-wider mb-2">
                           {flashcardFlipped ? "— FLASHCARD ANSWER (CLICK TO FLIP BACK) —" : "— FLASHCARD PROMPT (CLICK TO FLIP) —"}
                         </div>
                         <p className="text-[14px] font-medium leading-relaxed text-white">
@@ -298,12 +298,12 @@ export default function ScholarConsoleDeck() {
 
                   {activeMode === "proof" && (
                     <div className="mt-3 space-y-2">
-                      <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3 font-mono text-[12px] text-emerald-300">
+                      <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3 font-mono text-[12px] text-sage">
                         <span className="text-white/60 block text-[10px] uppercase mb-1">[SYMBOLIC DERIVATION TRACE]</span>
                         {selectedRom.proof}
                       </div>
-                      <div className="flex items-center gap-2 text-[11px] font-mono text-[#6FE3FF]/80">
-                        <CheckCircle2 size={13} className="text-emerald-400" />
+                      <div className="flex items-center gap-2 text-[11px] font-mono text-[var(--deck-brass)]/80">
+                        <CheckCircle2 size={13} className="text-sage" />
                         <span>Intermediate Step Precision: 99.8% Grounded</span>
                       </div>
                     </div>
@@ -333,21 +333,21 @@ export default function ScholarConsoleDeck() {
                 <button
                   type="button"
                   onClick={() => handleSetMode("socratic")}
-                  className={`deck-btn-3d btn-amber ${activeMode === "socratic" ? "is-active" : ""}`}
+                  className={`deck-btn-3d btn-brass ${activeMode === "socratic" ? "is-active" : ""}`}
                 >
                   Socratic
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSetMode("leitner")}
-                  className={`deck-btn-3d btn-emerald ${activeMode === "leitner" ? "is-active" : ""}`}
+                  className={`deck-btn-3d btn-sage ${activeMode === "leitner" ? "is-active" : ""}`}
                 >
                   Flashcard
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSetMode("proof")}
-                  className={`deck-btn-3d btn-purple ${activeMode === "proof" ? "is-active" : ""}`}
+                  className={`deck-btn-3d btn-moon ${activeMode === "proof" ? "is-active" : ""}`}
                 >
                   Proof
                 </button>
@@ -360,7 +360,7 @@ export default function ScholarConsoleDeck() {
                 <div className="font-mono text-[10.5px] uppercase font-bold tracking-wider text-white/70">
                   REASONING DEPTH
                 </div>
-                <div className="font-mono text-[13px] font-bold text-[#6FE3FF] mt-0.5">
+                <div className="font-mono text-[13px] font-bold text-[var(--deck-brass)] mt-0.5">
                   LEVEL {rotaryLevel} / 4
                 </div>
                 <span className="text-[10.5px] font-mono text-white/50">
@@ -383,7 +383,7 @@ export default function ScholarConsoleDeck() {
             {/* 3. Insertable ROM Cartridge Bay (Pierrelouis Cassette Slot) */}
             <div className="deck-cartridge-bay">
               <div className="flex items-center justify-between mb-2">
-                <span className="font-mono text-[10.5px] uppercase font-bold tracking-wider text-[#6FE3FF]">
+                <span className="font-mono text-[10.5px] uppercase font-bold tracking-wider text-[var(--deck-brass)]">
                   2. CARTRIDGE ROM BAY
                 </span>
                 <span className="font-mono text-[9.5px] text-white/50">CLICK TO LOAD</span>
@@ -401,7 +401,7 @@ export default function ScholarConsoleDeck() {
                       className={`deck-rom-chip ${isInserted ? "is-inserted" : ""}`}
                     >
                       <div className="flex items-center gap-2">
-                        <Disc size={13} className={isInserted ? "text-[#6FE3FF] animate-spin" : "text-white/40"} />
+                        <Disc size={13} className={isInserted ? "text-[var(--deck-brass)] animate-spin" : "text-white/40"} />
                         <span className="font-bold">{c.romName}</span>
                       </div>
                       <span className="text-[10px] text-white/50">{c.discipline.split(" ")[0]}</span>

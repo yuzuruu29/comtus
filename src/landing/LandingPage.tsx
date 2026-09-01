@@ -55,7 +55,7 @@ export default function LandingPage() {
 
   return (
     <LandingPlayProvider>
-      <div className="relative min-h-screen bg-[#F5F3EF] text-[#0B132B]">
+      <div className="relative min-h-screen bg-ground text-ink">
         {!ready && <Preloader onDone={() => setReady(true)} />}
         <CustomCursor />
         <TorchLayer ready={ready} />

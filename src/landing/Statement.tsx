@@ -73,23 +73,23 @@ export default function Statement() {
     <section
       ref={rootRef}
       data-torch
-      className="relative flex min-h-[92svh] items-center overflow-hidden border-y border-white/[0.12] bg-[#044AB3] text-white"
+      className="relative flex min-h-[92svh] items-center overflow-hidden border-y border-hairline bg-ground text-ink"
       aria-label="Manifesto"
     >
       <div
         className="stmt-glow pointer-events-none absolute left-1/2 top-1/2 h-[80vmin] w-[80vmin] -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
           background:
-            "radial-gradient(circle, rgba(111,227,255,0.22), rgba(4,74,179,0.4) 45%, transparent 70%)",
+            "radial-gradient(circle, color-mix(in srgb, var(--brasspale) 28%, transparent), color-mix(in srgb, var(--brass) 18%, transparent) 45%, transparent 70%)",
         }}
       />
       <div className="relative mx-auto max-w-4xl px-6 text-center">
-        <div className="flex items-center justify-center gap-3 mb-8 text-[#6FE3FF]">
-          <span className="stmt-rule h-px w-9 origin-left bg-[#6FE3FF]" />
-          <span className="font-mono text-[11.5px] uppercase tracking-widest font-bold text-[#6FE3FF]">The Point</span>
-          <span className="stmt-rule h-px w-9 origin-right bg-[#6FE3FF]" />
+        <div className="flex items-center justify-center gap-3 mb-8 text-brass">
+          <span className="stmt-rule h-px w-9 origin-left bg-brass" />
+          <span className="font-mono text-[11.5px] uppercase tracking-widest font-bold text-brass">The Point</span>
+          <span className="stmt-rule h-px w-9 origin-right bg-brass" />
         </div>
-        <p className="font-display text-[clamp(1.9rem,4.6vw,3.6rem)] font-[600] leading-[1.28] text-white drop-shadow-sm flex flex-wrap justify-center">
+        <p className="font-display text-landing-statement font-[600] text-ink flex flex-wrap justify-center">
           {TEXT.split(" ").map((w, i) => (
             <span key={i} className="stmt-word inline-block mr-[0.32em] last:mr-0">
               {w}

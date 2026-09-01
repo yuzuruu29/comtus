@@ -66,7 +66,7 @@ export default function Nav({
     <>
       <header
         ref={desktopRef}
-        className="fixed inset-x-0 top-5 z-[100] mx-auto hidden w-max items-center gap-1 border border-[rgba(4,74,179,0.18)] bg-white/95 py-2 pl-6 pr-2 backdrop-blur-xl opacity-0 md:flex rounded-full shadow-[0_4px_24px_rgba(4,74,179,0.1)]"
+        className="fixed inset-x-0 top-5 z-[100] mx-auto hidden w-max items-center gap-1 border border-hairline bg-surface/95 py-2 pl-6 pr-2 backdrop-blur-xl opacity-0 md:flex rounded-full shadow-card"
       >
         <Link
           to="/"
@@ -77,9 +77,9 @@ export default function Nav({
           <img
             src="/app-icon.jpg"
             alt="Comtus Logo"
-            className="h-6 w-6 rounded-full border border-[#044AB3]/30 shadow-[0_0_8px_rgba(4,74,179,0.2)] object-cover"
+            className="h-6 w-6 rounded-full border border-hairline object-cover"
           />
-          <span className="font-display text-[15px] font-[600] tracking-[0.14em] text-[#0B132B]">
+          <span className="font-display text-[15px] font-[600] tracking-[0.14em] text-ink">
             COMTUS
           </span>
         </Link>
@@ -89,10 +89,10 @@ export default function Nav({
             key={l.hash}
             type="button"
             onClick={() => go(l.hash)}
-            className="group relative px-3 py-1.5 text-[12.5px] font-medium text-[#5A6A85] transition-colors duration-200 hover:text-[#044AB3] cursor-pointer"
+            className="group relative px-3 py-1.5 text-[12.5px] font-medium text-muted transition-colors duration-200 hover:text-ink cursor-pointer"
           >
             {l.label}
-            <span className="absolute inset-x-3 -bottom-px h-0.5 origin-left scale-x-0 bg-[#044AB3] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100" />
+            <span className="absolute inset-x-3 -bottom-px h-0.5 origin-left scale-x-0 bg-brass transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100" />
           </button>
         ))}
 
@@ -101,7 +101,7 @@ export default function Nav({
             <button
               type="button"
               onClick={onStartStudying}
-              className="group flex items-center gap-2 rounded-full bg-[#044AB3] text-white py-1.5 pl-4 pr-2 text-[12px] font-medium shadow-[0_2px_12px_rgba(4,74,179,0.25)] hover:bg-[#033CA0] transition-all cursor-pointer"
+              className="group flex items-center gap-2 rounded-full grad-lamp text-night py-1.5 pl-4 pr-2 text-[12px] font-medium shadow-card hover:brightness-105 transition-all cursor-pointer"
             >
               <span>Start Studying</span>
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 transition-transform duration-200 group-hover:translate-x-0.5">
@@ -118,7 +118,7 @@ export default function Nav({
           ) : (
             <Link
               to="/studio"
-              className="group flex items-center gap-2 rounded-full bg-[#044AB3] text-white py-1.5 pl-4 pr-2 text-[12px] font-medium shadow-[0_2px_12px_rgba(4,74,179,0.25)] hover:bg-[#033CA0] transition-all cursor-pointer"
+              className="group flex items-center gap-2 rounded-full grad-lamp text-night py-1.5 pl-4 pr-2 text-[12px] font-medium shadow-card hover:brightness-105 transition-all cursor-pointer"
             >
               <span>Start Studying</span>
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 transition-transform duration-200 group-hover:translate-x-0.5">
@@ -139,29 +139,29 @@ export default function Nav({
       {/* Mobile bar */}
       <header
         ref={mobileRef}
-        className="fixed inset-x-4 top-[calc(1rem+var(--sat))] z-[100] flex items-center justify-between border border-[rgba(4,74,179,0.18)] bg-white/95 py-2.5 pl-5 pr-2.5 backdrop-blur-xl opacity-0 md:hidden rounded-full shadow-md"
+        className="fixed inset-x-4 top-[calc(1rem+var(--sat))] z-[100] flex items-center justify-between border border-hairline bg-surface/95 py-2.5 pl-5 pr-2.5 backdrop-blur-xl opacity-0 md:hidden rounded-full shadow-card"
       >
         <Link to="/" className="flex items-center gap-2" aria-label="Comtus home">
           <img
             src="/app-icon.jpg"
             alt="Comtus Logo"
-            className="h-5 w-5 rounded-full border border-[#044AB3]/30 shadow-[0_0_6px_rgba(4,74,179,0.2)] object-cover"
+            className="h-5 w-5 rounded-full border border-hairline object-cover"
           />
-          <span className="font-display text-sm font-[600] tracking-[0.14em] text-[#0B132B]">COMTUS</span>
+          <span className="font-display text-sm font-[600] tracking-[0.14em] text-ink">COMTUS</span>
         </Link>
         <button
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
-          className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(4,74,179,0.2)] bg-[#044AB3]/5 text-[#044AB3] active:scale-95"
+          className="relative flex h-9 w-9 items-center justify-center rounded-full border border-hairline bg-raised/60 text-ink active:scale-95"
         >
           <span
-            className={`absolute left-1/2 top-1/2 h-0.5 w-4 -translate-x-1/2 bg-[#044AB3] transition-all duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] ${
+            className={`absolute left-1/2 top-1/2 h-0.5 w-4 -translate-x-1/2 bg-ink transition-all duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] ${
               open ? "rotate-45" : "-translate-y-[3.5px]"
             }`}
           />
           <span
-            className={`absolute left-1/2 top-1/2 h-0.5 w-4 -translate-x-1/2 bg-[#044AB3] transition-all duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] ${
+            className={`absolute left-1/2 top-1/2 h-0.5 w-4 -translate-x-1/2 bg-ink transition-all duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] ${
               open ? "-rotate-45" : "translate-y-[3.5px]"
             }`}
           />
@@ -170,7 +170,7 @@ export default function Nav({
 
       {/* Mobile overlay */}
       <div
-        className={`fixed inset-0 z-[90] flex flex-col justify-center bg-white/98 px-8 pb-[calc(2rem+var(--sab))] pt-[calc(4rem+var(--sat))] backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] md:hidden ${
+        className={`fixed inset-0 z-[90] flex flex-col justify-center bg-ground/98 px-8 pb-[calc(2rem+var(--sab))] pt-[calc(4rem+var(--sat))] backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] md:hidden ${
           open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
@@ -180,7 +180,7 @@ export default function Nav({
               onClick={() =>
                 l.hash.startsWith("/") ? (window.location.href = l.hash) : go(l.hash)
               }
-              className={`font-display text-[2rem] font-[480] text-px-ink transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95 text-left ${
+              className={`font-display text-[2rem] font-[480] text-ink transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95 text-left ${
                 open ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
               }`}
               style={{ transitionDelay: open ? `${100 + i * 50}ms` : "0ms" }}

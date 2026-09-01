@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
@@ -20,18 +20,18 @@
       name="keywords"
       content="AI study companion, study assistant, student AI, quiz generator, mock exams, flashcards, note summarizer, exam preparation, grounded learning, study tools"
     />
-    <meta name="theme-color" content="#0B0F1A" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#F5F1E8" />
+    <meta name="color-scheme" content="light" />
     <script>
       (function () {
         try {
-          var path = location.pathname;
-          if (path === "/" || path === "") return;
           var raw = localStorage.getItem("comtus-settings");
-          if (!raw) return;
-          var parsed = JSON.parse(raw);
-          var state = parsed.state || parsed;
-          var theme = state.theme || "system";
+          var theme = "light";
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            var state = parsed.state || parsed;
+            theme = state.theme || "light";
+          }
           var light =
             theme === "light" ||
             (theme === "system" &&

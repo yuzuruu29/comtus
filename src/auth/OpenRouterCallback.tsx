@@ -64,10 +64,10 @@ export default function OpenRouterCallback() {
 
         {status === "success" && (
           <div className="space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-500/40 bg-emerald-500/15 shadow-[0_0_24px_rgba(16,185,129,0.2)]">
-              <CheckCircle size={32} className="text-emerald-400" weight="fill" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-sage/40 bg-sage/15 shadow-[0_0_24px_rgba(16,185,129,0.2)]">
+              <CheckCircle size={32} className="text-sage" weight="fill" />
             </div>
-            <h2 className="font-display text-[1.6rem] font-[450] text-emerald-300">
+            <h2 className="font-display text-[1.6rem] font-[450] text-sage">
               Connected Successfully!
             </h2>
             <p className="text-[13px] text-faded leading-relaxed">

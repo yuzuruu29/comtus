@@ -159,3 +159,59 @@
   font-weight: bold;
   letter-spacing: 0.08em;
 }
+
+html[data-theme="light"] .console-shell-root {
+  background-color: var(--ground);
+  padding: 0;
+}
+
+html[data-theme="light"] .console-chassis {
+  background-color: var(--ground);
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+html[data-theme="light"] .console-status-bar {
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--muted);
+}
+
+html[data-theme="light"] .console-live-led {
+  background-color: var(--sage);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--sage) 55%, transparent);
+}
+
+html[data-theme="light"] .console-notebook-title,
+html[data-theme="light"] .console-accent {
+  color: var(--ink);
+}
+
+html[data-theme="light"] .console-screen-viewport {
+  background-color: var(--ground);
+}
+
+html[data-theme="light"] .console-screen-scanlines {
+  opacity: 0.18;
+  background: linear-gradient(
+    transparent 50%,
+    color-mix(in srgb, var(--ink) 4%, transparent) 50%
+  );
+}
+
+html[data-theme="light"] .console-controller-bar {
+  background-color: var(--surface);
+  border-top: 1px solid var(--hairline);
+  color: var(--muted);
+}
+
+html[data-theme="light"] .console-keybind-pill {
+  background-color: var(--raised);
+  border-color: var(--hairline);
+  color: var(--ink);
+}
+
+html[data-theme="light"] .console-brand-tag {
+  color: var(--muted);
+}

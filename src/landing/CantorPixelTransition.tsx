@@ -11,9 +11,9 @@ interface CantorPixelTransitionProps {
 }
 
 export default function CantorPixelTransition({
-  fromColor = "#044AB3",
-  toColor = "#F5F3EF",
-  accentColor = "#6FE3FF",
+  fromColor = "var(--ground)",
+  toColor = "var(--surface)",
+  accentColor = "var(--brasspale)",
 }: CantorPixelTransitionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);

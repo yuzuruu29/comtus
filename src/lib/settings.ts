@@ -102,7 +102,7 @@ export const useSettings = create<SettingsState>()(
       tokensUsed: 0,
       activePassCode: "",
       effort: "high",
-      theme: "system",
+      theme: "light",
       motionMode: "full",
       companion: true,
       companionSfx: true,
@@ -199,7 +199,7 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: "comtus-settings",
-      version: 13,
+      version: 14,
       migrate: (persisted, version) => {
         const old = persisted as Partial<SettingsState> & {
           apiKey?: string;
@@ -222,7 +222,7 @@ export const useSettings = create<SettingsState>()(
           tokenBalance: old.tokenBalance ?? 0,
           tokensUsed: old.tokensUsed ?? 0,
           activePassCode: old.activePassCode ?? "",
-          theme: old.theme ?? "system",
+          theme: old.theme && old.theme !== "system" ? old.theme : "light",
           motionMode: old.motionMode ?? "full",
           companion: old.companion ?? true,
           companionSfx: old.companionSfx ?? true,
@@ -246,7 +246,7 @@ export const useSettings = create<SettingsState>()(
             tokenBalance: old.tokenBalance ?? 0,
             tokensUsed: old.tokensUsed ?? 0,
             activePassCode: old.activePassCode ?? "",
-            theme: old.theme ?? "system",
+            theme: old.theme && old.theme !== "system" ? old.theme : "light",
             lastBackupAt: old.lastBackupAt ?? 0,
           };
         }

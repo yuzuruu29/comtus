@@ -965,14 +965,14 @@ export default function ChatPane({
                       }
                       className={`flex items-center gap-1 sm:gap-1.5 rounded-full border px-2 sm:px-2.5 py-1 font-mono text-[10px] sm:text-[10.5px] transition-all active:scale-[0.96] ${
                         webSearchEnabled
-                          ? "border-cyan-500/60 bg-cyan-500/15 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)] font-medium"
-                          : "border-hairline bg-ink/[0.03] text-muted hover:border-cyan-500/30 hover:text-ink"
+                          ? "border-moon/60 bg-moon/15 text-moon shadow-[0_0_10px_color-mix(in_srgb,var(--moon)_20%,transparent)] font-medium"
+                          : "border-hairline bg-ink/[0.03] text-muted hover:border-moon/30 hover:text-ink"
                       }`}
                     >
                       <Globe
                         size={12}
                         weight={webSearchEnabled ? "fill" : "regular"}
-                        className={webSearchEnabled ? "text-cyan-400" : "text-muted"}
+                        className={webSearchEnabled ? "text-moon" : "text-muted"}
                       />
                       <span className="hidden xs:inline">Web Search</span>
                       <span className="xs:hidden">Web</span>
@@ -1391,9 +1391,9 @@ function SearchStatusStrip({
       <div
         key="searching"
         role="status"
-        className="anim-rise flex items-center gap-2 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] px-3.5 py-2 text-[12px] text-cyan-300"
+        className="anim-rise flex items-center gap-2 rounded-xl border border-moon/25 bg-moon/[0.06] px-3.5 py-2 text-[12px] text-moon"
       >
-        <Globe size={15} weight="fill" className="shrink-0 text-cyan-400" />
+        <Globe size={15} weight="fill" className="shrink-0 text-moon" />
         <span>Searching the web…</span>
       </div>
     );
@@ -1443,21 +1443,21 @@ function SearchStatusStrip({
     <div
       key="results"
       role="status"
-      className="anim-rise flex items-center gap-2 rounded-xl border border-cyan-500/25 bg-cyan-500/[0.06] px-3.5 py-2 text-[12px] text-cyan-300"
+      className="anim-rise flex items-center gap-2 rounded-xl border border-moon/25 bg-moon/[0.06] px-3.5 py-2 text-[12px] text-moon"
     >
-      <Globe size={15} weight="fill" className="shrink-0 text-cyan-400" />
+      <Globe size={15} weight="fill" className="shrink-0 text-moon" />
       <span className="min-w-0 flex-1">
         Fetched {meta.count} web {noun} just now
       </span>
       {meta.query && (
         <span
           title={meta.query}
-          className="hidden max-w-[12rem] truncate font-mono text-[10.5px] text-cyan-300/70 sm:inline"
+          className="hidden max-w-[12rem] truncate font-mono text-[10.5px] text-moon/70 sm:inline"
         >
           {meta.query}
         </span>
       )}
-      <span className="shrink-0 font-mono text-[10.5px] text-cyan-300/70">
+      <span className="shrink-0 font-mono text-[10.5px] text-moon/70">
         {formatSearchMs(meta.ms)}
       </span>
     </div>

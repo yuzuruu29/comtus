@@ -99,15 +99,15 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
   return (
     <div
       ref={rootRef}
-      className="fixed inset-0 z-[400] flex flex-col items-center justify-center bg-[#044AB3] text-white"
+      className="fixed inset-0 z-[400] flex flex-col items-center justify-center bg-ground text-ink"
       aria-hidden
     >
-      <div className="pre-glow absolute h-[46vmin] w-[46vmin] rounded-full bg-[radial-gradient(circle,rgba(111,227,255,0.3),rgba(4,74,179,0.5)_45%,transparent_70%)]" />
-      <div className="pre-flame relative drop-shadow-[0_0_24px_rgba(111,227,255,0.7)]">
-        <ComtusEmblem size={56} className="text-[#6FE3FF]" />
+      <div className="pre-glow absolute h-[46vmin] w-[46vmin] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--brasspale)_28%,transparent),color-mix(in_srgb,var(--brass)_16%,transparent)_45%,transparent_70%)]" />
+      <div className="pre-flame relative drop-shadow-[0_0_24px_color-mix(in_srgb,var(--brass)_40%,transparent)]">
+        <ComtusEmblem size={56} className="text-brass" />
       </div>
       <div className="relative mt-7 overflow-hidden">
-        <div className="flex font-display text-[clamp(2.2rem,6vw,4rem)] font-[600] tracking-[0.32em] text-white">
+        <div className="flex font-display text-[clamp(2.2rem,6vw,4rem)] font-[600] tracking-[0.32em] text-ink">
           {WORD.split("").map((l, i) => (
             <span key={i} className="pre-letter inline-block will-change-transform">
               {l}
@@ -115,11 +115,11 @@ export default function Preloader({ onDone }: { onDone: () => void }) {
           ))}
         </div>
       </div>
-      <div className="pre-rule mt-6 h-px w-44 origin-center bg-[#6FE3FF]" />
-      <div className="pre-count label-mono absolute bottom-[calc(1.5rem+var(--sab))] left-6 tabular-nums sm:bottom-10 sm:left-10 text-[#6FE3FF] font-mono font-bold">
+      <div className="pre-rule mt-6 h-px w-44 origin-center bg-brass" />
+      <div className="pre-count label-mono absolute bottom-[calc(1.5rem+var(--sab))] left-6 tabular-nums sm:bottom-10 sm:left-10 text-brass">
         000
       </div>
-      <div className="label-mono absolute bottom-[calc(1.5rem+var(--sab))] right-6 text-right uppercase tracking-[0.2em] text-white/80 sm:bottom-10 sm:right-10 font-mono">
+      <div className="label-mono absolute bottom-[calc(1.5rem+var(--sab))] right-6 text-right text-muted sm:bottom-10 sm:right-10">
         COGNITIVE INFRASTRUCTURE · ACTIVE
       </div>
     </div>

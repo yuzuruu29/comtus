@@ -76,6 +76,7 @@ The master palette is a curated 16-color system calibrated for high readability 
 | `moon` | `#3D6E9E` (`--px-moon`) | `#6C98C2` | Secondary accent |
 | `sage` | `#4F8A5A` (`--px-sage`) | `#78B084` | Success / correct |
 | `rust` | `#B2554A` (`--px-rust`) | `#C85848` | Error / incorrect |
+| `candle` | `#D97724` (`--px-candle`) | `#FF9E43` | Amber hearth spark, milestone flares |
 
 ### Texture & Dither Backdrops (CSS-Only)
 
@@ -103,9 +104,13 @@ accent, never as body text.
 | **Console** | JetBrains Mono | Inter | JetBrains Mono | Mono-forward terminal instrumentation |
 
 The landing owns its own type: Pixelify Sans Variable as display accent over the Cantor8
-console chrome. Never Press Start 2P.
+console chrome. Never Press Start 2P. The landing skin sets `--font-display` only; body stays
+Instrument Sans and mono stays JetBrains Mono, so headings and `.font-display` are pixel while
+paragraphs, buttons and `.label-mono` readouts stay legible.
 
 Landing scale: hero `clamp(2.8rem, 7.5vw, 6.8rem)` · section titles `clamp(2.1rem, 4.6vw, 3.8rem)` · statement `clamp(2.4rem, 6vw, 5.2rem)` · body 16px.
+These live as `--text-landing-hero` / `--text-landing-section` / `--text-landing-statement` in
+`src/index.css`. Use the token; do not hand-roll another `clamp()`.
 
 ---
 

@@ -4,14 +4,32 @@
    rotary dials, and cartridge sliding bays.
    ========================================================================== */
 
+/* Colour comes from the BRAND master palette (BRAND.md 3). The deck is a
+   physical dark instrument, so it pins the Lamplight dark values rather than
+   following html[data-theme] - the same rule as the landing-only literals in
+   index.css. Brass is the instrument glow; moon and sage carry the keycaps. */
+.scholar-deck-chassis {
+  --deck-shell-hi: #222c44;   /* px-raised */
+  --deck-shell-mid: #171f32;  /* px-surface-dark */
+  --deck-shell-lo: #0f1420;   /* px-ground (dark) */
+  --deck-void: #080b12;       /* px-void */
+  --deck-border: #33405f;     /* px-border */
+  --deck-brass: #e3b04b;
+  --deck-brass-deep: #b88428;
+  --deck-moon: #6c98c2;
+  --deck-sage: #78b084;
+  --deck-ink: #f5f0e6;
+  --deck-muted: #9099b0;
+}
+
 .scholar-deck-chassis {
   position: relative;
-  background: linear-gradient(145deg, #091733 0%, #03122B 50%, #020B1B 100%);
-  border: 2px solid rgba(111, 227, 255, 0.25);
+  background: linear-gradient(145deg, var(--deck-shell-hi) 0%, var(--deck-shell-mid) 55%, var(--deck-shell-lo) 100%);
+  border: 2px solid color-mix(in srgb, var(--deck-brass) 26%, transparent);
   border-radius: 28px;
   box-shadow:
     0 24px 70px rgba(0, 0, 0, 0.6),
-    0 4px 12px rgba(4, 74, 179, 0.3),
+    0 4px 12px color-mix(in srgb, var(--deck-brass) 18%, transparent),
     inset 0 1px 1px rgba(255, 255, 255, 0.15),
     inset 0 -2px 6px rgba(0, 0, 0, 0.8);
   overflow: hidden;
@@ -23,7 +41,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: radial-gradient(circle, #8A99B5 20%, #33405F 80%);
+  background: radial-gradient(circle, var(--deck-muted) 20%, var(--deck-border) 80%);
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.6), 0 1px 1px rgba(255, 255, 255, 0.2);
 }
 .deck-screw::after {
@@ -33,7 +51,7 @@
   left: 2px;
   width: 6px;
   height: 2px;
-  background: #171F32;
+  background: var(--deck-shell-mid);
 }
 
 /* ── 3D Tactile Push Buttons (Pierre-Louis Signature) ─────────────────────── */
@@ -50,79 +68,64 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #FFFFFF;
+  color: var(--deck-void);
   cursor: pointer;
   user-select: none;
   transition: transform 120ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
   outline: none;
 }
 
-/* Blue Keycap */
-.deck-btn-3d.btn-blue {
-  background: linear-gradient(180deg, #0A5FD9 0%, #044AB3 100%);
-  border: 1px solid rgba(111, 227, 255, 0.35);
-  box-shadow: 0 5px 0 #022354, 0 8px 14px rgba(0, 0, 0, 0.4);
+/* Moon keycap — Proof mode */
+.deck-btn-3d.btn-moon {
+  background: linear-gradient(180deg, var(--deck-moon) 0%, #3d6e9e 100%);
+  border: 1px solid color-mix(in srgb, var(--deck-moon) 45%, transparent);
+  box-shadow: 0 5px 0 #24405c, 0 8px 14px rgba(0, 0, 0, 0.4);
 }
-.deck-btn-3d.btn-blue:hover {
-  background: linear-gradient(180deg, #1168E3 0%, #0553C7 100%);
+.deck-btn-3d.btn-moon:hover {
+  background: linear-gradient(180deg, #86aed4 0%, #4779a9 100%);
 }
-.deck-btn-3d.btn-blue:active,
-.deck-btn-3d.btn-blue.is-active {
+.deck-btn-3d.btn-moon:active,
+.deck-btn-3d.btn-moon.is-active {
   transform: translateY(4px);
-  box-shadow: 0 1px 0 #022354, 0 3px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 0 #24405c, 0 3px 6px rgba(0, 0, 0, 0.5);
 }
 
-/* Amber/Orange Keycap */
-.deck-btn-3d.btn-amber {
-  background: linear-gradient(180deg, #F59E0B 0%, #D97706 100%);
-  border: 1px solid rgba(254, 243, 199, 0.4);
-  box-shadow: 0 5px 0 #92400E, 0 8px 14px rgba(0, 0, 0, 0.4);
+/* Brass keycap — Socratic mode */
+.deck-btn-3d.btn-brass {
+  background: linear-gradient(180deg, var(--deck-brass) 0%, var(--deck-brass-deep) 100%);
+  border: 1px solid color-mix(in srgb, #f7d486 55%, transparent);
+  box-shadow: 0 5px 0 #6b4e13, 0 8px 14px rgba(0, 0, 0, 0.4);
 }
-.deck-btn-3d.btn-amber:hover {
-  background: linear-gradient(180deg, #FBBF24 0%, #E58709 100%);
+.deck-btn-3d.btn-brass:hover {
+  background: linear-gradient(180deg, #f7d486 0%, #c99236 100%);
 }
-.deck-btn-3d.btn-amber:active,
-.deck-btn-3d.btn-amber.is-active {
+.deck-btn-3d.btn-brass:active,
+.deck-btn-3d.btn-brass.is-active {
   transform: translateY(4px);
-  box-shadow: 0 1px 0 #92400E, 0 3px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 0 #6b4e13, 0 3px 6px rgba(0, 0, 0, 0.5);
 }
 
-/* Emerald Keycap */
-.deck-btn-3d.btn-emerald {
-  background: linear-gradient(180deg, #10B981 0%, #059669 100%);
-  border: 1px solid rgba(167, 243, 208, 0.4);
-  box-shadow: 0 5px 0 #064E3B, 0 8px 14px rgba(0, 0, 0, 0.4);
+/* Sage keycap — Leitner mode */
+.deck-btn-3d.btn-sage {
+  background: linear-gradient(180deg, var(--deck-sage) 0%, #4f8a5a 100%);
+  border: 1px solid color-mix(in srgb, var(--deck-sage) 55%, transparent);
+  box-shadow: 0 5px 0 #2e5236, 0 8px 14px rgba(0, 0, 0, 0.4);
 }
-.deck-btn-3d.btn-emerald:hover {
-  background: linear-gradient(180deg, #34D399 0%, #05A372 100%);
+.deck-btn-3d.btn-sage:hover {
+  background: linear-gradient(180deg, #9ac7a3 0%, #5d9a68 100%);
 }
-.deck-btn-3d.btn-emerald:active,
-.deck-btn-3d.btn-emerald.is-active {
+.deck-btn-3d.btn-sage:active,
+.deck-btn-3d.btn-sage.is-active {
   transform: translateY(4px);
-  box-shadow: 0 1px 0 #064E3B, 0 3px 6px rgba(0, 0, 0, 0.5);
-}
-
-/* Purple/Rose Keycap */
-.deck-btn-3d.btn-purple {
-  background: linear-gradient(180deg, #8B5CF6 0%, #7C3AED 100%);
-  border: 1px solid rgba(237, 233, 254, 0.4);
-  box-shadow: 0 5px 0 #4C1D95, 0 8px 14px rgba(0, 0, 0, 0.4);
-}
-.deck-btn-3d.btn-purple:hover {
-  background: linear-gradient(180deg, #9E75F8 0%, #8347ED 100%);
-}
-.deck-btn-3d.btn-purple:active,
-.deck-btn-3d.btn-purple.is-active {
-  transform: translateY(4px);
-  box-shadow: 0 1px 0 #4C1D95, 0 3px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 0 #2e5236, 0 3px 6px rgba(0, 0, 0, 0.5);
 }
 
 /* ── CRT Screen Display with Glass Reflection & Scanlines ─────────────────── */
 
 .crt-bezel {
   position: relative;
-  background: #060D1A;
-  border: 3px solid #14223D;
+  background: var(--deck-void);
+  border: 3px solid var(--deck-border);
   border-radius: 20px;
   box-shadow:
     inset 0 4px 12px rgba(0, 0, 0, 0.8),
@@ -134,7 +137,7 @@
   position: relative;
   width: 100%;
   min-height: 290px;
-  background: radial-gradient(ellipse at center, #0B1933 0%, #050B18 100%);
+  background: radial-gradient(ellipse at center, var(--deck-shell-lo) 0%, var(--deck-void) 100%);
   padding: 1.25rem;
   overflow: hidden;
 }
@@ -166,7 +169,7 @@
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.09) 0%,
-    rgba(111, 227, 255, 0.03) 40%,
+    color-mix(in srgb, var(--deck-brass) 6%, transparent) 40%,
     transparent 60%
   );
   pointer-events: none;
@@ -175,7 +178,7 @@
 
 /* CRT Screen Off State */
 .crt-screen-glass.is-off {
-  background: #02050C;
+  background: #04070d;
   color: transparent !important;
 }
 .crt-screen-glass.is-off * {
@@ -186,14 +189,14 @@
 
 .deck-cartridge-bay {
   position: relative;
-  background: #040E21;
-  border: 2px dashed rgba(111, 227, 255, 0.3);
+  background: var(--deck-shell-lo);
+  border: 2px dashed color-mix(in srgb, var(--deck-brass) 30%, transparent);
   border-radius: 14px;
   padding: 0.75rem;
   transition: border-color 200ms ease;
 }
 .deck-cartridge-bay:hover {
-  border-color: #6FE3FF;
+  border-color: var(--deck-brass);
 }
 
 .deck-rom-chip {
@@ -202,25 +205,25 @@
   justify-content: space-between;
   padding: 0.5rem 0.85rem;
   border-radius: 10px;
-  border: 1px solid rgba(111, 227, 255, 0.2);
-  background: #081630;
+  border: 1px solid color-mix(in srgb, var(--deck-brass) 20%, transparent);
+  background: var(--deck-shell-mid);
   font-family: var(--font-mono, monospace);
   font-size: 0.75rem;
-  color: #8DA2C7;
+  color: var(--deck-muted);
   cursor: pointer;
   transition: all 180ms ease;
 }
 .deck-rom-chip:hover {
-  background: #0C2147;
-  border-color: #6FE3FF;
-  color: #FFFFFF;
+  background: var(--deck-shell-hi);
+  border-color: var(--deck-brass);
+  color: var(--deck-ink);
   transform: translateX(3px);
 }
 .deck-rom-chip.is-inserted {
-  background: linear-gradient(90deg, rgba(4, 74, 179, 0.3), rgba(111, 227, 255, 0.15));
-  border-color: #6FE3FF;
-  color: #6FE3FF;
-  box-shadow: 0 0 12px rgba(111, 227, 255, 0.2);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--deck-brass) 26%, transparent), color-mix(in srgb, var(--deck-brass) 12%, transparent));
+  border-color: var(--deck-brass);
+  color: var(--deck-brass);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--deck-brass) 22%, transparent);
 }
 
 /* ── Chunky Mechanical Rotary Dial (Pierrelouis Dial Effect) ───────────────── */
@@ -230,8 +233,8 @@
   width: 62px;
   height: 62px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #233454 0%, #0F1D36 60%, #060F1F 100%);
-  border: 2px solid rgba(111, 227, 255, 0.35);
+  background: radial-gradient(circle at 35% 35%, var(--deck-shell-hi) 0%, var(--deck-shell-mid) 60%, var(--deck-void) 100%);
+  border: 2px solid color-mix(in srgb, var(--deck-brass) 35%, transparent);
   box-shadow:
     0 6px 14px rgba(0, 0, 0, 0.6),
     inset 0 2px 4px rgba(255, 255, 255, 0.2);
@@ -249,8 +252,8 @@
   width: 4px;
   height: 12px;
   border-radius: 2px;
-  background: #6FE3FF;
-  box-shadow: 0 0 6px #6FE3FF;
+  background: var(--deck-brass);
+  box-shadow: 0 0 6px var(--deck-brass);
 }
 
 /* Knurled Grip Texture along the circumference */

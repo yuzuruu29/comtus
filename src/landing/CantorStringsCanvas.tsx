@@ -15,7 +15,22 @@ interface StringLine {
   amplitude: number;
   frequency: number;
   phase: number;
-  color: string;
+  accent: boolean;
+  alpha: number;
+}
+
+function tokenRgba(token: string, alpha: number): string {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  const hex = raw.startsWith("#") ? raw.slice(1) : "";
+  if (hex.length !== 6) {
+    return token === "--brass"
+      ? `rgba(165, 115, 28, ${alpha})`
+      : `rgba(11, 19, 43, ${alpha})`;
+  }
+  const r = Number.parseInt(hex.slice(0, 2), 16);
+  const g = Number.parseInt(hex.slice(2, 4), 16);
+  const b = Number.parseInt(hex.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 export default function CantorStringsCanvas() {
@@ -69,14 +84,15 @@ export default function CantorStringsCanvas() {
           });
         }
 
-        const alpha = 0.12 + (i / NUM_STRINGS) * 0.28;
+        const alpha = 0.1 + (i / NUM_STRINGS) * 0.22;
         strings.push({
           points,
           baseY,
           amplitude: 8 + Math.sin(i * 0.5) * 6,
           frequency: 0.002 + i * 0.0004,
           phase: i * 0.4,
-          color: i % 3 === 0 ? `rgba(111, 227, 255, ${alpha + 0.15})` : `rgba(255, 255, 255, ${alpha})`,
+          accent: i % 3 === 0,
+          alpha,
         });
       }
     };
@@ -113,7 +129,9 @@ export default function CantorStringsCanvas() {
 
       strings.forEach((str, sIdx) => {
         ctx.beginPath();
-        ctx.strokeStyle = str.color;
+        ctx.strokeStyle = str.accent
+          ? tokenRgba("--brass", str.alpha + 0.12)
+          : tokenRgba("--ink", str.alpha);
         ctx.lineWidth = sIdx % 3 === 0 ? 1.5 : 1;
 
         const pts = str.points;

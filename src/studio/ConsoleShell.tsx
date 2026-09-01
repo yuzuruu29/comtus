@@ -26,13 +26,13 @@ export default function ConsoleShell({
         <header className="console-status-bar" aria-label="Console Status Bar">
           <div className="console-status-left flex items-center gap-2">
             <span className="console-live-led" aria-hidden="true" />
-            <span className="font-bold tracking-wider text-[#6FE3FF]">COMTUS</span>
-            <span className="text-white/40">·</span>
+            <span className="font-bold tracking-wider console-accent">COMTUS</span>
+            <span className="text-muted/50">·</span>
             <span className="console-notebook-title">{notebookName}</span>
           </div>
           <div className="console-status-right hidden sm:flex items-center gap-2">
-            <span className="text-[10px] text-[#94A3B8]">INFERENCE:</span>
-            <span className="text-[#6FE3FF] font-semibold">{modelLabel}</span>
+            <span className="text-[10px] text-muted">INFERENCE:</span>
+            <span className="console-accent font-semibold">{modelLabel}</span>
           </div>
         </header>
 

@@ -12,6 +12,24 @@ describe("pixel desk skin", () => {
     expect(css).not.toMatch(/--font-mono:/);
   });
 
+  it("maps display and mono classes to their preset faces, not body", () => {
+    expect(css).not.toMatch(
+      /html\[data-pixel="on"\] \.font-display,\s*\nhtml\[data-pixel="on"\] \.font-mono/,
+    );
+    expect(css).toMatch(
+      /html\[data-pixel="on"\] \.font-display\s*\{[^}]*font-family:\s*var\(--font-display\)/,
+    );
+    expect(css).toMatch(
+      /html\[data-pixel="on"\] \.font-mono\s*\{[^}]*font-family:\s*var\(--font-mono\)/,
+    );
+  });
+
+  it("remaps pixel chrome to paper tokens in light theme", () => {
+    expect(css).toMatch(/html\[data-theme="light"\]\[data-pixel="on"\]\s*\{/);
+    expect(css).toMatch(/--px-ground:\s*var\(--px-paper-ground/);
+    expect(css).toMatch(/--ink:\s*var\(--px-ink\)/);
+  });
+
   it("does not pin chat or notes back to Inter", () => {
     expect(css).not.toMatch(/stay Inter/i);
     expect(css).not.toMatch(/Chat \/ notes/);

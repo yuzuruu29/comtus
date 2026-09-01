@@ -186,7 +186,7 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
           }
           className="flex items-center gap-1.5 text-inherit transition-colors cursor-pointer"
         >
-          <Activity size={13} className={on ? "text-[#044AB3] animate-pulse" : "text-[#5A6A85]"} strokeWidth={2} />
+          <Activity size={13} className={on ? "text-brass animate-pulse" : "text-muted"} strokeWidth={2} />
           <span className="torch-pill-label">
             <span className="torch-pill-mode">
               {on ? "BEAM: ON" : "STATIC"}
@@ -199,7 +199,7 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
         {hint && (
           <div className="torch-hint">
             <p className="torch-hint-title">
-              <Activity size={11} className="text-[#044AB3] inline-block mr-1.5 -mt-px" strokeWidth={2} />
+              <Activity size={11} className="text-brass inline-block mr-1.5 -mt-px" strokeWidth={2} />
               Precision Beam Focus
             </p>
             <p className="torch-hint-body">

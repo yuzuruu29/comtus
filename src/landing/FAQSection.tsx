@@ -88,7 +88,7 @@ export default function FAQSection() {
       ref={rootRef}
       id="faq"
       data-torch
-      className="relative mx-auto w-full max-w-4xl px-6 py-[clamp(6rem,14vh,10rem)] text-[#0B132B]"
+      className="relative mx-auto w-full max-w-4xl px-6 py-[clamp(6rem,14vh,10rem)] text-ink"
     >
       <div className="reveal-faq">
         <SectionHead
@@ -97,7 +97,7 @@ export default function FAQSection() {
           label="FAQ"
           title={
             <>
-              Frequently asked <em className="font-[500] text-[#044AB3]">questions.</em>
+              Frequently asked <em className="font-[500] text-brass">questions.</em>
             </>
           }
           sub="Everything you need to know about how Comtus works, privacy, model keys, and study tools."
@@ -112,8 +112,8 @@ export default function FAQSection() {
               key={faq.q}
               className={`overflow-hidden rounded-2xl border transition-all duration-300 ${
                 isOpen
-                  ? "border-[#044AB3] bg-white shadow-[0_6px_28px_rgba(4,74,179,0.1)]"
-                  : "border-[rgba(4,74,179,0.14)] bg-white hover:border-[#044AB3]/60 shadow-sm"
+                  ? "border-brass bg-surface shadow-[0_6px_28px_color-mix(in_srgb,var(--brass)_18%,transparent)]"
+                  : "border-hairline bg-surface hover:border-brass/60 shadow-sm"
               }`}
             >
               <button
@@ -132,14 +132,14 @@ export default function FAQSection() {
                 aria-expanded={isOpen}
                 className="faq-item flex w-full items-center justify-between gap-4 p-5 text-left transition-colors cursor-pointer"
               >
-                <span className="font-display text-[1.15rem] font-[520] text-[#0B132B]">
+                <span className="font-display text-[1.15rem] font-[520] text-ink">
                   {faq.q}
                 </span>
                 <span
                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-transform duration-300 ${
                     isOpen
-                      ? "rotate-180 text-white bg-[#044AB3] border-[#044AB3]"
-                      : "border-[rgba(4,74,179,0.2)] bg-[#044AB3]/5 text-[#044AB3]"
+                      ? "rotate-180 text-night bg-brass border-brass"
+                      : "border-hairline-strong bg-brass/10 text-brass"
                   }`}
                 >
                   <ChevronDown size={14} />
@@ -155,7 +155,7 @@ export default function FAQSection() {
                     transition={SOFT}
                     className="overflow-hidden"
                   >
-                    <div className="border-t border-[rgba(4,74,179,0.08)] px-5 pb-5 pt-3 text-[14px] leading-relaxed text-[#5A6A85]">
+                    <div className="border-t border-hairline px-5 pb-5 pt-3 text-[14px] leading-relaxed text-muted">
                       {faq.a}
                     </div>
                   </motion.div>

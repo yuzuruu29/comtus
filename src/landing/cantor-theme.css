@@ -4,18 +4,18 @@
    ========================================================================== */
 
 :root {
-  --c8-blue: #044AB3;
-  --c8-blue-dark: #033580;
-  --c8-blue-deep: #022354;
-  --c8-cyan: #6FE3FF;
-  --c8-cyan-glow: rgba(111, 227, 255, 0.4);
-  --c8-ink: #0B132B;
-  --c8-surface: #FFFFFF;
-  --c8-ground: #F5F3EF;
-  --c8-border: rgba(4, 74, 179, 0.14);
-  --c8-border-strong: rgba(4, 74, 179, 0.28);
-  --c8-muted: #334155;
-  --c8-white: #FFFFFF;
+  --c8-blue: var(--brass);
+  --c8-blue-dark: var(--brassdeep);
+  --c8-blue-deep: color-mix(in srgb, var(--brass) 55%, var(--ink));
+  --c8-cyan: var(--brasspale);
+  --c8-cyan-glow: color-mix(in srgb, var(--brasspale) 40%, transparent);
+  --c8-ink: var(--ink);
+  --c8-surface: var(--surface);
+  --c8-ground: var(--ground);
+  --c8-border: var(--hairline);
+  --c8-border-strong: var(--hairline-strong);
+  --c8-muted: var(--muted);
+  --c8-white: var(--surface);
 }
 
 /* ── Typography & Base Styles ─────────────────────────────────────────────── */
@@ -25,10 +25,10 @@
   width: 100%;
   background-color: var(--c8-ground);
   color: var(--c8-ink);
-  font-family: var(--font-display, "Pixelify Sans Variable", sans-serif);
+  font-family: var(--font-body);
   overflow-x: clip;
-  selection-background-color: #044AB3;
-  selection-color: #FFFFFF;
+  selection-background-color: var(--brass);
+  selection-color: var(--ground);
 }
 
 /* ── Line-Reveal Rolling Text Animation ───────────────────────────────────── */
@@ -69,35 +69,36 @@
   display: inline-flex;
   align-items: center;
   gap: 1rem;
-  background-color: var(--c8-blue);
-  color: #FFFFFF;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(92deg, var(--brassdeep), var(--brasspale));
+  color: #0b0f1a;
+  border: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
   border-radius: 9999px;
   padding: 0.65rem 1.6rem;
   font-size: 1.05rem;
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 300ms ease, transform 200ms ease, box-shadow 300ms ease;
-  box-shadow: 0 4px 16px rgba(4, 74, 179, 0.25);
+  transition: background-color 300ms ease, transform 200ms ease, box-shadow 300ms ease, filter 200ms ease;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--brass) 28%, transparent);
 }
 
 .c8-btn:hover {
-  background-color: #033CA0;
+  filter: brightness(1.06);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(4, 74, 179, 0.35);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--brass) 38%, transparent);
 }
 
 .c8-btn.c8-btn-light {
-  background-color: #FFFFFF;
-  color: var(--c8-blue);
+  background: var(--c8-surface);
+  color: var(--c8-ink);
   border: 1px solid var(--c8-border-strong);
-  box-shadow: 0 4px 14px rgba(4, 74, 179, 0.08);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 8%, transparent);
+  filter: none;
 }
 
 .c8-btn.c8-btn-light:hover {
-  background-color: #F8FAFC;
-  box-shadow: 0 6px 18px rgba(4, 74, 179, 0.15);
+  background-color: var(--c8-ground);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--ink) 12%, transparent);
 }
 
 .c8-arrow-wrap {
@@ -113,7 +114,7 @@
 }
 
 .c8-btn.c8-btn-light .c8-arrow-wrap {
-  background: rgba(4, 74, 179, 0.08);
+  background: color-mix(in srgb, var(--brass) 12%, transparent);
 }
 
 .c8-arrow-icon {
@@ -135,7 +136,7 @@
   top: 50%;
   width: 14px;
   height: 14px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 17L17 7M17 7H7M17 7V17'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231a1408' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 17L17 7M17 7H7M17 7V17'/%3E%3C/svg%3E");
   background-size: contain;
   background-repeat: no-repeat;
   transform: translate(calc(-50% - 20px), calc(-50% + 20px)) scale(0.85);
@@ -144,7 +145,7 @@
 }
 
 .c8-btn.c8-btn-light .c8-arrow-wrap::after {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23044AB3' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 17L17 7M17 7H7M17 7V17'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230B132B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 17L17 7M17 7H7M17 7V17'/%3E%3C/svg%3E");
 }
 
 .c8-btn:hover .c8-arrow-icon {
@@ -163,11 +164,11 @@
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  background: rgba(4, 74, 179, 0.06);
+  background: color-mix(in srgb, var(--brass) 10%, transparent);
   border: 1px solid var(--c8-border-strong);
   border-radius: 4px;
   padding: 0.35rem 0.75rem;
-  font-family: var(--font-mono, monospace);
+  font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--c8-blue);
@@ -183,9 +184,9 @@
 }
 
 .c8-tag.dark {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
-  color: #FFFFFF;
+  background: color-mix(in srgb, var(--brass) 12%, var(--c8-surface));
+  border-color: var(--c8-border-strong);
+  color: var(--c8-ink);
 }
 
 .c8-tag.dark .c8-cube-tag {
@@ -210,8 +211,8 @@
   position: relative;
   width: 100%;
   min-height: 90vh;
-  background-color: var(--c8-blue);
-  color: #FFFFFF;
+  background-color: var(--c8-ground);
+  color: var(--c8-ink);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -240,22 +241,22 @@
 }
 
 .c8-hero-h1 {
-  font-size: clamp(2.8rem, 7.5vw, 6.2rem);
+  font-family: var(--font-display);
+  font-size: var(--text-landing-hero);
   font-weight: 600;
   line-height: 1.05;
   letter-spacing: -0.02em;
   margin: 1.25rem 0 1.5rem;
-  color: #FFFFFF;
+  color: var(--c8-ink);
 }
 
 .c8-hero-sub {
   font-size: clamp(1.1rem, 2.2vw, 1.45rem);
   line-height: 1.6;
-  color: #FFFFFF;
+  color: var(--c8-muted);
   max-width: 720px;
   margin: 0 0 2.5rem;
   font-weight: 500;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 /* ── Orthogonal Circuit Pulse Stream (shrimp-flow) ────────────────────────── */
@@ -280,7 +281,7 @@
 
 .c8-circuit-path-base {
   fill: none;
-  stroke: rgba(4, 74, 179, 0.12);
+  stroke: color-mix(in srgb, var(--brass) 22%, transparent);
   stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -295,7 +296,7 @@
   pathLength: 1000;
   stroke-dasharray: 120 880;
   stroke-dashoffset: 1000;
-  filter: drop-shadow(0 0 6px rgba(4, 74, 179, 0.6));
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--brass) 45%, transparent));
 }
 
 /* ── Cantor8 Bento Grid Product Matrix ────────────────────────────────────── */
@@ -320,7 +321,8 @@
 }
 
 .c8-section-h2 {
-  font-size: clamp(2rem, 4.5vw, 3.8rem);
+  font-family: var(--font-display);
+  font-size: var(--text-landing-section);
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: -0.015em;
@@ -353,7 +355,7 @@
   flex-direction: column;
   justify-content: space-between;
   min-height: 320px;
-  box-shadow: 0 4px 20px rgba(4, 74, 179, 0.04);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--ink) 6%, transparent);
   transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), border-color 300ms ease, box-shadow 300ms ease;
   position: relative;
   overflow: hidden;
@@ -362,7 +364,7 @@
 .c8-bento-card:hover {
   transform: translateY(-4px);
   border-color: var(--c8-blue);
-  box-shadow: 0 12px 32px rgba(4, 74, 179, 0.12);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--brass) 16%, transparent);
 }
 
 .c8-bento-card.span-2 {
@@ -377,6 +379,7 @@
 }
 
 .c8-card-h3 {
+  font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 600;
   line-height: 1.2;
@@ -387,7 +390,7 @@
 .c8-card-p {
   font-size: 0.95rem;
   line-height: 1.6;
-  color: #334155;
+  color: var(--c8-muted);
   font-weight: 450;
   margin: 0 0 1.5rem;
 }
@@ -397,17 +400,17 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 1rem;
-  border-top: 1px solid rgba(4, 74, 179, 0.08);
+  border-top: 1px solid var(--c8-border);
 }
 
 .c8-card-status {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-family: var(--font-mono, monospace);
+  font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
-  color: #044AB3;
+  color: var(--c8-blue);
 }
 
 /* ── Dynamic Voxel Pixel Section Transitions ──────────────────────────────── */
@@ -445,7 +448,7 @@
 }
 
 .c8-curriculum-item {
-  background-color: #FFFFFF;
+  background-color: var(--c8-surface);
   border: 1px solid var(--c8-border);
   border-radius: 8px;
   padding: 1.25rem;
@@ -621,7 +624,7 @@ body.has-custom-cursor * {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(111, 227, 255, 0.4) 0%, transparent 60%, rgba(4, 74, 179, 0.2) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brasspale) 40%, transparent) 0%, transparent 60%, color-mix(in srgb, var(--brass) 20%, transparent) 100%);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -632,6 +635,6 @@ body.has-custom-cursor * {
 
 .c8-bento-card:hover::before {
   opacity: 1;
-  background: linear-gradient(135deg, #6FE3FF 0%, rgba(4, 74, 179, 0.5) 50%, #6FE3FF 100%);
+  background: linear-gradient(135deg, var(--brasspale) 0%, color-mix(in srgb, var(--brass) 50%, transparent) 50%, var(--brasspale) 100%);
 }
 

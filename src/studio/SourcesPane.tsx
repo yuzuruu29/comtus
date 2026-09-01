@@ -393,7 +393,7 @@ export default function SourcesPane({
                     className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
                   >
                     <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                      isYoutube ? "bg-red-500/10 text-red-400" : "bg-ink/[0.04] text-muted group-hover:text-brasspale"
+                      isYoutube ? "bg-rust/10 text-rust" : "bg-ink/[0.04] text-muted group-hover:text-brasspale"
                     }`}>
                       <Icon size={15} weight={isYoutube ? "fill" : "light"} />
                     </span>

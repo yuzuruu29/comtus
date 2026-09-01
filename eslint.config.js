@@ -10,11 +10,14 @@ export default tseslint.config(
   {
     ignores: [
       ".graphify/**",
+      ".rtk/**",
       "coverage/**",
       "desktop-releases/**",
       "dist/**",
       "node_modules/**",
-      "src-tauri/target/**",
+      "**/node_modules/**",
+      "promo/**",
+      "src-tauri/**",
       "mobile/src/test/**",
       "mobile/src/types/**",
     ],

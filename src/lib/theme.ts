@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import { useSettings } from "./settings";
 
 export type ThemePref = "system" | "dark" | "light";
@@ -7,9 +6,8 @@ export type ResolvedTheme = "dark" | "light";
 
 export function resolveAppTheme(
   pref: ThemePref,
-  opts: { landing: boolean; prefersLight: boolean },
+  opts: { prefersLight: boolean },
 ): ResolvedTheme {
-  if (opts.landing) return "light";
   if (pref === "light") return "light";
   if (pref === "dark") return "dark";
   return opts.prefersLight ? "light" : "dark";
@@ -30,7 +28,8 @@ export function applyPixelDesk(on: boolean): void {
 }
 
 /** Typography preset ownership lives on html[data-font-preset]; CSS maps each
- *  preset to its display/body/mono tokens. Undefined clears back to Scholar defaults. */
+ *  preset to its display/body/mono tokens. Undefined clears back to the
+ *  Instrument defaults declared in index.css. */
 export function applyFontPreset(id: string | undefined): void {
   if (id) document.documentElement.dataset.fontPreset = id;
   else delete document.documentElement.dataset.fontPreset;
@@ -54,23 +53,21 @@ export function usePixelDeskEffect() {
   }, [pixelDesk]);
 }
 
-/** Sets html[data-theme] for app surfaces. The landing route is always dark. */
+/** Sets html[data-theme] for landing and studio from the same preference. */
 export function useThemeEffect() {
-  const theme = useSettings((s) => s.theme);
-  const location = useLocation();
-  const landing = location.pathname === "/";
+  const theme = useSettings((s) => s.theme ?? "light");
 
   useEffect(() => {
     const apply = () => {
       const prefersLight =
         typeof window !== "undefined" &&
         window.matchMedia("(prefers-color-scheme: light)").matches;
-      applyResolvedTheme(resolveAppTheme(theme, { landing, prefersLight }));
+      applyResolvedTheme(resolveAppTheme(theme, { prefersLight }));
     };
     apply();
-    if (theme !== "system" || landing) return;
+    if (theme !== "system") return;
     const mq = window.matchMedia("(prefers-color-scheme: light)");
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
-  }, [theme, landing]);
+  }, [theme]);
 }

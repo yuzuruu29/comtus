@@ -588,7 +588,7 @@ export function PixelBatteryCompanion({
             type="button"
             title="Poke Companion"
             onClick={triggerPoke}
-            className="rounded-full p-1 text-[#FDE047] hover:bg-yellow-400/20"
+            className="rounded-full p-1 text-brasspale hover:bg-brass/20"
           >
             <Zap size={12} />
           </button>

@@ -132,22 +132,22 @@ export default function CognitiveTelemetryGrid() {
       aria-label="Cognitive Engine Telemetry Grid"
     >
       {/* Top Header Label */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-[#044AB3]/15 pb-4">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-hairline pb-4">
         <div className="flex items-center gap-2.5">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#6FE3FF] opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#044AB3]" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brasspale opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-brass" />
           </span>
-          <span className="font-mono text-[11px] uppercase tracking-[0.2em] font-semibold text-[#044AB3]">
+          <span className="font-mono text-[11px] uppercase tracking-[0.2em] font-semibold text-brass">
             COMTUS · COGNITIVE TELEMETRY & SPECIFICATIONS
           </span>
         </div>
-        <div className="flex items-center gap-4 text-[11.5px] font-mono text-[#5A6A85]">
+        <div className="flex items-center gap-4 text-[11.5px] font-mono text-muted">
           <span className="flex items-center gap-1.5">
-            <Activity size={12} className="text-[#044AB3]" />
+            <Activity size={12} className="text-brass" />
             <span>Architecture: Local-First / BYOK</span>
           </span>
-          <span className="hidden sm:inline text-[#044AB3]/30">|</span>
+          <span className="hidden sm:inline text-brass/30">|</span>
           <span className="hidden sm:inline">Zero Vendor Lock-In</span>
         </div>
       </div>
@@ -176,8 +176,8 @@ export default function CognitiveTelemetryGrid() {
               }}
               className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border p-5 transition-all duration-300 backdrop-blur-md cursor-pointer ${
                 isActive
-                  ? "border-[#044AB3] bg-white shadow-[0_12px_36px_-6px_rgba(4,74,179,0.18),0_0_24px_rgba(111,227,255,0.25)]"
-                  : "border-[#044AB3]/14 bg-white/80 hover:border-[#044AB3]/50 hover:bg-white shadow-sm"
+                  ? "border-brass bg-surface shadow-[0_12px_36px_-6px_color-mix(in_srgb,var(--brass)_18%,transparent),0_0_24px_color-mix(in_srgb,var(--brasspale)_22%,transparent)]"
+                  : "border-hairline bg-surface/80 hover:border-brass/50 hover:bg-surface shadow-sm"
               }`}
               style={
                 {
@@ -191,48 +191,48 @@ export default function CognitiveTelemetryGrid() {
                 className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                 style={{
                   background:
-                    "radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), rgba(111,227,255,0.2), transparent 70%)",
+                    "radial-gradient(400px circle at var(--mouse-x) var(--mouse-y), color-mix(in srgb, var(--brasspale) 22%, transparent), transparent 70%)",
                 }}
               />
 
               {/* Top Row: Code Badge & Category */}
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10.5px] font-bold tracking-wider text-[#044AB3] bg-[#044AB3]/8 px-2 py-0.5 rounded">
+                  <span className="font-mono text-[10.5px] font-bold tracking-wider text-brass bg-brass/10 px-2 py-0.5 rounded">
                     {mod.code}
                   </span>
-                  <span className="font-mono text-[11px] font-semibold text-[#5A6A85] tracking-wide">
+                  <span className="font-mono text-[11px] font-semibold text-muted tracking-wide">
                     {mod.tag}
                   </span>
                 </div>
 
                 {/* Main Stat & Icon */}
                 <div className="mt-5 flex items-baseline justify-between">
-                  <div className="font-display text-[2rem] font-[600] tracking-tight text-[#0B132B] group-hover:text-[#044AB3] transition-colors">
+                  <div className="font-display text-[2rem] font-[600] tracking-tight text-ink group-hover:text-brass transition-colors">
                     {mod.metric}
                   </div>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#044AB3]/8 text-[#044AB3] group-hover:bg-[#044AB3] group-hover:text-white transition-all duration-300">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brass/10 text-brass group-hover:bg-brass group-hover:text-night transition-all duration-300">
                     <Icon size={18} strokeWidth={2.2} />
                   </div>
                 </div>
 
-                <div className="mt-0.5 font-mono text-[11.5px] font-medium text-[#044AB3]">
+                <div className="mt-0.5 font-mono text-[11.5px] font-medium text-brass">
                   {mod.metricLabel}
                 </div>
 
-                <h3 className="mt-4 font-display text-[15px] font-[550] text-[#0B132B] leading-snug">
+                <h3 className="mt-4 font-display text-[15px] font-[550] text-ink leading-snug">
                   {mod.title}
                 </h3>
 
-                <p className="mt-1.5 text-[12px] leading-relaxed text-[#5A6A85]">
+                <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
                   {mod.detail}
                 </p>
               </div>
 
               {/* Bottom Live Snippet Trace */}
-              <div className="mt-6 border-t border-[#044AB3]/10 pt-3">
-                <div className="flex items-center gap-1.5 font-mono text-[10.5px] text-[#0B132B] bg-[#044AB3]/[0.04] p-2 rounded-lg border border-[#044AB3]/10">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#044AB3] animate-pulse shrink-0" />
+              <div className="mt-6 border-t border-hairline pt-3">
+                <div className="flex items-center gap-1.5 font-mono text-[10.5px] text-ink bg-brass/[0.06] p-2 rounded-lg border border-hairline">
+                  <span className="h-1.5 w-1.5 rounded-full bg-brass animate-pulse shrink-0" />
                   <span className="truncate">{mod.liveSnippet}</span>
                 </div>
               </div>

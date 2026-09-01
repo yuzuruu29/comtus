@@ -7,14 +7,13 @@
 
 @import "@fontsource-variable/pixelify-sans";
 
-:root,
 html[data-landing-pixel="on"] {
   /* Daylight Paper Master Palette Tokens */
   --px-paper-ground: #F5F1E8;      /* Primary aged parchment ground */
   --px-paper-surface: #FCFAF4;     /* Raised parchment card surface */
   --px-paper-raised: #EAE4D6;      /* Hover states, active parchment tiles */
   --px-paper-border: #D3C9B4;      /* Warm parchment bevel border */
-  --px-paper-ink: #1B2334;         /* High-contrast scholar ink text */
+  --px-paper-ink: #0B132B;         /* High-contrast scholar ink text */
   --px-paper-muted: #5A6274;       /* Muted labels, secondary metadata */
   --px-paper-sepia: #5C3D1E;       /* Deep sepia accent, rubber-stamp shadows */
 
@@ -47,13 +46,47 @@ html[data-landing-pixel="on"] {
   --rust: var(--px-rust);
   --candle: var(--px-candle);
 
+  /* Pixelify is the display accent only. Body and mono stay readable
+     (BRAND.md 4: Pixelify never as body text). */
   --font-display: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
-  --font-body: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
-  --font-mono: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
+  --font-body: "Instrument Sans Variable", "Instrument Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
   --radius-control: 2px;
   --radius-field: 2px;
   --radius-dialog: 2px;
   --glow-warm: rgba(165, 115, 28, 0.16);
+}
+
+html[data-theme="dark"][data-landing-pixel="on"] {
+  --px-ground: #0f1420;
+  --px-surface: #171f32;
+  --px-raised: #222c44;
+  --px-border: #33405f;
+  --px-ink: #f5f0e6;
+  --px-muted: #9099b0;
+  --px-brass-deep: #b88428;
+  --px-brass: #e3b04b;
+  --px-brass-light: #f7d486;
+  --px-moon: #6c98c2;
+  --px-sage: #78b084;
+  --px-rust: #c85848;
+  --ground: var(--px-ground);
+  --surface: var(--px-surface);
+  --ink: var(--px-ink);
+  --muted: var(--px-muted);
+  --brass: var(--px-brass);
+  --brasspale: var(--px-brass-light);
+  --night: #080b12;
+  --hairline: rgba(242, 237, 227, 0.09);
+  --hairline-strong: rgba(242, 237, 227, 0.18);
+}
+
+html[data-theme="dark"][data-landing-pixel="on"] body {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--px-brass) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--px-brass) 7%, transparent) 1px, transparent 1px),
+    radial-gradient(ellipse 78% 52% at 86% 118%, color-mix(in srgb, var(--px-brass) 22%, transparent), transparent 60%);
+  background-size: 16px 16px, 16px 16px, auto;
 }
 
 /* ── Aged Parchment Paper Base Atmosphere ─────────────────────────── */
@@ -74,41 +107,26 @@ html[data-landing-pixel="on"] body {
   background-attachment: fixed;
 }
 
-html[data-landing-pixel="on"] .font-display,
-html[data-landing-pixel="on"] .label-mono,
-html[data-landing-pixel="on"] button,
-html[data-landing-pixel="on"] a,
-html[data-landing-pixel="on"] p,
-html[data-landing-pixel="on"] li,
 html[data-landing-pixel="on"] h1,
 html[data-landing-pixel="on"] h2,
 html[data-landing-pixel="on"] h3,
 html[data-landing-pixel="on"] h4,
-html[data-landing-pixel="on"] span,
-html[data-landing-pixel="on"] input,
-html[data-landing-pixel="on"] textarea,
-html[data-landing-pixel="on"] label {
-  font-family: var(--font-display);
-}
-
 html[data-landing-pixel="on"] .font-display {
+  font-family: var(--font-display);
   font-optical-sizing: none;
-  font-variation-settings: "wght" 520;
-  letter-spacing: 0.01em;
   -webkit-font-smoothing: auto;
 }
 
-html[data-landing-pixel="on"] .label-mono {
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: inherit;
+/* Accent tracking is opt-in via .font-display; headings keep their own
+   designed (negative) tracking from the landing scale. */
+html[data-landing-pixel="on"] .font-display {
+  font-variation-settings: "wght" 520;
+  letter-spacing: 0.01em;
 }
 
-html[data-landing-pixel="on"] p,
-html[data-landing-pixel="on"] li {
-  font-size: max(14px, 1em);
-  font-variation-settings: "wght" 420;
+html[data-landing-pixel="on"] .label-mono {
+  font-family: var(--font-mono);
+  color: inherit;
 }
 
 /* ── Hard 16-Bit Corners & Crisp Bevels ───────────────────────────── */
@@ -474,7 +492,7 @@ html[data-landing-pixel="on"] .roll > span {
   position: relative;
   width: 100%;
   height: 1px;
-  background: rgba(4, 74, 179, 0.12);
+  background: color-mix(in srgb, var(--brass) 16%, transparent);
   overflow: visible;
 }
 
@@ -482,7 +500,7 @@ html[data-landing-pixel="on"] .roll > span {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent 0%, #044AB3 35%, #6FE3FF 50%, #044AB3 65%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, var(--brass) 35%, var(--brasspale) 50%, var(--brass) 65%, transparent 100%);
   transform-origin: center;
   transform: scaleX(0);
   transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
@@ -501,14 +519,14 @@ html[data-landing-pixel="on"] .roll > span {
   gap: 0.5rem;
   padding: 0.35rem 0.85rem;
   border-radius: 4px;
-  background: rgba(4, 74, 179, 0.08);
-  border: 1px solid rgba(4, 74, 179, 0.25);
+  background: color-mix(in srgb, var(--brass) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brass) 25%, transparent);
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #044AB3;
+  color: var(--brass);
   transition: all 0.25s ease;
 }
 
