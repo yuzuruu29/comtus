@@ -113,16 +113,21 @@ export const CURATED_FREE_MODELS: CuratedFreeModel[] = [
 ];
 
 
+export type SettingsTab = "models" | "settings";
+
 export default function SettingsModal({
   open,
   onClose,
+  initialTab = "settings",
 }: {
   open: boolean;
   onClose: () => void;
+  initialTab?: SettingsTab;
 }) {
   const s = useSettings();
   // Draft state mirrors the store; "Save & test" validates before committing.
   const [draft, setDraft] = useState(() => snapshot(s));
+  const [tab, setTab] = useState<SettingsTab>(initialTab);
   const [settingsMode, setSettingsMode] = useState<"starter" | "advanced" | "smarter">(
     s.provider === "anthropic" ? "smarter" : "starter"
   );
@@ -130,13 +135,14 @@ export default function SettingsModal({
 
   useEffect(() => {
     if (open) {
+      setTab(initialTab);
       const snap = snapshot(useSettings.getState());
       setDraft(snap);
       if (snap.provider === "anthropic") {
         setSettingsMode("smarter");
       }
     }
-  }, [open]);
+  }, [open, initialTab]);
 
   const [showCompatKey, setShowCompatKey] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -402,8 +408,38 @@ export default function SettingsModal({
 
   return (
     <>
-      <Modal open={open} onClose={onClose} title="Settings & AI Models" wide>
+      <Modal open={open} onClose={onClose} title="Settings" wide>
         <div className="space-y-6">
+          {/* Top-level split: AI model connections vs. studio preferences */}
+          <div className="grid grid-cols-2 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
+            <button
+              type="button"
+              onClick={() => setTab("models")}
+              className={`flex min-h-[40px] items-center justify-center gap-2 rounded-lg px-3 py-2 text-body font-medium transition-all active:scale-[0.97] ${
+                tab === "models"
+                  ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
+                  : "text-muted hover:text-ink"
+              }`}
+            >
+              <Cpu size={15} weight={tab === "models" ? "fill" : "regular"} />
+              AI Models
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("settings")}
+              className={`flex min-h-[40px] items-center justify-center gap-2 rounded-lg px-3 py-2 text-body font-medium transition-all active:scale-[0.97] ${
+                tab === "settings"
+                  ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
+                  : "text-muted hover:text-ink"
+              }`}
+            >
+              <Sliders size={15} weight={tab === "settings" ? "fill" : "regular"} />
+              Preferences
+            </button>
+          </div>
+
+          {tab === "settings" && (
+          <div className="space-y-6 anim-fade anim-fade--fast">
           {/* Appearance Switcher */}
           <div>
             <div className="label-mono !text-[10px] mb-2">Appearance</div>
@@ -713,6 +749,12 @@ export default function SettingsModal({
             </div>
           </div>
 
+          <DataTrustPanel open={open} />
+          </div>
+          )}
+
+          {tab === "models" && (
+          <div className="space-y-6 anim-fade anim-fade--fast">
           {/* Top Mode Segmented Control: Starter vs. Advanced vs. Smarter Models */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -1501,14 +1543,6 @@ export default function SettingsModal({
             </div>
           </div>
 
-          {testing && <LampPulse label="Testing the connection…" />}
-          {okProvider && (
-            <div className="flex items-center gap-2 rounded-xl border border-sage/30 bg-sage/[0.07] px-4 py-3 text-[13px] text-sage">
-              <Check size={15} /> Connection verified. Companion fully charged.
-            </div>
-          )}
-          {err && <ErrorNote>{err}</ErrorNote>}
-
           {/* AI Accuracy Disclaimer */}
           <div className="rounded-xl border border-brass/20 bg-brass/[0.04] p-3.5 text-ink/90">
             <div className="flex items-start gap-2.5">
@@ -1518,8 +1552,16 @@ export default function SettingsModal({
               </div>
             </div>
           </div>
+          </div>
+          )}
 
-          <DataTrustPanel open={open} />
+          {testing && <LampPulse label="Testing the connection…" />}
+          {okProvider && (
+            <div className="flex items-center gap-2 rounded-xl border border-sage/30 bg-sage/[0.07] px-4 py-3 text-[13px] text-sage">
+              <Check size={15} /> Connection verified. Companion fully charged.
+            </div>
+          )}
+          {err && <ErrorNote>{err}</ErrorNote>}
 
           <div className="flex items-center justify-between gap-3">
             <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-muted/70">

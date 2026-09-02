@@ -13,6 +13,7 @@ import { MilestoneUiProvider } from "./companion/milestoneUi";
 import "./pixel-desk.css";
 import { cycleLayout, loadLayout, saveLayout, togglePane, type LayoutMode } from "./layout";
 import { matchesShortcut } from "./shortcuts";
+import type { SettingsTab } from "./SettingsModal";
 
 function hasOpenModal(): boolean {
   return Boolean(document.querySelector('[role="dialog"][aria-modal="true"]'));
@@ -30,7 +31,7 @@ export default function DeskShell({
   children: ReactNode;
   layout?: LayoutMode;
   onLayout?: (mode: LayoutMode) => void;
-  onSettings?: () => void;
+  onSettings?: (tab?: SettingsTab) => void;
   onImport?: () => void;
   onNewNotebook?: () => void;
   onHome?: () => void;
@@ -181,7 +182,7 @@ export default function DeskShell({
       <MilestoneUiProvider value={{ count: milestoneCount, open: () => setMilestonesOpen(true) }}>
         {children}
         <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-        <FreeLimitWarningModal onOpenSettings={onSettings} />
+        <FreeLimitWarningModal onOpenSettings={() => onSettings?.("models")} />
         {isTauri() && <UpdateToast />}
         <DeskLife
           panelOpen={milestonesOpen}

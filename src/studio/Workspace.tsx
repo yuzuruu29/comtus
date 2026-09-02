@@ -12,7 +12,7 @@ import { SPRING, SOFT, deskPane, useCountUp } from "./fx";
 import SourcesPane from "./SourcesPane";
 import ChatPane from "./ChatPane";
 import StudioPane from "./StudioPane";
-import SettingsModal from "./SettingsModal";
+import SettingsModal, { type SettingsTab } from "./SettingsModal";
 import DeskShell from "./DeskShell";
 import CaptionButtons from "./Titlebar";
 import { useNotebookDesk } from "./useNotebookDesk";
@@ -40,6 +40,11 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   const setLayout = desk.setLayout;
   const openNotebookSource = desk.openSource;
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("settings");
+  const openSettings = useCallback((tab: SettingsTab = "settings") => {
+    setSettingsTab(tab);
+    setSettingsOpen(true);
+  }, []);
   const [mobilePane, setMobilePane] = useState<MobilePane>("chat");
   const panes = panesFor(desk.layout);
 
@@ -111,7 +116,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
     <DeskShell
       layout={desk.layout}
       onLayout={desk.setLayout}
-      onSettings={() => setSettingsOpen(true)}
+      onSettings={openSettings}
       onImport={desk.requestImport}
     >
       <ConsoleShell
@@ -188,7 +193,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           onToggleSources={toggleSources}
           onToggleStudio={toggleStudio}
           onRename={(name) => void desk.rename(name)}
-          onSettings={() => setSettingsOpen(true)}
+          onSettings={openSettings}
         />
 
         <div className="relative z-10 hidden min-h-0 flex-1 lg:flex">
@@ -246,7 +251,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 sourcesVersion={desk.sourcesVersion}
                 onNavigateSources={openSource}
                 modelLabel={modelLabel}
-                onOpenSettings={() => setSettingsOpen(true)}
+                onOpenSettings={() => openSettings("models")}
                 onAddSources={() => {
                   if (window.matchMedia("(min-width: 1024px)").matches) {
                     desk.setLayout(panes.studio ? "standard" : "reading");
@@ -325,7 +330,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   sourcesVersion={desk.sourcesVersion}
                   onNavigateSources={openSource}
                   modelLabel={modelLabel}
-                  onOpenSettings={() => setSettingsOpen(true)}
+                  onOpenSettings={() => openSettings("models")}
                   onAddSources={() => setMobilePane("sources")}
                 />
               </div>
@@ -369,7 +374,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           </nav>
         </div>
 
-        <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+        <SettingsModal open={settingsOpen} initialTab={settingsTab} onClose={() => setSettingsOpen(false)} />
         </div>
       </ConsoleShell>
     </DeskShell>

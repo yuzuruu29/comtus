@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -20,7 +20,7 @@ import ComtusLogo, { ComtusEmblem } from "../components/brand/ComtusLogo";
 import { ByokBadge, ProBadge, SettingsButton, CreateNotebookEmblem } from "../components/brand/BrandControls";
 import { SOFT, Spotlight, staggerDelay } from "./fx";
 import { timeAgo, Modal, Field, inputCls, btnLamp, btnGhost } from "./ui";
-import SettingsModal from "./SettingsModal";
+import SettingsModal, { type SettingsTab } from "./SettingsModal";
 import DeskShell from "./DeskShell";
 import CaptionButtons from "./Titlebar";
 import { useSettings } from "../lib/settings";
@@ -46,6 +46,11 @@ export default function NotebookList({
   const [createError, setCreateError] = useState("");
   const [name, setName] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(needsKey);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>(needsKey ? "models" : "settings");
+  const openSettings = useCallback((tab: SettingsTab = "settings") => {
+    setSettingsTab(tab);
+    setSettingsOpen(true);
+  }, []);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeTab, setActiveTab] = useState<"all" | "my">("all");
   const [sortOption, setSortOption] = useState<SortOption>("recent");
@@ -211,12 +216,12 @@ export default function NotebookList({
   };
 
   return (
-    <DeskShell onSettings={() => setSettingsOpen(true)} onNewNotebook={openCreateModal}>
+    <DeskShell onSettings={openSettings} onNewNotebook={openCreateModal}>
       <ConsoleShell notebookName="Course Notebooks Shelf" modelLabel="Local SQLite / Dexie">
         <div className="min-h-[100svh] bg-ground overflow-y-auto">
           <div className="pointer-events-none fixed inset-x-0 top-0 h-[48vh] bg-[radial-gradient(75%_100%_at_50%_0%,rgba(4,74,179,0.08),transparent_78%),radial-gradient(35%_60%_at_90%_0%,rgba(111,227,255,0.06),transparent_70%)]" />
           <div className="relative mx-auto w-full max-w-6xl px-3 sm:px-8 lg:px-12 pb-24">
-          <ShelfHeader onSettings={() => setSettingsOpen(true)} />
+          <ShelfHeader onSettings={openSettings} />
 
           {needsKey && (
             <div className="mt-4 mb-6 rounded-[var(--radius-dialog)] border border-brass/30 bg-surface/70 p-4 shadow-sm">
@@ -230,7 +235,7 @@ export default function NotebookList({
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setSettingsOpen(true)} className="rounded-[var(--radius-control)] grad-lamp px-4 py-2 text-[13px] font-semibold text-night hover:brightness-105 transition-colors shadow-sm">
+                <button onClick={() => openSettings("models")} className="rounded-[var(--radius-control)] grad-lamp px-4 py-2 text-[13px] font-semibold text-night hover:brightness-105 transition-colors shadow-sm">
                   Configure key
                 </button>
               </div>
@@ -682,7 +687,7 @@ export default function NotebookList({
           </div>
         </Modal>
 
-        <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+        <SettingsModal open={settingsOpen} initialTab={settingsTab} onClose={() => setSettingsOpen(false)} />
         </div>
       </ConsoleShell>
     </DeskShell>

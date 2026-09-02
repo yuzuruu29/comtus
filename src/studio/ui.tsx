@@ -58,20 +58,20 @@ export function Modal({
       // Prioritize autofocus element, then text inputs / textareas, then non-close buttons, then any focusable
       const auto = panelRef.current.querySelector<HTMLElement>('[autofocus]:not([disabled])');
       if (auto) {
-        auto.focus();
+        auto.focus({ preventScroll: true });
         return;
       }
       const input = panelRef.current.querySelector<HTMLElement>(
         'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled])',
       );
       if (input) {
-        input.focus();
+        input.focus({ preventScroll: true });
         return;
       }
       const first = panelRef.current.querySelector<HTMLElement>(
         'button:not([disabled]):not([aria-label="Close"]), [href], [tabindex]:not([tabindex="-1"])',
       );
-      (first ?? panelRef.current).focus();
+      (first ?? panelRef.current).focus({ preventScroll: true });
     }, 30);
 
     const onKey = (e: KeyboardEvent) => {
