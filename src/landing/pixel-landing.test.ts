@@ -8,10 +8,9 @@ const css = readFileSync(join(here, "pixel-landing.css"), "utf8");
 const cantor = readFileSync(join(here, "cantor-theme.css"), "utf8");
 
 describe("landing pixel skin typography", () => {
-  it("keeps Pixelify as the display accent only", () => {
+  it("uses Pixelify Sans as the default font system for the landing page", () => {
     expect(css).toMatch(/--font-display:\s*"Pixelify Sans Variable"/);
-    expect(css).not.toMatch(/--font-body:\s*"Pixelify/);
-    expect(css).not.toMatch(/--font-mono:\s*"Pixelify/);
+    expect(css).toMatch(/--font-body:\s*"Pixelify Sans Variable"/);
   });
 
   it("does not blanket element selectors onto a font family", () => {

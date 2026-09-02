@@ -55,7 +55,7 @@ describe("ComtusShowcase Component", () => {
     expect(screen.getByText("Rough thought, polished.")).toBeDefined();
 
     // Floating Stickers
-    expect(screen.getByTitle("16-Bit Blue Battery")).toBeDefined();
+    expect(screen.getByTitle("16-Bit Battery Companion")).toBeDefined();
     expect(screen.getByTitle("Antique Study Tome")).toBeDefined();
     expect(screen.getByTitle("Steaming Study Tea")).toBeDefined();
     expect(screen.getByTitle("Feather Quill")).toBeDefined();

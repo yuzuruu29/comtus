@@ -29,7 +29,7 @@ html[data-landing-pixel="on"] {
   --px-parchment: #E8DEC8;
   --px-ink: var(--px-paper-ink);
   --px-muted: var(--px-paper-muted);
-  --px-moon: #3D6E9E;
+  --px-moon: #8C7E6D;
   --px-sage: #4F8A5A;
   --px-rust: #B2554A;
   --px-candle: #D97724;
@@ -46,10 +46,10 @@ html[data-landing-pixel="on"] {
   --rust: var(--px-rust);
   --candle: var(--px-candle);
 
-  /* Pixelify is the display accent only. Body and mono stay readable
-     (BRAND.md 4: Pixelify never as body text). */
+  /* Pixelify Sans is the default font system for the landing page.
+     Only the studio has the function to change fonts. */
   --font-display: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
-  --font-body: "Instrument Sans Variable", "Instrument Sans", system-ui, -apple-system, sans-serif;
+  --font-body: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
   --radius-control: 2px;
   --radius-field: 2px;
@@ -67,7 +67,7 @@ html[data-theme="dark"][data-landing-pixel="on"] {
   --px-brass-deep: #b88428;
   --px-brass: #e3b04b;
   --px-brass-light: #f7d486;
-  --px-moon: #6c98c2;
+  --px-moon: #c4b8a5;
   --px-sage: #78b084;
   --px-rust: #c85848;
   --ground: var(--px-ground);

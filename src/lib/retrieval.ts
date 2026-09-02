@@ -48,7 +48,7 @@ export async function groundContext(
   sourceIds?: string[],
 ): Promise<RetrievalResult> {
   let sources = await db.sources.where("notebookId").equals(notebookId).toArray();
-  if (sourceIds && sourceIds.length > 0) {
+  if (sourceIds !== undefined) {
     const allow = new Set(sourceIds);
     sources = sources.filter((s) => allow.has(s.id));
   }

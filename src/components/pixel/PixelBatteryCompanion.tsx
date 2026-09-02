@@ -527,7 +527,7 @@ export function PixelBatteryCompanion({
           }}
           onPointerDown={(e) => e.stopPropagation()}
           onDoubleClick={(e) => e.stopPropagation()}
-          className="absolute -top-7 left-1/2 z-[70] -translate-x-1/2 rounded-full border border-[#044AB3]/40 bg-[#0B132B]/90 p-1 text-[#6FE3FF] shadow-md backdrop-blur-sm transition-colors hover:bg-[#044AB3]/60"
+          className="absolute -top-7 left-1/2 z-[70] -translate-x-1/2 rounded-full border border-brass/40 bg-ground/90 p-1 text-brasspale shadow-md backdrop-blur-sm transition-colors hover:bg-brass/20"
         >
           <ChevronUp size={12} />
         </button>
@@ -537,17 +537,17 @@ export function PixelBatteryCompanion({
       {speech && (
         <div
           id={speechId}
-          className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-[#044AB3]/30 bg-[#05132B]/95 px-2.5 py-1 text-center font-mono text-[11px] font-semibold text-[#6FE3FF] shadow-lg backdrop-blur-md anim-fade"
+          className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-brass/30 bg-ground/95 px-2.5 py-1 text-center font-mono text-[11px] font-semibold text-brasspale shadow-lg backdrop-blur-md anim-fade"
         >
           {speech}
-          <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-b border-r border-[#044AB3]/30 bg-[#05132B]" />
+          <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-b border-r border-brass/30 bg-ground" />
         </div>
       )}
 
       {/* Floating Mood Controls */}
       {showControls && (isHovered || isFocused) && (
         <div
-          className="absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full border border-[#044AB3]/40 bg-[#0B132B]/90 p-1 shadow-md backdrop-blur-sm"
+          className="absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full border border-brass/40 bg-ground/90 p-1 shadow-md backdrop-blur-sm"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
@@ -559,7 +559,7 @@ export function PixelBatteryCompanion({
             title="Idle Mood"
             onClick={() => handleMoodTransition("idle")}
             className={`rounded-full p-1 transition-colors ${
-              currentMood === "idle" ? "bg-[#044AB3] text-white" : "text-[#9099B0] hover:text-white"
+              currentMood === "idle" ? "bg-brass text-night font-bold" : "text-muted hover:text-ink"
             }`}
           >
             <Sun size={12} />
@@ -569,7 +569,7 @@ export function PixelBatteryCompanion({
             title="Think Mood"
             onClick={() => handleMoodTransition("think")}
             className={`rounded-full p-1 transition-colors ${
-              currentMood === "think" ? "bg-[#044AB3] text-white" : "text-[#9099B0] hover:text-white"
+              currentMood === "think" ? "bg-brass text-night font-bold" : "text-muted hover:text-ink"
             }`}
           >
             <BrainCircuit size={12} />
@@ -579,7 +579,7 @@ export function PixelBatteryCompanion({
             title="Sleep Mood"
             onClick={() => handleMoodTransition("sleep")}
             className={`rounded-full p-1 transition-colors ${
-              currentMood === "sleep" ? "bg-[#044AB3] text-white" : "text-[#9099B0] hover:text-white"
+              currentMood === "sleep" ? "bg-brass text-night font-bold" : "text-muted hover:text-ink"
             }`}
           >
             <Moon size={12} />
@@ -606,7 +606,7 @@ export function PixelBatteryCompanion({
           frameWidth={BATTERY_WIDTH}
           frameHeight={BATTERY_HEIGHT}
           scale={scale}
-          className="drop-shadow-[0_4px_12px_rgba(4,74,179,0.35)]"
+          className="drop-shadow-[0_4px_12px_rgba(227,176,75,0.3)]"
         />
       </div>
     </div>

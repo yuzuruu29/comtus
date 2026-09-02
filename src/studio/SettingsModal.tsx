@@ -536,7 +536,7 @@ export default function SettingsModal({
           <div>
             <div className="label-mono !text-[10px] mb-2">Desk companion</div>
             <p className="mb-3 text-[12.5px] leading-relaxed text-muted">
-              An energetic 16-bit blue battery companion that rests on your desk, celebrates study milestones, and keeps you company during long review sessions. Drag anywhere or double-click to reset.
+              An energetic 16-bit warm brass battery companion that rests on your desk, celebrates study milestones, and keeps you company during long review sessions. Drag anywhere or double-click to reset.
             </p>
             <div className="grid grid-cols-2 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
               <button
@@ -1474,7 +1474,7 @@ export default function SettingsModal({
                 Reasoning depth
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-2 rounded-xl border border-hairline bg-ground/60 p-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 rounded-xl border border-hairline bg-ground/60 p-1.5">
               {EFFORTS.map((e) => {
                 const active = draft.effort === e.id;
                 return (
@@ -1482,14 +1482,19 @@ export default function SettingsModal({
                     key={e.id}
                     type="button"
                     onClick={() => set({ effort: e.id })}
-                    className={`flex min-h-[40px] items-center justify-center rounded-lg px-3 py-2 text-[12.5px] font-medium transition-all active:scale-[0.97] ${
+                    className={`flex min-h-[42px] flex-col items-center justify-center rounded-lg px-2 py-1 text-center transition-all active:scale-[0.97] ${
                       active
                         ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_rgba(227,176,75,0.25)]"
-                        : "text-muted hover:text-ink"
+                        : "text-muted hover:text-ink hover:bg-ink/[0.03]"
                     }`}
                   >
-                    {e.id === "xhigh" && <Sparkle size={13} className="mr-1.5 inline" />}
-                    {e.label}
+                    <span className="text-[12px] font-medium flex items-center gap-1">
+                      {e.id === "xhigh" && <Sparkle size={11} className="inline" />}
+                      {e.label}
+                    </span>
+                    <span className={`text-[9px] font-mono uppercase tracking-wider ${active ? "text-night/80" : "text-muted/60"}`}>
+                      {e.badge}
+                    </span>
                   </button>
                 );
               })}

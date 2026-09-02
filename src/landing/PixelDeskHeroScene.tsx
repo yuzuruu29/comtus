@@ -242,7 +242,7 @@ export default function PixelDeskHeroScene({ className = "" }: { className?: str
         shapeRendering="crispEdges"
       >
         <defs>
-          {/* Radial Light Cone from Blue Battery Companion */}
+          {/* Radial Light Cone from Battery Companion */}
           <radialGradient
             id={`lampGlow-${filterId}`}
             cx="76%"
@@ -251,9 +251,9 @@ export default function PixelDeskHeroScene({ className = "" }: { className?: str
             fx="76%"
             fy="45%"
           >
-            <stop offset="0%" stopColor="#6FE3FF" stopOpacity={lampLit || lampHovered ? "0.55" : "0.3"} />
-            <stop offset="28%" stopColor="#044AB3" stopOpacity={lampLit || lampHovered ? "0.35" : "0.18"} />
-            <stop offset="60%" stopColor="#022354" stopOpacity={lampLit || lampHovered ? "0.18" : "0.08"} />
+            <stop offset="0%" stopColor="#FDE047" stopOpacity={lampLit || lampHovered ? "0.55" : "0.3"} />
+            <stop offset="28%" stopColor="#E3B04B" stopOpacity={lampLit || lampHovered ? "0.35" : "0.18"} />
+            <stop offset="60%" stopColor="#B88428" stopOpacity={lampLit || lampHovered ? "0.18" : "0.08"} />
             <stop offset="100%" stopColor="#080B12" stopOpacity="0" />
           </radialGradient>
 
@@ -278,9 +278,9 @@ export default function PixelDeskHeroScene({ className = "" }: { className?: str
           </linearGradient>
 
           <linearGradient id={`spineMoon-${filterId}`} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#6C98C2" />
-            <stop offset="60%" stopColor="#4D79A3" />
-            <stop offset="100%" stopColor="#325779" />
+            <stop offset="0%" stopColor="#C4B8A5" />
+            <stop offset="60%" stopColor="#9C8E7C" />
+            <stop offset="100%" stopColor="#756755" />
           </linearGradient>
         </defs>
 
@@ -357,7 +357,7 @@ export default function PixelDeskHeroScene({ className = "" }: { className?: str
             y1={r.y + 26}
             x2={r.x + 38 - 6}
             y2={r.y + 26 + r.length}
-            stroke="#6C98C2"
+            stroke="#9099B0"
             strokeWidth="1.5"
             strokeOpacity={r.opacity}
             strokeLinecap="square"
@@ -520,7 +520,7 @@ export default function PixelDeskHeroScene({ className = "" }: { className?: str
           <line x1="428" y1="322" x2="472" y2="322" stroke="#171F32" strokeWidth="2" strokeDasharray="10 3 8 2" />
           <line x1="428" y1="334" x2="466" y2="334" stroke="#171F32" strokeWidth="2" strokeDasharray="6 2 12 3" />
           <line x1="372" y1="362" x2="474" y2="362" stroke="#171F32" strokeWidth="2" strokeDasharray="14 3 18 2" />
-          <line x1="372" y1="376" x2="470" y2="376" stroke="#6C98C2" strokeWidth="2" strokeDasharray="8 4 16 3" />
+          <line x1="372" y1="376" x2="470" y2="376" stroke="#E3B04B" strokeWidth="2" strokeDasharray="8 4 16 3" />
           <line x1="372" y1="390" x2="450" y2="390" stroke="#171F32" strokeWidth="2" strokeDasharray="12 3 10 2" />
 
           {/* Stepped Page Shimmer Glint */}
@@ -576,7 +576,7 @@ export default function PixelDeskHeroScene({ className = "" }: { className?: str
           </g>
         </g>
 
-        {/* ── 16-BIT BLUE BATTERY COMPANION (Desk Right Mascot) ─────────── */}
+        {/* ── 16-BIT WARM BRASS BATTERY COMPANION (Desk Right Mascot) ─────────── */}
         <g
           transform="translate(620, 210)"
           className="cursor-pointer transition-transform duration-150 hover:-translate-y-2 active:scale-95"
@@ -587,7 +587,7 @@ export default function PixelDeskHeroScene({ className = "" }: { className?: str
           }}
           onMouseLeave={() => setLampHovered(false)}
           role="button"
-          aria-label={lampLit ? "16-Bit Blue Battery Companion, fully charged! Click to poke." : "Click to wake Blue Battery Companion."}
+          aria-label={lampLit ? "16-Bit Warm Brass Battery Companion, fully charged! Click to poke." : "Click to wake Warm Brass Battery Companion."}
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") handleLampClick();
@@ -596,70 +596,70 @@ export default function PixelDeskHeroScene({ className = "" }: { className?: str
           {/* Ground Contact Shadow */}
           <ellipse cx="55" cy="182" rx="46" ry="10" fill="#080B12" opacity="0.65" />
 
-          {/* ── Silver Terminal Cap ────────────────────────── */}
-          <rect x="42" y="0" width="26" height="12" fill="#94A3B8" stroke="#080E1E" strokeWidth="2" />
+          {/* ── Metal Terminal Cap ────────────────────────── */}
+          <rect x="42" y="0" width="26" height="12" fill="#94A3B8" stroke="#1A1108" strokeWidth="2" />
           <rect x="46" y="2" width="18" height="3" fill="#E2E8F0" />
           <rect x="44" y="5" width="22" height="4" fill="#CBD5E1" />
 
           {/* ── Main Battery Chassis Outline ────────────────── */}
-          <rect x="15" y="10" width="80" height="168" rx="8" fill="#080E1E" />
+          <rect x="15" y="10" width="80" height="168" rx="8" fill="#1A1108" />
 
-          {/* ── Royal Sapphire Blue Casing ──────────────────── */}
-          <rect x="19" y="14" width="72" height="160" rx="6" fill="#044AB3" />
-          {/* High Voltage Left Highlight */}
-          <rect x="21" y="16" width="6" height="156" fill="#4F93F7" />
-          <rect x="23" y="18" width="2" height="152" fill="#94C5FF" opacity="0.8" />
+          {/* ── Warm Brass Casing ──────────────────────────── */}
+          <rect x="19" y="14" width="72" height="160" rx="6" fill="#B88428" />
+          {/* Left Warm Highlight */}
+          <rect x="21" y="16" width="6" height="156" fill="#F7D486" />
+          <rect x="23" y="18" width="2" height="152" fill="#FFF2B2" opacity="0.8" />
           {/* Darker Right Shadow Bevel */}
-          <rect x="83" y="16" width="6" height="156" fill="#022354" />
-          <rect x="21" y="164" width="68" height="8" fill="#021B47" />
+          <rect x="83" y="16" width="6" height="156" fill="#7D5312" />
+          <rect x="21" y="164" width="68" height="8" fill="#4A2E1B" />
 
           {/* ── Digital LED Face Screen ─────────────────────── */}
-          <rect x="29" y="32" width="52" height="60" rx="4" fill="#05132B" stroke="#022354" strokeWidth="2" />
-          <rect x="31" y="34" width="48" height="56" fill="#040F22" />
+          <rect x="29" y="32" width="52" height="60" rx="4" fill="#080B12" stroke="#1F160E" strokeWidth="2" />
+          <rect x="31" y="34" width="48" height="56" fill="#050810" />
 
           {/* LED Glowing Eyes & Smile */}
           {mood === "poke" || pokeCount > 0 ? (
             /* Surprised / Poke Happy Face [ > ‿ < ] */
             <g className="anim-poke-jump">
               {/* Eye Left > */}
-              <path d="M36,48 L44,53 L36,58" stroke="#6FE3FF" strokeWidth="3" fill="none" strokeLinecap="square" />
+              <path d="M36,48 L44,53 L36,58" stroke="#FDE047" strokeWidth="3" fill="none" strokeLinecap="square" />
               <path d="M38,50 L42,53 L38,56" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
               {/* Eye Right < */}
-              <path d="M74,48 L66,53 L74,58" stroke="#6FE3FF" strokeWidth="3" fill="none" strokeLinecap="square" />
+              <path d="M74,48 L66,53 L74,58" stroke="#FDE047" strokeWidth="3" fill="none" strokeLinecap="square" />
               <path d="M72,50 L68,53 L72,56" stroke="#FFFFFF" strokeWidth="1.5" fill="none" />
               {/* Open Cheerful Smile */}
-              <rect x="47" y="70" width="16" height="8" rx="2" fill="#6FE3FF" />
+              <rect x="47" y="70" width="16" height="8" rx="2" fill="#FDE047" />
               <rect x="50" y="72" width="10" height="4" fill="#FFFFFF" />
             </g>
           ) : (
             /* Normal Cheerful Idle Face [ ^ ‿ ^ ] */
             <g>
               {/* Left Eye */}
-              <rect x="37" y="46" width="9" height="12" rx="2" fill="#6FE3FF" className="anim-px-flicker" />
+              <rect x="37" y="46" width="9" height="12" rx="2" fill="#FDE047" className="anim-px-flicker" />
               <rect x="39" y="48" width="3" height="4" fill="#FFFFFF" />
               {/* Right Eye */}
-              <rect x="64" y="46" width="9" height="12" rx="2" fill="#6FE3FF" className="anim-px-flicker" />
+              <rect x="64" y="46" width="9" height="12" rx="2" fill="#FDE047" className="anim-px-flicker" />
               <rect x="66" y="48" width="3" height="4" fill="#FFFFFF" />
               {/* Cute Pixel Smile */}
-              <path d="M47,68 Q55,76 63,68" stroke="#6FE3FF" strokeWidth="3" fill="none" strokeLinecap="round" />
+              <path d="M47,68 Q55,76 63,68" stroke="#FDE047" strokeWidth="3" fill="none" strokeLinecap="round" />
             </g>
           )}
 
           {/* ── Multi-Bar Charging Battery Gauge ─────────────── */}
           <g transform="translate(29, 102)">
             {/* Gauge Background Plate */}
-            <rect x="0" y="0" width="52" height="24" rx="3" fill="#021B47" stroke="#044AB3" strokeWidth="1.5" />
+            <rect x="0" y="0" width="52" height="24" rx="3" fill="#080B12" stroke="#B88428" strokeWidth="1.5" />
             {/* Charging Level Bars */}
-            <rect x="4" y="4" width="8" height="16" rx="1" fill="#4EED88" className="anim-px-flicker" />
-            <rect x="14" y="4" width="8" height="16" rx="1" fill="#4EED88" className="anim-px-flicker" />
-            <rect x="24" y="4" width="8" height="16" rx="1" fill="#6FE3FF" className="anim-px-flicker" />
-            <rect x="34" y="4" width="8" height="16" rx="1" fill="#6FE3FF" opacity={lampLit || lampHovered ? "1" : "0.5"} />
-            <rect x="44" y="4" width="4" height="16" rx="1" fill="#6FE3FF" opacity={lampLit || lampHovered ? "1" : "0.2"} />
+            <rect x="4" y="4" width="8" height="16" rx="1" fill="#78B084" className="anim-px-flicker" />
+            <rect x="14" y="4" width="8" height="16" rx="1" fill="#78B084" className="anim-px-flicker" />
+            <rect x="24" y="4" width="8" height="16" rx="1" fill="#FDE047" className="anim-px-flicker" />
+            <rect x="34" y="4" width="8" height="16" rx="1" fill="#FDE047" opacity={lampLit || lampHovered ? "1" : "0.5"} />
+            <rect x="44" y="4" width="4" height="16" rx="1" fill="#FDE047" opacity={lampLit || lampHovered ? "1" : "0.2"} />
           </g>
 
           {/* ── 100% Fully Charged Status Stamp ─────────────── */}
-          <rect x="33" y="136" width="44" height="16" rx="3" fill="#05132B" stroke="#044AB3" strokeWidth="1" />
-          <text x="55" y="148" textAnchor="middle" fill="#6FE3FF" fontSize="9" fontFamily="monospace" fontWeight="bold" letterSpacing="0.5">
+          <rect x="33" y="136" width="44" height="16" rx="3" fill="#080B12" stroke="#B88428" strokeWidth="1" />
+          <text x="55" y="148" textAnchor="middle" fill="#FDE047" fontSize="9" fontFamily="monospace" fontWeight="bold" letterSpacing="0.5">
             100%
           </text>
 
@@ -667,10 +667,10 @@ export default function PixelDeskHeroScene({ className = "" }: { className?: str
           {(mood === "poke" || pokeCount > 0 || lampHovered) && (
             <g className="battery-spark-burst" opacity="0.95">
               {/* Electric Sparks */}
-              <rect x="0" y="24" width="6" height="6" fill="#6FE3FF" className="anim-px-flicker" />
-              <rect x="94" y="40" width="7" height="7" fill="#FDE047" className="anim-px-flicker" />
-              <rect x="-8" y="90" width="5" height="5" fill="#4EED88" />
-              <rect x="98" y="120" width="6" height="6" fill="#6FE3FF" />
+              <rect x="0" y="24" width="6" height="6" fill="#FDE047" className="anim-px-flicker" />
+              <rect x="94" y="40" width="7" height="7" fill="#FFF7C2" className="anim-px-flicker" />
+              <rect x="-8" y="90" width="5" height="5" fill="#78B084" />
+              <rect x="98" y="120" width="6" height="6" fill="#FDE047" />
               <polygon points="55,-12 50,-2 57,-2 52,8 64,-4 57,-4" fill="#FDE047" />
             </g>
           )}
@@ -693,16 +693,16 @@ export default function PixelDeskHeroScene({ className = "" }: { className?: str
 
       {/* ── 3. Atmospheric Status Pill & Interactive Hint ──────────────── */}
       <div className="absolute bottom-3 left-4 z-20 flex items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 border border-[#33405F] bg-[#080B12]/85 px-2.5 py-1 text-[11px] font-mono uppercase tracking-widest text-[#F7D486] shadow-[1px_1px_0_#080B12] backdrop-blur-sm">
+        <span className="inline-flex items-center gap-1.5 border border-hairline bg-night/85 px-2.5 py-1 text-[11px] font-mono uppercase tracking-widest text-brasspale shadow-[1px_1px_0_#080B12] backdrop-blur-sm">
           <span
             className={`h-2 w-2 ${
-              lampLit ? "bg-[#E3B04B] shadow-[0_0_8px_#E3B04B]" : "bg-[#9099B0]"
+              lampLit ? "bg-[#E3B04B] shadow-[0_0_8px_#E3B04B]" : "bg-muted"
             } transition-colors duration-150`}
           />
           16-Bit Study Desk {lampLit ? "· Lamp Lit" : "· Tap Lamp"}
         </span>
         {pokeCount > 0 && (
-          <span className="hidden sm:inline-flex border border-[#E3B04B]/30 bg-[#171F32]/85 px-2 py-0.5 text-[10px] font-mono text-[#F5F0E6] backdrop-blur-sm">
+          <span className="hidden sm:inline-flex border border-brass/30 bg-shelf/85 px-2 py-0.5 text-[10px] font-mono text-parchment backdrop-blur-sm">
             Flare #{pokeCount}
           </span>
         )}

@@ -8,7 +8,7 @@
   flex-direction: column;
   height: 100svh;
   width: 100vw;
-  background-color: #021B47;
+  background-color: var(--ground);
   padding: 6px;
   box-sizing: border-box;
   overflow: hidden;
@@ -28,12 +28,12 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  background-color: #F5F3EF;
-  border: 2px solid rgba(4, 74, 179, 0.35);
+  background-color: var(--surface);
+  border: 2px solid var(--hairline-strong);
   border-radius: 8px;
   box-shadow:
-    0 0 0 1px rgba(111, 227, 255, 0.25),
-    0 12px 32px rgba(2, 27, 71, 0.35);
+    0 0 0 1px var(--hairline),
+    0 12px 32px rgba(0, 0, 0, 0.25);
   overflow: hidden;
   position: relative;
 }
@@ -51,30 +51,28 @@
   align-items: center;
   justify-content: space-between;
   height: 30px;
-  background-color: #021B47;
-  border-bottom: 1px solid rgba(111, 227, 255, 0.25);
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--hairline);
   padding: 0 14px;
   font-family: var(--font-mono, monospace);
   font-size: 11px;
-  color: #6FE3FF;
+  color: var(--muted);
   user-select: none;
   z-index: 20;
 }
-
-
 
 .console-live-led {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background-color: #6FE3FF;
-  box-shadow: 0 0 8px #6FE3FF;
+  background-color: var(--brass);
+  box-shadow: 0 0 8px var(--brass);
   animation: console-led-pulse 2s infinite ease-in-out;
 }
 
 @keyframes console-led-pulse {
   0%, 100% { opacity: 0.7; transform: scale(0.95); }
-  50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 12px #6FE3FF; }
+  50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 12px var(--brass); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -84,7 +82,7 @@
 }
 
 .console-notebook-title {
-  color: #FFFFFF;
+  color: var(--ink);
   font-weight: 600;
   max-width: 160px;
   overflow: hidden;
@@ -105,7 +103,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background-color: #F5F3EF;
+  background-color: var(--ground);
   overflow: hidden;
 }
 
@@ -114,24 +112,24 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(
-    rgba(4, 74, 179, 0) 50%,
-    rgba(4, 74, 179, 0.02) 50%
+    transparent 50%,
+    color-mix(in srgb, var(--ink) 3%, transparent) 50%
   );
   background-size: 100% 4px;
   pointer-events: none;
   z-index: 40;
-  opacity: 0.4;
+  opacity: 0.3;
 }
 
 /* Console Footer Controller Strip */
 .console-controller-bar {
   height: 26px;
-  background-color: #021B47;
-  border-top: 1px solid rgba(111, 227, 255, 0.25);
+  background-color: var(--surface);
+  border-top: 1px solid var(--hairline);
   padding: 0 14px;
   font-family: var(--font-mono, monospace);
   font-size: 10.5px;
-  color: #94A3B8;
+  color: var(--muted);
   user-select: none;
   z-index: 20;
 }
@@ -148,14 +146,14 @@
   gap: 3px;
   padding: 1px 6px;
   border-radius: 4px;
-  background-color: rgba(4, 74, 179, 0.3);
-  border: 1px solid rgba(111, 227, 255, 0.35);
-  color: #FFFFFF;
+  background-color: color-mix(in srgb, var(--brass) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brass) 30%, transparent);
+  color: var(--ink);
   font-weight: 600;
 }
 
 .console-brand-tag {
-  color: #6FE3FF;
+  color: var(--brass);
   font-weight: bold;
   letter-spacing: 0.08em;
 }

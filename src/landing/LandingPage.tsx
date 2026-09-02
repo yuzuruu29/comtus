@@ -3,6 +3,7 @@ import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Preloader from "./Preloader";
+import PreLandingOnboarding, { ONBOARDING_SEEN_KEY } from "./PreLandingOnboarding";
 import CustomCursor from "../components/CustomCursor";
 import TorchLayer from "./TorchLayer";
 import Nav from "./Nav";
@@ -14,7 +15,7 @@ import FAQSection from "./FAQSection";
 import Statement from "./Statement";
 import FinalCTA from "./FinalCTA";
 import Footer from "./Footer";
-import OnboardingModal from "./OnboardingModal";
+import OnboardingModal, { type SubjectOption } from "./OnboardingModal";
 import SectionDivider from "./SectionDivider";
 import { LandingPlayProvider } from "./LandingPlay";
 import { applyLandingPixel } from "./pixelMotion";
@@ -26,6 +27,14 @@ gsap.registerPlugin(ScrollTrigger);
 export default function LandingPage() {
   const [ready, setReady] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [showPreOnboarding, setShowPreOnboarding] = useState<boolean>(() => {
+    try {
+      return !localStorage.getItem(ONBOARDING_SEEN_KEY);
+    } catch {
+      return false;
+    }
+  });
+  const [activeDiscipline, setActiveDiscipline] = useState<SubjectOption | null>(null);
 
   useEffect(() => {
     applyLandingPixel(true);
@@ -47,20 +56,41 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    document.documentElement.style.overflow = ready ? "" : "hidden";
+    document.documentElement.style.overflow = ready && !showPreOnboarding ? "" : "hidden";
     return () => {
       document.documentElement.style.overflow = "";
     };
-  }, [ready]);
+  }, [ready, showPreOnboarding]);
 
   return (
     <LandingPlayProvider>
       <div className="relative min-h-screen bg-ground text-ink">
-        {!ready && <Preloader onDone={() => setReady(true)} />}
+        {showPreOnboarding ? (
+          <PreLandingOnboarding
+            onComplete={(profile) => {
+              if (profile?.subject) {
+                setActiveDiscipline(profile.subject);
+              }
+              setShowPreOnboarding(false);
+              setReady(true);
+            }}
+            onSkip={() => {
+              setShowPreOnboarding(false);
+              setReady(true);
+            }}
+          />
+        ) : (
+          !ready && <Preloader onDone={() => setReady(true)} />
+        )}
         <CustomCursor />
-        <TorchLayer ready={ready} />
+        <TorchLayer ready={ready && !showPreOnboarding} />
         <div className="grain" aria-hidden />
-        <Nav ready={ready} onStartStudying={() => setOnboardingOpen(true)} />
+        <Nav
+          ready={ready && !showPreOnboarding}
+          onStartStudying={() => setOnboardingOpen(true)}
+          activeDiscipline={activeDiscipline}
+          onReplayOnboarding={() => setShowPreOnboarding(true)}
+        />
 
         <main>
           {/* Chapter 1: Cantor8 High-Precision Cognitive Infrastructure */}

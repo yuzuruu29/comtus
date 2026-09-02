@@ -17,7 +17,7 @@ import {
   YoutubeLogo,
 } from "@phosphor-icons/react";
 import { ComtusEmblem } from "../components/brand/ComtusLogo";
-import { loadFocus, saveFocus } from "./focus";
+import { loadFocus, pruneFocus, saveFocus, subscribeFocus } from "./focus";
 import { db, deleteSource } from "../lib/db";
 import type { Source } from "../lib/types";
 import { importFiles, extractUrl, chunkText } from "../lib/import";
@@ -122,8 +122,17 @@ export default function SourcesPane({
   const seenImportTick = useRef<number | null>(null);
   const seenDropSignal = useRef<number | FileList | null>(null);
 
+  useEffect(() => {
+    return subscribeFocus(notebookId, (ids) => {
+      setFocused(ids);
+    });
+  }, [notebookId]);
+
   const refresh = useCallback(async () => {
-    setSources(await db.sources.where("notebookId").equals(notebookId).sortBy("addedAt"));
+    const list = await db.sources.where("notebookId").equals(notebookId).sortBy("addedAt");
+    setSources(list);
+    const pruned = pruneFocus(notebookId, list.map((s) => s.id));
+    setFocused(pruned);
   }, [notebookId]);
 
   const handleFiles = useCallback(
@@ -222,8 +231,9 @@ export default function SourcesPane({
   const totalTokens = sources.reduce((s, x) => s + x.tokens, 0);
 
   // All sources selected by default (focused === null or all included)
-  const isAllSelected = focused === null || (sources.length > 0 && focused.length === sources.length);
-  const selectedCount = focused === null ? sources.length : focused.length;
+  const validFocused = focused ? focused.filter((id) => sources.some((s) => s.id === id)) : null;
+  const isAllSelected = validFocused === null || (sources.length > 0 && validFocused.length === sources.length);
+  const selectedCount = validFocused === null ? sources.length : validFocused.length;
 
   const toggleSelectAll = () => {
     if (isAllSelected) {
@@ -413,6 +423,12 @@ export default function SourcesPane({
                       onClick={async (e) => {
                         e.stopPropagation();
                         await deleteSource(s.id);
+                        const currentFocus = loadFocus(notebookId);
+                        if (currentFocus !== null) {
+                          const remaining = currentFocus.filter((id) => id !== s.id);
+                          saveFocus(notebookId, remaining);
+                          setFocused(remaining);
+                        }
                         onChanged();
                         void refresh();
                       }}

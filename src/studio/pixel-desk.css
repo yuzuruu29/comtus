@@ -22,7 +22,7 @@ html[data-pixel="on"] {
   --px-parchment: #E8DEC8;   /* Aged scholar parchment */
   --px-ink: #F5F0E6;         /* Primary high-contrast text */
   --px-muted: #9099B0;       /* Muted labels, metadata */
-  --px-moon: #6C98C2;        /* Midnight blue secondary accent */
+  --px-moon: #C4B8A5;        /* Scholar moonlight secondary accent */
   --px-sage: #78B084;        /* Success, correct answers */
   --px-rust: #C85848;        /* Error, warnings, alerts */
   --px-candle: #FF9E43;      /* Amber hearth spark, milestone flares */
@@ -91,7 +91,7 @@ html[data-theme="light"][data-pixel="on"] {
   --px-brass-deep: #7d5312;
   --px-brass: #a5731c;
   --px-brass-light: #e3b04b;
-  --px-moon: #3d6e9e;
+  --px-moon: #8c7e6d;
   --px-sage: #4f8a5a;
   --px-rust: #b2554a;
   --px-candle: #d97724;
@@ -173,7 +173,7 @@ html[data-theme="light"][data-pixel="on"] .md h4 {
 }
 
 html[data-pixel="on"] .label-mono,
-html[data-pixel="on"] .phase-pill,
+html[data-pixel="on"] .phase-pill-inline,
 html[data-pixel="on"] .kbd-chip,
 html[data-pixel="on"] .cite-chip,
 html[data-pixel="on"] .usage-limits-kicker,

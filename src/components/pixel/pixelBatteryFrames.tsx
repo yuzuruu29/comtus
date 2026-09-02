@@ -1,21 +1,21 @@
 import type { PixelAnimation, PixelFrame, PixelRun } from "./PixelSprite";
 
 /**
- * 16-Bit Blue Battery Companion Palette
- * Tuned to Cantor8 Electric Sapphire Blue, metallic steel terminals,
- * glowing electric cyan display, and vibrant particle sparks.
+ * 16-Bit Warm Brass Battery Companion Palette
+ * Tuned to Comtus signature warm brass and golden amber tones, metallic terminals,
+ * glowing warm display, and vibrant particle sparks.
  */
 export const BATTERY_PALETTE = {
   // Outline & Deep Shadows
-  OUTLINE: "#080E1E",
-  BODY_SHADOW: "#021A3D",
-  BODY_DARK: "#022354",
+  OUTLINE: "#1A1108",
+  BODY_SHADOW: "#4A2E1B",
+  BODY_DARK: "#7D5312",
 
-  // Electric Royal Sapphire Body
-  BODY_MID: "#044AB3",
-  BODY_LIGHT: "#1D68D8",
-  BODY_HIGHLIGHT: "#4F93F7",
-  BODY_GLINT: "#93C5FD",
+  // Warm Brass Scholar Body
+  BODY_MID: "#B88428",
+  BODY_LIGHT: "#E3B04B",
+  BODY_HIGHLIGHT: "#F7D486",
+  BODY_GLINT: "#FFF2B2",
 
   // Metal Positive Terminal Nub
   TERMINAL_DARK: "#334155",
@@ -24,29 +24,29 @@ export const BATTERY_PALETTE = {
   TERMINAL_GLINT: "#E2E8F0",
 
   // Recessed Digital LED Screen
-  SCREEN_BORDER: "#0A1E3F",
-  SCREEN_BG: "#05132B",
+  SCREEN_BORDER: "#1F160E",
+  SCREEN_BG: "#080B12",
 
-  // Electric Cyan LED Display & Eyes
-  CYAN_DIM: "#0E7490",
-  CYAN_MID: "#06B6D4",
-  CYAN_CORE: "#6FE3FF",
-  CYAN_BRIGHT: "#A5F3FC",
-  CYAN_WHITE: "#E0F7FE",
+  // Warm Golden LED Display & Eyes
+  CYAN_DIM: "#B88428",
+  CYAN_MID: "#E3B04B",
+  CYAN_CORE: "#FDE047",
+  CYAN_BRIGHT: "#FFF7C2",
+  CYAN_WHITE: "#FFFFFF",
 
   // Cute Cheek Blush
-  CHEEK_BLUSH: "#F472B6",
+  CHEEK_BLUSH: "#FF8C7A",
 
-  // Electric Sparks & Flares
+  // Golden Sparks & Flares
   SPARK_GOLD: "#FDE047",
-  SPARK_AMBER: "#F59E0B",
-  SPARK_CYAN: "#6FE3FF",
+  SPARK_AMBER: "#E3B04B",
+  SPARK_CYAN: "#FFF7C2",
   SPARK_WHITE: "#FFFFFF",
 
   // Sleep Floating zZz
-  ZZZ_SOFT: "#7DD3FC",
-  ZZZ_MID: "#38BDF8",
-  ZZZ_DEEP: "#0284C7",
+  ZZZ_SOFT: "#F7D486",
+  ZZZ_MID: "#E3B04B",
+  ZZZ_DEEP: "#B88428",
 } as const;
 
 export const BATTERY_WIDTH = 36;

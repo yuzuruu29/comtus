@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { scrollToSection } from "../lib/scroll";
 import { ComtusEmblem } from "../components/brand/ComtusLogo";
 import { PIXEL_HOP } from "./pixelMotion";
+import type { SubjectOption } from "./OnboardingModal";
 
 const LINKS = [
   { label: "Console", hash: "#hero" },
@@ -12,16 +13,19 @@ const LINKS = [
   { label: "Help & FAQ", hash: "#faq" },
 ];
 
-/** Floating glass island nav — hides on scroll down, returns on scroll up.
- *  Mobile: hamburger morphs to an X; menu expands as a full glass overlay
- *  with staggered link reveals. */
+export interface NavProps {
+  ready: boolean;
+  onStartStudying?: () => void;
+  activeDiscipline?: SubjectOption | null;
+  onReplayOnboarding?: () => void;
+}
+
 export default function Nav({
   ready,
   onStartStudying,
-}: {
-  ready: boolean;
-  onStartStudying?: () => void;
-}) {
+  activeDiscipline,
+  onReplayOnboarding,
+}: NavProps) {
   const [open, setOpen] = useState(false);
   const desktopRef = useRef<HTMLElement>(null);
   const mobileRef = useRef<HTMLElement>(null);
@@ -95,6 +99,24 @@ export default function Nav({
             <span className="absolute inset-x-3 -bottom-px h-0.5 origin-left scale-x-0 bg-brass transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100" />
           </button>
         ))}
+
+        {activeDiscipline && (
+          <span className="hidden xl:inline-flex items-center gap-1.5 rounded-full border border-brass/30 bg-brass/10 px-2.5 py-1 text-[11px] font-mono text-brass">
+            <span className="text-xs">{activeDiscipline.icon}</span>
+            <span className="font-semibold">{activeDiscipline.shortLabel}</span>
+          </span>
+        )}
+
+        {onReplayOnboarding && (
+          <button
+            type="button"
+            onClick={onReplayOnboarding}
+            className="hidden lg:inline-flex items-center gap-1 rounded-full border border-hairline px-2.5 py-1 text-[11px] font-mono text-muted hover:border-brass hover:text-ink transition-colors cursor-pointer"
+            title="Replay Scholar Onboarding"
+          >
+            <span>Intro</span>
+          </button>
+        )}
 
         <div className="ml-2 flex items-center gap-2">
           {onStartStudying ? (
@@ -189,8 +211,35 @@ export default function Nav({
             </button>
           </div>
         ))}
+        {onReplayOnboarding && (
+          <div className="overflow-hidden py-1">
+            <button
+              onClick={() => {
+                setOpen(false);
+                onReplayOnboarding();
+              }}
+              className={`font-display text-[1.4rem] font-[480] text-brass transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95 text-left ${
+                open ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
+              }`}
+              style={{ transitionDelay: open ? "350ms" : "0ms" }}
+            >
+              Replay Onboarding
+            </button>
+          </div>
+        )}
+        {activeDiscipline && (
+          <div
+            className={`mt-4 inline-flex items-center gap-1.5 rounded-full border border-brass/30 bg-brass/10 px-3 py-1 font-mono text-xs text-brass transition-opacity duration-500 ${
+              open ? "opacity-100" : "opacity-0"
+            }`}
+            style={{ transitionDelay: open ? "380ms" : "0ms" }}
+          >
+            <span>{activeDiscipline.icon}</span>
+            <span>Focus: {activeDiscipline.label}</span>
+          </div>
+        )}
         <div
-          className={`label-mono mt-8 transition-opacity duration-500 text-px-muted ${
+          className={`label-mono mt-6 transition-opacity duration-500 text-px-muted ${
             open ? "opacity-90" : "opacity-0"
           }`}
           style={{ transitionDelay: open ? "420ms" : "0ms" }}

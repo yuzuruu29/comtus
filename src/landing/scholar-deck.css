@@ -16,7 +16,7 @@
   --deck-border: #33405f;     /* px-border */
   --deck-brass: #e3b04b;
   --deck-brass-deep: #b88428;
-  --deck-moon: #6c98c2;
+  --deck-moon: #c4b8a5;
   --deck-sage: #78b084;
   --deck-ink: #f5f0e6;
   --deck-muted: #9099b0;
@@ -77,17 +77,17 @@
 
 /* Moon keycap — Proof mode */
 .deck-btn-3d.btn-moon {
-  background: linear-gradient(180deg, var(--deck-moon) 0%, #3d6e9e 100%);
+  background: linear-gradient(180deg, var(--deck-moon) 0%, #8c7e6d 100%);
   border: 1px solid color-mix(in srgb, var(--deck-moon) 45%, transparent);
-  box-shadow: 0 5px 0 #24405c, 0 8px 14px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 5px 0 #5c4e3e, 0 8px 14px rgba(0, 0, 0, 0.4);
 }
 .deck-btn-3d.btn-moon:hover {
-  background: linear-gradient(180deg, #86aed4 0%, #4779a9 100%);
+  background: linear-gradient(180deg, #ded5c7 0%, #a89a87 100%);
 }
 .deck-btn-3d.btn-moon:active,
 .deck-btn-3d.btn-moon.is-active {
   transform: translateY(4px);
-  box-shadow: 0 1px 0 #24405c, 0 3px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 0 #5c4e3e, 0 3px 6px rgba(0, 0, 0, 0.5);
 }
 
 /* Brass keycap — Socratic mode */

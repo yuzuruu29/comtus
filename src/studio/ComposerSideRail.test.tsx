@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { Effort } from "../lib/types";
 import { ComposerSideRail } from "./ComposerSideRail";
 
 afterEach(() => {
@@ -21,7 +22,7 @@ function mockTrackRect(el: HTMLElement) {
   });
 }
 
-function openPicker(effort: "medium" | "high" | "xhigh" = "high", onEffortChange = vi.fn()) {
+function openPicker(effort: Effort = "high", onEffortChange = vi.fn()) {
   render(
     <ComposerSideRail
       effort={effort}
@@ -36,16 +37,17 @@ function openPicker(effort: "medium" | "high" | "xhigh" = "high", onEffortChange
 describe("ComposerSideRail", () => {
   it("shows the current effort on a compact chip until opened", () => {
     render(<ComposerSideRail effort="high" onEffortChange={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Thinking effort" })).toHaveTextContent("Deep");
+    expect(screen.getByRole("button", { name: "Thinking effort" })).toHaveTextContent("High");
     expect(screen.queryByRole("slider")).not.toBeInTheDocument();
   });
 
-  it("opens a landscape slider in a popover", () => {
+  it("opens a landscape slider in a popover with 4-stop ladder", () => {
     openPicker();
     const slider = screen.getByRole("slider", { name: "Thinking effort" });
     expect(slider).toHaveAttribute("aria-orientation", "horizontal");
-    expect(slider).toHaveAttribute("aria-valuetext", "Deep");
-    expect(slider).toHaveAttribute("aria-valuenow", "1");
+    expect(slider).toHaveAttribute("aria-valuetext", "High");
+    expect(slider).toHaveAttribute("aria-valuenow", "2");
+    expect(slider).toHaveAttribute("aria-valuemax", "3");
   });
 
   it("raises effort with ArrowRight and lowers it with ArrowLeft", () => {
@@ -57,27 +59,41 @@ describe("ComposerSideRail", () => {
     expect(onEffortChange).toHaveBeenCalledWith("medium");
   });
 
-  it("jumps to Steady on Home and Exhaustive on End", () => {
+  it("jumps to Low on Home and Extra High on End", () => {
     const onEffortChange = openPicker("high");
     const slider = screen.getByRole("slider", { name: "Thinking effort" });
     fireEvent.keyDown(slider, { key: "Home" });
-    expect(onEffortChange).toHaveBeenCalledWith("medium");
+    expect(onEffortChange).toHaveBeenCalledWith("low");
     fireEvent.keyDown(slider, { key: "End" });
     expect(onEffortChange).toHaveBeenCalledWith("xhigh");
   });
 
-  it("selects Exhaustive from the labeled tick", () => {
+  it("selects Extra High from the labeled tick", () => {
     const onEffortChange = openPicker("medium");
-    fireEvent.click(screen.getByRole("button", { name: "Exhaustive" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Extra High" })[0]!);
     expect(onEffortChange).toHaveBeenCalledWith("xhigh");
   });
 
-  it("maps a pointer press near the right of the track to Exhaustive", () => {
+  it("selects Low from the labeled tick", () => {
+    const onEffortChange = openPicker("high");
+    fireEvent.click(screen.getAllByRole("button", { name: "Low" })[0]!);
+    expect(onEffortChange).toHaveBeenCalledWith("low");
+  });
+
+  it("maps a pointer press near the right of the track to Extra High", () => {
     const onEffortChange = openPicker("medium");
     const slider = screen.getByRole("slider", { name: "Thinking effort" });
     mockTrackRect(slider);
     fireEvent.pointerDown(slider, { clientX: 96 });
     expect(onEffortChange).toHaveBeenCalledWith("xhigh");
+  });
+
+  it("maps a pointer press near the left of the track to Low", () => {
+    const onEffortChange = openPicker("medium");
+    const slider = screen.getByRole("slider", { name: "Thinking effort" });
+    mockTrackRect(slider);
+    fireEvent.pointerDown(slider, { clientX: 4 });
+    expect(onEffortChange).toHaveBeenCalledWith("low");
   });
 
   it("does not render a usage meter on the composer", () => {

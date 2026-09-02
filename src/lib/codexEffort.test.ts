@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 import { codexEffort } from "./llm";
 
 describe("codexEffort", () => {
-  it("maps Steady to medium", () => {
+  it("maps Low to low", () => {
+    expect(codexEffort("low", true)).toBe("low");
+    expect(codexEffort("low", false)).toBe("low");
+  });
+
+  it("maps Medium to medium", () => {
     expect(codexEffort("medium", true)).toBe("medium");
     expect(codexEffort("medium", false)).toBe("medium");
   });

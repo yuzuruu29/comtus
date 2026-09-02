@@ -24,7 +24,7 @@
   --px-parchment: #E8DEC8;         /* Aged scholar parchment */
   --px-ink: var(--px-paper-ink);   /* High-contrast primary text */
   --px-muted: var(--px-paper-muted); /* Muted labels, secondary captions */
-  --px-moon: #3D6E9E;              /* Scholar blue secondary accent */
+  --px-moon: #8C7E6D;              /* Scholar pewter secondary accent */
   --px-sage: #4F8A5A;              /* Success, verified marks */
   --px-rust: #B2554A;              /* Error, warnings, alerts */
   --px-candle: #D97724;            /* Amber hearth spark, milestone flares */
@@ -41,7 +41,7 @@ html[data-theme="dark"] {
   --px-brass: #E3B04B;
   --px-brass-deep: #B88428;
   --px-brass-light: #F7D486;
-  --px-moon: #6C98C2;
+  --px-moon: #C4B8A5;
   --px-sage: #78B084;
   --px-rust: #C85848;
   --px-candle: #FF9E43;

@@ -59,8 +59,8 @@ function GlyphArtwork({ glyph, size }: { glyph: StudyGlyphKey; size: number }) {
               <stop offset="100%" stopColor="#E3B04B" />
             </linearGradient>
             <linearGradient id="compNeedleS" x1="10" y1="16" x2="16" y2="25" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#7FA8C9" />
-              <stop offset="100%" stopColor="#355577" />
+              <stop offset="0%" stopColor="#C96A5E" />
+              <stop offset="100%" stopColor="#8C3B30" />
             </linearGradient>
           </defs>
           <circle cx="16" cy="16" r="13" stroke="url(#compRing)" strokeWidth="1.75" />
@@ -159,8 +159,8 @@ function GlyphArtwork({ glyph, size }: { glyph: StudyGlyphKey; size: number }) {
         <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
           <defs>
             <linearGradient id="gCode" x1="4" y1="8" x2="28" y2="24" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#7FA8C9" />
-              <stop offset="100%" stopColor="#355B82" />
+              <stop offset="0%" stopColor="#F5C869" />
+              <stop offset="100%" stopColor="#A5731C" />
             </linearGradient>
           </defs>
           <path d="M10 10L4.5 16L10 22" stroke="url(#gCode)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -195,8 +195,8 @@ function GlyphArtwork({ glyph, size }: { glyph: StudyGlyphKey; size: number }) {
         <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
           <defs>
             <linearGradient id="gAtom" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#7FA8C9" />
-              <stop offset="100%" stopColor="#3D6E9E" />
+              <stop offset="0%" stopColor="#E3B04B" />
+              <stop offset="100%" stopColor="#7D5312" />
             </linearGradient>
           </defs>
           <ellipse cx="16" cy="16" rx="12" ry="4.5" stroke="url(#gAtom)" strokeWidth="1.3" transform="rotate(30 16 16)" />
@@ -249,7 +249,7 @@ function GlyphArtwork({ glyph, size }: { glyph: StudyGlyphKey; size: number }) {
             <linearGradient id="gPalette" x1="5" y1="5" x2="27" y2="27" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stopColor="#F5C869" />
               <stop offset="50%" stopColor="#E3B04B" />
-              <stop offset="100%" stopColor="#7FA8C9" />
+              <stop offset="100%" stopColor="#8FBF98" />
             </linearGradient>
           </defs>
           <path
@@ -259,7 +259,7 @@ function GlyphArtwork({ glyph, size }: { glyph: StudyGlyphKey; size: number }) {
           />
           <circle cx="10" cy="12" r="1.75" fill="#E3B04B" />
           <circle cx="15" cy="9.5" r="1.75" fill="#8FBF98" />
-          <circle cx="20.5" cy="11.5" r="1.75" fill="#7FA8C9" />
+          <circle cx="20.5" cy="11.5" r="1.75" fill="#E3B04B" />
           <circle cx="21" cy="16.5" r="1.75" fill="#C96A5E" />
         </svg>
       );
@@ -269,15 +269,15 @@ function GlyphArtwork({ glyph, size }: { glyph: StudyGlyphKey; size: number }) {
         <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
           <defs>
             <linearGradient id="gGlobe" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#7FA8C9" />
-              <stop offset="100%" stopColor="#3D6E9E" />
+              <stop offset="0%" stopColor="#E3B04B" />
+              <stop offset="100%" stopColor="#7D5312" />
             </linearGradient>
           </defs>
           <circle cx="16" cy="16" r="12" stroke="url(#gGlobe)" strokeWidth="1.75" />
           <ellipse cx="16" cy="16" rx="6" ry="12" stroke="url(#gGlobe)" strokeWidth="1.25" />
           <path d="M4 16H28" stroke="url(#gGlobe)" strokeWidth="1.25" />
-          <path d="M6 10H26" stroke="rgba(127,168,201,0.5)" strokeWidth="1" />
-          <path d="M6 22H26" stroke="rgba(127,168,201,0.5)" strokeWidth="1" />
+          <path d="M6 10H26" stroke="rgba(227,176,75,0.4)" strokeWidth="1" />
+          <path d="M6 22H26" stroke="rgba(227,176,75,0.4)" strokeWidth="1" />
         </svg>
       );
 
@@ -313,7 +313,7 @@ function GlyphArtwork({ glyph, size }: { glyph: StudyGlyphKey; size: number }) {
           <defs>
             <linearGradient id="gShield" x1="5" y1="5" x2="27" y2="27" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stopColor="#F5C869" />
-              <stop offset="100%" stopColor="#7FA8C9" />
+              <stop offset="100%" stopColor="#8FBF98" />
             </linearGradient>
           </defs>
           <path
@@ -331,7 +331,7 @@ function GlyphArtwork({ glyph, size }: { glyph: StudyGlyphKey; size: number }) {
         <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
           <defs>
             <linearGradient id="gWave" x1="4" y1="10" x2="28" y2="22" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#7FA8C9" />
+              <stop offset="0%" stopColor="#8FBF98" />
               <stop offset="100%" stopColor="#E3B04B" />
             </linearGradient>
           </defs>

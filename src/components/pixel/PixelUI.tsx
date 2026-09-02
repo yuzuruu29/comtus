@@ -133,9 +133,9 @@ const CARD_VARIANTS: Record<PixelCardVariant, { bg: string; text: string; border
     glow: "before:bg-[radial-gradient(ellipse_at_top_right,rgba(227,176,75,0.06),transparent_60%)]",
   },
   book: {
-    bg: "bg-[#0d1322]",
+    bg: "bg-[#121828]",
     text: "text-[#f2ede3]",
-    border: "border-l-4 border-l-[#e3b04b] border-t border-r border-b border-[#2a3654] shadow-[3px_3px_0px_#0b0f1a]",
+    border: "border-l-4 border-l-[#e3b04b] border-t border-r border-b border-[#3d352b] shadow-[3px_3px_0px_#0b0f1a]",
     glow: "before:bg-[radial-gradient(ellipse_at_top_left,rgba(227,176,75,0.08),transparent_50%)]",
   },
   parchment: {
@@ -147,7 +147,7 @@ const CARD_VARIANTS: Record<PixelCardVariant, { bg: string; text: string; border
   shelf: {
     bg: "bg-[#1a2136]",
     text: "text-[#f2ede3]",
-    border: "border-[#2a3654] border-t-2 border-t-[#e3b04b]/60 shadow-[3px_3px_0px_#0b0f1a,inset_0px_1px_0px_rgba(240,206,140,0.2)]",
+    border: "border-[#3d352b] border-t-2 border-t-[#e3b04b]/60 shadow-[3px_3px_0px_#0b0f1a,inset_0px_1px_0px_rgba(240,206,140,0.2)]",
     glow: "before:bg-[linear-gradient(to_bottom,rgba(227,176,75,0.08)_0%,transparent_16px)]",
   },
 };
@@ -249,10 +249,10 @@ const BADGE_VARIANTS: Record<PixelBadgeVariant, { bg: string; text: string; bord
     dot: "bg-[#e3b04b]",
   },
   moon: {
-    bg: "bg-[#7fa8c9]/12",
-    text: "text-[#7fa8c9]",
-    border: "border-[#7fa8c9]/50 shadow-[1px_1px_0px_rgba(127,168,201,0.2)]",
-    dot: "bg-[#7fa8c9]",
+    bg: "bg-[#c4b8a5]/15",
+    text: "text-[#c4b8a5]",
+    border: "border-[#c4b8a5]/50 shadow-[1px_1px_0px_rgba(196,184,165,0.2)]",
+    dot: "bg-[#c4b8a5]",
   },
   sage: {
     bg: "bg-[#8fbf98]/12",
@@ -484,9 +484,9 @@ const PROGRESS_VARIANTS: Record<PixelProgressVariant, { active: string; glow: st
     border: "border-[#c99236]/40",
   },
   moon: {
-    active: "bg-[#7fa8c9]",
-    glow: "shadow-[0_0_4px_#7fa8c9]",
-    border: "border-[#7fa8c9]/40",
+    active: "bg-[#c4b8a5]",
+    glow: "shadow-[0_0_4px_#c4b8a5]",
+    border: "border-[#c4b8a5]/40",
   },
   sage: {
     active: "bg-[#8fbf98]",

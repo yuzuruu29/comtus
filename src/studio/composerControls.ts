@@ -1,11 +1,11 @@
 import type { Effort } from "../lib/types";
 
-export const EFFORT_STEPS: readonly Effort[] = ["medium", "high", "xhigh"];
+export const EFFORT_STEPS: readonly Effort[] = ["low", "medium", "high", "xhigh"];
 const TOP_STEP = EFFORT_STEPS.length - 1;
 
 export function effortToStep(effort: Effort): number {
   const index = EFFORT_STEPS.indexOf(effort);
-  return index < 0 ? 1 : index;
+  return index < 0 ? 2 : index;
 }
 
 export function stepToEffort(step: number): Effort {
@@ -22,8 +22,10 @@ export function stepFromTrackX({
   left: number;
   width: number;
 }): number {
-  if (width <= 0) return 1;
-  const t = (clientX - left) / width;
+  const pad = 12;
+  const innerWidth = width - pad * 2;
+  if (innerWidth <= 0) return 2;
+  const t = Math.max(0, Math.min(1, (clientX - (left + pad)) / innerWidth));
   return stepToEffortIndex(t * TOP_STEP);
 }
 

@@ -314,7 +314,7 @@ export interface AudioOverviewPayload {
 export type ProviderId = "anthropic" | "openai-compatible" | "claude-oauth" | "codex";
 
 export type AnthropicModelId = "claude-opus-5" | "claude-sonnet-5";
-export type Effort = "medium" | "high" | "xhigh";
+export type Effort = "low" | "medium" | "high" | "xhigh";
 
 export interface StoredKey {
   id: string;

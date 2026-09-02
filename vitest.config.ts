@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
@@ -16,6 +16,7 @@ export default defineConfig({
     testTimeout: 15_000,
     hookTimeout: 15_000,
     teardownTimeout: 8_000,
+    exclude: [...configDefaults.exclude, "promo/**"],
   },
 });
 

@@ -1,18 +1,41 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Brain, CaretDown, CaretRight, Gauge, Lightning } from "@phosphor-icons/react";
+import { Brain, CaretDown, CaretRight, Gauge, Lightning, Sparkle } from "@phosphor-icons/react";
 import { EFFORTS, effortLabelFor } from "../lib/llm";
 import { useSettings } from "../lib/settings";
 import type { Effort } from "../lib/types";
 import { effortToStep, stepFromTrackX, stepToEffort } from "./composerControls";
 import { POPOVER, SOFT, SPRING } from "./fx";
 
-/* Per-level face for chip + caption: Steady strolls, Deep ponders,
-   Exhaustive sparks. */
-const LEVEL_FACES: Record<Effort, { icon: typeof Brain; tone: string }> = {
-  medium: { icon: Gauge, tone: "calm" },
-  high: { icon: Brain, tone: "deep" },
-  xhigh: { icon: Lightning, tone: "blazing" },
+/* Per-level metadata for chip, preview card, and indicators. */
+const LEVEL_FACES: Record<
+  Effort,
+  { icon: typeof Brain; tone: string; title: string; accentClass: string }
+> = {
+  low: {
+    icon: Gauge,
+    tone: "fast",
+    title: "Light & Quick",
+    accentClass: "text-sage border-sage/30 bg-sage/10",
+  },
+  medium: {
+    icon: Brain,
+    tone: "calm",
+    title: "Balanced Thinking",
+    accentClass: "text-moon border-moon/30 bg-moon/10",
+  },
+  high: {
+    icon: Sparkle,
+    tone: "deep",
+    title: "Deep Reasoning",
+    accentClass: "text-brass border-brass/30 bg-brass/10",
+  },
+  xhigh: {
+    icon: Lightning,
+    tone: "blazing",
+    title: "Maximum Compute",
+    accentClass: "text-rust border-rust/30 bg-rust/10",
+  },
 };
 
 type Burst = { key: number; parts: BurstPart[] };
@@ -58,11 +81,12 @@ export function ComposerSideRail({
   const prevStep = useRef(effortToStep(effort));
   const reduceMotion = !!useReducedMotion();
   const step = effortToStep(effort);
-  const along = `calc(9px + ${step / 2} * (100% - 18px))`;
-  const fill = `calc(${step / 2} * (100% - 18px))`;
+  const along = `calc(12px + ${step / 3} * (100% - 24px))`;
+  const fill = `calc(${step / 3} * (100% - 24px))`;
   const label = effortLabelFor(effort);
-  const face = LEVEL_FACES[effort];
+  const face = LEVEL_FACES[effort] ?? LEVEL_FACES.high;
   const FaceIcon = face.icon;
+  const activeOption = EFFORTS.find((e) => e.id === effort) ?? EFFORTS[2];
 
   useEffect(() => {
     if (!open) return;
@@ -108,10 +132,31 @@ export function ComposerSideRail({
     [onEffortChange],
   );
 
-  const settle = () => {
+  const settle = (e?: React.PointerEvent<HTMLElement>) => {
+    if (e?.currentTarget && e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        /* already released */
+      }
+    }
     dragging.current = false;
     setIsDragging(false);
   };
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const onUp = () => {
+      dragging.current = false;
+      setIsDragging(false);
+    };
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [isDragging]);
 
   const slide = reduceMotion ? { duration: 0 } : { duration: 0.18 };
 
@@ -122,7 +167,7 @@ export function ComposerSideRail({
         aria-label="Thinking effort"
         aria-haspopup="dialog"
         aria-expanded={open}
-        title="How hard the model thinks"
+        title="Reasoning effort: Control how deeply the model thinks before answering"
         onClick={() => setOpen((v) => !v)}
         className={`effort-chip ${open ? "is-open" : ""}`}
         data-level={effort}
@@ -136,8 +181,9 @@ export function ComposerSideRail({
             exit={{ y: reduceMotion ? 0 : -7, opacity: 0 }}
             transition={slide}
           >
-            <FaceIcon size={11} weight="fill" />
-            {label}
+            <FaceIcon size={11} weight="fill" className="shrink-0 text-brass" />
+            <span className="hidden xs:inline">Think: {label}</span>
+            <span className="xs:hidden">{label}</span>
           </motion.span>
         </AnimatePresence>
         <CaretDown
@@ -158,134 +204,200 @@ export function ComposerSideRail({
             aria-label="Thinking effort"
             data-level={effort}
           >
-            <div
-              role="slider"
-              tabIndex={0}
-              aria-label="Thinking effort"
-              aria-orientation="horizontal"
-              aria-valuemin={0}
-              aria-valuemax={2}
-              aria-valuenow={step}
-              aria-valuetext={label}
-              className={`effort-track ${isDragging ? "is-dragging" : ""}`}
-              data-level={effort}
-              onPointerDown={(e) => {
-                dragging.current = true;
-                setIsDragging(true);
-                e.currentTarget.setPointerCapture?.(e.pointerId);
-                applyPointer(e.currentTarget, e.clientX);
-              }}
-              onPointerMove={(e) => {
-                if (!dragging.current) return;
-                applyPointer(e.currentTarget, e.clientX);
-              }}
-              onPointerUp={settle}
-              onPointerCancel={settle}
-              onKeyDown={(e) => {
-                const current = effortToStep(effort);
-                if (e.key === "ArrowRight" || e.key === "ArrowUp") {
-                  e.preventDefault();
-                  onEffortChange(stepToEffort(current + 1));
-                } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
-                  e.preventDefault();
-                  onEffortChange(stepToEffort(current - 1));
-                } else if (e.key === "Home") {
-                  e.preventDefault();
-                  onEffortChange("medium");
-                } else if (e.key === "End") {
-                  e.preventDefault();
-                  onEffortChange("xhigh");
-                }
-              }}
-            >
-              <span className="effort-fill" style={{ width: fill }} />
-              {EFFORTS.map((item, index) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  aria-label={item.label}
-                  aria-pressed={item.id === effort}
-                  title={item.label}
-                  className={`effort-dot ${index <= step ? "is-lit" : ""}`}
-                  style={{ left: `calc(9px + ${index / 2} * (100% - 18px))` }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => onEffortChange(item.id)}
-                />
-              ))}
-              {burst && (
-                <span
-                  key={burst.key}
-                  className="effort-sparks"
-                  style={{ left: along }}
-                  aria-hidden="true"
-                >
-                  {burst.parts.map((part, i) => (
-                    <span
-                      key={i}
-                      className="effort-spark"
-                      style={
-                        {
-                          width: part.size,
-                          height: part.size,
-                          background: part.color,
-                          animationDelay: part.delay,
-                          "--dx": `${part.dx.toFixed(1)}px`,
-                          "--dy": `${part.dy.toFixed(1)}px`,
-                        } as React.CSSProperties
-                      }
-                    />
-                  ))}
+            {/* Header: Title + Active Badge */}
+            <div className="flex items-center justify-between border-b border-hairline px-3.5 py-2.5">
+              <div className="flex items-center gap-1.5">
+                <Brain size={13} weight="fill" className="text-brass" />
+                <span className="font-mono text-[11px] font-semibold tracking-wide text-ink">
+                  Reasoning effort
                 </span>
-              )}
-              <span className="effort-thumb" style={{ left: along }}>
-                <span className="effort-thumb-ring" aria-hidden="true" />
-                <motion.span
-                  className="effort-thumb-core"
-                  animate={
-                    isDragging && !reduceMotion
-                      ? { scaleX: 1.4, scaleY: 0.68 }
-                      : { scaleX: 1, scaleY: 1 }
+              </div>
+              <span
+                className={`font-mono text-[9.5px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${face.accentClass}`}
+              >
+                {activeOption.badge}
+              </span>
+            </div>
+
+            <div className="px-3.5 pt-2.5 pb-1 text-[11.5px] text-muted">
+              Choose how deeply the model thinks before answering.
+            </div>
+
+            {/* Slider track */}
+            <div className="px-3.5 py-2.5">
+              <div
+                role="slider"
+                tabIndex={0}
+                aria-label="Thinking effort"
+                aria-orientation="horizontal"
+                aria-valuemin={0}
+                aria-valuemax={3}
+                aria-valuenow={step}
+                aria-valuetext={label}
+                className={`effort-track ${isDragging ? "is-dragging" : ""}`}
+                data-level={effort}
+                onPointerDown={(e) => {
+                  dragging.current = true;
+                  setIsDragging(true);
+                  e.currentTarget.setPointerCapture?.(e.pointerId);
+                  applyPointer(e.currentTarget, e.clientX);
+                }}
+                onPointerMove={(e) => {
+                  if (!dragging.current) return;
+                  applyPointer(e.currentTarget, e.clientX);
+                }}
+                onPointerUp={settle}
+                onPointerCancel={settle}
+                onKeyDown={(e) => {
+                  const current = effortToStep(effort);
+                  if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+                    e.preventDefault();
+                    onEffortChange(stepToEffort(current + 1));
+                  } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+                    e.preventDefault();
+                    onEffortChange(stepToEffort(current - 1));
+                  } else if (e.key === "Home" || e.key === "1") {
+                    e.preventDefault();
+                    onEffortChange("low");
+                  } else if (e.key === "2") {
+                    e.preventDefault();
+                    onEffortChange("medium");
+                  } else if (e.key === "3") {
+                    e.preventDefault();
+                    onEffortChange("high");
+                  } else if (e.key === "End" || e.key === "4") {
+                    e.preventDefault();
+                    onEffortChange("xhigh");
                   }
-                  transition={SPRING}
-                />
-              </span>
-            </div>
-            <div className={`effort-level effort-level-${face.tone}`} aria-hidden="true">
-              <FaceIcon size={12} weight="fill" className="effort-level-icon" />
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.span
-                  key={label}
-                  className="effort-level-text"
-                  initial={{ y: reduceMotion ? 0 : 9, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: reduceMotion ? 0 : -9, opacity: 0 }}
-                  transition={slide}
-                >
-                  {label}
-                </motion.span>
-              </AnimatePresence>
-              <span className="effort-bars">
-                {[0, 1, 2].map((bar) => (
-                  <span
-                    key={bar}
-                    className={`effort-bar ${bar <= step ? "is-active" : ""}`}
-                  />
-                ))}
-              </span>
-            </div>
-            {onOpenSettings && (
-              <button
-                type="button"
-                className="effort-advanced"
-                onClick={() => {
-                  setOpen(false);
-                  onOpenSettings();
                 }}
               >
-                Advanced
-                <CaretRight size={11} />
-              </button>
-            )}
+                <span className="effort-fill" style={{ width: fill }} />
+                {EFFORTS.map((item, index) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    aria-label={item.label}
+                    aria-pressed={item.id === effort}
+                    title={item.label}
+                    className={`effort-dot ${index <= step ? "is-lit" : ""}`}
+                    style={{ left: `calc(12px + ${index / 3} * (100% - 24px))` }}
+                    onClick={() => onEffortChange(item.id)}
+                  />
+                ))}
+                {burst && (
+                  <span
+                    key={burst.key}
+                    className="effort-sparks"
+                    style={{ left: along }}
+                    aria-hidden="true"
+                  >
+                    {burst.parts.map((part, i) => (
+                      <span
+                        key={i}
+                        className="effort-spark"
+                        style={
+                          {
+                            width: part.size,
+                            height: part.size,
+                            background: part.color,
+                            animationDelay: part.delay,
+                            "--dx": `${part.dx.toFixed(1)}px`,
+                            "--dy": `${part.dy.toFixed(1)}px`,
+                          } as React.CSSProperties
+                        }
+                      />
+                    ))}
+                  </span>
+                )}
+                <span className="effort-thumb" style={{ left: along }}>
+                  <span className="effort-thumb-ring" aria-hidden="true" />
+                  <motion.span
+                    className="effort-thumb-core"
+                    animate={
+                      isDragging && !reduceMotion
+                        ? { scaleX: 1.35, scaleY: 0.72 }
+                        : { scaleX: 1, scaleY: 1 }
+                    }
+                    transition={SPRING}
+                  />
+                </span>
+              </div>
+
+              {/* Tick labels underneath track */}
+              <div className="flex items-center justify-between px-0.5 pt-1.5">
+                {EFFORTS.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onEffortChange(item.id)}
+                    className={`font-mono text-[10px] tracking-wide transition-colors cursor-pointer ${
+                      item.id === effort
+                        ? "font-semibold text-brasspale"
+                        : "text-muted/60 hover:text-ink"
+                    }`}
+                  >
+                    {item.shortLabel}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Active Tier Info Card */}
+            <div className="mx-3.5 mb-2.5 rounded-xl border border-hairline bg-ground/80 p-2.5">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5 font-medium text-[12px] text-ink">
+                  <FaceIcon size={13} weight="fill" className="text-brass" />
+                  <span>{face.title}</span>
+                </div>
+                <span className="font-mono text-[9px] uppercase tracking-wider text-muted/60">
+                  {step + 1} of 4
+                </span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-muted">
+                {activeOption.desc}
+              </p>
+            </div>
+
+            {/* Quick 1-click pills */}
+            <div className="flex items-center gap-1 px-3.5 pb-2">
+              {EFFORTS.map((item) => {
+                const active = item.id === effort;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onEffortChange(item.id)}
+                    className={`flex-1 rounded-lg border py-1 font-mono text-[10px] uppercase tracking-wider transition-all active:scale-[0.96] cursor-pointer ${
+                      active
+                        ? "border-brass/60 bg-brass/20 text-brasspale font-semibold shadow-[0_0_8px_rgba(227,176,75,0.2)]"
+                        : "border-hairline bg-ground/40 text-muted hover:border-brass/30 hover:text-ink"
+                    }`}
+                  >
+                    {item.shortLabel}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-hairline px-3.5 py-2 flex items-center justify-between">
+              <span className="font-mono text-[9px] text-muted/60 uppercase tracking-widest">
+                Arrow keys / 1-4
+              </span>
+              {onOpenSettings && (
+                <button
+                  type="button"
+                  className="font-mono text-[10px] text-brass hover:underline inline-flex items-center gap-0.5 cursor-pointer"
+                  onClick={() => {
+                    setOpen(false);
+                    onOpenSettings();
+                  }}
+                >
+                  Settings
+                  <CaretRight size={10} />
+                </button>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

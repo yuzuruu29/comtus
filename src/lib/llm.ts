@@ -48,10 +48,43 @@ export const MODELS: {
   },
 ];
 
-export const EFFORTS: { id: Effort; label: string }[] = [
-  { id: "medium", label: "Steady" },
-  { id: "high", label: "Deep" },
-  { id: "xhigh", label: "Exhaustive" },
+export interface EffortOption {
+  id: Effort;
+  label: string;
+  shortLabel: string;
+  badge: string;
+  desc: string;
+}
+
+export const EFFORTS: EffortOption[] = [
+  {
+    id: "low",
+    label: "Low",
+    shortLabel: "Low",
+    badge: "Fast",
+    desc: "Quick responses with light reasoning for factual queries and rapid drafting.",
+  },
+  {
+    id: "medium",
+    label: "Medium",
+    shortLabel: "Medium",
+    badge: "Balanced",
+    desc: "Balanced depth and speed for everyday queries, explanations, and standard coding.",
+  },
+  {
+    id: "high",
+    label: "High",
+    shortLabel: "High",
+    badge: "Deep",
+    desc: "Deep reasoning for complex logic, multi-step math, and in-depth code debugging.",
+  },
+  {
+    id: "xhigh",
+    label: "Extra High",
+    shortLabel: "Extra High",
+    badge: "Max",
+    desc: "Maximum compute and exhaustive verification for demanding workflows.",
+  },
 ];
 
 export const COMPAT_PRESETS: { id: string; label: string; baseUrl: string; note: string }[] = [
@@ -165,7 +198,11 @@ export const CODEX_MODELS: { id: string; label: string; note: string }[] = CODEX
 
 /** Pure effort → wire tier mapping for Codex. The wire ladder accepts
  *  xhigh; clamp only when the model's own roster says it doesn't. */
-export function codexEffort(effort: Effort, supportsXhigh: boolean): "medium" | "high" | "xhigh" {
+export function codexEffort(
+  effort: Effort,
+  supportsXhigh: boolean,
+): "low" | "medium" | "high" | "xhigh" {
+  if (effort === "low") return "low";
   if (effort === "medium") return "medium";
   if (effort === "xhigh" && supportsXhigh) return "xhigh";
   return "high";
@@ -203,7 +240,7 @@ export function modelLabelFor(provider: ProviderId, model: string): string {
 
 /** Effort label from the single EFFORTS table — no duplicated ternaries. */
 export function effortLabelFor(effort: Effort): string {
-  return EFFORTS.find((e) => e.id === effort)?.label ?? EFFORTS[1]?.label ?? "Deep";
+  return EFFORTS.find((e) => e.id === effort)?.label ?? "High";
 }
 
 /* ── Clients ──────────────────────────────────────────────── */
@@ -556,8 +593,12 @@ async function streamAnthropic(
         ...args.history.slice(-12),
         { role: "user", content },
       ] satisfies Anthropic.MessageParam[],
-      thinking: { type: "adaptive", display: "summarized" },
-      output_config: { effort: args.reasoning ? "high" : args.effort },
+      ...(args.reasoning
+        ? {
+            thinking: { type: "adaptive" as const, display: "summarized" as const },
+            output_config: { effort: args.effort },
+          }
+        : {}),
     },
     { signal: args.signal },
   );
@@ -632,7 +673,9 @@ async function streamCodex(
     input,
     stream: true as const,
     store: false as const,
-    reasoning: { effort: codexEffort(args.effort, codexSupportsXhigh(args.model)) },
+    ...(args.reasoning
+      ? { reasoning: { effort: codexEffort(args.effort, codexSupportsXhigh(args.model)) } }
+      : {}),
   };
   let stream: AsyncIterable<OpenAI.Responses.ResponseStreamEvent>;
   try {
@@ -703,7 +746,9 @@ async function streamCompatible(
     messages,
     stream: true as const,
     max_tokens: 32000,
-    reasoning_effort: args.effort === "xhigh" ? ("high" as const) : args.effort,
+    ...(args.reasoning
+      ? { reasoning_effort: args.effort === "xhigh" ? ("high" as const) : args.effort }
+      : {}),
   };
   let stream: AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>;
   try {

@@ -58,11 +58,11 @@ type DeletedGenerationNotice = {
   focusUndo: boolean;
 };
 
-const QUICK_AID_PILLS: { kind: GenerationKind; icon: typeof BookOpen; name: string }[] = [
-  { kind: "study-guide", icon: BookOpen, name: "Study guide" },
-  { kind: "brief", icon: Briefcase, name: "Briefing doc" },
-  { kind: "faq", icon: Question, name: "FAQ" },
-  { kind: "timeline", icon: ClockCounterClockwise, name: "Timeline" },
+const QUICK_AID_PILLS: { kind: GenerationKind; icon: typeof BookOpen; name: string; kindVar: string }[] = [
+  { kind: "study-guide", icon: BookOpen, name: "Study guide", kindVar: "var(--brass)" },
+  { kind: "brief", icon: Briefcase, name: "Briefing doc", kindVar: "var(--candle)" },
+  { kind: "faq", icon: Question, name: "FAQ", kindVar: "var(--sage)" },
+  { kind: "timeline", icon: ClockCounterClockwise, name: "Timeline", kindVar: "var(--brasspale)" },
 ];
 
 const MORE_TOOLS: {
@@ -74,14 +74,14 @@ const MORE_TOOLS: {
 }[] = [
   { flow: "quiz", icon: ListChecks, name: "Practice Quiz", line: "Instant checks & rationales", kindVar: "var(--brass)" },
   { flow: "exam", icon: GraduationCap, name: "Mock Exam", line: "Timed simulation & board review", kindVar: "var(--rust)" },
-  { flow: "essay", icon: PenNib, name: "Essay Coach", line: "Writing rubric feedback", kindVar: "var(--moon)" },
+  { flow: "essay", icon: PenNib, name: "Essay Coach", line: "Writing rubric feedback", kindVar: "var(--candle)" },
   { flow: "flashcards", icon: Stack, name: "Flashcards", line: "Spaced repetition deck", kindVar: "var(--sage)" },
   { flow: "presentation", icon: Presentation, name: "Slides & Deck", line: "Visual presentation outline", kindVar: "var(--brasspale)" },
 ];
 
 const KIND_CSS: Record<ReturnType<typeof kindAccent>, string> = {
   brass: "var(--brass)",
-  moon: "var(--moon)",
+  moon: "var(--candle)",
   sage: "var(--sage)",
   rust: "var(--rust)",
 };
@@ -302,7 +302,7 @@ export default function StudioPane({
                 key={t.kind}
                 onClick={() => openAid(t.kind)}
                 className="kind-tile flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[12px] font-medium text-ink/90 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)] active:translate-y-0.5 active:scale-[0.99]"
-                style={{ ["--kind" as string]: KIND_CSS[kindAccent(t.kind)] }}
+                style={{ ["--kind" as string]: t.kindVar }}
               >
                 <t.icon size={14} weight="light" className="kind-icon shrink-0" />
                 <span className="truncate">{t.name}</span>

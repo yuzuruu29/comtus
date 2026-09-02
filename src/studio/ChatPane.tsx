@@ -34,7 +34,7 @@ import {
   Trash,
   X,
 } from "@phosphor-icons/react";
-import { loadFocus, saveFocus } from "./focus";
+import { loadFocus, pruneFocus, saveFocus, subscribeFocus } from "./focus";
 import ModelPickerMenu from "./ModelPickerMenu";
 import ComposerSideRailDock from "./ComposerSideRail";
 import {
@@ -422,7 +422,7 @@ export default function ChatPane({
           notebookName: notebook.name,
           history: history.slice(0, -1),
           question,
-          sourceIds: focusedSources && focusedSources.length > 0 ? focusedSources : undefined,
+          sourceIds: focusedSources !== null ? focusedSources : undefined,
           reasoning: reasoningEnabled,
           webSearch: webSearchEnabled,
           signal: controller.signal,
@@ -430,7 +430,6 @@ export default function ChatPane({
             setStreaming((s) => (s ? { ...s, phase: "searching" } : s)),
           onSearchDone: (meta) => {
             searchMetaRef.current = meta;
-            setSearchBanner(meta);
             setStreaming((s) => (s ? { ...s, phase: "reading", webSearch: meta } : s));
           },
           onThinking: (_d, full) =>
@@ -469,7 +468,6 @@ export default function ChatPane({
     [input, notebook, streaming, hasKey, cs, messages, activeId, activeSession, reasoningEnabled, webSearchEnabled],
   );
 
-  // Commit a finished answer once its typewriter reveal has drained.
   useEffect(() => {
     const fin = finalizeRef.current;
     if (!fin || !smoothed.caughtUp) return;
@@ -488,14 +486,14 @@ export default function ChatPane({
       };
       await saveMessage(assistant);
       setStreaming(null);
-      // Switched chats while the reveal drained — persist, but don't touch
-      // the view that's now showing a different thread.
+      setSearchBanner(null);
       if (fin.token !== loadToken.current) return;
       setSettledId(assistant.id);
       setMessages((m) => [...m, assistant]);
       bumpSession(fin.sessionId);
     })();
   }, [finalizeTick, smoothed.caughtUp]);
+
 
   const hasText = !!input.trim();
   const tkEstimate = useMemo(
@@ -813,42 +811,10 @@ export default function ChatPane({
             data-streaming={streaming ? "" : undefined}
             className="composer-shell relative"
           >
-            <AnimatePresence>
-              {streaming && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6, scale: 0.94 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 4, scale: 0.94, transition: { duration: 0.14 } }}
-                  transition={SOFT}
-                  className="phase-pill"
-                  role="status"
-                >
-                  <span className="phase-dot" />
-                  <AnimatePresence mode="popLayout" initial={false}>
-                    <motion.span
-                      key={streaming.phase ?? "reading"}
-                      className="phase-label"
-                      initial={{ opacity: 0, y: RISE_1 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -RISE_1 }}
-                      transition={{ duration: 0.14, ease: HOUSE }}
-                    >
-                      {streaming.phase === "thinking"
-                        ? "thinking"
-                        : streaming.phase === "answering"
-                          ? "answering"
-                          : streaming.phase === "searching"
-                            ? "searching the web"
-                            : "reading sources"}
-                    </motion.span>
-                  </AnimatePresence>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             <div className="relative z-[2]">
               {/* Context strip */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar px-3 sm:px-3.5 pb-2 pt-2 sm:pt-2.5">
+              <div className="flex items-center gap-1.5 overflow-x-auto sm:overflow-visible no-scrollbar px-3 sm:px-3.5 pb-2 pt-2 sm:pt-2.5">
                 <div className="relative shrink-0">
                   <ModelPickerMenu modelLabel={modelLabel} onOpenSettings={onOpenSettings} />
                 </div>
@@ -858,6 +824,38 @@ export default function ChatPane({
                   </div>
                 )}
                 <span className="flex-1 min-w-1 sm:min-w-2" />
+                <AnimatePresence>
+                  {streaming && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.92, x: 4 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.92, x: 4, transition: { duration: 0.12 } }}
+                      transition={SOFT}
+                      className="phase-pill-inline shrink-0"
+                      role="status"
+                    >
+                      <span className="phase-dot" />
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        <motion.span
+                          key={streaming.phase ?? "reading"}
+                          className="phase-label"
+                          initial={{ opacity: 0, y: RISE_1 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -RISE_1 }}
+                          transition={{ duration: 0.14, ease: HOUSE }}
+                        >
+                          {streaming.phase === "thinking"
+                            ? "thinking"
+                            : streaming.phase === "answering"
+                              ? "answering"
+                              : streaming.phase === "searching"
+                                ? "searching the web"
+                                : "reading sources"}
+                        </motion.span>
+                      </AnimatePresence>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 <div className="relative shrink-0">
                   <ComposerSideRailDock onOpenSettings={onOpenSettings} />
                 </div>
@@ -1228,20 +1226,20 @@ const MessageBubble = memo(function MessageBubble({
 
       {/* High-Precision Pixelated Reasoning Process Drawer */}
       {hasThinking && (
-        <div className="think-rule relative overflow-hidden rounded-xl border border-[rgba(4,74,179,0.22)] bg-white shadow-sm">
+        <div className="think-rule relative overflow-hidden rounded-xl border border-brass/35 bg-surface shadow-sm">
           {isThinking && <span className="pixel-reasoning-laser-top" aria-hidden="true" />}
 
           <button
             onClick={() => (onToggleThinking ? onToggleThinking() : setOpen((v) => !v))}
-            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left transition-colors hover:bg-[#044AB3]/[0.04] cursor-pointer"
+            className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left transition-colors hover:bg-brass/[0.06] cursor-pointer"
           >
-            <div className="flex h-5 w-5 items-center justify-center rounded bg-[#044AB3]/10 text-[#044AB3]">
+            <div className="flex h-5 w-5 items-center justify-center rounded bg-brass/15 text-brass">
               <Brain size={14} weight="bold" />
             </div>
 
             <span
               className={`font-mono text-[12px] font-semibold tracking-wide ${
-                isThinking ? "thinking-live" : "text-[#044AB3]"
+                isThinking ? "thinking-live" : "text-brass"
               }`}
             >
               {isThinking ? "COGNITIVE REASONING MATRIX ACTIVE…" : "Socratic Reasoning Process"}
@@ -1249,7 +1247,7 @@ const MessageBubble = memo(function MessageBubble({
 
             {/* Pixelated Equalizer Waves while reasoning */}
             {isThinking && (
-              <div className="flex items-center gap-1 h-3.5 px-1.5 py-0.5 rounded bg-[#044AB3]/10 border border-[#044AB3]/20" title="Active inference stream">
+              <div className="flex items-center gap-1 h-3.5 px-1.5 py-0.5 rounded bg-brass/15 border border-brass/30" title="Active inference stream">
                 <span className="pixel-eq-bar pixel-eq-bar-1" />
                 <span className="pixel-eq-bar pixel-eq-bar-2" />
                 <span className="pixel-eq-bar pixel-eq-bar-3" />
@@ -1258,18 +1256,18 @@ const MessageBubble = memo(function MessageBubble({
             )}
 
             <div className="ml-auto flex items-center gap-2">
-              <span className="font-mono text-[10px] uppercase tracking-wider text-[#5A6A85] bg-[#F5F3EF] px-2 py-0.5 rounded border border-[rgba(4,74,179,0.12)]">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-muted bg-ground px-2 py-0.5 rounded border border-hairline">
                 {isThinking ? "STREAMING" : "TRACE"}
               </span>
               <CaretDown
                 size={13}
-                className={`text-[#5A6A85] transition-transform duration-200 ${open ? "" : "-rotate-90"}`}
+                className={`text-muted transition-transform duration-200 ${open ? "" : "-rotate-90"}`}
               />
             </div>
           </button>
 
           <Collapse open={open}>
-            <div className="max-h-64 overflow-y-auto px-4 pb-3.5 pt-1 font-mono text-[12px] leading-relaxed text-[#0B132B]/90 whitespace-pre-wrap border-t border-[rgba(4,74,179,0.08)] bg-[#FCFAF4]/60">
+            <div className="max-h-64 overflow-y-auto px-4 pb-3.5 pt-1 font-mono text-[12px] leading-relaxed text-ink/90 whitespace-pre-wrap border-t border-hairline bg-ground/50">
               {msg.thinking}
               {isThinking && <span className="pixel-thought-cursor" aria-hidden="true" />}
             </div>
@@ -1282,7 +1280,7 @@ const MessageBubble = memo(function MessageBubble({
 
       {/* Formatted Markdown Content */}
       {msg.content ? (
-        <div className="md text-[14.5px] leading-relaxed text-[#0B132B]">
+        <div className="md text-[14.5px] leading-relaxed text-ink">
           <ReactMarkdown
             remarkPlugins={[remarkGfm, ...mathRemarkPlugins]}
             rehypePlugins={[...mathRehypePlugins]}
@@ -1300,12 +1298,12 @@ const MessageBubble = memo(function MessageBubble({
       ) : (
         streaming && (
           <div className="flex items-center gap-3 text-[13px] py-2.5 font-mono">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#044AB3]/10 border border-[rgba(4,74,179,0.22)] shadow-sm">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brass/10 border border-brass/30 shadow-sm">
               <span className="typing-harmonic-dot" />
               <span className="typing-harmonic-dot" />
               <span className="typing-harmonic-dot" />
             </div>
-            <span className="text-[12px] font-semibold tracking-wide text-[#044AB3]">
+            <span className="text-[12px] font-semibold tracking-wide text-brass">
               {phase === "thinking"
                 ? "Synthesizing deep reasoning & dialectic proofs…"
                 : phase === "answering"
@@ -1489,9 +1487,19 @@ function FocusMenu({
       .where("notebookId")
       .equals(notebook.id)
       .toArray()
-      .then((rows) => setSources(rows.map((r) => ({ id: r.id, title: r.title }))));
-    setFocus(loadFocus(notebook.id));
+      .then((rows) => {
+        const list = rows.map((r) => ({ id: r.id, title: r.title }));
+        setSources(list);
+        const pruned = pruneFocus(notebook.id, list.map((s) => s.id));
+        setFocus(pruned);
+      });
   }, [notebook.id, sourcesVersion]);
+
+  useEffect(() => {
+    return subscribeFocus(notebook.id, (ids) => {
+      setFocus(ids);
+    });
+  }, [notebook.id]);
 
   useEffect(() => {
     if (!open) return;
@@ -1514,17 +1522,29 @@ function FocusMenu({
     const next = effective.includes(id)
       ? effective.filter((x) => x !== id)
       : [...effective, id];
-    const value = next.length === sources.length || next.length === 0 ? null : next;
+    const value = next.length === sources.length ? null : next;
     setFocus(value);
     saveFocus(notebook.id, value);
+  };
+
+  const selectAll = () => {
+    setFocus(null);
+    saveFocus(notebook.id, null);
+  };
+
+  const selectNone = () => {
+    setFocus([]);
+    saveFocus(notebook.id, []);
   };
 
   const label =
     sources.length === 0
       ? "no sources yet"
-      : focus === null
+      : focus === null || focus.length === sources.length
         ? `all ${sources.length} sources`
-        : `${focus.length} of ${sources.length} sources`;
+        : focus.length === 0
+          ? "no sources focused"
+          : `${focus.length} of ${sources.length} sources`;
 
   return (
     <div ref={ref} className="relative">
@@ -1556,6 +1576,28 @@ function FocusMenu({
             role="listbox"
             className="absolute bottom-full left-0 z-50 mb-2 w-72 overflow-hidden rounded-2xl border border-hairline-strong bg-surface/95 p-1 text-ink shadow-[0_16px_40px_rgba(0,0,0,0.55)] backdrop-blur-xl"
           >
+            <div className="flex items-center justify-between border-b border-hairline px-3 py-1.5 text-[11px] text-muted">
+              <span>Grounding Sources</span>
+              {sources.length > 0 && (
+                <div className="flex items-center gap-2 font-mono text-[10px]">
+                  <button
+                    type="button"
+                    onClick={selectAll}
+                    className="text-brass hover:underline cursor-pointer"
+                  >
+                    All
+                  </button>
+                  <span className="text-muted/40">|</span>
+                  <button
+                    type="button"
+                    onClick={selectNone}
+                    className="text-muted hover:text-ink hover:underline cursor-pointer"
+                  >
+                    None
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="max-h-60 overflow-y-auto py-1">
               {sources.length === 0 && (
                 <div className="px-3 py-2 text-[12px] text-muted">

@@ -81,7 +81,7 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     id: "thinkingmachines/inkling:free",
     name: "Inkling Omni",
     badge: "Omni-Modal Vision",
-    badgeColor: "text-moon border-moon/40 bg-moon/15",
+    badgeColor: "text-candle border-candle/40 bg-candle/15",
     category: "vision",
     modality: "multimodal",
     modalityNote: "🖼️ Omni-Modal (Vision + Audio + Text)",
@@ -115,7 +115,7 @@ const BENCHMARK_MODELS: BenchmarkModel[] = [
     id: "poolside/laguna-s-2.1:free",
     name: "Poolside Laguna S 2.1",
     badge: "Coding & Math Proofs",
-    badgeColor: "text-moondeep border-moondeep/40 bg-moondeep/15",
+    badgeColor: "text-sage border-sage/40 bg-sage/15",
     category: "reasoning",
     modality: "text",
     modalityNote: "📄 Text-Only · Coding & Proofs",
@@ -546,7 +546,7 @@ export default function OpenRouterByokSection() {
                       </td>
                       <td className="py-3 px-3 whitespace-nowrap">
                         <span className={`inline-block px-2 py-0.5 rounded text-[9.5px] font-medium ${
-                          m.modality === "multimodal" ? "bg-moon/10 text-moon border border-moon/30" : "bg-raised text-muted border border-hairline"
+                          m.modality === "multimodal" ? "bg-brass/10 text-brass border border-brass/30" : "bg-raised text-muted border border-hairline"
                         }`}>
                           {m.modality === "multimodal" ? "🖼️ Multimodal (Vision)" : "📄 Text-Only"}
                         </span>
@@ -571,14 +571,14 @@ export default function OpenRouterByokSection() {
           )}
 
           {/* Modality Advisory & Image Input Guidance */}
-          <div className="mt-6 rounded-2xl border border-moon/25 bg-moon/[0.07] p-4 sm:p-5">
+          <div className="mt-6 rounded-2xl border border-brass/25 bg-brass/[0.07] p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-moon/40 bg-moon/100/20 text-[14px]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-brass/40 bg-brass/20 text-[14px]">
                 💡
               </div>
               <div className="text-[12.5px] leading-relaxed text-muted">
                 <strong className="font-semibold text-ink">Understanding Model Modality:</strong>{" "}
-                <span className="text-moon font-semibold">Multimodal models (like Ox Alpha, Dots3-Note, Inkling)</span> directly parse raw image attachments, anatomical diagrams, handwritten formulas, and lecture slides.{" "}
+                <span className="text-brass font-semibold">Multimodal models (like Ox Alpha, Dots3-Note, Inkling)</span> directly parse raw image attachments, anatomical diagrams, handwritten formulas, and lecture slides.{" "}
                 <span className="text-brassdeep font-semibold">Text-only models (like Nemotron 3.5 Lightning, Laguna S 2.1)</span> excel at pure logic, coding, and reasoning proofs. When you upload PDFs or slides in Comtus, Comtus automatically extracts the text locally on your device before sending so you get clean answers on any model.
               </div>
             </div>

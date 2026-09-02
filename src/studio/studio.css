@@ -104,9 +104,9 @@
 .thinking-live {
   background: linear-gradient(
     90deg,
-    #044AB3 20%,
-    #6FE3FF 50%,
-    #044AB3 80%
+    var(--brassdeep) 20%,
+    var(--brasspale) 50%,
+    var(--brassdeep) 80%
   );
   background-size: 200% 100%;
   -webkit-background-clip: text;
@@ -132,9 +132,9 @@
   background: linear-gradient(
     100deg,
     transparent,
-    rgba(111, 227, 255, 0.25) 30%,
+    color-mix(in srgb, var(--brasspale) 25%, transparent) 30%,
     rgba(255, 255, 255, 0.4) 50%,
-    rgba(111, 227, 255, 0.25) 70%,
+    color-mix(in srgb, var(--brasspale) 25%, transparent) 70%,
     transparent
   );
   animation: think-gloss 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
@@ -160,9 +160,9 @@
 
 .pixel-eq-bar {
   width: 3px;
-  background-color: #6FE3FF;
+  background-color: var(--brass);
   border-radius: 1px;
-  box-shadow: 0 0 6px rgba(111, 227, 255, 0.8);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--brass) 80%, transparent);
 }
 .pixel-eq-bar-1 { animation: pixel-eq-1 0.75s steps(6) infinite; }
 .pixel-eq-bar-2 { animation: pixel-eq-2 0.65s steps(6) infinite; }
@@ -179,8 +179,8 @@
   display: inline-block;
   width: 7px;
   height: 13px;
-  background-color: #044AB3;
-  box-shadow: 0 0 8px rgba(111, 227, 255, 0.8);
+  background-color: var(--brass);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--brass) 80%, transparent);
   vertical-align: -1px;
   margin-left: 3px;
   animation: pixel-blink 0.8s steps(2) infinite;
@@ -193,7 +193,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #044AB3, #6FE3FF, #044AB3);
+  background: linear-gradient(90deg, var(--brassdeep), var(--brasspale), var(--brassdeep));
   background-size: 200% 100%;
   animation: think-shimmer 2s linear infinite;
 }
@@ -520,30 +520,23 @@
   opacity: 1;
 }
 
-/* ── Composer Phase Pill (Floating status during generation) ─── */
-.phase-pill {
-  position: absolute;
-  top: -12px;
-  left: 18px;
-  z-index: 10;
+.phase-pill-inline {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
+  min-height: 24px;
   font-family: var(--font-mono);
   font-size: 9.5px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--brasspale);
   background: color-mix(in srgb, var(--surface) 94%, var(--ground));
   border: 1px solid color-mix(in srgb, var(--brass) 38%, var(--hairline-strong));
   border-radius: 999px;
-  padding: 3px 10px 3px 8px;
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.45),
-    0 0 12px rgba(227, 176, 75, 0.12);
+  padding: 0 9px 0 8px;
+  line-height: 1;
   pointer-events: none;
-  backdrop-filter: blur(8px);
 }
 .phase-dot {
   width: 6px;
@@ -722,14 +715,15 @@ button[data-armed="true"]:hover .send-halo {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  min-height: 26px;
-  padding: 0 9px 0 11px;
+  min-height: 24px;
+  padding: 0 9px 0 10px;
   border: 1px solid var(--hairline-strong);
   border-radius: 999px;
   background: color-mix(in srgb, var(--ink) 4%, transparent);
-  font-family: var(--font-body);
-  font-size: 12.5px;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
   font-weight: 500;
+  letter-spacing: 0.04em;
   color: var(--ink);
   line-height: 1;
   cursor: pointer;
@@ -750,13 +744,20 @@ button[data-armed="true"]:hover .send-halo {
   position: absolute;
   right: 0;
   bottom: calc(100% + 8px);
-  z-index: 40;
-  width: 220px;
-  padding: 14px 14px 10px;
+  z-index: 180;
+  width: 290px;
+  padding: 0;
   border: 1px solid var(--hairline-strong);
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--raised) 92%, var(--ground));
-  box-shadow: var(--elev-modal);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--ground) 96%, var(--ink));
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(16px);
+  overflow: hidden;
+}
+@media (min-width: 640px) {
+  .effort-popover {
+    width: 324px;
+  }
 }
 .effort-track {
   position: relative;
@@ -767,8 +768,8 @@ button[data-armed="true"]:hover .send-halo {
 .effort-track::before {
   content: "";
   position: absolute;
-  left: 9px;
-  right: 9px;
+  left: 12px;
+  right: 12px;
   top: 50%;
   height: 6px;
   margin-top: -3px;
@@ -778,7 +779,7 @@ button[data-armed="true"]:hover .send-halo {
 }
 .effort-fill {
   position: absolute;
-  left: 9px;
+  left: 12px;
   top: 50%;
   height: 6px;
   margin-top: -3px;

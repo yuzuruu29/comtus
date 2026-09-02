@@ -22,9 +22,9 @@ const SIZE_MAP = {
 };
 
 /**
- * High-Precision Cantor8 16-Bit Blue Battery Prism Brand Emblem.
- * Multi-layered vector component with radial cyan light bloom, Royal Sapphire casing,
- * metallic positive terminal nub, recessed digital screen, and glowing cyan LED energy core.
+ * High-Precision Cantor8 16-Bit Warm Brass Battery Brand Emblem.
+ * Multi-layered vector component with radial amber light bloom, warm brass casing,
+ * metallic positive terminal nub, recessed digital screen, and glowing golden LED energy core.
  */
 export function ComtusEmblem({
   size = 22,
@@ -55,23 +55,23 @@ export function ComtusEmblem({
           fx="50%"
           fy="46%"
         >
-          <stop offset="0%" stopColor="#6FE3FF" stopOpacity="0.4" />
-          <stop offset="55%" stopColor="#044AB3" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="#044AB3" stopOpacity="0" />
+          <stop offset="0%" stopColor="#FDE047" stopOpacity="0.45" />
+          <stop offset="55%" stopColor="#E3B04B" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#B88428" stopOpacity="0" />
         </radialGradient>
 
-        {/* Sapphire Battery Casing Gradient */}
+        {/* Warm Brass Battery Casing Gradient */}
         <linearGradient id="c8BatteryCasing" x1="11" y1="8" x2="37" y2="42" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#1D68D8" />
-          <stop offset="45%" stopColor="#044AB3" />
-          <stop offset="100%" stopColor="#021A3D" />
+          <stop offset="0%" stopColor="#F7D486" />
+          <stop offset="45%" stopColor="#E3B04B" />
+          <stop offset="100%" stopColor="#7D5312" />
         </linearGradient>
 
-        {/* Silver Terminal Nub Gradient */}
+        {/* Metallic Terminal Nub Gradient */}
         <linearGradient id="c8TerminalGrad" x1="19" y1="4" x2="29" y2="9" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#E2E8F0" />
-          <stop offset="45%" stopColor="#94A3B8" />
-          <stop offset="100%" stopColor="#334155" />
+          <stop offset="0%" stopColor="#FFF2B2" />
+          <stop offset="45%" stopColor="#E2E8F0" />
+          <stop offset="100%" stopColor="#64748B" />
         </linearGradient>
 
         {/* Glow Core Filter */}
@@ -92,12 +92,12 @@ export function ComtusEmblem({
         height="5"
         rx="2"
         fill="url(#c8TerminalGrad)"
-        stroke="#080E1E"
+        stroke="#1A1108"
         strokeWidth="1"
       />
       <rect x="20.5" y="4.5" width="4" height="1.2" rx="0.6" fill="#FFFFFF" opacity="0.85" />
 
-      {/* Main Sapphire Battery Body */}
+      {/* Main Warm Brass Battery Body */}
       <rect
         x="11"
         y="8"
@@ -105,13 +105,13 @@ export function ComtusEmblem({
         height="34"
         rx="6"
         fill="url(#c8BatteryCasing)"
-        stroke="#080E1E"
+        stroke="#1A1108"
         strokeWidth="1.2"
       />
 
       {/* Left Specular Glint */}
-      <rect x="13" y="10" width="2" height="30" rx="1" fill="#93C5FD" opacity="0.55" />
-      <rect x="13" y="10" width="1" height="26" rx="0.5" fill="#FFFFFF" opacity="0.75" />
+      <rect x="13" y="10" width="2" height="30" rx="1" fill="#FFF2B2" opacity="0.6" />
+      <rect x="13" y="10" width="1" height="26" rx="0.5" fill="#FFFFFF" opacity="0.85" />
 
       {/* Recessed Digital LED Screen */}
       <rect
@@ -120,25 +120,25 @@ export function ComtusEmblem({
         width="18"
         height="18"
         rx="3.5"
-        fill="#05132B"
-        stroke="#0A1E3F"
+        fill="#080B12"
+        stroke="#1F160E"
         strokeWidth="1"
       />
 
-      {/* Glowing Cyan LED Digital Face */}
+      {/* Glowing Warm Gold LED Digital Face */}
       <g filter="url(#c8CyanGlow)">
         {/* Left Eye */}
-        <rect x="18" y="17" width="3" height="3" rx="0.75" fill="#6FE3FF" />
+        <rect x="18" y="17" width="3" height="3" rx="0.75" fill="#FDE047" />
         <rect x="18.5" y="17.5" width="1" height="1" fill="#FFFFFF" />
 
         {/* Right Eye */}
-        <rect x="27" y="17" width="3" height="3" rx="0.75" fill="#6FE3FF" />
+        <rect x="27" y="17" width="3" height="3" rx="0.75" fill="#FDE047" />
         <rect x="27.5" y="17.5" width="1" height="1" fill="#FFFFFF" />
 
         {/* Smile Arc */}
         <path
           d="M21 23.5C22.2 25.2 25.8 25.2 27 23.5"
-          stroke="#6FE3FF"
+          stroke="#FDE047"
           strokeWidth="1.4"
           strokeLinecap="round"
         />
@@ -146,16 +146,16 @@ export function ComtusEmblem({
 
       {/* Multi-Bar Power Gauge */}
       <g opacity="0.9">
-        <rect x="15" y="32.5" width="3.5" height="2.5" rx="0.75" fill="#6FE3FF" />
-        <rect x="19.5" y="32.5" width="3.5" height="2.5" rx="0.75" fill="#6FE3FF" />
-        <rect x="24" y="32.5" width="3.5" height="2.5" rx="0.75" fill="#6FE3FF" />
-        <rect x="28.5" y="32.5" width="4.5" height="2.5" rx="0.75" fill="#6FE3FF" />
+        <rect x="15" y="32.5" width="3.5" height="2.5" rx="0.75" fill="#78B084" />
+        <rect x="19.5" y="32.5" width="3.5" height="2.5" rx="0.75" fill="#78B084" />
+        <rect x="24" y="32.5" width="3.5" height="2.5" rx="0.75" fill="#FDE047" />
+        <rect x="28.5" y="32.5" width="4.5" height="2.5" rx="0.75" fill="#FDE047" />
       </g>
 
       {/* Sparkle Accent */}
       <path
         d="M36 6L37 9L40 10L37 11L36 14L35 11L32 10L35 9L36 6Z"
-        fill="#6FE3FF"
+        fill="#FDE047"
         opacity="0.85"
       />
     </svg>
@@ -178,7 +178,7 @@ export default function ComtusLogo({
   if (variant === "mark") {
     return (
       <div
-        className={`flex items-center justify-center rounded-xl bg-[#044AB3]/10 border border-[rgba(4,74,179,0.18)] text-[#044AB3] shadow-[0_0_16px_rgba(111,227,255,0.2)] ${config.box} ${className}`}
+        className={`flex items-center justify-center rounded-xl bg-brass/10 border border-brass/25 text-brass shadow-[0_0_16px_rgba(227,176,75,0.2)] ${config.box} ${className}`}
       >
         <ComtusEmblem size={config.icon} breathe={breathe} />
       </div>
@@ -188,7 +188,7 @@ export default function ComtusLogo({
   return (
     <div className={`flex items-center select-none ${config.gap} ${className}`}>
       <div
-        className={`flex items-center justify-center rounded-xl bg-[#044AB3]/10 border border-[rgba(4,74,179,0.18)] text-[#044AB3] shadow-[0_0_16px_rgba(111,227,255,0.2)] shrink-0 ${config.box}`}
+        className={`flex items-center justify-center rounded-xl bg-brass/10 border border-brass/25 text-brass shadow-[0_0_16px_rgba(227,176,75,0.2)] shrink-0 ${config.box}`}
       >
         <ComtusEmblem size={config.icon} breathe={breathe} />
       </div>

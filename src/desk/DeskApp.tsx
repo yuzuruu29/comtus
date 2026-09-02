@@ -241,6 +241,8 @@ export default function DeskApp() {
                     clearPendingView={desk.clearPendingView}
                     pendingGenerationId={pendingWorkId}
                     onGenerationConsumed={clearPendingWork}
+                    modelLabel={modelLabelFor(cs.provider, cs.model)}
+                    onOpenSettings={() => setSettingsOpen(true)}
                   />
                 ) : desk.loadState === "error" ? (
                   <div

@@ -52,7 +52,7 @@ describe("pixel desk skin", () => {
     expect(css).toMatch(/--px-parchment:\s*#E8DEC8/);
     expect(css).toMatch(/--px-ink:\s*#F5F0E6/);
     expect(css).toMatch(/--px-muted:\s*#9099B0/);
-    expect(css).toMatch(/--px-moon:\s*#6C98C2/);
+    expect(css).toMatch(/--px-moon:\s*#C4B8A5/);
     expect(css).toMatch(/--px-sage:\s*#78B084/);
     expect(css).toMatch(/--px-rust:\s*#C85848/);
     expect(css).toMatch(/--px-candle:\s*#FF9E43/);

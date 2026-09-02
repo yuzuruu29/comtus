@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
 import { motion } from "motion/react";
 import { Books, Notebook } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
@@ -32,6 +32,8 @@ export default function NotebookDesk({
   clearPendingView,
   pendingGenerationId,
   onGenerationConsumed,
+  modelLabel,
+  onOpenSettings,
 }: {
   notebookId: string;
   notebook: NotebookRow | null;
@@ -49,11 +51,17 @@ export default function NotebookDesk({
   clearPendingView: () => void;
   pendingGenerationId?: string | null;
   onGenerationConsumed?: () => void;
+  modelLabel?: string;
+  onOpenSettings?: () => void;
 }) {
   const compact = useMediaQuery("(max-width: 1199px)");
   // On compact windows keep Chat usable by showing at most one companion
   // pane. Standard favors Sources; Studio remains one click away.
   const panes = panesFor(layout, compact);
+
+  const onAddSources = useCallback(() => {
+    setLayout(compact ? "reading" : panes.studio ? "standard" : "reading");
+  }, [compact, panes.studio, setLayout]);
 
   // Translate desk-level import requests into pane ticks. The seen-ref
   // keeps a stale signal from re-firing when switching between notebooks.
@@ -113,7 +121,14 @@ export default function NotebookDesk({
           transition={SOFT}
           className={`${deskPane} overflow-hidden`}
         >
-          <ChatPane notebook={notebook} sourcesVersion={sourcesVersion} onNavigateSources={openSource} />
+          <ChatPane
+            notebook={notebook}
+            sourcesVersion={sourcesVersion}
+            onNavigateSources={openSource}
+            modelLabel={modelLabel}
+            onOpenSettings={onOpenSettings}
+            onAddSources={onAddSources}
+          />
         </motion.div>
       </main>
 
