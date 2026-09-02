@@ -225,7 +225,7 @@ export function PixelBatteryCompanion({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const scale = propScale ?? (isMobile ? 2.5 : 5);
+  const scale = propScale ?? (isMobile ? 2.25 : 4.5);
   const restingOffset = useMemo(
     () => propRestingOffset ?? (isMobile ? { right: 14, bottom: 84 } : { right: 28, bottom: 28 }),
     [propRestingOffset, isMobile],

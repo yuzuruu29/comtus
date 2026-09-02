@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import ConsoleShell from "./ConsoleShell";
 
 describe("ConsoleShell Component", () => {
-  it("renders retro console chassis, status bar, and controller hints", () => {
+  it("renders retro console chassis, status bar, and workspace content", () => {
     render(
       <ConsoleShell notebookName="Biochemistry 101" modelLabel="DeepSeek R1">
         <div data-testid="workspace-content">Workspace 3-Pane Body</div>
@@ -21,10 +21,8 @@ describe("ConsoleShell Component", () => {
     // Children content rendered inside viewport
     expect(screen.getByTestId("workspace-content")).toBeDefined();
 
-    // Controller footer bar
-    expect(screen.getByText(/COMMANDS/)).toBeDefined();
-    expect(screen.getByText(/SOURCES/)).toBeDefined();
-    expect(screen.getByText(/STUDIO/)).toBeDefined();
-    expect(screen.getByText("COMTUS · COGNITIVE WORKSPACE")).toBeDefined();
+    // Controller footer bar is gone
+    expect(screen.queryByText(/COMMANDS/)).toBeNull();
+    expect(screen.queryByText("COMTUS · COGNITIVE WORKSPACE")).toBeNull();
   });
 });

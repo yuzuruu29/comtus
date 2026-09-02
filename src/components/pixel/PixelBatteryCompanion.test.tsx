@@ -99,13 +99,13 @@ describe("PixelBatteryCompanion", () => {
     window.innerWidth = 375;
     const { unmount } = render(<PixelBatteryCompanion />);
     let companion = screen.getByLabelText("16-bit Blue Battery Companion");
-    expect(companion.style.width).toBe(`${36 * 2.5}px`);
+    expect(companion.style.width).toBe(`${36 * 2.25}px`);
     unmount();
 
     window.innerWidth = 1024;
     render(<PixelBatteryCompanion />);
     companion = screen.getByLabelText("16-bit Blue Battery Companion");
-    expect(companion.style.width).toBe(`${36 * 5}px`);
+    expect(companion.style.width).toBe(`${36 * 4.5}px`);
   });
 
   it("supports touch pointer drag without throwing", () => {

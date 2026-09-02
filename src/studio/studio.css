@@ -500,16 +500,39 @@
   border-color: color-mix(in srgb, var(--brass) 55%, var(--hairline-strong));
   box-shadow:
     0 8px 32px -4px rgba(0, 0, 0, 0.5),
-    0 0 0 1px color-mix(in srgb, var(--brass) 22%, transparent),
-    0 0 24px rgba(227, 176, 75, 0.09);
+    0 0 28px -2px var(--glow-warm);
+}
+/* Gradient gold ring that lights up while the composer is in use */
+.composer-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--brasspale), var(--brass) 45%, var(--brassdeep));
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity var(--dur-med) var(--ease-house);
+  pointer-events: none;
+}
+.composer-shell[data-focused]::before,
+.composer-shell[data-streaming]::before {
+  opacity: 1;
 }
 
 .composer-ambience {
   display: block;
   background: radial-gradient(
     ellipse 70% 50% at 50% 100%,
-    rgba(227, 176, 75, 0.14) 0%,
-    rgba(227, 176, 75, 0.03) 50%,
+    rgba(227, 176, 75, 0.2) 0%,
+    rgba(227, 176, 75, 0.04) 50%,
     transparent 75%
   );
   opacity: 0;
