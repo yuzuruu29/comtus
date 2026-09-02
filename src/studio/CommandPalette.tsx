@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import {
   Books,
   ChatCircle,
+  Cpu,
   GearSix,
   House,
   MagnifyingGlass,
@@ -91,7 +92,8 @@ export default function CommandPalette({
     const actions: Item[] = [
       { id: "home", group: "Actions", label: "Home", hint: `${mod}+Shift+H`, icon: House, run: desk.goHome },
       { id: "new", group: "Actions", label: "New notebook", hint: `${mod}+N`, icon: Plus, run: desk.newNotebook },
-      { id: "settings", group: "Actions", label: "Settings", hint: `${mod}+,`, icon: GearSix, run: desk.openSettings },
+      { id: "models", group: "Actions", label: "AI Models", icon: Cpu, run: () => desk.openSettings("models") },
+      { id: "settings", group: "Actions", label: "Settings", hint: `${mod}+,`, icon: GearSix, run: () => desk.openSettings("settings") },
       { id: "milestones", group: "Actions", label: "Milestones", icon: Medal, run: desk.openMilestones },
       { id: "import", group: "Actions", label: "Add sources", icon: Notebook, run: desk.importFiles },
       { id: "sources", group: "Layout", label: "Toggle sources", hint: `${mod}+1`, icon: Notebook, run: desk.toggleSources },

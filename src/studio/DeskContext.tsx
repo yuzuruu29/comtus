@@ -1,9 +1,10 @@
 import { createContext, useContext } from "react";
 import type { LayoutMode } from "./layout";
+import type { SettingsTab } from "./SettingsModal";
 
 export type DeskActions = {
   goHome: () => void;
-  openSettings: () => void;
+  openSettings: (tab?: SettingsTab) => void;
   newNotebook: () => void;
   openNotebook: (id: string) => void;
   setLayout: (mode: LayoutMode) => void;

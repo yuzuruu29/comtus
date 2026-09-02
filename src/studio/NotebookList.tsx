@@ -694,7 +694,7 @@ export default function NotebookList({
   );
 }
 
-function ShelfHeader({ onSettings }: { onSettings: () => void }) {
+function ShelfHeader({ onSettings }: { onSettings: (tab?: SettingsTab) => void }) {
   const tauri = isTauri();
   const platform = detectPlatform();
   const macPad = tauri && platform === "mac";
@@ -721,17 +721,17 @@ function ShelfHeader({ onSettings }: { onSettings: () => void }) {
       )}
       <div className="no-drag flex items-center gap-1.5 sm:gap-2.5">
         <MilestonesButton />
-        <SettingsButton onClick={onSettings} />
+        <SettingsButton onClick={() => onSettings("settings")} />
 
         {/* Plan Status Badge */}
         {isPro ? (
           <ProBadge
             planTier={planTier}
             remainingTokens={remainingTokens}
-            onClick={onSettings}
+            onClick={() => onSettings("models")}
           />
         ) : (
-          <ByokBadge onClick={onSettings} />
+          <ByokBadge onClick={() => onSettings("models")} />
         )}
 
         <CaptionButtons />

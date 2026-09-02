@@ -406,40 +406,29 @@ export default function SettingsModal({
     draft.compatBaseUrl.includes("openrouter") &&
     draft.compatKey.trim().length > 0;
 
+  const versionRow = (
+    <div className="flex items-center justify-between gap-3">
+      <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-muted/70">
+        Comtus v{__APP_VERSION__}
+        {isTauri() ? " · Desk App" : ""}
+      </span>
+      {isTauri() && (
+        <button
+          type="button"
+          onClick={requestUpdateCheck}
+          className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-muted/70 transition-colors hover:text-brasspale"
+        >
+          Check for updates
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <>
-      <Modal open={open} onClose={onClose} title="Settings" wide>
+      {/* Panel 1: studio preferences — gear icon, Ctrl+, CommandPalette */}
+      <Modal open={open && tab === "settings"} onClose={onClose} title="Settings" wide>
         <div className="space-y-6">
-          {/* Top-level split: AI model connections vs. studio preferences */}
-          <div className="grid grid-cols-2 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
-            <button
-              type="button"
-              onClick={() => setTab("models")}
-              className={`flex min-h-[40px] items-center justify-center gap-2 rounded-lg px-3 py-2 text-body font-medium transition-all active:scale-[0.97] ${
-                tab === "models"
-                  ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
-                  : "text-muted hover:text-ink"
-              }`}
-            >
-              <Cpu size={15} weight={tab === "models" ? "fill" : "regular"} />
-              AI Models
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("settings")}
-              className={`flex min-h-[40px] items-center justify-center gap-2 rounded-lg px-3 py-2 text-body font-medium transition-all active:scale-[0.97] ${
-                tab === "settings"
-                  ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
-                  : "text-muted hover:text-ink"
-              }`}
-            >
-              <Sliders size={15} weight={tab === "settings" ? "fill" : "regular"} />
-              Preferences
-            </button>
-          </div>
-
-          {tab === "settings" && (
-          <div className="space-y-6 anim-fade anim-fade--fast">
           {/* Appearance Switcher */}
           <div>
             <div className="label-mono !text-[10px] mb-2">Appearance</div>
@@ -750,11 +739,21 @@ export default function SettingsModal({
           </div>
 
           <DataTrustPanel open={open} />
-          </div>
-          )}
 
-          {tab === "models" && (
-          <div className="space-y-6 anim-fade anim-fade--fast">
+          {versionRow}
+
+          <div className="flex justify-end gap-3 pt-1">
+            <button className={btnGhost} onClick={onClose}>
+              Done
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Panel 2: AI model connections — composer model picker, notebook
+          "Configure key" CTA, free-limit warning, "AI Models" palette command */}
+      <Modal open={open && tab === "models"} onClose={onClose} title="AI Models" wide>
+        <div className="space-y-6">
           {/* Top Mode Segmented Control: Starter vs. Advanced vs. Smarter Models */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -1552,8 +1551,6 @@ export default function SettingsModal({
               </div>
             </div>
           </div>
-          </div>
-          )}
 
           {testing && <LampPulse label="Testing the connection…" />}
           {okProvider && (
@@ -1563,21 +1560,7 @@ export default function SettingsModal({
           )}
           {err && <ErrorNote>{err}</ErrorNote>}
 
-          <div className="flex items-center justify-between gap-3">
-            <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-muted/70">
-              Comtus v{__APP_VERSION__}
-              {isTauri() ? " · Desk App" : ""}
-            </span>
-            {isTauri() && (
-              <button
-                type="button"
-                onClick={requestUpdateCheck}
-                className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-muted/70 transition-colors hover:text-brasspale"
-              >
-                Check for updates
-              </button>
-            )}
-          </div>
+          {versionRow}
 
           <div className="flex justify-end gap-3 pt-1">
             <button className={btnGhost} onClick={onClose}>

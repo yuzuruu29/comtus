@@ -74,7 +74,7 @@ export default function DeskShell({
         if (onHome) onHome();
         else navigate("/studio");
       },
-      openSettings: () => onSettings?.(),
+      openSettings: (tab) => onSettings?.(tab),
       newNotebook: () => {
         if (onNewNotebook) onNewNotebook();
         else {
