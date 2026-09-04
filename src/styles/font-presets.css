@@ -1,33 +1,18 @@
 /* ==========================================================================
-   Studio typography presets — curated font systems owned by
-   html[data-font-preset] (applied by useFontPresetEffect in lib/theme.ts).
-   Each preset maps the three font tokens; nothing else may set them.
+   Reading size — html[data-reading], applied by useReadingEffect in
+   lib/theme.ts. Three sizes of one face, not four type systems: spec 5.1
+   fixes the faces (Literata to read, Instrument Sans for UI) and leaves the
+   student only the choice that matters at 2am.
    ========================================================================== */
 
-/* Instrument — unified Inter system; JetBrains Mono as the single mono fallback. */
-html[data-font-preset="instrument"] {
-  --font-display: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
-  --font-body: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
+html[data-reading="compact"] {
+  --text-read: 1rem;
 }
 
-/* Pixel Signal — unified pixel system; JetBrains Mono as the single mono fallback. */
-html[data-font-preset="pixel-signal"] {
-  --font-display: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
-  --font-body: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
+html[data-reading="comfortable"] {
+  --text-read: 1.0625rem;
 }
 
-/* Scholar — unified Fraunces system; JetBrains Mono as the single mono fallback. */
-html[data-font-preset="scholar"] {
-  --font-display: "Fraunces Variable", "Fraunces", "Iowan Old Style", Georgia, serif;
-  --font-body: "Fraunces Variable", "Fraunces", "Iowan Old Style", Georgia, serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
-}
-
-/* Console — unified JetBrains Mono system; JetBrains Mono as the single mono fallback. */
-html[data-font-preset="console"] {
-  --font-display: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
-  --font-body: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
-  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
+html[data-reading="large"] {
+  --text-read: 1.1875rem;
 }

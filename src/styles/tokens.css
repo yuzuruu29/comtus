@@ -65,8 +65,10 @@
   --beat-slow: 3.2s; /* emblem breathe */
   --beat-lamp: 3.2s; /* composer glow while streaming */
 
-  /* ── Accent chrome face (spec 5.1) ───────────────────────────────────── */
-  --font-pixel: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
+  /* Reading measure. font-presets.css overrides --text-read per setting.
+     The faces themselves are declared in index.css @theme, which emits them
+     to :root and generates the font-read / font-ui utilities in one step. */
+  --text-read: 1.0625rem;
 
   /* ── Daylight palette (spec 4) ───────────────────────────────────────── */
   --ground: #f5f1e8;

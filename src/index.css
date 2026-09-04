@@ -2,10 +2,10 @@
 @import "./styles/tokens.css";
 @import "./styles/chrome-pixel.css";
 @import "./styles/font-presets.css";
-@import "@fontsource-variable/fraunces";
-@import "@fontsource-variable/inter";
+
+@import "@fontsource-variable/literata";
 @import "@fontsource-variable/instrument-sans";
-@import "@fontsource/instrument-serif/400.css";
+
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
 
@@ -41,11 +41,19 @@
   --color-parchment: #f2ede3;
   --color-faded: #8e96ab;
 
-  /* Defaults mirror the Instrument preset (fontPresets.ts default) so surfaces
-     without html[data-font-preset] match the documented default, not Scholar. */
-  --font-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
-  --font-body: "Instrument Sans Variable", "Instrument Sans", system-ui, -apple-system, sans-serif;
+  /* Faces are fixed (spec 5.1): Literata reads, Instrument Sans runs the UI,
+     JetBrains Mono carries code and figures, Pixelify is accent chrome only.
+     They live here rather than tokens.css because @theme both emits them to
+     :root AND generates the font-read / font-ui utilities; declaring them in
+     both places would be the drift this phase exists to remove. */
+  --font-read: "Literata Variable", Literata, Georgia, serif;
+  --font-ui: "Instrument Sans Variable", "Instrument Sans", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
+  --font-pixel: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
+
+  /* Deprecated aliases — Task 2.5 retires the last consumer. */
+  --font-display: var(--font-read);
+  --font-body: var(--font-ui);
 
   --ease-house: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-house-inout: cubic-bezier(0.65, 0, 0.35, 1);

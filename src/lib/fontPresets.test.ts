@@ -2,75 +2,45 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { FONT_PRESETS, fontPresetById } from "./fontPresets";
+import { DEFAULT_READING, READING_OPTIONS, READING_SIZES, isReadingSize } from "./fontPresets";
 
 const css = readFileSync(
   join(dirname(fileURLToPath(import.meta.url)), "../styles/font-presets.css"),
   "utf8",
 );
 
-function blockForPreset(id: string): string {
-  const marker = `html[data-font-preset="${id}"]`;
-  const start = css.indexOf(marker);
-  if (start === -1) return "";
+const sizeFor = (id: string): string =>
+  new RegExp(`html\\[data-reading="${id}"\\]\\s*\\{[^}]*--text-read:\\s*([^;]+);`)
+    .exec(css)?.[1]
+    .trim() ?? "";
 
-  const nextMarkerIndex = css.indexOf(`html[data-font-preset="`, start + marker.length);
-  const end = nextMarkerIndex === -1 ? css.length : nextMarkerIndex;
-  let block = css.slice(start, end);
-
-  const commentRegex = /\/\*[\s\S]*?\*\//g;
-  while (commentRegex.test(block)) {
-    block = block.replace(commentRegex, "");
-  }
-  return block;
-}
-
-describe("font presets", () => {
-  it("offers exactly the four curated systems, Instrument first", () => {
-    expect(FONT_PRESETS.map((p) => p.id)).toEqual([
-      "instrument",
-      "pixel-signal",
-      "scholar",
-      "console",
-    ]);
+describe("reading size", () => {
+  it("offers exactly three sizes, smallest first", () => {
+    expect([...READING_SIZES]).toEqual(["compact", "comfortable", "large"]);
+    expect(READING_OPTIONS.map((o) => o.id)).toEqual([...READING_SIZES]);
   });
 
-  it("uses a single primary family across display, body, and mono in every preset", () => {
-    for (const preset of FONT_PRESETS) {
-      const block = blockForPreset(preset.id);
-      const displayPrimary = block.match(/--font-display:\s*"([^"]+)"/)?.[1] ?? "";
-      const bodyPrimary = block.match(/--font-body:\s*"([^"]+)"/)?.[1] ?? "";
-      const monoPrimary = block.match(/--font-mono:\s*"([^"]+)"/)?.[1] ?? "";
+  it("defaults to the middle size", () => {
+    expect(DEFAULT_READING).toBe("comfortable");
+  });
 
-      expect(displayPrimary, `${preset.id} display primary`).not.toBe("");
-      expect(bodyPrimary, `${preset.id} body primary`).not.toBe("");
-      expect(monoPrimary, `${preset.id} mono primary`).not.toBe("");
-
-      const presetFamilies = new Set([displayPrimary, bodyPrimary, monoPrimary]);
-      expect(presetFamilies.size, `${preset.id} family count`).toBeLessThanOrEqual(2);
+  it("maps every size to --text-read in CSS, and the labels do not lie", () => {
+    for (const option of READING_OPTIONS) {
+      expect(sizeFor(option.id), `${option.id} in CSS`).toBe(option.size);
     }
   });
 
-  it("maps every preset to display, body, and mono tokens in CSS", () => {
-    for (const preset of FONT_PRESETS) {
-      const block = blockForPreset(preset.id);
-      expect(block, preset.id).toMatch(/--font-display:/);
-      expect(block, preset.id).toMatch(/--font-body:/);
-      expect(block, preset.id).toMatch(/--font-mono:/);
-    }
+  it("gets monotonically larger", () => {
+    const rems = READING_OPTIONS.map((o) => parseFloat(o.size));
+    expect(rems).toEqual([...rems].sort((a, b) => a - b));
+    expect(new Set(rems).size).toBe(rems.length);
   });
 
-  it("restricts Pixelify to the Pixel Signal preset", () => {
-    for (const preset of FONT_PRESETS) {
-      const block = blockForPreset(preset.id).replace(/\/\*[\s\S]*?\*\//g, "");
-      if (preset.id !== "pixel-signal") {
-        expect(block, preset.id).not.toMatch(/Pixelify Sans/);
-      }
-    }
-  });
-
-  it("falls back to the Instrument preset for unknown ids", () => {
-    expect(fontPresetById("nope").id).toBe("instrument");
-    expect(fontPresetById(undefined).id).toBe("instrument");
+  it("rejects anything that is not a reading size", () => {
+    expect(isReadingSize("comfortable")).toBe(true);
+    // The four font systems this replaced must not survive a migration.
+    expect(isReadingSize("instrument")).toBe(false);
+    expect(isReadingSize("pixel-signal")).toBe(false);
+    expect(isReadingSize(undefined)).toBe(false);
   });
 });

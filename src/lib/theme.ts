@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { DEFAULT_READING } from "./fontPresets";
 import { useSettings } from "./settings";
 
 export type ThemePref = "system" | "dark" | "light";
@@ -29,21 +30,21 @@ export function applyChrome(on: boolean): void {
   else delete document.documentElement.dataset.chrome;
 }
 
-/** Typography preset ownership lives on html[data-font-preset]; CSS maps each
- *  preset to its display/body/mono tokens. Undefined clears back to the
- *  Instrument defaults declared in index.css. */
-export function applyFontPreset(id: string | undefined): void {
-  if (id) document.documentElement.dataset.fontPreset = id;
-  else delete document.documentElement.dataset.fontPreset;
+/** Reading size lives on html[data-reading]; styles/font-presets.css maps each
+ *  size to --text-read. Undefined clears back to the token default. The faces
+ *  themselves are fixed in tokens.css and are not a user choice (spec 5.1). */
+export function applyReading(size: string | undefined): void {
+  if (size) document.documentElement.dataset.reading = size;
+  else delete document.documentElement.dataset.reading;
 }
 
-/** Curated font systems (see fontPresets.ts). Studio-only; the landing owns its own type. */
-export function useFontPresetEffect() {
-  const fontPreset = useSettings((s) => s.fontPreset ?? "instrument");
+/** Reading size (see fontPresets.ts). Studio-only; the landing sets its own measure. */
+export function useReadingEffect() {
+  const reading = useSettings((s) => s.reading ?? DEFAULT_READING);
   useEffect(() => {
-    applyFontPreset(fontPreset);
-    return () => applyFontPreset(undefined);
-  }, [fontPreset]);
+    applyReading(reading);
+    return () => applyReading(undefined);
+  }, [reading]);
 }
 
 /** Pixel accent lettering while the desk is mounted. Off unless asked for. */

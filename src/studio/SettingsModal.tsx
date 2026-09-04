@@ -24,7 +24,7 @@ import {
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, LampPulse } from "./ui";
 import { BorderBeam } from "./fx";
 import { useSettings } from "../lib/settings";
-import { FONT_PRESETS } from "../lib/fontPresets";
+import { DEFAULT_READING, READING_OPTIONS } from "../lib/fontPresets";
 import {
   startAmbient,
   stopAmbient,
@@ -173,7 +173,7 @@ export default function SettingsModal({
   const companionOn = useSettings((st) => st.companion !== false);
   const sfxOn = useSettings((st) => st.companionSfx !== false);
   const pixelOn = useSettings((st) => st.pixelDesk !== false);
-  const fontPreset = useSettings((st) => st.fontPreset);
+  const reading = useSettings((st) => st.reading);
 
   // Procedural Sound Engine state
   const [audioMuted, setAudioMuted] = useState(() => isMuted());
@@ -460,37 +460,41 @@ export default function SettingsModal({
           </div>
 
           <div>
-            <div className="label-mono !text-[10px] mb-2">Typography</div>
+            <div className="label-mono !text-[10px] mb-2">Reading size</div>
             <p className="mb-3 text-[12.5px] leading-relaxed text-muted">
-              Curated font systems for the studio — each pairs a display, body, and mono face. Pixelify appears only as display accents in Pixel Signal, never as body text.
+              Sets how large source text and answers are set. Everything else keeps its size.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
-              {FONT_PRESETS.map((preset) => {
-                const active = (fontPreset ?? "instrument") === preset.id;
+            <div
+              role="radiogroup"
+              aria-label="Reading size"
+              className="grid grid-cols-3 gap-1 rounded-xl border border-hairline bg-ground/60 p-1"
+            >
+              {READING_OPTIONS.map((option) => {
+                const active = (reading ?? DEFAULT_READING) === option.id;
                 return (
                   <button
-                    key={preset.id}
+                    key={option.id}
                     type="button"
-                    onClick={() => useSettings.getState().update({ fontPreset: preset.id })}
-                    className={`flex min-h-[52px] flex-col items-start justify-center rounded-lg px-3 py-2 text-left transition-all active:scale-[0.97] ${
-                      active
-                        ? "grad-lamp shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
-                        : "hover:bg-surface/60"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => useSettings.getState().update({ reading: option.id })}
+                    className={`flex min-h-[44px] items-center justify-center rounded-lg px-3 py-2 transition-all active:scale-[0.97] ${
+                      active ? "bg-brass text-ground" : "text-ink hover:bg-surface/60"
                     }`}
                   >
-                    <span
-                      className={`text-[15px] leading-tight ${active ? "font-semibold text-night" : "text-ink"}`}
-                      style={{ fontFamily: preset.previewFamily }}
-                    >
-                      {preset.label}
-                    </span>
-                    <span className={`text-[11px] leading-tight ${active ? "text-night/70" : "text-muted"}`}>
-                      {preset.tagline}
+                    <span style={{ fontFamily: "var(--font-read)", fontSize: option.size }}>
+                      {option.label}
                     </span>
                   </button>
                 );
               })}
             </div>
+            <p
+              className="mt-3 rounded-lg border border-hairline bg-ground/40 px-3 py-2 text-muted"
+              style={{ fontFamily: "var(--font-read)", fontSize: "var(--text-read)", maxWidth: "68ch" }}
+            >
+              The lamp is lit, the sources are open, and every answer cites the page it came from.
+            </p>
           </div>
 
           <div>

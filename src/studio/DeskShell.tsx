@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useNavigate } from "react-router-dom";
 import { createNotebook } from "../lib/db";
 import { detectPlatform, isDeskShell, isTauri } from "../lib/desktop";
-import { useFontPresetEffect, useChromeEffect, useThemeEffect } from "../lib/theme";
+import { useReadingEffect, useChromeEffect, useThemeEffect } from "../lib/theme";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { DeskContext, defaultDeskActions, type DeskActions } from "./DeskContext";
 import CommandPalette from "./CommandPalette";
@@ -47,7 +47,7 @@ export default function DeskShell({
   // default; it changes display type only, never the palette.
   useChromeEffect();
   // Curated typography system (html[data-font-preset]) — owns all font tokens.
-  useFontPresetEffect();
+  useReadingEffect();
 
   useEffect(() => {
     document.documentElement.dataset.shell = isDeskShell() ? "desktop" : "browser";

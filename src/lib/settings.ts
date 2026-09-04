@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import type { AnthropicModelId, CodexModelInfo, CodexUsage, Effort, OAuthAccount, ProviderId, StoredKey } from "./types";
 import { normalizeStoredCodexUsage } from "./codexUsage";
+import { DEFAULT_READING, isReadingSize, type ReadingSize } from "./fontPresets";
 import type { CallSettings } from "./llm";
 
 export type PlanTier = "free" | "sprint" | "scholar" | "mastery";
@@ -52,10 +53,10 @@ interface SettingsState {
   motionMode: "none" | "minimal" | "full";
   companion: boolean;
   companionSfx: boolean;
-  /** Studio pixel chrome (brass-bevel palette + arcade press). Fonts are owned by fontPreset. */
+  /** Pixel accent chrome: display lettering only, never the palette. */
   pixelDesk: boolean;
-  /** Curated typography system: "instrument" (default) | "pixel-signal" | "scholar" | "console". */
-  fontPreset: "instrument" | "pixel-signal" | "scholar" | "console";
+  /** Reading measure. The faces themselves are fixed (spec 5.1). */
+  reading: ReadingSize;
   lastBackupAt: number;
   setProvider: (p: ProviderId) => void;
   update: (patch: Partial<SettingsState>) => void;
@@ -109,7 +110,7 @@ export const useSettings = create<SettingsState>()(
       // Pixel accent chrome is opt-in for new installs (spec 3.4). Existing
       // users keep their choice through migrate().
       pixelDesk: false,
-      fontPreset: "instrument",
+      reading: DEFAULT_READING,
       lastBackupAt: 0,
       setProvider: (provider) => set({ provider }),
       update: (patch) => set(patch),
@@ -229,7 +230,9 @@ export const useSettings = create<SettingsState>()(
           companion: old.companion ?? true,
           companionSfx: old.companionSfx ?? true,
           pixelDesk: old.pixelDesk ?? true,
-          fontPreset: old.fontPreset ?? (old.pixelDesk === false ? "scholar" : "pixel-signal"),
+          // The four font systems are gone (spec 5.1). Everyone lands on the
+          // default measure; nobody loses a face they cannot get back.
+          reading: isReadingSize(old.reading) ? old.reading : DEFAULT_READING,
           lastBackupAt: old.lastBackupAt ?? 0,
         };
         if (version < 2) {

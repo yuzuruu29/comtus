@@ -1,43 +1,29 @@
-/** Curated Studio typography systems. Locked design decision: presets are
- *  whole systems, not mix-and-match controls — one primary family per preset,
- *  with JetBrains Mono allowed only as the single mono fallback. */
-export type FontPresetId = "instrument" | "pixel-signal" | "scholar" | "console";
+/** Reading size, the one typography choice the student still makes.
+ *
+ *  Spec 5.1 fixes the faces: Literata to read, Instrument Sans for UI,
+ *  JetBrains Mono for code and figures, Pixelify only as accent chrome. The
+ *  four swappable font systems this replaces (instrument, pixel-signal,
+ *  scholar, console) let any surface become any face, which is how the studio
+ *  ended up with three competing type identities. */
+export const READING_SIZES = ["compact", "comfortable", "large"] as const;
 
-export interface FontPreset {
-  id: FontPresetId;
+export type ReadingSize = (typeof READING_SIZES)[number];
+
+export const DEFAULT_READING: ReadingSize = "comfortable";
+
+export interface ReadingOption {
+  id: ReadingSize;
   label: string;
-  tagline: string;
-  /** CSS font-family stack for the picker's live preview line. */
-  previewFamily: string;
+  /** Must match --text-read in styles/font-presets.css. */
+  size: string;
 }
 
-export const FONT_PRESETS: FontPreset[] = [
-  {
-    id: "instrument",
-    label: "Instrument",
-    tagline: "Unified Inter system with mono fallback",
-    previewFamily: "'Inter Variable', 'Inter', system-ui, sans-serif",
-  },
-  {
-    id: "pixel-signal",
-    label: "Pixel Signal",
-    tagline: "Unified Pixelify Sans system with mono fallback",
-    previewFamily: "'Pixelify Sans Variable', 'Pixelify Sans', sans-serif",
-  },
-  {
-    id: "scholar",
-    label: "Scholar",
-    tagline: "Unified Fraunces system with mono fallback",
-    previewFamily: "'Fraunces Variable', 'Fraunces', Georgia, serif",
-  },
-  {
-    id: "console",
-    label: "Console",
-    tagline: "Unified JetBrains Mono system",
-    previewFamily: "'JetBrains Mono', ui-monospace, monospace",
-  },
+export const READING_OPTIONS: ReadingOption[] = [
+  { id: "compact", label: "Compact", size: "1rem" },
+  { id: "comfortable", label: "Comfortable", size: "1.0625rem" },
+  { id: "large", label: "Large", size: "1.1875rem" },
 ];
 
-export function fontPresetById(id: string | undefined): FontPreset {
-  return FONT_PRESETS.find((p) => p.id === id) ?? FONT_PRESETS[0];
+export function isReadingSize(value: unknown): value is ReadingSize {
+  return typeof value === "string" && (READING_SIZES as readonly string[]).includes(value);
 }

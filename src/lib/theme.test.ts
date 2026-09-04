@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { applyChrome, applyFontPreset, resolveAppTheme } from "./theme";
+import { applyChrome, applyReading, resolveAppTheme } from "./theme";
 
 describe("resolveAppTheme", () => {
   it("honors an explicit light or dark preference", () => {
@@ -26,15 +26,15 @@ describe("applyChrome", () => {
   });
 });
 
-describe("applyFontPreset", () => {
+describe("applyReading", () => {
   afterEach(() => {
-    applyFontPreset(undefined);
+    applyReading(undefined);
   });
 
-  it("sets and clears the typography preset on html", () => {
-    applyFontPreset("pixel-signal");
-    expect(document.documentElement.dataset.fontPreset).toBe("pixel-signal");
-    applyFontPreset(undefined);
-    expect(document.documentElement.dataset.fontPreset).toBeUndefined();
+  it("sets and clears the reading size on html", () => {
+    applyReading("large");
+    expect(document.documentElement.dataset.reading).toBe("large");
+    applyReading(undefined);
+    expect(document.documentElement.dataset.reading).toBeUndefined();
   });
 });
