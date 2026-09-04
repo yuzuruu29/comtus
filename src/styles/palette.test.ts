@@ -13,8 +13,6 @@ const ALLOW = new Set([
   // User-facing focus-beacon colour picker: seven named user choices
   // ("Amber Glow", "Deep Review", ...), deliberate variety rather than chrome.
   "src/studio/companion/StudyFocusDock.tsx",
-  // Not reachable from main.tsx; kept for reference only.
-  "src/landing/ComtusShowcase.tsx",
 ]);
 
 describe("brand palette", () => {

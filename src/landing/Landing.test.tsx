@@ -1,7 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
-import ComtusShowcase, { COMTUS_CARDS_LEFT, COMTUS_CARDS_RIGHT } from "./ComtusShowcase";
 import FAQSection from "./FAQSection";
 import OnboardingModal from "./OnboardingModal";
 import { AboutPage, PrivacyPage, TermsPage, ResponsibleAIPage, ContactPage, StudyCompanionPage } from "./StaticPages";
@@ -56,96 +55,6 @@ vi.mock("gsap/ScrollTrigger", () => ({
     update: vi.fn(),
   },
 }));
-
-describe("ComtusShowcase Component", () => {
-  it("renders hero headline, brand subtitle, subheader pill, and floating scholar stickers", () => {
-    render(
-      <BrowserRouter>
-        <ComtusShowcase />
-      </BrowserRouter>
-    );
-
-    expect(screen.getByText("YOUR AI STUDY COMPANION")).toBeDefined();
-    expect(screen.getByRole("heading", { level: 1 })).toBeDefined();
-    expect(screen.getByText("COMTUS")).toBeDefined();
-    expect(screen.getByText("Rough thought, polished.")).toBeDefined();
-
-    // Floating Stickers
-    expect(screen.getByTitle("16-Bit Battery Companion")).toBeDefined();
-    expect(screen.getByTitle("Antique Study Tome")).toBeDefined();
-    expect(screen.getByTitle("Steaming Study Tea")).toBeDefined();
-    expect(screen.getByTitle("Feather Quill")).toBeDefined();
-    expect(screen.getByTitle("Wax Seal of Mastery")).toBeDefined();
-    expect(screen.getByTitle("Spark of Diligence")).toBeDefined();
-    cleanup();
-  });
-
-  it("renders the interactive 16-bit study console and toggles modes with D-Pad and action buttons", () => {
-    render(
-      <BrowserRouter>
-        <ComtusShowcase />
-      </BrowserRouter>
-    );
-
-    expect(screen.getByRole("region", { name: "16-Bit Study Console" })).toBeDefined();
-    expect(screen.getByText(/COMTUS-16 · SOCRATIC/i)).toBeDefined();
-
-    // Answer choice in Socratic mode
-    const choiceA = screen.getByText(/A\) Magnesium block expulsion via depolarization/i);
-    expect(choiceA).toBeDefined();
-    fireEvent.click(choiceA);
-    expect(screen.getByText(/✓ Correct!/i)).toBeDefined();
-
-    // D-Pad Down to Flashcards mode
-    const dpadDown = screen.getByRole("button", { name: "D-Pad Down" });
-    fireEvent.click(dpadDown);
-    expect(screen.getByText(/COMTUS-16 · FLASHCARDS/i)).toBeDefined();
-    expect(screen.getByText("Hebbian Plasticity")).toBeDefined();
-
-    // Action button A to flip card
-    const btnA = screen.getByRole("button", { name: "A" });
-    fireEvent.click(btnA);
-    expect(screen.getByText(/Neurons that fire together wire together/i)).toBeDefined();
-
-    // D-Pad Down to Proof mode
-    fireEvent.click(dpadDown);
-    expect(screen.getByText(/COMTUS-16 · PROOF/i)).toBeDefined();
-    expect(screen.getByText(/PROOF: Euler's Identity/i)).toBeDefined();
-
-    // D-Pad Down to BYOK mode
-    fireEvent.click(dpadDown);
-    expect(screen.getByText(/COMTUS-16 · BYOK/i)).toBeDefined();
-    expect(screen.getByText(/ACTIVE INFERENCE PROVIDER/i)).toBeDefined();
-
-    // Action button A to switch model
-    fireEvent.click(btnA);
-    expect(screen.getAllByText("DeepSeek R1").length).toBeGreaterThan(0);
-    cleanup();
-  });
-
-  it("renders all 14 study blueprint cards in dual columns with metrics and CTA link", () => {
-    render(
-      <BrowserRouter>
-        <ComtusShowcase />
-      </BrowserRouter>
-    );
-
-    // Left Column Cards (7)
-    for (const card of COMTUS_CARDS_LEFT) {
-      expect(screen.getByText(card.title)).toBeDefined();
-    }
-
-    // Right Column Cards (7)
-    for (const card of COMTUS_CARDS_RIGHT) {
-      expect(screen.getByText(card.title)).toBeDefined();
-    }
-
-    // Bottom Sticky CTA
-    const ctaLink = screen.getByRole("link", { name: /OPEN THE STUDIO/i });
-    expect(ctaLink.getAttribute("href")).toBe("/studio");
-    cleanup();
-  });
-});
 
 describe("FAQSection Component", () => {
   it("renders core questions and expands answers upon click", () => {

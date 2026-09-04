@@ -301,30 +301,6 @@ html[data-shell] body {
   border-color: var(--hairline);
 }
 
-/* Desktop-window mockup gloss — a slow light sweep across the install
-   card's window preview (see landing/DesktopApp.tsx). */
-@keyframes desk-gloss {
-  0% { transform: translateX(-130%) skewX(-12deg); opacity: 0; }
-  18% { opacity: 0.75; }
-  65% { opacity: 0.3; }
-  100% { transform: translateX(300%) skewX(-12deg); opacity: 0; }
-}
-.desk-gloss {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 44%;
-  pointer-events: none;
-  background: linear-gradient(
-    100deg,
-    transparent,
-    color-mix(in srgb, var(--brass) 7%, transparent) 30%,
-    color-mix(in srgb, var(--ink) 12%, transparent) 50%,
-    color-mix(in srgb, var(--brass) 7%, transparent) 70%,
-    transparent
-  );
-  animation: desk-gloss 4.5s var(--ease-house-inout) infinite;
-}
-
 /* Mono eyebrow label — the margin note */
 .label-mono {
   font-family: var(--font-mono);
