@@ -220,14 +220,14 @@ One master palette. Every other color is derived with `color-mix()`.
 | `--muted` | `#5A6274` | `#8E96AB` | secondary text (≥ 4.5:1 on ground in both themes) |
 | `--hairline` | `rgba(11,19,43,.12)` | `rgba(242,237,227,.09)` | dividers |
 | `--hairline-strong` | `rgba(11,19,43,.22)` | `rgba(242,237,227,.18)` | borders on interactive controls |
-| `--brass` | `#A5731C` | `#E3B04B` | the lamp — primary action, selection, citation |
-| `--brass-deep` | `#7D5312` | `#C99236` | pressed states, text on brass fills |
-| `--brass-pale` | `#E3B04B` | `#F0CE8C` | glow, active rims |
-| `--leather` | `#4A2E1B` | `#4A2E1B` | notebook spines, footer, deep shadows |
-| `--sage` | `#4F8A5A` | `#8FBF98` | correct / verified |
-| `--rust` | `#B2554A` | `#C96A5E` | incorrect / error |
-| `--candle` | `#D97724` | `#FF9E43` | milestone flare, due-today badge |
-| `--moon` | `#8C7E6D` | `#C4B8A5` | thinking drawer, reasoning text, secondary accent (pewter, not blue) |
+| `--brass` | `#845C16` | `#E3B04B` | the lamp — primary action, selection, citation |
+| `--brass-deep` | `#5B3F0F` | `#C99236` | pressed fills |
+| `--brass-pale` | `#E3B04B` | `#F0CE8C` | glow only (decorative; carries no meaning) |
+| `--leather` | `#4A2E1B` | `#4A2E1B` | notebook spines, footer, deep shadows, text on candle fills |
+| `--sage` | `#3F6E48` | `#8FBF98` | correct / verified |
+| `--rust` | `#A04D43` | `#D57064` | incorrect / error |
+| `--candle` | `#EF8328` | `#FF9E43` | milestone flare, due-today badge (fill only) |
+| `--moon` | `#6B6052` | `#C4B8A5` | thinking drawer, reasoning text, secondary accent (pewter, not blue) |
 
 Rules:
 
@@ -241,6 +241,25 @@ Rules:
 4. Glows exist only on the lamp (composer focus/streaming) and citation
    targets — never as decorative halos on buttons or cards.
 5. `BRAND.md §3` is rewritten from this table; the `--px-*` layer is deleted.
+6. **Text on a filled control is always `--ground`**, in both themes, for
+   `--brass` and `--brass-deep` fills. `--brass-deep` is the pressed *fill*,
+   never a text color. Text on a `--candle` fill is `--leather`.
+7. `--brass-pale` is decorative glow only. It never carries state, never
+   outlines an active control, and never sits under text. Active rims use
+   `--brass`.
+8. `--candle` is a fill only. It is never used as a text or icon color.
+   `--sage`, `--rust`, `--moon`, and `--brass` may be text or icons and are
+   sized for it.
+
+Every pair above is asserted by `src/styles/contrast.test.ts` (Task 1.1). The
+table was solved against WCAG AA on 2026-09-05: `--ink`, `--muted`, `--moon`,
+`--sage`, `--rust` clear 4.5:1 on `--ground`, `--surface`, and `--raised` in
+both themes; `--ground` clears 4.5:1 on `--brass` and `--brass-deep` fills;
+`--leather` clears 4.5:1 on `--candle`. The Daylight column was darkened from
+the first draft, which failed: `--brass-deep` on `--brass` scored 1.63:1
+(Daylight) and 1.38:1 (Lamplight), making the primary button illegible in both
+themes, and `--moon`, `--sage`, `--rust`, `--candle` all fell below 4.5:1 as
+Daylight text.
 
 Tailwind exposure stays as it is today (`@theme` maps `--color-*` to these
 variables) so `bg-surface`, `text-muted`, `border-hairline` keep working.

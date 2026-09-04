@@ -338,13 +338,23 @@ const ratio = (a: string, b: string) => { const [x, y] = [lum(a), lum(b)].sort((
 
 describe.each([["Daylight", ":root"], ["Lamplight", 'html[data-theme="dark"]']])("%s contrast", (_, sel) => {
   const b = block(sel);
-  it("ink and muted read on ground and surface", () => {
-    for (const fg of ["--ink", "--muted"]) for (const bg of ["--ground", "--surface", "--raised"]) {
-      expect(ratio(hex(b, fg), hex(b, bg)), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
-    }
+  it("every text token reads on every ground it sits on", () => {
+    for (const fg of ["--ink", "--muted", "--moon", "--sage", "--rust"])
+      for (const bg of ["--ground", "--surface", "--raised"]) {
+        expect(ratio(hex(b, fg), hex(b, bg)), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+      }
   });
-  it("brass-deep text reads on brass fills", () => {
-    expect(ratio(hex(b, "--brass-deep"), hex(b, "--brass-pale"))).toBeGreaterThanOrEqual(3);
+  it("filled controls carry legible text", () => {
+    // Spec §4 rule 6: text on a brass fill is --ground, never --brass-deep.
+    for (const fill of ["--brass", "--brass-deep"]) {
+      expect(ratio(hex(b, "--ground"), hex(b, fill)), `--ground on ${fill}`).toBeGreaterThanOrEqual(4.5);
+    }
+    expect(ratio(hex(b, "--leather"), hex(b, "--candle")), "--leather on --candle").toBeGreaterThanOrEqual(4.5);
+  });
+  it("brass reads as a text and icon color", () => {
+    for (const bg of ["--ground", "--surface"]) {
+      expect(ratio(hex(b, "--brass"), hex(b, bg)), `--brass on ${bg}`).toBeGreaterThanOrEqual(4.5);
+    }
   });
 });
 ```
@@ -458,7 +468,7 @@ export function Sheet(props: { open: boolean; onClose: () => void; title: string
 // Empty.tsx — <Empty title body action={<Button/>} />: one teaching sentence, one action
 ```
 
-Design rules baked into `ui.css`: primary = brass fill + `--brass-deep` text + ink-press physics (`.btn-ink-press` from `BRAND.md §5`); secondary = surface + hairline-strong; ghost = transparent; all states (hover, focus-visible ring `2px solid var(--brass)` offset 2px, active, disabled 55% opacity, loading with `CircleNotch` spinning at `--dur-slow`); radii from tokens only; no backdrop-filter except `Sheet`/`Dialog` scrims.
+Design rules baked into `ui.css`: primary = `--brass` fill + `--ground` text (Spec §4 rule 6; `--brass-deep` is the pressed fill, never a text color) + ink-press physics (`.btn-ink-press` from `BRAND.md §5`); secondary = surface + hairline-strong; ghost = transparent; all states (hover, focus-visible ring `2px solid var(--brass)` offset 2px, active, disabled 55% opacity, loading with `CircleNotch` spinning at `--dur-slow`); radii from tokens only; no backdrop-filter except `Sheet`/`Dialog` scrims.
 
 - [ ] **Step 1: Failing tests** — `Button` renders `aria-busy` when loading and ignores clicks; `Sheet` traps Tab and closes on Escape; `Segmented` has `role="radiogroup"` and arrow-key navigation.
 - [ ] **Step 2:** implement; re-export `Modal as Dialog` for old callers.
