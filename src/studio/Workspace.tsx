@@ -398,7 +398,7 @@ function WorkspaceHeader({
   onToggleSources: () => void;
   onToggleStudio: () => void;
   onRename: (name: string) => void;
-  onSettings: () => void;
+  onSettings: (tab?: SettingsTab) => void;
 }) {
   const platform = detectPlatform();
   const tauri = isTauri();
@@ -498,13 +498,13 @@ function WorkspaceHeader({
             </>
           )}
           <button
-            onClick={onSettings}
+            onClick={() => onSettings("models")}
             className="hidden items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-[12px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
           >
             {modelLabel} · {effortLabel}
           </button>
           <button
-            onClick={onSettings}
+            onClick={() => onSettings()}
             className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
             aria-label="Settings"
           >
@@ -516,12 +516,12 @@ function WorkspaceHeader({
             <ProBadge
               planTier="PRO"
               remainingTokens={remainingTokens}
-              onClick={onSettings}
+              onClick={() => onSettings("models")}
               className="hidden sm:flex"
             />
           ) : (
             <ByokBadge
-              onClick={onSettings}
+              onClick={() => onSettings("models")}
               className="hidden sm:flex"
             />
           )}
@@ -543,7 +543,7 @@ function WorkspaceHeader({
 
           {/* Account & Settings */}
           <button
-            onClick={onSettings}
+            onClick={() => onSettings()}
             className="flex h-8 w-8 items-center justify-center rounded-full text-brass transition-all hover:bg-brass/10 hover:text-brasspale active:scale-95"
             title="Account & Settings"
             aria-label="Account and settings"

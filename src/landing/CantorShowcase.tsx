@@ -53,7 +53,7 @@ const PRODUCTS = [
     tag: "Open Infrastructure",
     title: "Multi-Model BYOK Workbench",
     desc: "Connect directly to Claude 3.7 Sonnet, DeepSeek R1, GPT-4o, or run local offline models via Ollama. Zero vendor lock-in and zero telemetry.",
-    status: "100% Data Sovereignty · SQLite",
+    status: "Your sources stay on this device",
     span: 2,
     icon: ShieldCheck,
   },

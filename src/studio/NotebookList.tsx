@@ -217,7 +217,7 @@ export default function NotebookList({
 
   return (
     <DeskShell onSettings={openSettings} onNewNotebook={openCreateModal}>
-      <ConsoleShell notebookName="Course Notebooks Shelf" modelLabel="Local SQLite / Dexie">
+      <ConsoleShell notebookName="Course Notebooks Shelf" modelLabel="On this device">
         <div className="min-h-[100svh] bg-ground overflow-y-auto">
           <div className="pointer-events-none fixed inset-x-0 top-0 h-[48vh] bg-[radial-gradient(75%_100%_at_50%_0%,rgba(4,74,179,0.08),transparent_78%),radial-gradient(35%_60%_at_90%_0%,rgba(111,227,255,0.06),transparent_70%)]" />
           <div className="relative mx-auto w-full max-w-6xl px-3 sm:px-8 lg:px-12 pb-24">

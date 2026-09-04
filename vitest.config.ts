@@ -1,5 +1,6 @@
 import { configDefaults, defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
+import pkg from "./package.json";
 
 // Tests that need a browser. Everything else under src/lib, api and src/styles
 // is pure logic and runs in node, where a file costs about 2.6s instead of 18s:
@@ -29,6 +30,9 @@ const shared = {
 
 export default defineConfig({
   plugins: [react()],
+  // vite.config.ts defines this for the app build; without it here, any test
+  // that renders SettingsModal dies on an undefined global.
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   test: {
     ...shared,
     projects: [
