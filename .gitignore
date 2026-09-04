@@ -19,3 +19,15 @@ src-tauri/gen
 # Hoplite sandbox scratch
 .hoplite/shots/
 .pnpm-store/
+
+# Installers ship via GitHub Releases, not the repo
+desktop-releases/
+# Ad renders
+minimax-ad-assets/
+# Export tests used to drop PDFs here
+/*.pdf
+
+# Superseded design captures. Keep only the approved composer reference.
+design-mockups/*
+!design-mockups/option-b-console-deck.png
+!design-mockups/composer-chat-options.html

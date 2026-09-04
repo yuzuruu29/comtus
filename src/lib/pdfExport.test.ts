@@ -1,6 +1,27 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Generation, QuizQuestion } from "./types";
 import { savePdf } from "./pdfExport";
+
+// pdfExport.ts:406 calls doc.save(), which under the test runner wrote
+// la-quiz.pdf and nursing-guide.pdf into the repo root on every run.
+// jsPDF assigns save as an own property in its constructor, so there is no
+// prototype to spy on. Subclass instead: real jsPDF everywhere, save stubbed.
+const { saveSpy } = vi.hoisted(() => ({ saveSpy: vi.fn() }));
+
+vi.mock("jspdf", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("jspdf")>();
+  class PatchedPdf extends actual.jsPDF {
+    constructor(...args: ConstructorParameters<typeof actual.jsPDF>) {
+      super(...args);
+      this.save = saveSpy as unknown as typeof this.save;
+    }
+  }
+  return { ...actual, jsPDF: PatchedPdf };
+});
+
+beforeEach(() => {
+  saveSpy.mockClear();
+});
 
 const solutionQ: QuizQuestion = {
   id: "q0",
@@ -39,18 +60,18 @@ function gen(kind: Generation["kind"], payload: unknown, title = "Quiz · 10 ite
 
 describe("savePdf", () => {
   it("builds a quiz paper even when config was never stored", async () => {
-    await expect(
-      savePdf(gen("quiz", { questions: [solutionQ, mcq] }), "Linear Algebra", "la-quiz"),
-    ).resolves.toBeUndefined();
+    await savePdf(gen("quiz", { questions: [solutionQ, mcq] }), "Linear Algebra", "la-quiz");
+    expect(saveSpy).toHaveBeenCalledOnce();
+    expect(saveSpy.mock.calls[0]?.[0]).toMatch(/la-quiz\.pdf$/);
   });
 
   it("builds a study-guide PDF from markdown", async () => {
-    await expect(
-      savePdf(
-        gen("study-guide", { markdown: "# Fluids\n\n- hydrostatic pressure\n" }, "Study guide"),
-        "Nursing",
-        "nursing-guide",
-      ),
-    ).resolves.toBeUndefined();
+    await savePdf(
+      gen("study-guide", { markdown: "# Fluids\n\n- hydrostatic pressure\n" }, "Study guide"),
+      "Nursing",
+      "nursing-guide",
+    );
+    expect(saveSpy).toHaveBeenCalledOnce();
+    expect(saveSpy.mock.calls[0]?.[0]).toMatch(/nursing-guide\.pdf$/);
   });
 });
