@@ -15,3 +15,7 @@ src-tauri/gen
 .graphify/
 .zcode/
 .env.vercel*
+
+# Hoplite sandbox scratch
+.hoplite/shots/
+.pnpm-store/
