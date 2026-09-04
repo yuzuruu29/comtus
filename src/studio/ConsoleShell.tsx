@@ -29,11 +29,8 @@ export default function ConsoleShell({
           </div>
         </header>
 
-        {/* CRT Screen Viewport (3-Pane Workspace) */}
-        <div className="console-screen-viewport">
-          <div className="console-screen-scanlines" aria-hidden="true" />
-          {children}
-        </div>
+        {/* Three-pane workspace */}
+        <div className="console-screen-viewport">{children}</div>
       </div>
     </div>
   );

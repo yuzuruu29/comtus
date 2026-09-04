@@ -232,12 +232,12 @@ export default function ScholarConsoleDeck() {
           </button>
         </div>
 
-        {/* Grid: CRT Screen on Left, Controls & Cartridge Bay on Right */}
+        {/* Grid: Screen on Left, Controls & Cartridge Bay on Right */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          {/* ── CRT Monitor Screen Area (7 Cols) ─────────────────────────────── */}
+          {/* ── Screen area (7 Cols) ─────────────────────────────── */}
           <div className="lg:col-span-8">
-            <div className="crt-bezel">
-              <div className={`crt-screen-glass ${!powerOn ? "is-off" : ""}`}>
+            <div className="deck-screen-frame">
+              <div className={`deck-screen ${!powerOn ? "is-off" : ""}`}>
                 {/* Screen Header Telemetry */}
                 <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3 font-mono text-[10.5px] text-[var(--deck-brass)]">
                   <div className="flex items-center gap-2">
@@ -310,7 +310,7 @@ export default function ScholarConsoleDeck() {
                   )}
                 </div>
 
-                {/* CRT Scanline Footer Status */}
+                {/* Footer status */}
                 <div className="mt-4 border-t border-white/10 pt-2 flex items-center justify-between font-mono text-[10px] text-white/50">
                   <span>COMTUS v0.3.1 // ON-DEVICE DEXIE</span>
                   <span>SYSTEM LATENCY: 14MS</span>

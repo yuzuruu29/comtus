@@ -22,27 +22,19 @@
   }
 }
 
-/* Outer Console Chassis */
+/* Outer chassis. The desk is paper, not a bevelled console: no bezel border,
+   no drop shadow, no rounded screen. */
 .console-chassis {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
   background-color: var(--surface);
-  border: 2px solid var(--hairline-strong);
-  border-radius: 8px;
-  box-shadow:
-    0 0 0 1px var(--hairline),
-    0 12px 32px rgba(0, 0, 0, 0.25);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
   overflow: hidden;
   position: relative;
-}
-
-@media (max-width: 768px) {
-  .console-chassis {
-    border: none;
-    border-radius: 0;
-  }
 }
 
 /* Console Header Status Strip */
@@ -96,7 +88,7 @@
   }
 }
 
-/* CRT Screen Workspace Bezel */
+/* Workspace viewport */
 .console-screen-viewport {
   position: relative;
   flex: 1;
@@ -107,20 +99,6 @@
   overflow: hidden;
 }
 
-/* Scanline Overlay over Studio Screen */
-.console-screen-scanlines {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    transparent 50%,
-    color-mix(in srgb, var(--ink) 3%, transparent) 50%
-  );
-  background-size: 100% 4px;
-  pointer-events: none;
-  z-index: 40;
-  opacity: 0.3;
-}
-
 html[data-theme="light"] .console-shell-root {
   background-color: var(--ground);
   padding: 0;
@@ -128,9 +106,6 @@ html[data-theme="light"] .console-shell-root {
 
 html[data-theme="light"] .console-chassis {
   background-color: var(--ground);
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
 }
 
 html[data-theme="light"] .console-status-bar {
@@ -153,10 +128,3 @@ html[data-theme="light"] .console-screen-viewport {
   background-color: var(--ground);
 }
 
-html[data-theme="light"] .console-screen-scanlines {
-  opacity: 0.18;
-  background: linear-gradient(
-    transparent 50%,
-    color-mix(in srgb, var(--ink) 4%, transparent) 50%
-  );
-}

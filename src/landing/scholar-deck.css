@@ -1,6 +1,6 @@
 /* ==========================================================================
    Comtus ScholarDeck — Tactile Physical Hardware Console
-   Inspired by pierrelouis.design skeuomorphic 3D tactile buttons, CRT glass,
+   Inspired by pierrelouis.design skeuomorphic 3D tactile buttons, glass screens,
    rotary dials, and cartridge sliding bays.
    ========================================================================== */
 
@@ -120,20 +120,17 @@
   box-shadow: 0 1px 0 #2e5236, 0 3px 6px rgba(0, 0, 0, 0.5);
 }
 
-/* ── CRT Screen Display with Glass Reflection & Scanlines ─────────────────── */
+/* ── Screen area ──────────────────────────────────────────────────────────── */
 
-.crt-bezel {
+.deck-screen-frame {
   position: relative;
   background: var(--deck-void);
-  border: 3px solid var(--deck-border);
-  border-radius: 20px;
-  box-shadow:
-    inset 0 4px 12px rgba(0, 0, 0, 0.8),
-    0 2px 4px rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--deck-border);
+  border-radius: 12px;
   overflow: hidden;
 }
 
-.crt-screen-glass {
+.deck-screen {
   position: relative;
   width: 100%;
   min-height: 290px;
@@ -142,46 +139,12 @@
   overflow: hidden;
 }
 
-/* Scanline Overlay */
-.crt-screen-glass::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.25) 0px,
-    rgba(0, 0, 0, 0.25) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-  pointer-events: none;
-  z-index: 10;
-}
-
-/* Glass Reflection Glare */
-.crt-screen-glass::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 45%;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.09) 0%,
-    color-mix(in srgb, var(--deck-brass) 6%, transparent) 40%,
-    transparent 60%
-  );
-  pointer-events: none;
-  z-index: 11;
-}
-
-/* CRT Screen Off State */
-.crt-screen-glass.is-off {
+/* Screen off state */
+.deck-screen.is-off {
   background: #04070d;
   color: transparent !important;
 }
-.crt-screen-glass.is-off * {
+.deck-screen.is-off * {
   opacity: 0 !important;
 }
 
