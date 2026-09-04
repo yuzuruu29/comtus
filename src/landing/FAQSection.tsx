@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown } from "lucide-react";
+
 import SectionHead from "./SectionHead";
 import { SOFT } from "../studio/fx";
 import { playProceduralSfx } from "../studio/companion/sfx";
 import "./landing.css";
+import { CaretDown } from "@phosphor-icons/react";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -142,7 +143,7 @@ export default function FAQSection() {
                       : "border-hairline-strong bg-brass/10 text-brass"
                   }`}
                 >
-                  <ChevronDown size={14} />
+                  <CaretDown size={14} />
                 </span>
               </button>
 

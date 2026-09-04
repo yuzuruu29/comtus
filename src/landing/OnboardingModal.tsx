@@ -1,19 +1,9 @@
 import { useState, useEffect, useRef, useId } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  X,
-  ArrowRight,
-  ArrowLeft,
-  BookOpen,
-  Target,
-  Sparkles,
-  FolderTree,
-  FileText,
-  GraduationCap,
-  Check,
-} from "lucide-react";
+
 import { PixelButton, PixelBadge } from "../components/pixel/PixelUI";
 import "./landing.css";
+import { ArrowLeft, ArrowRight, BookOpen, Check, FileText, GraduationCap, Sparkle, Target, TreeStructure, X } from "@phosphor-icons/react";
 
 export interface OnboardingModalProps {
   isOpen: boolean;
@@ -122,7 +112,7 @@ export const GOALS: GoalOption[] = [
     label: "Organize my notes & slides",
     badge: "Note Synthesis",
     desc: "Clean outlines, summaries, and structured study guides",
-    icon: FolderTree,
+    icon: TreeStructure,
   },
   {
     id: "quiz",
@@ -698,7 +688,7 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
                 <PixelButton
                   variant="brass"
                   size="lg"
-                  leftIcon={<Sparkles size={15} />}
+                  leftIcon={<Sparkle size={15} />}
                   onClick={handleLaunch}
                   className="shadow-[0_4px_20px_rgba(227,176,75,0.25)]"
                 >

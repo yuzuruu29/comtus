@@ -2,21 +2,13 @@ import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import {
-  Brain,
-  Layers,
-  CheckCircle2,
-  ShieldCheck,
-  GraduationCap,
-  Laptop,
-  ArrowUpRight,
-  Sparkles,
-} from "lucide-react";
+
 import CantorStringsCanvas from "./CantorStringsCanvas";
 import CantorCircuitStream from "./CantorCircuitStream";
 import CantorPixelTransition from "./CantorPixelTransition";
 import { playProceduralSfx } from "../studio/companion/sfx";
 import "./cantor-theme.css";
+import { ArrowUpRight, Brain, CheckCircle, GraduationCap, Laptop, ShieldCheck, Sparkle, Stack } from "@phosphor-icons/react";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -37,7 +29,7 @@ const PRODUCTS = [
     desc: "Automated spaced repetition algorithm with confidence weighting, speed drills, and scheduled memory consolidation.",
     status: "94.2% Long-Term Retention",
     span: 1,
-    icon: Layers,
+    icon: Stack,
   },
   {
     id: "proof",
@@ -46,7 +38,7 @@ const PRODUCTS = [
     desc: "Strict symbolic derivation engine validating intermediate steps in calculus, physics, and formal logic with instant error localization.",
     status: "99.1% Step Precision",
     span: 1,
-    icon: CheckCircle2,
+    icon: CheckCircle,
   },
   {
     id: "byok",
@@ -293,7 +285,7 @@ export default function CantorShowcase() {
 
                   <div className="c8-card-footer">
                     <span className="c8-card-status">
-                      <Sparkles className="w-3.5 h-3.5 text-brass" />
+                      <Sparkle className="w-3.5 h-3.5 text-brass" />
                       <span>{prod.status}</span>
                     </span>
 

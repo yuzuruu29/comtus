@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Camera, ImageUp, RotateCcw, Trash2 } from "lucide-react";
+
 import type { SolutionCheck, SolutionVerdict } from "../../lib/types";
 import { SOFT } from "../fx";
+import { ArrowCounterClockwise, Camera, ImageSquare, Trash } from "@phosphor-icons/react";
 
 /**
  * The submission bin — a handwritten solution goes in, a verdict comes
@@ -93,7 +94,7 @@ export function SolutionBin({
               className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-muted transition-colors hover:bg-ink/5 hover:text-ink"
               title="Replace photo"
             >
-              <RotateCcw size={13} />
+              <ArrowCounterClockwise size={13} />
               <span className="text-[11.5px] font-medium">Replace</span>
             </button>
             <button
@@ -105,7 +106,7 @@ export function SolutionBin({
               title="Remove photo"
               aria-label="Remove photo"
             >
-              <Trash2 size={14} />
+              <Trash size={14} />
             </button>
           </div>
         )}
@@ -162,7 +163,7 @@ export function SolutionBin({
           }`}
         >
           <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brass/10 text-brass">
-            <ImageUp size={19} />
+            <ImageSquare size={19} />
           </span>
           <div>
             <p className="text-[13.5px] font-medium text-ink">
@@ -187,7 +188,7 @@ export function SolutionBin({
                 disabled={busy}
                 className="inline-flex min-h-[38px] items-center gap-2 rounded-[var(--radius-control)] border border-hairline bg-ink/[0.03] px-4 py-2 text-[12.5px] font-medium text-ink/90 transition-all hover:border-hairline-strong hover:bg-ink/[0.07] active:scale-[0.97] disabled:opacity-40"
               >
-                <ImageUp size={14} />
+                <ImageSquare size={14} />
                 Upload file
               </button>
             </div>

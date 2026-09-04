@@ -7,18 +7,26 @@ import { describe, expect, it } from "vitest";
  *  ConsoleShell being deleted later. */
 const CRT = /scanline|\bcrt\b|crt-/i;
 
+/** Every source file under src, excluding tests. */
+function sources(): { path: string; text: string }[] {
+  const root = process.cwd();
+  return readdirSync(join(root, "src"), { recursive: true, encoding: "utf8" })
+    .filter((f) => /\.(css|ts|tsx)$/.test(f) && !/\.test\.tsx?$/.test(f))
+    .map((rel) => `src/${rel.split("\\").join("/")}`)
+    .map((path) => ({ path, text: readFileSync(join(root, path), "utf8") }));
+}
+
 describe("brand: no CRT chrome", () => {
   it("ships no scanline or CRT bezel anywhere in src", () => {
-    const root = process.cwd();
-    const files = readdirSync(join(root, "src"), {
-      recursive: true,
-      encoding: "utf8",
-    }).filter((f) => /\.(css|ts|tsx)$/.test(f) && !/\.test\.tsx?$/.test(f));
+    expect(sources().filter((f) => CRT.test(f.text)).map((f) => f.path)).toEqual([]);
+  });
+});
 
-    const offenders = files
-      .map((rel) => `src/${rel.split("\\").join("/")}`)
-      .filter((norm) => CRT.test(readFileSync(join(root, norm), "utf8")));
-
+describe("brand: one icon library", () => {
+  it("imports icons only from @phosphor-icons/react", () => {
+    const offenders = sources()
+      .filter((f) => /from\s*["']lucide-react["']/.test(f.text))
+      .map((f) => f.path);
     expect(offenders).toEqual([]);
   });
 });

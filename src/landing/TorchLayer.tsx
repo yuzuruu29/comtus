@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { Activity } from "lucide-react";
+
 import { torchManager } from "../lib/torchState";
+import { Pulse } from "@phosphor-icons/react";
 
 const STORE_KEY = "comtus-torch";
 const HINT_KEY = "comtus-torch-hint";
@@ -186,7 +187,7 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
           }
           className="flex items-center gap-1.5 text-inherit transition-colors cursor-pointer"
         >
-          <Activity size={13} className={on ? "text-brass animate-pulse" : "text-muted"} strokeWidth={2} />
+          <Pulse size={13} className={on ? "text-brass animate-pulse" : "text-muted"} />
           <span className="torch-pill-label">
             <span className="torch-pill-mode">
               {on ? "BEAM: ON" : "STATIC"}
@@ -199,7 +200,7 @@ export default function TorchLayer({ ready }: { ready: boolean }) {
         {hint && (
           <div className="torch-hint">
             <p className="torch-hint-title">
-              <Activity size={11} className="text-brass inline-block mr-1.5 -mt-px" strokeWidth={2} />
+              <Pulse size={11} className="text-brass inline-block mr-1.5 -mt-px" />
               Precision Beam Focus
             </p>
             <p className="torch-hint-body">

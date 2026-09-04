@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, X, RotateCcw, Timer, GraduationCap, PencilLine, PenLine, Minus } from "lucide-react";
+
 import type {
   ExamBlueprint,
   ExamMode,
@@ -27,6 +27,7 @@ import {
   type SolutionSubmission,
 } from "./SolutionBin";
 import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote } from "../ui";
+import { ArrowCounterClockwise, Check, GraduationCap, Minus, PencilSimpleLine, Timer, X } from "@phosphor-icons/react";
 
 /* ── PH PRC presets ───────────────────────────────────────── */
 
@@ -436,7 +437,7 @@ export function ExamRunner({
             onClick={() => setMode("drill")}
             className="rounded-2xl border border-hairline bg-ink/[0.02] p-5 text-left transition-colors hover:border-brass/40 hover:bg-brass/[0.04]"
           >
-            <PencilLine size={17} className="text-brasspale" />
+            <PencilSimpleLine size={17} className="text-brasspale" />
             <div className="mt-3 font-display text-[1.1rem] font-[440] text-ink">Drill</div>
             <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
               Every answer explained the moment you commit — for learning, not timing.
@@ -670,7 +671,7 @@ export function ExamRunner({
                     : "bg-ink/[0.03] text-muted/60"
               }`}
             >
-              {qq.format === "solution" ? <PenLine size={11} /> : i + 1}
+              {qq.format === "solution" ? <PencilSimpleLine size={11} /> : i + 1}
             </button>
           ))}
         </div>
@@ -885,7 +886,7 @@ function ExamResults({
       <div className="flex justify-end gap-3">
         {onExit && <button className={btnGhost} onClick={onExit}>Done</button>}
         <button className={btnLamp} onClick={onRetake}>
-          <RotateCcw size={13} className="mr-1.5 inline" /> Retake
+          <ArrowCounterClockwise size={13} className="mr-1.5 inline" /> Retake
         </button>
       </div>
     </motion.div>

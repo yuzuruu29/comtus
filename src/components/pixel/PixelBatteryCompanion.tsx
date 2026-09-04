@@ -10,7 +10,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { Moon, Sun, BrainCircuit, Zap, ChevronUp } from "lucide-react";
+
 import { PixelSprite } from "./PixelSprite";
 import {
   COZY_PIXEL_BATTERY_ANIMATIONS,
@@ -18,6 +18,7 @@ import {
   BATTERY_WIDTH,
 } from "./pixelBatteryFrames";
 import { playSfx as playEngineSfx } from "../../lib/soundEngine";
+import { Brain, CaretUp, Lightning, Moon, Sun } from "@phosphor-icons/react";
 
 export type BatteryAnimationMood = "idle" | "think" | "poke" | "sleep" | "cheer" | "celebrate";
 export type LampAnimationMood = BatteryAnimationMood;
@@ -529,7 +530,7 @@ export function PixelBatteryCompanion({
           onDoubleClick={(e) => e.stopPropagation()}
           className="absolute -top-7 left-1/2 z-[70] -translate-x-1/2 rounded-full border border-brass/40 bg-ground/90 p-1 text-brasspale shadow-md backdrop-blur-sm transition-colors hover:bg-brass/20"
         >
-          <ChevronUp size={12} />
+          <CaretUp size={12} />
         </button>
       )}
 
@@ -572,7 +573,7 @@ export function PixelBatteryCompanion({
               currentMood === "think" ? "bg-brass text-night font-bold" : "text-muted hover:text-ink"
             }`}
           >
-            <BrainCircuit size={12} />
+            <Brain size={12} />
           </button>
           <button
             type="button"
@@ -590,7 +591,7 @@ export function PixelBatteryCompanion({
             onClick={triggerPoke}
             className="rounded-full p-1 text-brasspale hover:bg-brass/20"
           >
-            <Zap size={12} />
+            <Lightning size={12} />
           </button>
         </div>
       )}

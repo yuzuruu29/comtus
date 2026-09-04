@@ -1,17 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
-import {
-  ArrowRight,
-  ArrowLeft,
-  Sparkles,
-  BookOpen,
-  Check,
-  Compass,
-  Zap,
-  ShieldCheck,
-  Target,
-} from "lucide-react";
+
 import { ComtusEmblem } from "../components/brand/ComtusLogo";
 import {
   SUBJECTS,
@@ -26,6 +16,7 @@ import {
   STAGE_TRANSITION_EASE,
 } from "./pixelMotion";
 import "./pixel-landing.css";
+import { ArrowLeft, ArrowRight, BookOpen, Check, Compass, Lightning, ShieldCheck, Sparkle, Target } from "@phosphor-icons/react";
 
 export const ONBOARDING_SEEN_KEY = "comtus_onboarding_seen";
 
@@ -279,7 +270,7 @@ export default function PreLandingOnboarding({
           <div className="space-y-8 animate-fadeIn text-center sm:text-left">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 rounded-[2px] border border-brass/40 bg-brass/10 px-3 py-1 font-mono text-xs text-brass">
-                <Sparkles size={14} className="text-brass" />
+                <Sparkle size={14} className="text-brass" />
                 <span>COGNITIVE INFRASTRUCTURE FOR SCHOLARS</span>
               </div>
               <h1 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-parchment leading-tight">
@@ -310,7 +301,7 @@ export default function PreLandingOnboarding({
 
               <div className="rounded-[2px] border border-hairline bg-study p-4 transition-colors hover:border-brass/50">
                 <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-[2px] border border-brass/30 bg-night text-brass">
-                  <Zap size={18} />
+                  <Lightning size={18} />
                 </div>
                 <h2 className="font-display text-base font-bold text-parchment mb-1">
                   Cantor8 Architecture
@@ -581,7 +572,7 @@ export default function PreLandingOnboarding({
                   onClick={handleLaunchStudio}
                   className="group flex w-full sm:w-auto items-center justify-center gap-2 rounded-[2px] border border-brass/80 bg-brass px-6 py-3 font-display text-xs font-bold uppercase tracking-wider text-night shadow-[0_4px_20px_rgba(227,176,75,0.3)] hover:brightness-110 active:scale-[0.99] transition-all cursor-pointer min-h-[48px]"
                 >
-                  <Sparkles size={14} />
+                  <Sparkle size={14} />
                   <span>Launch into Studio</span>
                   <ArrowRight
                     size={14}

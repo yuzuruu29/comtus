@@ -290,7 +290,7 @@ export default defineConfig({
           "vendor-gsap": ["gsap"],
           "vendor-ai": ["@anthropic-ai/sdk", "openai"],
           "vendor-markdown": ["react-markdown", "remark-gfm"],
-          "vendor-icons": ["lucide-react", "@phosphor-icons/react"],
+          "vendor-icons": ["@phosphor-icons/react"],
         },
       },
     },

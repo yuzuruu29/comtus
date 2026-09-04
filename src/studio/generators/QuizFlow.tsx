@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, X, RotateCcw, Sparkles, Trophy } from "lucide-react";
+
 import type { QuizConfig, QuizPayload, QuizQuestion, QuizFormat, Generation, SolutionCheck } from "../../lib/types";
 import { generateJSON, checkSolution, friendlyError } from "../../lib/llm";
 import { useCallSettings, useSettings } from "../../lib/settings";
@@ -15,6 +15,7 @@ import {
   type SolutionSubmission,
 } from "./SolutionBin";
 import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote } from "../ui";
+import { ArrowCounterClockwise, Check, Sparkle, Trophy, X } from "@phosphor-icons/react";
 
 /* ── Configuration ────────────────────────────────────────── */
 
@@ -160,7 +161,7 @@ Constraints: MCQ always has exactly 4 options; truefalse has options ["True","Fa
       <div className="flex justify-end gap-3">
         <button className={btnGhost} onClick={onCancel}>Cancel</button>
         <button className={btnLamp} onClick={generate} disabled={busy || formats.length === 0}>
-          <Sparkles size={13} className="mr-1.5 inline" />
+          <Sparkle size={13} className="mr-1.5 inline" />
           {busy ? "Writing…" : "Write my quiz"}
         </button>
       </div>
@@ -369,7 +370,7 @@ function QuizResults({
       </div>
       <div className="flex flex-wrap justify-end gap-3">
         <button className={btnGhost} onClick={onRetake}>
-          <RotateCcw size={13} className="mr-1.5 inline" /> Retake
+          <ArrowCounterClockwise size={13} className="mr-1.5 inline" /> Retake
         </button>
         {onRegenerate && (
           <button className={btnLamp} onClick={onRegenerate}>New quiz</button>

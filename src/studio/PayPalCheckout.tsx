@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+
 import { PAYPAL_CLIENT_ID, type StudyPlan } from "../lib/paypal";
 import { isTauri } from "../lib/desktop";
 import ExternalLink from "./ExternalLink";
+import { CheckCircle, CircleNotch, WarningCircle } from "@phosphor-icons/react";
 
 /**
  * PayPal checkout. Money logic lives server-side: order creation uses
@@ -155,14 +156,14 @@ export default function PayPalCheckout({
     <div className="space-y-2">
       {error && (
         <div key="error" className="anim-fade anim-fade--fast flex items-center gap-2 rounded-lg border border-rust/30 bg-rust/[0.08] p-2.5 text-[12px] text-rust">
-          <AlertCircle size={14} className="shrink-0" />
+          <WarningCircle size={14} className="shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {success && (
         <div key="success" className="anim-fade anim-fade--fast flex items-start gap-2 rounded-lg border border-sage/30 bg-sage/[0.08] p-2.5 text-left text-[12px] leading-relaxed text-sage">
-          <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
+          <CheckCircle size={14} className="mt-0.5 shrink-0" />
           <span>
             Payment confirmed (Order #{success.slice(-8)}) — your Access Pass has been issued.
           </span>
@@ -171,14 +172,14 @@ export default function PayPalCheckout({
 
       {!sdkReady && !error && (
         <div key="sdk-loading" className="anim-fade anim-fade--fast flex items-center justify-center gap-2 rounded-lg border border-hairline bg-ink/[0.02] py-3 text-[12px] text-muted">
-          <Loader2 size={14} className="animate-spin text-brass" />
+          <CircleNotch size={14} className="animate-spin text-brass" />
           <span>Loading secure PayPal checkout…</span>
         </div>
       )}
 
       {loading && (
         <div key="confirming" className="anim-fade anim-fade--fast flex items-center justify-center gap-2 rounded-lg border border-brass/30 bg-brass/[0.06] py-3 text-[12px] text-brasspale">
-          <Loader2 size={14} className="animate-spin text-brass" />
+          <CircleNotch size={14} className="animate-spin text-brass" />
           <span>Confirming payment & activating your pass…</span>
         </div>
       )}

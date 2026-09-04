@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Feather, PenLine, ListChecks } from "lucide-react";
+
 import type { EssayReviewPayload, Generation, RubricCriterion } from "../../lib/types";
 import { RUBRICS } from "../../lib/types";
 import { generateJSON, friendlyError } from "../../lib/llm";
@@ -7,6 +7,7 @@ import { useCallSettings } from "../../lib/settings";
 import { saveGeneration } from "../../lib/db";
 import { GENERATOR_SYSTEM, buildSourceBlock, sanitizeReview } from "./common";
 import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote } from "../ui";
+import { Feather, ListChecks, PencilSimpleLine } from "@phosphor-icons/react";
 
 interface PromptIdea {
   title: string;
@@ -228,7 +229,7 @@ JSON shape:
           {error && <ErrorNote>{error}</ErrorNote>}
           <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-between sm:gap-3">
             <button className={btnGhost} onClick={() => setChosen(null)}>
-              <PenLine size={13} className="mr-1.5 inline" /> Different prompt
+              <PencilSimpleLine size={13} className="mr-1.5 inline" /> Different prompt
             </button>
             <button className={btnLamp} onClick={grade} disabled={busy || essay.trim().length < 80}>
               {busy ? "Grading…" : "Grade with reasoning"}

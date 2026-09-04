@@ -1,14 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import {
-  Power,
-  Disc,
-  CheckCircle2,
-  Radio,
-} from "lucide-react";
 import { playProceduralSfx } from "../studio/companion/sfx";
 import "./scholar-deck.css";
+import { CheckCircle, Disc, Power, Radio } from "@phosphor-icons/react";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -303,7 +298,7 @@ export default function ScholarConsoleDeck() {
                         {selectedRom.proof}
                       </div>
                       <div className="flex items-center gap-2 text-[11px] font-mono text-[var(--deck-brass)]/80">
-                        <CheckCircle2 size={13} className="text-sage" />
+                        <CheckCircle size={13} className="text-sage" />
                         <span>Intermediate Step Precision: 99.8% Grounded</span>
                       </div>
                     </div>

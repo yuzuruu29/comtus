@@ -1,26 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import {
-  BrainCircuit,
-  BookOpen,
-  Command,
-  Trophy,
-  X,
-  Camera,
-  CameraOff,
-  Sun,
-  Moon,
-  Flame,
-  Volume2,
-  VolumeX,
-  Play,
-  Pause,
-  RotateCcw,
-  Sparkles,
-  Zap,
-  Timer,
-  TimerOff,
-} from "lucide-react";
+
 import { useDesk } from "../DeskContext";
 import { SPRING } from "../fx";
 import { useFocusVision } from "./useFocusVision";
@@ -34,6 +14,7 @@ import {
   type LampPos,
 } from "./lampPos";
 import "./companion.css";
+import { ArrowCounterClockwise, BookOpen, Brain, Camera, CameraSlash, Command, EyeSlash, Flame, Lightning, Moon, Pause, Play, Sparkle, SpeakerHigh, SpeakerX, Sun, Timer, Trophy, X } from "@phosphor-icons/react";
 
 export type FocusBeaconColor = "gold" | "green" | "cyan" | "orange" | "red" | "rose" | "moon";
 
@@ -304,7 +285,7 @@ export default function StudyFocusDock({
                   onClick={() => setSfxEnabled(!sfxEnabled)}
                   className="p-1 text-muted hover:text-ink rounded cursor-pointer transition-colors"
                 >
-                  {sfxEnabled ? <Volume2 size={13} className="text-brass" /> : <VolumeX size={13} />}
+                  {sfxEnabled ? <SpeakerHigh size={13} className="text-brass" /> : <SpeakerX size={13} />}
                 </button>
                 <button
                   type="button"
@@ -327,7 +308,7 @@ export default function StudyFocusDock({
                   [
                     { key: "gold", label: "Study", icon: Flame },
                     { key: "green", label: "Lock-In", icon: Sun },
-                    { key: "cyan", label: "Review", icon: Zap },
+                    { key: "cyan", label: "Review", icon: Lightning },
                     { key: "moon", label: "Quiet", icon: Moon },
                   ] as const
                 ).map(({ key, label, icon: Icon }) => (
@@ -370,7 +351,7 @@ export default function StudyFocusDock({
                     }}
                     className="text-[10px] font-mono text-muted hover:text-rose-300 flex items-center gap-1 transition-colors"
                   >
-                    <TimerOff size={11} />
+                    <EyeSlash size={11} />
                     <span>Hide</span>
                   </button>
                 )}
@@ -427,7 +408,7 @@ export default function StudyFocusDock({
                       }}
                       className="p-1.5 rounded-lg border border-white/10 bg-white/[0.02] text-muted hover:text-ink cursor-pointer"
                     >
-                      <RotateCcw size={12} />
+                      <ArrowCounterClockwise size={12} />
                     </button>
                   )}
                 </div>
@@ -448,7 +429,7 @@ export default function StudyFocusDock({
               }`}
             >
               <div className="flex items-center gap-2">
-                {focusVision.isActive ? <Camera size={14} className="text-emerald-400" /> : <CameraOff size={14} />}
+                {focusVision.isActive ? <Camera size={14} className="text-emerald-400" /> : <CameraSlash size={14} />}
                 <span>{focusVision.isActive ? "Focus Cam: Active" : "Enable Focus Cam"}</span>
               </div>
               <span className="text-[10px] opacity-75 font-mono">100% On-Device</span>
@@ -465,7 +446,7 @@ export default function StudyFocusDock({
                   if (sfxEnabled) playProceduralSfx("click");
                 }}
               >
-                <BrainCircuit size={13} className="text-brass" />
+                <Brain size={13} className="text-brass" />
                 <span>Quiz & Aid</span>
               </button>
               <button
@@ -558,7 +539,7 @@ export default function StudyFocusDock({
         </div>
 
         {/* Sparkle Quick Action Icon */}
-        <Sparkles size={12} className={`${activeTheme.text} opacity-80`} />
+        <Sparkle size={12} className={`${activeTheme.text} opacity-80`} />
       </motion.div>
     </div>
   );

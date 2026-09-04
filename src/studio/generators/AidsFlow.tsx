@@ -4,19 +4,7 @@ import remarkGfm from "remark-gfm";
 import { mathRemarkPlugins, mathRehypePlugins } from "../../lib/markdownMath";
 import { externalMarkdownComponents } from "../ExternalLink";
 import { motion } from "motion/react";
-import {
-  Copy,
-  Check,
-  RotateCcw,
-  Layers,
-  Plus,
-  Crown,
-  ChevronLeft,
-  ChevronRight,
-  Maximize2,
-  Minimize2,
-  Presentation,
-} from "lucide-react";
+
 import type {
   DocPayload,
   FlashcardsPayload,
@@ -33,6 +21,7 @@ import { SPRING } from "../fx";
 import { playSfx } from "../companion/sfx";
 import { GENERATOR_SYSTEM, buildSourceBlock, sanitizeCards } from "./common";
 import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote, Modal } from "../ui";
+import { ArrowCounterClockwise, ArrowsIn, ArrowsOut, CaretLeft, CaretRight, Check, Copy, Crown, Plus, Presentation, Stack } from "@phosphor-icons/react";
 
 /* ── Document aids: study guide, brief, FAQ, timeline ─────── */
 
@@ -291,7 +280,7 @@ JSON shape: {"cards":[{"front":"...","back":"...","topic":"..."}]}`,
       <div className="flex justify-end gap-3">
         <button className={btnGhost} onClick={onCancel}>Cancel</button>
         <button className={btnLamp} onClick={generate} disabled={busy}>
-          <Layers size={13} className="mr-1.5 inline" />
+          <Stack size={13} className="mr-1.5 inline" />
           {busy ? "Distilling…" : `Make ${count} cards`}
         </button>
       </div>
@@ -432,7 +421,7 @@ export function FlashcardsView({
               setFlipped(false);
             }}
           >
-            <RotateCcw size={13} className="mr-1.5 inline" /> Run again
+            <ArrowCounterClockwise size={13} className="mr-1.5 inline" /> Run again
           </button>
           <button className={btnLamp} onClick={() => setAddModalOpen(true)}>
             <Plus size={13} className="mr-1.5 inline" /> Add card
@@ -848,7 +837,7 @@ export function SlideshowView({ gen }: { gen: Generation }) {
             onClick={() => setFullscreen((v) => !v)}
             className="flex items-center gap-1 rounded-lg border border-hairline bg-ink/5 px-2.5 py-1 font-mono text-[11px] text-muted hover:text-ink"
           >
-            {fullscreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+            {fullscreen ? <ArrowsIn size={12} /> : <ArrowsOut size={12} />}
             {fullscreen ? "Exit" : "Fullscreen"}
           </button>
         </div>
@@ -904,7 +893,7 @@ export function SlideshowView({ gen }: { gen: Generation }) {
           disabled={activeIdx === 0}
           className={btnGhost + " disabled:opacity-30"}
         >
-          <ChevronLeft size={14} className="mr-1 inline" /> Previous
+          <CaretLeft size={14} className="mr-1 inline" /> Previous
         </button>
 
         {/* Slide indicator dots */}
@@ -926,7 +915,7 @@ export function SlideshowView({ gen }: { gen: Generation }) {
           disabled={activeIdx === slides.length - 1}
           className={btnLamp + " disabled:opacity-30"}
         >
-          Next <ChevronRight size={14} className="ml-1 inline" />
+          Next <CaretRight size={14} className="ml-1 inline" />
         </button>
       </div>
     </div>

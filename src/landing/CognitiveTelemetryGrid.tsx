@@ -1,14 +1,9 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import {
-  FileCheck2,
-  GitBranch,
-  Database,
-  Cpu,
-  Activity,
-} from "lucide-react";
+
 import { playProceduralSfx } from "../studio/companion/sfx";
+import { Cpu, Database, GitBranch, Pulse, SealCheck } from "@phosphor-icons/react";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -21,7 +16,7 @@ interface TelemetryModule {
   metricLabel: string;
   detail: string;
   liveSnippet: string;
-  icon: typeof FileCheck2;
+  icon: typeof SealCheck;
 }
 
 const MODULES: TelemetryModule[] = [
@@ -34,7 +29,7 @@ const MODULES: TelemetryModule[] = [
     metricLabel: "Page-level source fidelity",
     detail: "Every paragraph is bound to exact page coordinates in your textbooks, notes, and research PDFs.",
     liveSnippet: "Doc.pdf:p.42 §3.1 -> Source Anchor Verified (Score 0.998)",
-    icon: FileCheck2,
+    icon: SealCheck,
   },
   {
     id: "socratic",
@@ -144,7 +139,7 @@ export default function CognitiveTelemetryGrid() {
         </div>
         <div className="flex items-center gap-4 text-[11.5px] font-mono text-muted">
           <span className="flex items-center gap-1.5">
-            <Activity size={12} className="text-brass" />
+            <Pulse size={12} className="text-brass" />
             <span>Architecture: Local-First / BYOK</span>
           </span>
           <span className="hidden sm:inline text-brass/30">|</span>
@@ -212,7 +207,7 @@ export default function CognitiveTelemetryGrid() {
                     {mod.metric}
                   </div>
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brass/10 text-brass group-hover:bg-brass group-hover:text-night transition-all duration-300">
-                    <Icon size={18} strokeWidth={2.2} />
+                    <Icon size={18} />
                   </div>
                 </div>
 

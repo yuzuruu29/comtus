@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Check, Copy, ShieldCheck } from "lucide-react";
+
 import { STUDY_PLANS } from "../lib/paypal";
 import PayPalCheckout from "../studio/PayPalCheckout";
+import { Check, Copy, ShieldCheck } from "@phosphor-icons/react";
 
 export default function HostedCheckout() {
   const [params] = useSearchParams();

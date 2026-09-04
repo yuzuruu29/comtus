@@ -1,19 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import {
-  Sparkles,
-  Zap,
-  ExternalLink,
-  ShieldCheck,
-  RefreshCw,
-  AlertTriangle,
-  Crown,
-  CheckCircle2,
-} from "lucide-react";
+
 import SectionHead from "./SectionHead";
 import TiltCard from "./TiltCard";
 import { startOpenRouterOAuth } from "../lib/openrouterAuth";
+import { ArrowSquareOut, ArrowsClockwise, CheckCircle, Crown, Lightning, ShieldCheck, Sparkle, Warning } from "@phosphor-icons/react";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -280,7 +272,7 @@ export default function OpenRouterByokSection() {
                 onClick={() => void startOpenRouterOAuth()}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brass py-3 font-mono text-[12px] font-semibold text-white shadow-[0_4px_16px_rgba(165,115,28,0.25)] transition-all hover:bg-brassdeep hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
               >
-                <Sparkles size={14} className="shrink-0" />
+                <Sparkle size={14} className="shrink-0" />
                 <span>Connect with OpenRouter (1-Click)</span>
               </button>
             </div>
@@ -331,7 +323,7 @@ export default function OpenRouterByokSection() {
             </div>
 
             <div className="mt-6 pt-4 border-t border-[rgba(165,115,28,0.08)] text-[11.5px] font-mono text-brass font-semibold flex items-center gap-1.5">
-              <Sparkles size={14} className="text-brass shrink-0" />
+              <Sparkle size={14} className="text-brass shrink-0" />
               <span>100% Free Grounded Learning</span>
             </div>
           </div>
@@ -367,7 +359,7 @@ export default function OpenRouterByokSection() {
                 className="group flex items-center gap-1.5 font-mono text-[11.5px] text-muted transition-colors duration-300 hover:text-brass"
               >
                 {p.name}
-                <ExternalLink
+                <ArrowSquareOut
                   size={10}
                   className="opacity-50 transition-opacity group-hover:opacity-100"
                 />
@@ -589,7 +581,7 @@ export default function OpenRouterByokSection() {
         <div className="reveal-byok mt-12 overflow-hidden rounded-2xl border border-hairline bg-surface p-6 sm:p-8 shadow-sm">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-brass/30 bg-brass/10">
-              <AlertTriangle size={15} className="text-brassdeep" />
+              <Warning size={15} className="text-brassdeep" />
             </span>
             <div className="max-w-2xl">
               <h3 className="font-display text-[1.45rem] font-[520] leading-snug text-ink">
@@ -606,7 +598,7 @@ export default function OpenRouterByokSection() {
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-[rgba(165,115,28,0.12)] bg-raised p-4">
               <div className="flex items-center gap-2 text-[13px] font-semibold text-ink">
-                <RefreshCw size={13} className="shrink-0 text-brass" /> Switch free model
+                <ArrowsClockwise size={13} className="shrink-0 text-brass" /> Switch free model
               </div>
               <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
                 Open Settings and pick Dots3-Note or Nemotron 3.5 Lightning — switching takes two seconds.
@@ -615,7 +607,7 @@ export default function OpenRouterByokSection() {
 
             <div className="rounded-xl border border-[rgba(165,115,28,0.12)] bg-raised p-4">
               <div className="flex items-center gap-2 text-[13px] font-semibold text-ink">
-                <Zap size={13} className="shrink-0 text-sage" /> Use Groq fast free
+                <Lightning size={13} className="shrink-0 text-sage" /> Use Groq fast free
               </div>
               <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
                 Groq's dedicated LPUs serve 500+ tok/s with virtually zero queue latency.
@@ -646,7 +638,7 @@ export default function OpenRouterByokSection() {
               <div className="flex flex-wrap gap-2 pt-2">
                 {["Structured Deck Outlines", "Presenter Speaker Notes", "Interactive Slide Deck Viewer", "Export to PowerPoint / Markdown", "Adaptive Thinking"].map((f) => (
                   <span key={f} className="flex items-center gap-1.5 rounded-full border border-[rgba(165,115,28,0.15)] bg-surface px-3 py-1 font-mono text-[11px] text-ink font-medium shadow-sm">
-                    <CheckCircle2 size={12} className="text-brass" /> {f}
+                    <CheckCircle size={12} className="text-brass" /> {f}
                   </span>
                 ))}
               </div>

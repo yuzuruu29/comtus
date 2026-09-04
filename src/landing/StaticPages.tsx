@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, BookOpen, FileText, Mail, Sparkles } from "lucide-react";
+
 import Footer from "./Footer";
 import "./landing.css";
+import { ArrowLeft, BookOpen, Envelope, FileText, Shield, Sparkle } from "@phosphor-icons/react";
 
 interface StaticPageLayoutProps {
   title: string;
@@ -65,7 +66,7 @@ export function AboutPage() {
     <StaticPageLayout
       title="About Comtus"
       subtitle="The story of a thinking study companion, built for the quiet hours of deliberate study."
-      icon={Sparkles}
+      icon={Sparkle}
     >
       <div className="space-y-6">
         <h2 className="font-display text-[1.5rem] font-[450] text-brasspale">
@@ -313,7 +314,7 @@ export function ContactPage() {
     <StaticPageLayout
       title="Contact & Support"
       subtitle="Reach out to the Comtus engineering and educational team."
-      icon={Mail}
+      icon={Envelope}
     >
       <div className="space-y-6">
         <h2 className="font-display text-[1.5rem] font-[450] text-brasspale">
@@ -343,7 +344,7 @@ export function StudyCompanionPage() {
     <StaticPageLayout
       title="AI Study Companion for Students"
       subtitle="The comprehensive guide to studying smarter with Comtus: Understand, Organize, Practice, and Master."
-      icon={Sparkles}
+      icon={Sparkle}
     >
       <div className="space-y-6">
         <h2 className="font-display text-[1.5rem] font-[450] text-brasspale">
