@@ -15,6 +15,7 @@
     "desktop:build": "tauri build",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:mobile": "vitest run --config mobile/vitest.config.ts",
     "test:smoke": "node scripts/smoke-cdp.mjs",
     "test:tauri-smoke": "node scripts/smoke-tauri-cdp.mjs",
     "launch-check": "bash scripts/launch-check.sh"
