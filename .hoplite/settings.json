@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "ports": {"preview": 5199, "additional": {}},
+  "scripts": {
+    "setup": {"enabled": true, "command": "pnpm install --frozen-lockfile"},
+    "run": {"enabled": true, "command": "pnpm exec vite --host 0.0.0.0 --port 5199 --strictPort"},
+    "archive": {"enabled": true, "command": null},
+    "check": {"enabled": true, "command": "pnpm exec tsc --noEmit && pnpm lint && pnpm test"}
+  },
+  "mcpServers": []
+}
