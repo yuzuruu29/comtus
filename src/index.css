@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./styles/tokens.css";
 @import "./styles/pixel-palette.css";
 @import "./styles/font-presets.css";
 @import "@fontsource-variable/fraunces";
@@ -21,8 +22,12 @@
   --color-hairline-strong: var(--hairline-strong);
 
   --color-brass: var(--brass);
-  --color-brassdeep: var(--brassdeep);
-  --color-brasspale: var(--brasspale);
+  --color-brass-deep: var(--brass-deep);
+  --color-brass-pale: var(--brass-pale);
+  --color-leather: var(--leather);
+  /* Deprecated spellings — Task 2.5 retires the last consumer. */
+  --color-brassdeep: var(--brass-deep);
+  --color-brasspale: var(--brass-pale);
   --color-moon: var(--moon);
   --color-moondeep: var(--moondeep);
   --color-sage: var(--sage);
@@ -99,114 +104,7 @@
   --text-landing-statement--line-height: 1.28;
 }
 
-/* ── Theme values ───────────────────────────────────────── */
-:root {
-  --sat: env(safe-area-inset-top, 0px);
-  --sar: env(safe-area-inset-right, 0px);
-  --sab: env(safe-area-inset-bottom, 0px);
-  --sal: env(safe-area-inset-left, 0px);
-  --desk-header: 3.5rem;
-  --desk-row: 3rem;
-  --desk-pad: 1.25rem;
-  --desk-rail: 3rem;
-  --radius-control: 6px;
-  --radius-field: 10px;
-  --radius-dialog: 12px;
-  --z-titlebar: 40;
-  --z-palette: 80;
-  --z-modal: 90;
-
-  --dur-fast: 120ms;
-  --dur-med: 220ms;
-  --dur-slow: 360ms; /* Collapse reveals, card entrances, stage swaps */
-  --dur-glow: 480ms; /* light blooms — ambience pools, spotlight opacity */
-  --dur-settle: 700ms; /* grow-x bars, cite-flash decay, big one-shots */
-
-  /* Distances — lamplight travels short distances */
-  --rise-1: 4px; /* chips, pills, phase-label crossfade */
-  --rise-2: 8px; /* popovers, jump-to-latest */
-  --rise-3: 14px; /* toasts */
-  --drift-x: 12px; /* list-row exits */
-
-  /* Stagger — per-item entrance step; cap at 10 items everywhere */
-  --stagger-step: 30ms;
-
-  /* Loop tempos — the lamp breathes at three speeds */
-  --beat-fast: 1.4s; /* phase dot */
-  --beat-med: 2.6s; /* send halo */
-  --beat-slow: 3.2s; /* emblem breathe */
-
-  /* Daylight Paper (light) — default */
-  --ground: #f5f1e8;
-  --surface: #fcfaf4;
-  --raised: #eae4d6;
-  --ink: #0b132b;
-  --muted: #5a6274;
-  --hairline: rgba(27, 35, 52, 0.12);
-  --hairline-strong: rgba(27, 35, 52, 0.22);
-  --brass: #a5731c;
-  --brassdeep: #7d5312;
-  --brasspale: #e3b04b;
-  --moon: #8c7e6d;
-  --moondeep: #5c4e3e;
-  --sage: #4f8a5a;
-  --rust: #b2554a;
-  --candle: #d97724;
-  --glow-warm: rgba(165, 115, 28, 0.14);
-  --glow-cool: rgba(140, 126, 109, 0.12);
-  --elev-card: 1px 2px 0 rgba(92, 61, 30, 0.14), 0 4px 14px -3px rgba(74, 46, 27, 0.12);
-  --elev-lift: 2px 4px 0 rgba(92, 61, 30, 0.2), 0 8px 20px -4px rgba(74, 46, 27, 0.18);
-  --elev-modal: 0 28px 64px -12px rgba(27, 35, 52, 0.28);
-  color-scheme: light;
-}
-
-html[data-theme="light"] {
-  --ground: #f5f1e8;
-  --surface: #fcfaf4;
-  --raised: #eae4d6;
-  --ink: #0b132b;
-  --muted: #5a6274;
-  --hairline: rgba(27, 35, 52, 0.12);
-  --hairline-strong: rgba(27, 35, 52, 0.22);
-  --brass: #a5731c;
-  --brassdeep: #7d5312;
-  --brasspale: #e3b04b;
-  --moon: #8c7e6d;
-  --moondeep: #5c4e3e;
-  --sage: #4f8a5a;
-  --rust: #b2554a;
-  --candle: #d97724;
-  --glow-warm: rgba(165, 115, 28, 0.14);
-  --glow-cool: rgba(140, 126, 109, 0.12);
-  --elev-card: 1px 2px 0 rgba(92, 61, 30, 0.14), 0 4px 14px -3px rgba(74, 46, 27, 0.12);
-  --elev-lift: 2px 4px 0 rgba(92, 61, 30, 0.2), 0 8px 20px -4px rgba(74, 46, 27, 0.18);
-  --elev-modal: 0 28px 64px -12px rgba(27, 35, 52, 0.28);
-  color-scheme: light;
-}
-
-html[data-theme="dark"] {
-  --ground: #0b0f1a;
-  --surface: #121828;
-  --raised: #1a2136;
-  --ink: #f2ede3;
-  --muted: #8e96ab;
-  --hairline: rgba(242, 237, 227, 0.09);
-  --hairline-strong: rgba(242, 237, 227, 0.18);
-  --brass: #e3b04b;
-  --brassdeep: #c99236;
-  --brasspale: #f0ce8c;
-  --moon: #c4b8a5;
-  --moondeep: #3d352b;
-  --sage: #8fbf98;
-  --rust: #c96a5e;
-  --candle: #ff9e43;
-  --glow-warm: rgba(227, 176, 75, 0.22);
-  --glow-cool: rgba(196, 184, 165, 0.18);
-  --elev-card: 0 1px 2px rgba(8, 11, 20, 0.35), 0 8px 24px rgba(8, 11, 20, 0.28);
-  --elev-lift: 0 4px 16px rgba(8, 11, 20, 0.4), 0 0 24px var(--glow-warm);
-  --elev-modal: 0 40px 100px -20px rgba(0, 0, 0, 0.7);
-  color-scheme: dark;
-}
+/* Theme values live in ./styles/tokens.css — the single source of truth. */
 
 html[data-shell="desktop"] {
   --desk-header: 2.5rem;
