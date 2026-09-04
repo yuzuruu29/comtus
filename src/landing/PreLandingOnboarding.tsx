@@ -15,7 +15,6 @@ import {
   VELVET_DISSOLVE_EASE,
   STAGE_TRANSITION_EASE,
 } from "./pixelMotion";
-import "./pixel-landing.css";
 import { ArrowLeft, ArrowRight, BookOpen, Check, Compass, Lightning, ShieldCheck, Sparkle, Target } from "@phosphor-icons/react";
 
 export const ONBOARDING_SEEN_KEY = "comtus_onboarding_seen";

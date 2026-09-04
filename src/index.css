@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "./styles/tokens.css";
-@import "./styles/pixel-palette.css";
+@import "./styles/chrome-pixel.css";
 @import "./styles/font-presets.css";
 @import "@fontsource-variable/fraunces";
 @import "@fontsource-variable/inter";

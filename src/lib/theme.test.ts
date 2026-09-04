@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { applyFontPreset, applyPixelDesk, resolveAppTheme } from "./theme";
+import { applyChrome, applyFontPreset, resolveAppTheme } from "./theme";
 
 describe("resolveAppTheme", () => {
   it("honors an explicit light or dark preference", () => {
@@ -13,16 +13,16 @@ describe("resolveAppTheme", () => {
   });
 });
 
-describe("applyPixelDesk", () => {
+describe("applyChrome", () => {
   afterEach(() => {
-    delete document.documentElement.dataset.pixel;
+    delete document.documentElement.dataset.chrome;
   });
 
-  it("sets and clears the studio pixel flag on html", () => {
-    applyPixelDesk(true);
-    expect(document.documentElement.dataset.pixel).toBe("on");
-    applyPixelDesk(false);
-    expect(document.documentElement.dataset.pixel).toBeUndefined();
+  it("sets and clears the pixel accent flag on html", () => {
+    applyChrome(true);
+    expect(document.documentElement.dataset.chrome).toBe("pixel");
+    applyChrome(false);
+    expect(document.documentElement.dataset.chrome).toBeUndefined();
   });
 });
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useNavigate } from "react-router-dom";
 import { createNotebook } from "../lib/db";
 import { detectPlatform, isDeskShell, isTauri } from "../lib/desktop";
-import { useFontPresetEffect, usePixelDeskEffect, useThemeEffect } from "../lib/theme";
+import { useFontPresetEffect, useChromeEffect, useThemeEffect } from "../lib/theme";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { DeskContext, defaultDeskActions, type DeskActions } from "./DeskContext";
 import CommandPalette from "./CommandPalette";
@@ -10,7 +10,6 @@ import UpdateToast from "./UpdateToast";
 import FreeLimitWarningModal from "./FreeLimitWarningModal";
 import DeskLife from "./companion/DeskLife";
 import { MilestoneUiProvider } from "./companion/milestoneUi";
-import "./pixel-desk.css";
 import { cycleLayout, loadLayout, saveLayout, togglePane, type LayoutMode } from "./layout";
 import { matchesShortcut } from "./shortcuts";
 import type { SettingsTab } from "./SettingsModal";
@@ -44,9 +43,9 @@ export default function DeskShell({
   const compactViewport = useMediaQuery("(max-width: 1199px)");
   const compact = isDeskShell() && compactViewport;
   useThemeEffect();
-  // 16-bit Cozy Pixel Bookshop skin is active by default (html[data-pixel="on"]).
-  // Scholar Study mode can be toggled in Settings (data-pixel="off" / pixelDesk: false).
-  usePixelDeskEffect();
+  // Optional pixel accent lettering (html[data-chrome="pixel"]). Off by
+  // default; it changes display type only, never the palette.
+  useChromeEffect();
   // Curated typography system (html[data-font-preset]) — owns all font tokens.
   useFontPresetEffect();
 

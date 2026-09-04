@@ -25,18 +25,15 @@ const TOKENS = [
 
 const TOKENS_CSS = "src/styles/tokens.css";
 
-/** The pixel skins still remap semantic tokens onto the --px-* layer.
- *  Task 1.2 retires that layer and empties this list. Shrink only. */
-const REDEFINE_DEBT = ["src/studio/pixel-desk.css", "src/landing/pixel-landing.css"];
+/** Files still allowed to redefine a semantic token. Task 1.2 retired the
+ *  --px-* layer, so this is empty and must stay that way. Shrink only. */
+const REDEFINE_DEBT: string[] = [];
 
 /** Files still carrying raw hex, each with the task that removes them.
  *  This list may shrink. It may never grow. */
 const HEX_DEBT: Record<string, string> = {
-  "src/studio/pixel-desk.css": "Task 1.2 — becomes chrome-pixel.css",
-  "src/landing/pixel-landing.css": "Task 4.1 — landing rebuilt",
   "src/landing/scholar-deck.css": "Task 4.1 — deck deleted",
   "src/landing/cantor-theme.css": "Task 4.1 — landing rebuilt",
-  "src/styles/pixel-palette.css": "Task 1.2 — px-* layer retired",
   "src/studio/studio.css": "Task 2.4 — chat pane rebuilt on the kit",
   "src/index.css": "Task 4.1 — landing-only literals move or go",
 };
@@ -67,6 +64,13 @@ describe("design tokens", () => {
     const offenders = cssFiles()
       .filter((rel) => rel !== TOKENS_CSS && !(rel in HEX_DEBT))
       .filter((rel) => /#[0-9a-f]{3,8}\b/i.test(stripComments(read(rel))));
+    expect(offenders).toEqual([]);
+  });
+
+  it("has no legacy pixel theme hooks", () => {
+    // The pixel look is an accent chrome (html[data-chrome="pixel"]), never a
+    // palette override keyed off data-pixel / data-landing-pixel.
+    const offenders = cssFiles().filter((rel) => /data-pixel|data-landing-pixel/.test(read(rel)));
     expect(offenders).toEqual([]);
   });
 

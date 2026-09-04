@@ -21,10 +21,12 @@ export function applyResolvedTheme(resolved: ResolvedTheme): void {
   scheme?.setAttribute("content", resolved);
 }
 
-/** Studio-only pixel chrome. Landing uses html[data-landing-pixel] instead. DeskShell clears this on leave. */
-export function applyPixelDesk(on: boolean): void {
-  if (on) document.documentElement.dataset.pixel = "on";
-  else delete document.documentElement.dataset.pixel;
+/** Optional pixel accent chrome — display lettering only (styles/chrome-pixel.css).
+ *  It never touches the palette; colour always comes from tokens.css.
+ *  DeskShell clears this on leave. */
+export function applyChrome(on: boolean): void {
+  if (on) document.documentElement.dataset.chrome = "pixel";
+  else delete document.documentElement.dataset.chrome;
 }
 
 /** Typography preset ownership lives on html[data-font-preset]; CSS maps each
@@ -44,13 +46,13 @@ export function useFontPresetEffect() {
   }, [fontPreset]);
 }
 
-/** Pixelify on all desk text + arcade press while the desk is mounted. */
-export function usePixelDeskEffect() {
-  const pixelDesk = useSettings((s) => s.pixelDesk !== false);
+/** Pixel accent lettering while the desk is mounted. Off unless asked for. */
+export function useChromeEffect() {
+  const chrome = useSettings((s) => s.pixelDesk === true);
   useEffect(() => {
-    applyPixelDesk(pixelDesk);
-    return () => applyPixelDesk(false);
-  }, [pixelDesk]);
+    applyChrome(chrome);
+    return () => applyChrome(false);
+  }, [chrome]);
 }
 
 /** Sets html[data-theme] for landing and studio from the same preference. */

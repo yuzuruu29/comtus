@@ -18,8 +18,7 @@ import Footer from "./Footer";
 import OnboardingModal, { type SubjectOption } from "./OnboardingModal";
 import SectionDivider from "./SectionDivider";
 import { LandingPlayProvider } from "./LandingPlay";
-import { applyLandingPixel } from "./pixelMotion";
-import "./pixel-landing.css";
+import { clearLandingChrome } from "./pixelMotion";
 import "./cantor-theme.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -37,8 +36,7 @@ export default function LandingPage() {
   const [activeDiscipline, setActiveDiscipline] = useState<SubjectOption | null>(null);
 
   useEffect(() => {
-    applyLandingPixel(true);
-    return () => applyLandingPixel(false);
+    clearLandingChrome();
   }, []);
 
   useEffect(() => {

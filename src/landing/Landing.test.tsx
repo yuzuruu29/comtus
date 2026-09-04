@@ -148,12 +148,12 @@ describe("Static Public Pages", () => {
   }, 20000);
 });
 
-describe("Pixel landing overlay", () => {
-  it("sets and clears html[data-landing-pixel]", async () => {
-    const { applyLandingPixel } = await import("./pixelMotion");
-    applyLandingPixel(true);
-    expect(document.documentElement.dataset.landingPixel).toBe("on");
-    applyLandingPixel(false);
+describe("Landing chrome", () => {
+  it("clears any stale pixel-skin attributes", async () => {
+    const { clearLandingChrome } = await import("./pixelMotion");
+    document.documentElement.dataset.landingPixel = "on";
+    document.documentElement.dataset.lamp = "on";
+    clearLandingChrome();
     expect(document.documentElement.dataset.landingPixel).toBeUndefined();
     expect(document.documentElement.dataset.lamp).toBeUndefined();
   });

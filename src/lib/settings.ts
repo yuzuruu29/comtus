@@ -106,7 +106,9 @@ export const useSettings = create<SettingsState>()(
       motionMode: "full",
       companion: true,
       companionSfx: true,
-      pixelDesk: true,
+      // Pixel accent chrome is opt-in for new installs (spec 3.4). Existing
+      // users keep their choice through migrate().
+      pixelDesk: false,
       fontPreset: "instrument",
       lastBackupAt: 0,
       setProvider: (provider) => set({ provider }),

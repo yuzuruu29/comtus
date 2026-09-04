@@ -14,12 +14,11 @@ export function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-export function applyLandingPixel(on: boolean): void {
-  if (on) {
-    document.documentElement.dataset.landingPixel = "on";
-    delete document.documentElement.dataset.fontPreset;
-  } else {
-    delete document.documentElement.dataset.landingPixel;
-    delete document.documentElement.dataset.lamp;
-  }
+/** The landing renders on the base tokens now. The pixel skin this used to
+ *  switch on (html[data-landing-pixel]) was a whole-palette override; spec 3.3
+ *  retires it and Task 4.1 rebuilds the page. Kept as a one-way clear so a
+ *  stale attribute from a previous session cannot linger. */
+export function clearLandingChrome(): void {
+  delete document.documentElement.dataset.landingPixel;
+  delete document.documentElement.dataset.lamp;
 }

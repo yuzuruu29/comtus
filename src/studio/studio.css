@@ -335,7 +335,7 @@
   to { transform: translateX(220%); }
 }
 /* Brass lamp-glint across a card's top rule — house ease in Scholar,
-   stepped in pixel-desk.css. Transform-only so it stays on the compositor. */
+   Transform-only so it stays on the compositor. */
 @keyframes shelf-glint {
   from { transform: translateX(-120%); opacity: 0; }
   22% { opacity: 1; }
@@ -370,7 +370,7 @@
 }
 
 /* Pixel desk replaces chip-pop with stepped pixel-pop (no 1.06 overshoot)
-   in pixel-desk.css when html[data-pixel="on"]. */
+   (pixel chrome is lettering only now). */
 
 /* Citation chips arrive one after another. Scope this to a wrapper that
    contains ONLY chips — an icon sibling would consume the nth-child(1)

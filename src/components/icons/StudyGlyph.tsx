@@ -160,7 +160,7 @@ function GlyphArtwork({ glyph, size }: { glyph: StudyGlyphKey; size: number }) {
           <defs>
             <linearGradient id="gCode" x1="4" y1="8" x2="28" y2="24" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stopColor="#F5C869" />
-              <stop offset="100%" stopColor="#A5731C" />
+              <stop offset="100%" stopColor="#845C16" />
             </linearGradient>
           </defs>
           <path d="M10 10L4.5 16L10 22" stroke="url(#gCode)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

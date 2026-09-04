@@ -65,6 +65,9 @@
   --beat-slow: 3.2s; /* emblem breathe */
   --beat-lamp: 3.2s; /* composer glow while streaming */
 
+  /* ── Accent chrome face (spec 5.1) ───────────────────────────────────── */
+  --font-pixel: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
+
   /* ── Daylight palette (spec 4) ───────────────────────────────────────── */
   --ground: #f5f1e8;
   --surface: #fcfaf4;

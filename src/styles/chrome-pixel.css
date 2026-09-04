@@ -1,0 +1,24 @@
+/* ==========================================================================
+   Pixel accent chrome — html[data-chrome="pixel"]
+
+   The 16-bit look is an accent, never a theme. It contributes display
+   lettering and nothing else: no token remaps, no palette override, no
+   background texture, no !important. Colour comes from tokens.css in both
+   themes, exactly as it does with the chrome off.
+
+   What this replaces: pixel-desk.css remapped fifteen semantic tokens onto a
+   --px-* layer (--ink, --ground, --surface, --brass...), which pinned the
+   studio to one dark palette regardless of html[data-theme] and silently
+   reintroduced the pre-WCAG colours. Spec 3.3 retires that world.
+   ========================================================================== */
+
+@import "@fontsource-variable/pixelify-sans";
+
+html[data-chrome="pixel"] .font-display,
+html[data-chrome="pixel"] .md h1,
+html[data-chrome="pixel"] .md h2,
+html[data-chrome="pixel"] .md h3,
+html[data-chrome="pixel"] .md h4 {
+  font-family: var(--font-pixel);
+  letter-spacing: 0.01em;
+}
