@@ -18,7 +18,12 @@ vi.mock("motion/react", async (importOriginal) => {
 vi.mock("./ConsoleShell", () => ({ default: ({ children }: { children: ReactNode }) => <>{children}</> }));
 vi.mock("./companion/DeskLife", () => ({ default: () => null }));
 
-afterEach(cleanup);
+// fake-indexeddb is shared across every test file in the worker, so seeded
+// notebooks leak into later files and change what the shelf renders.
+afterEach(async () => {
+  cleanup();
+  await db.notebooks.clear();
+});
 
 describe("workspace header", () => {
   it("opens the Settings dialog from the gear button", async () => {
