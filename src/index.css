@@ -196,11 +196,10 @@ html[data-shell] body {
   background: linear-gradient(92deg, var(--brassdeep), var(--brasspale));
 }
 
+/* Solid, not a gradient clipped to text: gradient text is a generated-UI tell
+   (spec 2.2 B4), and it defeats the contrast the palette guarantees. */
 .text-lamp {
-  background: linear-gradient(92deg, var(--brassdeep) 10%, var(--brasspale) 90%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--brass);
 }
 
 .hairline {
@@ -257,21 +256,19 @@ html[data-shell] body {
   margin-top: -3px;
   background: var(--brasspale);
 }
+/* Scales with transform rather than animating width/height/margin: those are
+   layout-bound and force a reflow every frame (spec 6.6). */
 .cursor-ring {
   width: 38px;
   height: 38px;
   margin-left: -19px;
   margin-top: -19px;
   border: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
-  transition: width 0.3s var(--ease-house), height 0.3s var(--ease-house),
-    border-color 0.3s, margin 0.3s var(--ease-house);
+  transition: transform var(--dur-slow) var(--ease-out), border-color var(--dur-slow);
 }
 .cursor-ring.is-active {
-  width: 58px;
-  height: 58px;
-  margin-left: -29px;
-  margin-top: -29px;
-  border-color: color-mix(in srgb, var(--brasspale) 80%, transparent);
+  transform: scale(1.526);
+  border-color: color-mix(in srgb, var(--brass-pale) 80%, transparent);
 }
 
 @media (hover: none), (pointer: coarse) {
@@ -350,7 +347,7 @@ html[data-shell] body {
   will-change: transform;
   margin-left: -25px;
   margin-top: -8px;
-  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+  transition: transform 0.15s var(--ease-out), filter 0.3s ease;
   filter: drop-shadow(0 0 10px rgba(255, 152, 0, 0.5));
 }
 

@@ -22,6 +22,33 @@ describe("brand: no CRT chrome", () => {
   });
 });
 
+describe("brand: motion", () => {
+  /** Files whose motion is rewritten by a later task. Shrink only. */
+  const MOTION_DEBT = ["src/landing/cantor-theme.css", "src/landing/scholar-deck.css"];
+
+  it("uses no bounce or overshoot easing", () => {
+    // cubic-bezier with y1 or y2 > 1 overshoots. BRAND.md 5 forbids it.
+    const bounce = /cubic-bezier\(\s*[\d.]+\s*,\s*1\.[1-9]/;
+    const offenders = sources()
+      .filter((f) => !MOTION_DEBT.includes(f.path))
+      .filter((f) => bounce.test(f.text))
+      .map((f) => f.path);
+    expect(offenders).toEqual([]);
+  });
+
+  it("never transitions box size", () => {
+    // Spec 6.6 names width/height/margin/padding: these reflow the document
+    // every frame. The composer thumb still animates `left`, which only moves
+    // an absolutely positioned element; Task 2.4 rebuilds it on transform.
+    const boxSize = /transition:[^;]*\b(width|height|margin|padding)\b/;
+    const offenders = sources()
+      .filter((f) => f.path.endsWith(".css") && !MOTION_DEBT.includes(f.path))
+      .filter((f) => boxSize.test(f.text))
+      .map((f) => f.path);
+    expect(offenders).toEqual([]);
+  });
+});
+
 describe("brand: one icon library", () => {
   it("imports icons only from @phosphor-icons/react", () => {
     const offenders = sources()

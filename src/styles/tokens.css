@@ -43,7 +43,12 @@
   --bp-md: 900px;
   --bp-lg: 1200px;
 
-  /* ── Motion ──────────────────────────────────────────────────────────── */
+  /* ── Motion (spec 6.6) ───────────────────────────────────────────────── */
+  /* One easing vocabulary. No bounce, no overshoot: BRAND.md 5 forbids it,
+     and a study desk should not spring at someone at 2am. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+
   --dur-fast: 120ms;
   --dur-med: 220ms;
   --dur-slow: 360ms; /* Collapse reveals, card entrances, stage swaps */

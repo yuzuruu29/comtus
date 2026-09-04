@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useSettings } from "../lib/settings";
 import { usageLimitRows, type UsageLimitRow } from "../lib/codexUsage";
@@ -22,7 +23,7 @@ function UsageRow({ row }: { row: UsageLimitRow }) {
         aria-valuetext={`${row.usedPercent}% used, ${row.caption}`}
         className="usage-limit-track"
       >
-        <span className="usage-fill" style={{ width: `${row.usedPercent}%` }} />
+        <span className="usage-fill" style={{ "--fill": row.usedPercent / 100 } as CSSProperties} />
       </div>
       <div className="usage-caption">{row.caption}</div>
     </div>

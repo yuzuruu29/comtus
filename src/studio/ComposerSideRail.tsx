@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Brain, CaretDown, CaretRight, Gauge, Lightning, Sparkle } from "@phosphor-icons/react";
 import { EFFORTS, effortLabelFor } from "../lib/llm";
@@ -82,7 +82,7 @@ export function ComposerSideRail({
   const reduceMotion = !!useReducedMotion();
   const step = effortToStep(effort);
   const along = `calc(12px + ${step / 3} * (100% - 24px))`;
-  const fill = `calc(${step / 3} * (100% - 24px))`;
+  const fill = step / 3;
   const label = effortLabelFor(effort);
   const face = LEVEL_FACES[effort] ?? LEVEL_FACES.high;
   const FaceIcon = face.icon;
@@ -271,7 +271,7 @@ export function ComposerSideRail({
                   }
                 }}
               >
-                <span className="effort-fill" style={{ width: fill }} />
+                <span className="effort-fill" style={{ "--fill": fill } as CSSProperties} />
                 {EFFORTS.map((item, index) => (
                   <button
                     key={item.id}

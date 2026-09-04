@@ -19,7 +19,8 @@ export function useMotionMode(): "none" | "minimal" | "full" {
 
 /** House springs — one feel across the whole app. */
 export const SPRING = { type: "spring", stiffness: 350, damping: 32 } as const;
-export const SOFT = { type: "spring", stiffness: 220, damping: 26 } as const;
+/** A tween, not a spring: springs overshoot, and BRAND.md 5 forbids bounce. */
+export const SOFT = { type: "tween", duration: 0.2, ease: [0.16, 1, 0.3, 1] } as const;
 export const CRISP = { type: "spring", stiffness: 420, damping: 36, mass: 0.8 } as const;
 /** Cubic approximation of the house ease, for non-spring tweens. */
 export const HOUSE = [0.16, 1, 0.3, 1] as const;
