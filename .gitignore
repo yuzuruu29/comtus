@@ -31,3 +31,7 @@ minimax-ad-assets/
 design-mockups/*
 !design-mockups/option-b-console-deck.png
 !design-mockups/composer-chat-options.html
+
+# Nested agent worktrees and SDD scratch — never commit
+.claude/
+.superpowers/

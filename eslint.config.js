@@ -9,6 +9,8 @@ const sourceFiles = ["src/**/*.{ts,tsx}"];
 export default tseslint.config(
   {
     ignores: [
+      ".claude/**",
+      "**/dist/**",
       ".graphify/**",
       ".rtk/**",
       "coverage/**",
