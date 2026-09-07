@@ -21,10 +21,6 @@ vi.mock("./SettingsModal", () => ({ default: () => null }));
 vi.mock("./DeskShell", () => ({
   default: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
-vi.mock("./ConsoleShell", () => ({
-  default: ({ children }: { children: ReactNode }) => <>{children}</>,
-}));
-vi.mock("./companion/MilestonesButton", () => ({ default: () => null }));
 vi.mock("./Titlebar", () => ({ default: () => null }));
 vi.mock("../desk/DeskApp", () => ({ default: () => null }));
 
@@ -54,11 +50,11 @@ describe("notebook create → studio navigation", () => {
       </MemoryRouter>,
     );
 
-    // Notebook list (no id) renders with a Create button.
-    expect(await screen.findByRole("button", { name: "Create new" })).toBeInTheDocument();
+    // Shelf (no id, no notebooks yet) renders its empty-state create action.
+    expect(await screen.findByRole("button", { name: "New notebook" })).toBeInTheDocument();
 
-    // Open the create modal.
-    fireEvent.click(screen.getByRole("button", { name: "Create new" }));
+    // Open the create dialog.
+    fireEvent.click(screen.getByRole("button", { name: "New notebook" }));
 
     // Type a name and submit.
     fireEvent.change(screen.getByPlaceholderText("Name this notebook"), {

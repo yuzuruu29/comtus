@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import NotebookList from "./NotebookList";
+import Shelf from "./Shelf";
 import Workspace from "./Workspace";
 import DeskApp from "../desk/DeskApp";
 import { MotionPrefs } from "./fx";
@@ -39,7 +39,7 @@ export default function StudioApp() {
   return (
     <MotionPrefs>
       {!notebookId ? (
-        <NotebookList onOpen={openNotebook} needsKey={!hasKey} />
+        <Shelf onOpen={openNotebook} needsKey={!hasKey} />
       ) : (
         <Workspace key={notebookId} notebookId={notebookId} />
       )}
