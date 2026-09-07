@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createNotebook } from "../lib/db";
 import { detectPlatform, isDeskShell, isTauri } from "../lib/desktop";
 import { useReadingEffect, useChromeEffect, useThemeEffect } from "../lib/theme";
-import { useMediaQuery } from "../lib/useMediaQuery";
+import { useBreakpoint } from "../lib/useBreakpoint";
 import { DeskContext, defaultDeskActions, type DeskActions } from "./DeskContext";
 import CommandPalette from "./CommandPalette";
 import UpdateToast from "./UpdateToast";
@@ -40,8 +40,8 @@ export default function DeskShell({
   const [milestonesOpen, setMilestonesOpen] = useState(false);
   const [milestoneCount, setMilestoneCount] = useState(0);
   const platform = detectPlatform();
-  const compactViewport = useMediaQuery("(max-width: 1199px)");
-  const compact = isDeskShell() && compactViewport;
+  const bp = useBreakpoint();
+  const compact = isDeskShell() && bp === "sm";
   useThemeEffect();
   // Optional pixel accent lettering (html[data-chrome="pixel"]). Off by
   // default; it changes display type only, never the palette.

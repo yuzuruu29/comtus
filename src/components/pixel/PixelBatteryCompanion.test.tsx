@@ -10,12 +10,36 @@ import {
   persistBatteryPos,
 } from "./PixelBatteryCompanion";
 
+/** Drives useBreakpoint's three matchMedia listeners to a single named rung,
+    since isMobile now comes from the sm/md/lg/xl ladder, not window.innerWidth. */
+function mockBreakpointMedia(bp: "sm" | "lg") {
+  const md = bp !== "sm";
+  const lg = bp === "lg";
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: query === "(min-width: 640px)" ? md : query === "(min-width: 900px)" ? lg : false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+}
+
 afterEach(() => {
   cleanup();
   localStorage.removeItem(COMTUS_BATTERY_POS_KEY);
   localStorage.removeItem("comtus:lamp_pos");
   vi.useRealTimers();
   vi.restoreAllMocks();
+  // Tests that call mockBreakpointMedia override window.matchMedia; put back
+  // the desktop-shaped default so later tests in this file keep working.
+  mockBreakpointMedia("lg");
 });
 
 describe("PixelBatteryCompanion", () => {
@@ -96,13 +120,13 @@ describe("PixelBatteryCompanion", () => {
   });
 
   it("adapts scale for mobile viewports vs desktop", () => {
-    window.innerWidth = 375;
+    mockBreakpointMedia("sm");
     const { unmount } = render(<PixelBatteryCompanion />);
     let companion = screen.getByLabelText("16-bit Blue Battery Companion");
     expect(companion.style.width).toBe(`${36 * 2.25}px`);
     unmount();
 
-    window.innerWidth = 1024;
+    mockBreakpointMedia("lg");
     render(<PixelBatteryCompanion />);
     companion = screen.getByLabelText("16-bit Blue Battery Companion");
     expect(companion.style.width).toBe(`${36 * 4.5}px`);

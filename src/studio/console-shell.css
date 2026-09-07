@@ -16,7 +16,7 @@
   font-family: var(--font-display, sans-serif);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 639px) {
   .console-shell-root {
     padding: 0;
   }

@@ -16,6 +16,7 @@ import SettingsModal, { type SettingsTab } from "./SettingsModal";
 import DeskShell from "./DeskShell";
 import CaptionButtons from "./Titlebar";
 import { useNotebookDesk } from "./useNotebookDesk";
+import { bpAtLeast, useBreakpoint } from "../lib/useBreakpoint";
 import { panesFor } from "./layout";
 import { usePaneResize } from "./usePaneResize";
 import { db } from "../lib/db";
@@ -47,6 +48,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   }, []);
   const [mobilePane, setMobilePane] = useState<MobilePane>("chat");
   const panes = panesFor(desk.layout);
+  const bp = useBreakpoint();
 
   const collapseSources = useCallback(
     () => setLayout(panes.studio ? "writing" : "focus"),
@@ -253,7 +255,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 modelLabel={modelLabel}
                 onOpenSettings={() => openSettings("models")}
                 onAddSources={() => {
-                  if (window.matchMedia("(min-width: 1024px)").matches) {
+                  if (bpAtLeast(bp, "md")) {
                     desk.setLayout(panes.studio ? "standard" : "reading");
                   } else {
                     setMobilePane("sources");

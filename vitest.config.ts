@@ -12,6 +12,7 @@ const DOM_LIB_TESTS = [
   "pixelMotion",
   "soundEngine",
   "theme",
+  "useBreakpoint",
   "useSmoothText",
   "voice",
   "webSearch",

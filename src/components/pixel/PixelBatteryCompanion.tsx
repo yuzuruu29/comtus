@@ -18,6 +18,7 @@ import {
   BATTERY_WIDTH,
 } from "./pixelBatteryFrames";
 import { playSfx as playEngineSfx } from "../../lib/soundEngine";
+import { bpAtLeast, useBreakpoint } from "../../lib/useBreakpoint";
 import { Brain, CaretUp, Lightning, Moon, Sun } from "@phosphor-icons/react";
 
 export type BatteryAnimationMood = "idle" | "think" | "poke" | "sleep" | "cheer" | "celebrate";
@@ -219,12 +220,8 @@ export function PixelBatteryCompanion({
   const [internalMood, setInternalMood] = useState<BatteryAnimationMood>(initialMood);
   const currentMood = controlledMood ?? internalMood;
 
-  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-    window.addEventListener("resize", checkMobile, { passive: true });
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  const bp = useBreakpoint();
+  const isMobile = !bpAtLeast(bp, "lg");
 
   const scale = propScale ?? (isMobile ? 2.25 : 4.5);
   const restingOffset = useMemo(
