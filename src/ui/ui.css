@@ -1,0 +1,465 @@
+/* ==========================================================================
+   src/ui primitive kit — component classes. Tokens only (src/styles/tokens.css),
+   enforced by src/styles/tokens.test.ts. No raw hex, no invented tokens.
+
+   Press physics (Spec BRAND.md 5): rest = --elev-card, hover = --elev-lift
+   + a small lift, active = --elev-card + a small depression. The old
+   .btn-ink-press class this was going to reuse was deleted with the pixel
+   palette (Task 1.2) — this file rebuilds the feel from the elevation
+   tokens directly instead of reviving that name.
+   ========================================================================== */
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+.btn-md {
+  min-height: 40px;
+  padding: 0 1.125rem;
+  font-size: 0.9375rem;
+}
+.btn-sm {
+  min-height: 32px;
+  padding: 0 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.btn-primary {
+  background: var(--brass);
+  color: var(--ground);
+  box-shadow: var(--elev-card);
+}
+.btn-primary:hover:not(:disabled) {
+  box-shadow: var(--elev-lift);
+  transform: translateY(-1px);
+}
+.btn-primary:active:not(:disabled) {
+  background: var(--brass-deep);
+  box-shadow: var(--elev-card);
+  transform: translateY(1px);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--hairline-strong);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--raised);
+}
+.btn-secondary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
+}
+.btn-ghost:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn-danger {
+  background: var(--rust);
+  color: var(--ground);
+}
+.btn-danger:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.btn-danger:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn-spinner {
+  animation: ui-spin var(--dur-slow) linear infinite;
+}
+
+@keyframes ui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Icon button ─────────────────────────────────────────────────────── */
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.icon-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.icon-btn:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+.icon-btn-md {
+  width: 40px;
+  height: 40px;
+}
+.icon-btn-sm {
+  width: 32px;
+  height: 32px;
+}
+
+.icon-btn-ghost {
+  background: transparent;
+  color: var(--muted);
+}
+.icon-btn-ghost:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+.icon-btn-ghost:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.icon-btn-secondary {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--hairline-strong);
+}
+.icon-btn-secondary:hover:not(:disabled) {
+  background: var(--raised);
+}
+.icon-btn-secondary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.icon-btn-primary {
+  background: var(--brass);
+  color: var(--ground);
+  box-shadow: var(--elev-card);
+}
+.icon-btn-primary:hover:not(:disabled) {
+  box-shadow: var(--elev-lift);
+  transform: translateY(-1px);
+}
+.icon-btn-primary:active:not(:disabled) {
+  background: var(--brass-deep);
+  box-shadow: var(--elev-card);
+  transform: translateY(1px);
+}
+
+.icon-btn-danger {
+  background: transparent;
+  color: var(--rust);
+}
+.icon-btn-danger:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--rust) 12%, transparent);
+}
+.icon-btn-danger:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* ── Chip ────────────────────────────────────────────────────────────── */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0.25rem 0.375rem 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.chip:hover {
+  border-color: var(--hairline-strong);
+}
+.chip-selected {
+  border-color: var(--brass);
+  background: color-mix(in oklab, var(--brass) 14%, var(--surface));
+}
+.chip-body {
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.chip-body:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+}
+.chip-remove:hover {
+  opacity: 1;
+  background: color-mix(in oklab, var(--ink) 10%, transparent);
+}
+.chip-remove:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+.chip-tone-brass {
+  border-color: color-mix(in oklab, var(--brass) 45%, var(--hairline));
+}
+.chip-tone-moon {
+  border-color: color-mix(in oklab, var(--moon) 45%, var(--hairline));
+}
+.chip-tone-sage {
+  border-color: color-mix(in oklab, var(--sage) 45%, var(--hairline));
+}
+.chip-tone-rust {
+  border-color: color-mix(in oklab, var(--rust) 45%, var(--hairline));
+}
+.chip-tone-candle {
+  border-color: color-mix(in oklab, var(--candle) 45%, var(--hairline));
+}
+
+/* ── Field inputs ────────────────────────────────────────────────────── */
+
+.field-input,
+.field-textarea {
+  width: 100%;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-field);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0.625rem 0.875rem;
+  font-size: 16px;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.field-input::placeholder,
+.field-textarea::placeholder {
+  color: var(--muted);
+}
+.field-input:hover,
+.field-textarea:hover {
+  border-color: var(--hairline-strong);
+}
+.field-input:focus-visible,
+.field-textarea:focus-visible {
+  outline: none;
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--brass) 22%, transparent);
+}
+.field-input:disabled,
+.field-textarea:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.field-textarea {
+  resize: vertical;
+  min-height: 6rem;
+}
+
+/* ── Segmented control ───────────────────────────────────────────────── */
+
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+}
+.segmented-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border: none;
+  border-radius: calc(var(--radius-control) - 2px);
+  background: none;
+  color: var(--muted);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.segmented-option:hover {
+  color: var(--ink);
+}
+.segmented-option:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+.segmented-option-selected,
+.segmented-option-selected:hover {
+  background: var(--brass);
+  color: var(--ground);
+}
+
+/* ── Menu ────────────────────────────────────────────────────────────── */
+
+.menu-panel {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-field);
+  background: var(--surface);
+  box-shadow: var(--elev-lift);
+  padding: 0.25rem;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  border: none;
+  border-radius: calc(var(--radius-field) - 4px);
+  background: none;
+  color: var(--ink);
+  padding: 0.5rem 0.625rem;
+  font-size: 0.8125rem;
+  text-align: left;
+  cursor: pointer;
+}
+.menu-item:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
+}
+.menu-item:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: -2px;
+}
+.menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Sheet / Dialog scrims ───────────────────────────────────────────── */
+
+.sheet-scrim,
+.dialog-scrim {
+  background: color-mix(in oklab, var(--ground) 80%, transparent);
+}
+.sheet-panel {
+  background: var(--surface);
+  border-left: 1px solid var(--hairline);
+  box-shadow: var(--elev-modal);
+}
+
+/* ── Skeleton ────────────────────────────────────────────────────────── */
+
+.skeleton {
+  border-radius: var(--radius-control);
+  background: linear-gradient(90deg, var(--raised) 25%, var(--hairline) 37%, var(--raised) 63%);
+  background-size: 400% 100%;
+  animation: ui-shimmer 1.6s ease-in-out infinite;
+}
+@keyframes ui-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+.skeleton-card {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-field);
+  background: var(--surface);
+  padding: 1rem;
+}
+
+/* ── Empty ───────────────────────────────────────────────────────────── */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--muted);
+}
+.empty-icon {
+  color: var(--muted);
+}
+.empty-title {
+  color: var(--ink);
+  font-weight: 600;
+}
+.empty-body {
+  max-width: 32ch;
+  font-size: 0.875rem;
+}
+
+/* ── Reduced motion (BRAND.md 5) ─────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .icon-btn,
+  .chip,
+  .field-input,
+  .field-textarea,
+  .segmented-option {
+    transition-duration: 0ms !important;
+  }
+  .btn-primary:hover:not(:disabled),
+  .btn-primary:active:not(:disabled),
+  .btn-secondary:active:not(:disabled),
+  .btn-ghost:active:not(:disabled),
+  .btn-danger:active:not(:disabled),
+  .icon-btn-ghost:active:not(:disabled),
+  .icon-btn-secondary:active:not(:disabled),
+  .icon-btn-primary:hover:not(:disabled),
+  .icon-btn-primary:active:not(:disabled),
+  .icon-btn-danger:active:not(:disabled) {
+    transform: none !important;
+  }
+  .btn-spinner,
+  .skeleton {
+    animation: none !important;
+  }
+}

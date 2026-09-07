@@ -16,6 +16,10 @@ const ResponsibleAIPage = lazy(() => loadChunk(() => import("./landing/StaticPag
 const ContactPage = lazy(() => loadChunk(() => import("./landing/StaticPages")).then((m) => ({ default: m.ContactPage })));
 const StudyCompanionPage = lazy(() => loadChunk(() => import("./landing/StaticPages")).then((m) => ({ default: m.StudyCompanionPage })));
 const OpenRouterCallback = lazy(() => loadChunk(() => import("./auth/OpenRouterCallback")));
+// Dev-only screenshot surface for the src/ui primitive kit — never routed to in production.
+const KitPreview = import.meta.env.DEV
+  ? lazy(() => loadChunk(() => import("./ui/__preview__/KitPreview")))
+  : null;
 
 export default function App() {
   const deskShell = isDeskShell();
@@ -40,6 +44,7 @@ export default function App() {
             element={deskShell ? <Navigate to="/studio" replace /> : <LandingPage />}
           />
           <Route path="/studio" element={<StudioApp />} />
+          {KitPreview && <Route path="/studio/kit" element={<KitPreview />} />}
           <Route path="/studio/:notebookId" element={<StudioApp />} />
           <Route
             path="/checkout"
