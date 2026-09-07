@@ -60,8 +60,8 @@ const MODULES: TelemetryModule[] = [
     title: "Multi-Model BYOK Routing",
     metric: "18ms",
     metricLabel: "Direct API dispatch latency",
-    detail: "Seamlessly switch between Claude 3.7 Sonnet, DeepSeek R1, GPT-4o, or local Ollama with zero markup.",
-    liveSnippet: "Direct Dispatch -> Claude 3.7 / DeepSeek R1 / Ollama Ready",
+    detail: "Switch between Claude, DeepSeek, GPT-4o, or local Ollama with zero markup.",
+    liveSnippet: "Direct Dispatch -> Claude / DeepSeek / Ollama Ready",
     icon: Cpu,
   },
 ];

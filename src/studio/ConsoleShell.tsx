@@ -10,7 +10,7 @@ export interface ConsoleShellProps {
 export default function ConsoleShell({
   children,
   notebookName = "Course Notebook",
-  modelLabel = "Claude 3.7 Sonnet",
+  modelLabel = "No model selected",
 }: ConsoleShellProps) {
   return (
     <div className="console-shell-root" data-testid="console-shell-root">
