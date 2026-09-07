@@ -704,6 +704,12 @@ html[data-theme="light"] [contenteditable]:focus-visible {
   .send-halo {
     opacity: 0 !important;
   }
+  /* The composer's lamp glow stops breathing but stays lit — .is-lit's
+     static opacity: 1 is what's left once the animation is gone, so the
+     lamp rests visibly on instead of vanishing (Task 2.4). */
+  .composer-ambience.is-breathing {
+    animation: none !important;
+  }
 
   /* The streaming beacon rests as a static solid caret — still marking
      "more is coming", just without movement. */

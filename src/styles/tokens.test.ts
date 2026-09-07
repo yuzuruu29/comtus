@@ -34,7 +34,6 @@ const REDEFINE_DEBT: string[] = [];
 const HEX_DEBT: Record<string, string> = {
   "src/landing/scholar-deck.css": "Task 4.1 — deck deleted",
   "src/landing/cantor-theme.css": "Task 4.1 — landing rebuilt",
-  "src/studio/studio.css": "Task 2.4 — chat pane rebuilt on the kit",
   "src/index.css": "Task 4.1 — landing-only literals move or go",
 };
 
