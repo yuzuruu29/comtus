@@ -115,12 +115,22 @@ export interface Generation {
  *  their handwritten solution and AI grades it (see SolutionCheck). */
 export type QuizFormat = "mcq" | "truefalse" | "identification" | "solution";
 
+export interface QuestionGraph {
+  title: string;
+  xLabel: string;
+  yLabel: string;
+  series: { label: string; points: [number, number][] }[];
+  xRange?: [number, number];
+  yRange?: [number, number];
+}
+
 export interface QuizQuestion {
   id: string;
   format: QuizFormat;
   topic: string;
   difficulty: "easy" | "moderate" | "hard";
   stem: string;
+  graph?: QuestionGraph;
   /** MCQ / T-F options; identification leaves empty. */
   options: string[];
   answerIndex: number; // for identification: always 0, answer lives in `answer`

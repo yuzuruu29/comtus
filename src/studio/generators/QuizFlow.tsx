@@ -7,7 +7,9 @@ import { useCallSettings, useSettings } from "../../lib/settings";
 import { saveGeneration } from "../../lib/db";
 import { SOFT, SPRING, useCountUp } from "../fx";
 import { playSfx } from "../companion/sfx";
-import { GENERATOR_SYSTEM, buildSourceBlock, sanitizeQuestions, solutionCredit, fmtScore } from "./common";
+import { GENERATOR_SYSTEM, ASSESSMENT_FORMAT_RULES, buildSourceBlock, sanitizeQuestions, solutionCredit, fmtScore } from "./common";
+import { AssessmentContent, AssessmentGraph } from "../../components/AssessmentContent";
+import { assessmentGradingStem, assessmentOptionLabel } from "../../lib/assessmentContent";
 import {
   SolutionBin,
   SolutionVerdictCard,
@@ -57,7 +59,7 @@ export function QuizConfigForm({
       setStatus("Comtus is writing your quiz…");
       const raw = await generateJSON<QuizPayload>({
         ...cs,
-        system: GENERATOR_SYSTEM,
+        system: GENERATOR_SYSTEM + ASSESSMENT_FORMAT_RULES,
         user: `Write a quiz from these sources.
 
 Sources:
@@ -202,7 +204,7 @@ export function QuizTaker({
     try {
       const result = await checkSolution({
         ...cs,
-        stem: q.stem,
+        stem: assessmentGradingStem(q),
         expectedAnswer: q.answer,
         expectedApproach: q.rationale,
         studentFinalAnswer: typed[i].trim() || undefined,
@@ -453,7 +455,8 @@ function QuizQuestionView({
           transition={SOFT}
           className="space-y-5"
         >
-          <p className="text-[15px] font-medium leading-relaxed text-ink">{q.stem}</p>
+          <AssessmentContent className="text-[15px] font-medium leading-relaxed text-ink">{q.stem}</AssessmentContent>
+          {q.graph && <AssessmentGraph graph={q.graph} />}
 
           {isSolution ? (
             <div className="space-y-3">
@@ -510,7 +513,7 @@ function QuizQuestionView({
                     <span className={correct ? "text-sage" : "text-rust"}>
                       {correct ? "Correct — " : "The answer: "}
                     </span>
-                    <span className="text-ink/90">{q.answer}</span>
+                    <AssessmentContent inline className="text-ink/90">{q.answer}</AssessmentContent>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -532,6 +535,7 @@ function QuizQuestionView({
                 return (
                   <motion.button
                     key={oi}
+                    aria-label={assessmentOptionLabel(opt, oi)}
                     disabled={isChecked}
                     onClick={() => setPicked((p) => p.map((v, i) => (i === idx ? oi : v)))}
                     whileTap={{ scale: 0.985 }}
@@ -548,7 +552,7 @@ function QuizQuestionView({
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-hairline-strong font-mono text-[10.5px] text-muted">
                       {String.fromCharCode(65 + oi)}
                     </span>
-                    <span className="flex-1 text-ink/90">{opt}</span>
+                    <AssessmentContent inline className="min-w-0 flex-1 text-ink/90">{opt}</AssessmentContent>
                     <AnimatePresence>
                       {state === "answer" && (
                         <motion.span
@@ -591,7 +595,7 @@ function QuizQuestionView({
                 <div className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-moon/80">
                   Why{q.sourceHint ? ` · ${q.sourceHint}` : ""}
                 </div>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-ink/85">{q.rationale}</p>
+                <AssessmentContent className="mt-1.5 text-[13px] leading-relaxed text-ink/85">{q.rationale}</AssessmentContent>
               </motion.div>
             )}
           </AnimatePresence>

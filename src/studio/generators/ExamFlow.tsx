@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { AssessmentContent, AssessmentGraph } from "../../components/AssessmentContent";
+import { assessmentGradingStem, assessmentOptionLabel } from "../../lib/assessmentContent";
 
 import type {
   ExamBlueprint,
@@ -15,6 +17,7 @@ import { saveGeneration } from "../../lib/db";
 import { SOFT, SPRING, useCountUp } from "../fx";
 import {
   GENERATOR_SYSTEM,
+  ASSESSMENT_FORMAT_RULES,
   buildSourceBlock,
   sanitizeQuestions,
   solutionCredit,
@@ -160,7 +163,7 @@ export function ExamConfigForm({
       setStatus(`Writing ${total} items across ${blueprint.sections.length} sections…`);
       const questions = await generateJSON<QuizQuestion[]>({
         ...cs,
-        system: GENERATOR_SYSTEM,
+        system: GENERATOR_SYSTEM + ASSESSMENT_FORMAT_RULES,
         user: `Write a full board-exam simulation from these sources.
 
 Sources:
@@ -382,7 +385,7 @@ export function ExamRunner({
     try {
       const result = await checkSolution({
         ...cs,
-        stem: q.stem,
+        stem: assessmentGradingStem(q),
         expectedAnswer: q.answer,
         expectedApproach: q.rationale,
         studentFinalAnswer: typed[i].trim() || undefined,
@@ -518,7 +521,8 @@ export function ExamRunner({
           transition={SOFT}
           className="space-y-5"
         >
-          <p className="text-[15px] font-medium leading-relaxed text-ink">{q.stem}</p>
+          <AssessmentContent className="text-[15px] font-medium leading-relaxed text-ink">{q.stem}</AssessmentContent>
+          {q.graph && <AssessmentGraph graph={q.graph} />}
 
           {isSolution ? (
             <div className="space-y-3">
@@ -558,6 +562,7 @@ export function ExamRunner({
               return (
                 <motion.button
                   key={oi}
+                  aria-label={assessmentOptionLabel(opt, oi)}
                   onClick={() => setAnswers((a) => a.map((v, i) => (i === idx ? oi : v)))}
                   whileTap={{ scale: 0.985 }}
                   className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-[13.5px] transition-colors duration-200 ${
@@ -573,7 +578,7 @@ export function ExamRunner({
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-hairline-strong font-mono text-[10.5px] text-muted">
                     {String.fromCharCode(65 + oi)}
                   </span>
-                  <span className="flex-1 text-ink/90">{opt}</span>
+                  <AssessmentContent inline className="min-w-0 flex-1 text-ink/90">{opt}</AssessmentContent>
                   <AnimatePresence>
                     {state === "answer" && (
                       <motion.span
@@ -614,7 +619,7 @@ export function ExamRunner({
                 className="rounded-xl border border-moon/15 bg-moon/[0.05] px-4 py-3.5"
               >
                 <div className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-moon/80">Why</div>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-ink/85">{q.rationale}</p>
+                <AssessmentContent className="mt-1.5 text-[13px] leading-relaxed text-ink/85">{q.rationale}</AssessmentContent>
               </motion.div>
             )}
           </AnimatePresence>
@@ -727,7 +732,7 @@ function ExamResults({
         try {
           const result = await checkSolution({
             ...callSettings,
-            stem: q.stem,
+            stem: assessmentGradingStem(q),
             expectedAnswer: q.answer,
             expectedApproach: q.rationale,
             studentFinalAnswer: typed[i]?.trim() || undefined,
@@ -850,7 +855,8 @@ function ExamResults({
                     )}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13.5px] font-medium leading-relaxed text-ink/90">{q.stem}</p>
+                    <AssessmentContent className="text-[13.5px] font-medium leading-relaxed text-ink/90">{q.stem}</AssessmentContent>
+                    {q.graph && <AssessmentGraph graph={q.graph} />}
                     {isSol ? (
                       <>
                         {chk ? (
@@ -865,18 +871,18 @@ function ExamResults({
                           <p className="mt-1.5 text-[12px] text-muted">No solution submitted — skipped.</p>
                         )}
                         <p className="mt-1.5 text-[12px] text-muted">
-                          Key: <span className="text-sage">{q.answer}</span>
+                          Key: <AssessmentContent inline className="text-sage">{q.answer}</AssessmentContent>
                         </p>
                       </>
                     ) : (
                       credit === 0 && (
                         <p className="mt-1.5 text-[12px] text-muted">
-                          Yours: {answers[i] !== null ? q.options[answers[i]!] : "— skipped"} · Key:{" "}
-                          <span className="text-sage">{q.options[q.answerIndex]}</span>
+                          Yours: <AssessmentContent inline>{answers[i] !== null ? q.options[answers[i]!] : "— skipped"}</AssessmentContent> · Key:{" "}
+                          <AssessmentContent inline className="text-sage">{q.options[q.answerIndex]}</AssessmentContent>
                         </p>
                       )
                     )}
-                    <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink/70">{q.rationale}</p>
+                    <AssessmentContent className="mt-1.5 text-[12.5px] leading-relaxed text-ink/70">{q.rationale}</AssessmentContent>
                   </div>
                 </div>
               </div>

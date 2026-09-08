@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { motion } from "motion/react";
+import { AssessmentContent } from "../../components/AssessmentContent";
 
 import type { SolutionCheck, SolutionVerdict } from "../../lib/types";
 import { SOFT } from "../fx";
@@ -253,7 +254,7 @@ export function SolutionVerdictCard({ check }: { check: SolutionCheck }) {
       </div>
       {check.transcribedAnswer && check.verdict !== "unreadable" && (
         <p className="mt-2 text-[12.5px] text-muted">
-          Read on your photo: <span className="text-ink/90">{check.transcribedAnswer}</span>
+          Read on your photo: <AssessmentContent inline className="text-ink/90">{check.transcribedAnswer}</AssessmentContent>
           {check.finalAnswerOk ? (
             <span className={VERDICT_TEXT.correct}> — matches</span>
           ) : (
@@ -266,13 +267,13 @@ export function SolutionVerdictCard({ check }: { check: SolutionCheck }) {
           {check.errors.map((e, i) => (
             <li key={i} className="flex gap-2 text-[12.5px] leading-relaxed text-ink/80">
               <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current opacity-60" />
-              {e}
+              <AssessmentContent>{e}</AssessmentContent>
             </li>
           ))}
         </ul>
       )}
       {check.feedback && (
-        <p className="mt-2 text-[13px] leading-relaxed text-ink/85">{check.feedback}</p>
+        <AssessmentContent className="mt-2 text-[13px] leading-relaxed text-ink/85">{check.feedback}</AssessmentContent>
       )}
       <AiCheckNote className="mt-3 border-t border-current/10 pt-2.5 opacity-90" />
     </motion.div>

@@ -56,6 +56,9 @@ importers:
       gsap:
         specifier: ^3.13.0
         version: 3.15.0
+      html2canvas:
+        specifier: 1.4.1
+        version: 1.4.1
       jspdf:
         specifier: ^4.2.1
         version: 4.2.1
@@ -4111,8 +4114,7 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  base64-arraybuffer@1.0.2:
-    optional: true
+  base64-arraybuffer@1.0.2: {}
 
   base64-js@1.5.1: {}
 
@@ -4221,7 +4223,6 @@ snapshots:
   css-line-break@2.1.0:
     dependencies:
       utrie: 1.0.2
-    optional: true
 
   css-tree@3.2.1:
     dependencies:
@@ -4803,7 +4804,6 @@ snapshots:
     dependencies:
       css-line-break: 2.1.0
       text-segmentation: 1.0.3
-    optional: true
 
   https@1.0.0: {}
 
@@ -6062,7 +6062,6 @@ snapshots:
   text-segmentation@1.0.3:
     dependencies:
       utrie: 1.0.2
-    optional: true
 
   tinybench@2.9.0: {}
 
@@ -6224,7 +6223,6 @@ snapshots:
   utrie@1.0.2:
     dependencies:
       base64-arraybuffer: 1.0.2
-    optional: true
 
   vfile-location@5.0.3:
     dependencies:

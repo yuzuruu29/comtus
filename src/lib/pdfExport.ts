@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { createAssessmentCapture } from "./assessmentExport";
 import type { Generation } from "./types";
 import type {
   QuizPayload,
@@ -151,130 +152,89 @@ function nameDateScoreRow(flow: Flow, total?: number): void {
 
 /* ── quiz & exam paper ────────────────────────────────────── */
 
-function questionBlock(flow: Flow, q: QuizQuestion, n: number): void {
-  const doc = flow.doc;
-  const stemX = M + 22;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10.5);
-  setFill(doc, INK);
-  const stemLines = doc.splitTextToSize(q.stem, W - 22) as string[];
-
-  // Never orphan an item's options / working lines on the next page.
-  const optionsCount =
-    q.format === "identification"
-      ? 0
-      : q.format === "truefalse"
-        ? 2
-        : q.format === "solution"
-          ? 4
-          : q.options.length;
-  const needed = stemLines.length * 15 + optionsCount * 16 + 34;
-  if (flow.y + needed > BOTTOM && flow.y > M + 20) doc.addPage();
-
-  doc.setFont("helvetica", "bold");
-  doc.text(`${n}.`, M, flow.y + 10.5);
-  doc.setFont("helvetica", "normal");
-  let sy = flow.y;
-  for (const line of stemLines) {
-    doc.text(line, stemX, sy + 10.5);
-    sy += 15;
-  }
-  flow.y = sy + 4;
-
-  if (q.format === "identification") {
-    doc.setDrawColor(CARD_LINE[0], CARD_LINE[1], CARD_LINE[2]);
-    doc.setLineWidth(0.8);
-    if (flow.y + 16 > BOTTOM) doc.addPage();
-    doc.line(stemX + 4, flow.y + 8, M + W - 30, flow.y + 8);
-    flow.gap(20);
-  } else if (q.format === "solution") {
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(9);
-    setFill(doc, FADED);
-    if (flow.y + 14 > BOTTOM) doc.addPage();
-    doc.text("Show your working:", stemX, flow.y + 10);
-    flow.y += 16;
-    doc.setDrawColor(CARD_LINE[0], CARD_LINE[1], CARD_LINE[2]);
-    doc.setLineWidth(0.6);
-    for (let i = 0; i < 4; i++) {
-      if (flow.y + 16 > BOTTOM) doc.addPage();
-      doc.line(stemX + 4, flow.y + 8, M + W - 30, flow.y + 8);
-      flow.gap(16);
-    }
-    flow.gap(8);
-  } else {
-    const opts = q.format === "truefalse" ? ["True", "False"] : q.options;
-    opts.forEach((opt, i) => {
-      wrapped(flow, `${String.fromCharCode(65 + i)}.  ${opt}`, { indent: 22 });
-      flow.y += 3;
-    });
-    flow.gap(8);
-  }
-}
-
-function quizExamPdf(doc: Doc, gen: Generation, notebookName: string): void {
-  const isExam = gen.kind === "exam";
+async function quizExamPdf(doc: Doc, gen: Generation, notebookName: string): Promise<void> {
   const payload = gen.payload as QuizPayload & ExamPayload;
   const questions: QuizQuestion[] = payload.questions ?? [];
-
   const flow = chrome(doc, gen.title, metaLineFor(gen), notebookName);
-
-  if (isExam && payload.blueprint?.sections?.length) {
-    wrapped(
-      flow,
-      `Blueprint: ` + payload.blueprint.sections.map((s) => `${s.topic} (${s.items})`).join("  ·  "),
-      { size: 9.5, color: FADED, gapAfter: 8 },
-    );
+  if (gen.kind === "exam" && payload.blueprint?.sections?.length) {
+    wrapped(flow, "Blueprint: " + payload.blueprint.sections.map((s) => `${s.topic} (${s.items})`).join(" · "),
+      { size: 9.5, color: FADED, gapAfter: 8 });
   }
-
-  nameDateScoreRow(flow, isExam ? payload.blueprint?.totalItems : questions.length);
-
-  wrapped(flow, "Read each item carefully. Choose the best answer.", {
-    size: 9.5,
-    style: "italic",
-    color: FADED,
-    gapAfter: 8,
-  });
-
-  questions.forEach((q, i) => questionBlock(flow, q, i + 1));
-
-  // Answer key on its own page — print the paper without the last page.
-  doc.addPage();
-  const keyFlow = new Flow(doc);
-  heading(keyFlow, "Answer Key", 14);
-  questions.forEach((q, i) => {
-    const d = keyFlow.doc;
-    const ans = answerText(q);
-    d.setFont("helvetica", "bold");
-    d.setFontSize(10);
-    setFill(d, BRASS);
-    const numW = 22;
-    const ansW = d.getTextWidth(ans);
-    // Long answers push the rationale onto its own line instead of beside it.
-    const beside = numW + ansW + 12 <= W - 120;
-    const ratX = beside ? M + numW + ansW + 12 : M + 10;
-    const ratW = beside ? W - numW - ansW - 12 : W - 10;
-    d.setFont("helvetica", "italic");
-    d.setFontSize(9);
-    setFill(d, FADED);
-    const ratLines = (d.splitTextToSize(q.rationale || "", ratW) as string[]).slice(0, beside ? 2 : 3);
-    const rowH = beside ? Math.max(16, ratLines.length * 11 + 4) : 16 + ratLines.length * 11;
-    if (keyFlow.y + rowH + 4 > BOTTOM) d.addPage();
-    d.setFont("helvetica", "bold");
-    d.setFontSize(10);
-    setFill(d, BRASS);
-    d.text(`${i + 1}.`, M, keyFlow.y + 10);
-    d.text(ans, M + numW, keyFlow.y + 10);
-    d.setFont("helvetica", "italic");
-    d.setFontSize(9);
-    setFill(d, FADED);
-    ratLines.forEach((line, li) => {
-      d.text(line, ratX, keyFlow.y + 10 + (beside ? li * 11 : 14 + li * 11));
+  nameDateScoreRow(flow, questions.length);
+  wrapped(flow, "Read each item carefully. Choose the best answer or show your working as instructed.",
+    { size: 9.5, style: "italic", color: FADED, gapAfter: 8 });
+  const capture = createAssessmentCapture();
+  const prepareContent = async (content: string | NonNullable<QuizQuestion["graph"]>, indent = 22) => {
+    const width = W - indent;
+    return (await capture.render(content, (BOTTOM - M - 24) / width)).map((image) => {
+      const height = image.height / image.width * width;
+      const scale = Math.min(1, (BOTTOM - M - 24) / height);
+      return { data: image.data, x: M + indent, width: width * scale, height: height * scale };
     });
-    keyFlow.y += rowH + 4;
-  });
-
+  };
+  type Prepared = Awaited<ReturnType<typeof prepareContent>>;
+  const itemHeading = (item: number, continued = false) => {
+    wrapped(flow, `Item ${item}${continued ? " (continued)" : ""}`,
+      { size: 9, style: "bold", color: BRASS, gapAfter: 3 });
+  };
+  const nextItemPage = (item: number) => {
+    doc.addPage();
+    flow.y = M;
+    itemHeading(item, true);
+  };
+  const beginItem = (images: Prepared, item: number, extraHeight = 0) => {
+    const height = images.reduce((total, image) => total + image.height + 4, 16 + extraHeight);
+    const needed = height <= BOTTOM - M ? height : 16 + (images[0]?.height ?? 0);
+    if (flow.y + needed > BOTTOM) { doc.addPage(); flow.y = M; }
+    itemHeading(item);
+  };
+  const addImages = (images: Prepared, item: number) => {
+    for (const image of images) {
+      if (flow.y + image.height > BOTTOM) nextItemPage(item);
+      doc.addImage(image.data, "PNG", image.x, flow.y, image.width, image.height);
+      flow.y += image.height + 4;
+    }
+  };
+  try {
+    for (const [i, q] of questions.entries()) {
+      const images = await prepareContent(q.stem);
+      if (q.graph) images.push(...await prepareContent(q.graph));
+      const writingLines = q.format === "solution" ? 4 : q.format === "identification" ? 1 : 0;
+      if (!writingLines) {
+        for (const [oi, option] of (q.format === "truefalse" ? ["True", "False"] : q.options).entries()) {
+          images.push(...await prepareContent(`**${String.fromCharCode(65 + oi)}.** ${option}`, 32));
+        }
+      }
+      beginItem(images, i + 1, writingLines ? 13 + writingLines * 20 : 0);
+      addImages(images, i + 1);
+      if (writingLines) {
+        if (flow.y + 33 > BOTTOM) nextItemPage(i + 1);
+        wrapped(flow, q.format === "solution" ? "Show your working:" : "Your answer:",
+          { indent: 22, size: 9, color: FADED });
+        doc.setDrawColor(...CARD_LINE);
+        doc.setLineWidth(0.6);
+        for (let line = 0; line < writingLines; line++) {
+          if (flow.y + 20 > BOTTOM) nextItemPage(i + 1);
+          doc.line(M + 26, flow.y + 14, M + W - 20, flow.y + 14);
+          flow.y += 20;
+        }
+      }
+      flow.gap(12);
+    }
+    doc.addPage();
+    flow.y = M;
+    heading(flow, "Answer Key", 14);
+    for (const [i, q] of questions.entries()) {
+      const answer = q.format === "mcq" ? `${answerText(q)}. ${q.options[q.answerIndex] ?? q.answer}` : q.answer || answerText(q);
+      const images = await prepareContent(answer);
+      if (q.rationale) images.push(...await prepareContent(q.rationale));
+      beginItem(images, i + 1);
+      addImages(images, i + 1);
+      flow.gap(10);
+    }
+  } finally {
+    capture.close();
+  }
   footers(doc, notebookName);
 }
 
@@ -395,7 +355,7 @@ export async function savePdf(gen: Generation, notebookName: string, base: strin
   switch (gen.kind) {
     case "quiz":
     case "exam":
-      quizExamPdf(doc, gen, notebookName);
+      await quizExamPdf(doc, gen, notebookName);
       break;
     case "flashcards":
       flashcardsPdf(doc, gen, notebookName);

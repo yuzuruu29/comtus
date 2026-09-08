@@ -1,4 +1,5 @@
 import { groundContext } from "../../lib/retrieval";
+import { validateQuestionGraph } from "../../lib/assessmentContent";
 import type { QuizQuestion, EssayReviewPayload, Flashcard, SolutionCheck } from "../../lib/types";
 
 /**
@@ -45,6 +46,13 @@ Rules:
 - Match the requested difficulty and topic distribution faithfully.
 - Output ONLY the requested JSON.`;
 
+export const ASSESSMENT_FORMAT_RULES = String.raw`
+Assessment formatting:
+- Use Markdown and dollar-delimited LaTeX in stems, options, solution answers and rationales. Use $...$ inline and $$...$$ on their own lines for display equations. Typeset matrices with \begin{bmatrix}1 & -3 \\ 0 & 4\end{bmatrix}, fractions with \frac{a}{b}, indices with x_{i}, powers with x^{2}, and economics notation with Q_{d}, P, elasticity and units. Never use nested programming arrays to display a matrix.
+- Return valid JSON: escape EVERY LaTeX backslash as a double backslash in JSON strings, and newlines as \n. Currency dollar signs must be escaped in Markdown (a backslash before $), itself escaped in JSON. Keep ordinary prose outside math.
+- Identification "answer" must remain a concise plain-text answer without Markdown or LaTeX delimiters so the typed-answer grader can compare it.
+- When a question requires a graph, provide an optional "graph" object: {"title":"Market schedules","xLabel":"Quantity","yLabel":"Price","series":[{"label":"Demand","points":[[0,10],[10,0]]}],"xRange":[0,10],"yRange":[0,10]}. Coordinates are numeric [x,y] pairs joined in given order. Include only data grounded in the source; never invent a missing graph. Use 1-6 series, 2-100 points each, finite coordinates of absolute value at most 1e9, and labels of at most 120 characters. Optional ranges must be increasing and contain every point. Include all data needed to answer, with no marked correct answer, equilibrium solution or other answer annotations. Do not ask about a graph unless its necessary data is provided. Omit graph for questions that do not need one.`;
+
 /* ── Model-output validation ────────────────────────────────
    The UI indexes into generated payloads; validate shapes once,
    at generation time, so a malformed item can never blank it. */
@@ -69,7 +77,10 @@ export function sanitizeQuestions(raw: unknown): QuizQuestion[] {
   if (!Array.isArray(raw)) return [];
   const out: QuizQuestion[] = [];
   raw.forEach((q, i) => {
+    if (!q || typeof q !== "object") return;
     const o = q as Record<string, unknown>;
+    const graph = o.graph === undefined ? undefined : validateQuestionGraph(o.graph);
+    if (graph === null) throw new Error("An assessment graph was invalid. Please generate again so every question has its required graph.");
     if (typeof o.stem !== "string" || o.stem.trim().length < 4) return;
     const format =
       o.format === "truefalse" || o.format === "identification" || o.format === "solution"
@@ -105,6 +116,7 @@ export function sanitizeQuestions(raw: unknown): QuizQuestion[] {
       difficulty:
         o.difficulty === "easy" || o.difficulty === "hard" ? o.difficulty : "moderate",
       stem: o.stem,
+      ...(graph ? { graph } : {}),
       options,
       answerIndex,
       answer: typeof o.answer === "string" ? o.answer : options[answerIndex] ?? "",

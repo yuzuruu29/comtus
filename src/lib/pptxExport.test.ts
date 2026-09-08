@@ -2,6 +2,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import PptxGenJS from "pptxgenjs";
 import type { Generation, QuizQuestion } from "./types";
 import { savePptx } from "./pptxExport";
+import { createAssessmentCapture } from "./assessmentExport";
+
+vi.mock("./assessmentExport", () => ({
+  createAssessmentCapture: vi.fn(() => ({ render: vi.fn().mockResolvedValue([]), close: vi.fn() })),
+}));
 
 const solutionQ: QuizQuestion = {
   id: "q0",
@@ -49,6 +54,10 @@ describe("savePptx", () => {
     expect(writeFile).toHaveBeenCalled();
     const arg = writeFile.mock.calls[0]?.[0] as { fileName?: string } | undefined;
     expect(arg?.fileName).toMatch(/la-quiz\.pptx$/);
+    const capture = vi.mocked(createAssessmentCapture).mock.results.at(-1)!.value;
+    expect(capture.render).toHaveBeenCalledWith(expect.stringContaining(solutionQ.answer), expect.any(Number));
+    expect(capture.render).toHaveBeenCalledWith(solutionQ.rationale, expect.any(Number));
+    expect(capture.close).toHaveBeenCalledOnce();
   });
 
   it("writes a presentation deck", async () => {

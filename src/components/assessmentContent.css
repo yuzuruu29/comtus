@@ -1,0 +1,32 @@
+.assessment-content { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.assessment-paragraph { display: block; margin-block: .35em; }
+.assessment-paragraph:first-child { margin-top: 0; }
+.assessment-paragraph:last-child { margin-bottom: 0; }
+.assessment-inline { display: inline; }
+.assessment-inline .assessment-paragraph { display: inline; }
+.assessment-content .katex { font-size: 1.12em; }
+.assessment-content .katex-display { margin: .8em 0; overflow-x: auto; overflow-y: hidden; padding-block: .3em; max-width: 100%; }
+.assessment-content .katex-display > .katex { white-space: nowrap; }
+.assessment-content .katex:not(.katex-display .katex) { display: inline-block; max-width: 100%; overflow-x: auto; overflow-y: hidden; vertical-align: middle; padding-block: .15em; }
+.assessment-content ul, .assessment-content ol { padding-left: 1.5em; }
+.assessment-content ul { list-style: disc; }
+.assessment-content ol { list-style: decimal; }
+.assessment-content pre, .assessment-table { display: block; max-width: 100%; overflow-x: auto; }
+.assessment-table table { border-collapse: collapse; font-size: .9em; }
+.assessment-table th, .assessment-table td { padding: .4em .8em; border: 1px solid var(--color-hairline, currentColor); text-align: left; }
+.assessment-graph { max-width: 38rem; margin-block: 1rem; color: var(--color-ink, currentColor); }
+.assessment-graph figcaption { font-weight: 600; margin-bottom: .4rem; overflow-wrap: anywhere; }
+.assessment-plot { max-width: 100%; overflow-x: auto; }
+.assessment-plot:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.assessment-graph svg { display: block; width: 100%; min-width: 540px; height: auto; overflow: hidden; }
+.assessment-graph-scroll-hint { display: none; font-size: .75rem; margin-block: .3rem; }
+@media (max-width: 600px) { .assessment-graph-scroll-hint { display: block; } }
+.assessment-graph svg text { fill: currentColor; font-size: 11px; }
+.assessment-grid { stroke: currentColor; opacity: .12; fill: none; }
+.assessment-axis { stroke: currentColor; opacity: .65; fill: none; }
+.assessment-series-0, .assessment-series-1 { color: var(--color-brass, currentColor); }
+.assessment-series-2, .assessment-series-3 { color: var(--color-sage, currentColor); }
+.assessment-series-4, .assessment-series-5 { color: var(--color-rust, currentColor); }
+.assessment-legend { display: flex; flex-wrap: wrap; gap: .4rem 1rem; font-size: .85em; margin: .5rem 0; list-style: none; padding: 0; }
+.assessment-legend li { overflow-wrap: anywhere; }
+.assessment-graph summary { cursor: pointer; font-size: .85em; margin-block: .5rem; }

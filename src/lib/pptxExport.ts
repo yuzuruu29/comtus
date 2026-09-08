@@ -1,4 +1,5 @@
 import PptxGenJS from "pptxgenjs";
+import { createAssessmentCapture } from "./assessmentExport";
 import type { Generation } from "./types";
 import type {
   QuizPayload,
@@ -100,122 +101,61 @@ function pageFoot(s: Slide, n: number): void {
   });
 }
 
-function quizExamPptx(pptx: PptxGenJS, gen: Generation): void {
+async function quizExamPptx(pptx: PptxGenJS, gen: Generation): Promise<void> {
   const payload = gen.payload as QuizPayload & ExamPayload;
   const questions = payload.questions ?? [];
-
-  const sub: string[] =
-    gen.kind === "exam" && payload.blueprint
-      ? [`${payload.blueprint.totalItems} items`, `${payload.blueprint.minutes} minutes`]
-      : [
-          `${payload.config?.count ?? questions.length} items`,
-          ...(payload.config?.difficulty ? [payload.config.difficulty] : []),
-        ];
-  titleSlide(pptx, gen.title, sub);
-
-  questions.forEach((q, i) => {
-    // Question slide
-    const qs = baseSlide(pptx, { study: true });
-    sectionTag(qs, `${gen.kind === "exam" ? "Mock exam" : "Quiz"} · Item ${i + 1} of ${questions.length}`);
-    qs.addText(q.stem, {
-      x: 0.55,
-      y: 0.75,
-      w: 8.9,
-      h: 1.9,
-      fontFace: "Georgia",
-      fontSize: q.stem.length > 180 ? 16 : 20,
-      color: PARCHMENT,
-      valign: "top",
-    });
-
-    const opts = q.format === "truefalse" ? ["True", "False"] : q.options;
-    if (q.format === "identification") {
-      qs.addText("Your answer:", {
-        x: 0.55,
-        y: 3.1,
-        w: 3,
-        h: 0.4,
-        fontFace: "Arial",
-        fontSize: 13,
-        color: FADED,
-        italic: true,
-      });
-    } else if (q.format === "solution") {
-      qs.addText("Show your working on paper.", {
-        x: 0.55,
-        y: 3.1,
-        w: 8.9,
-        h: 0.4,
-        fontFace: "Arial",
-        fontSize: 13,
-        color: FADED,
-        italic: true,
-      });
-    } else {
-      opts.forEach((opt, oi) => {
-        const rowY = 2.85 + oi * 0.52;
-        qs.addText(`${String.fromCharCode(65 + oi)}.  ${opt}`, {
-          x: 0.85,
-          y: rowY,
-          w: 8.2,
-          h: 0.45,
-          fontFace: "Arial",
-          fontSize: 14,
-          color: PARCHMENT,
-        });
-      });
+  titleSlide(pptx, gen.title, gen.kind === "exam" && payload.blueprint
+    ? [`${payload.blueprint.totalItems} items`, `${payload.blueprint.minutes} minutes`]
+    : [`${questions.length} items`, payload.config?.difficulty ?? ""]);
+  const capture = createAssessmentCapture(true);
+  let page = 1;
+  try {
+    for (const [i, q] of questions.entries()) {
+      for (const answer of [false, true]) {
+        let slide: Slide;
+        let y = 0.72;
+        let continuation = 0;
+        const nextSlide = () => {
+          slide = baseSlide(pptx, { study: true });
+          sectionTag(slide, `${answer ? "Answer" : gen.kind === "exam" ? "Mock exam" : "Quiz"} · Item ${i + 1}${continuation ? " · continued" : ""}`);
+          pageFoot(slide, ++page);
+          slide.addNotes(answer ? `${q.stem}\nAnswer: ${q.answer}\n${q.rationale}`
+            : [q.stem, ...q.options, q.graph ? JSON.stringify(q.graph) : ""].join("\n"));
+          if (q.topic) slide.addText(q.topic, { x: 0.55, y: 5.08, w: 8, h: 0.25, fontSize: 9, color: FADED });
+          y = 0.72;
+          continuation++;
+        };
+        const addContent = async (content: string | NonNullable<typeof q.graph>) => {
+          for (const image of await capture.render(content, 4.15 / 8.9)) {
+            const height = image.height / image.width * 8.9;
+            const scale = Math.min(1, 4.15 / height);
+            const h = height * scale;
+            if (y + h > 4.92) nextSlide();
+            slide.addImage({ data: image.data, x: 0.55, y, w: 8.9 * scale, h });
+            y += h + 0.08;
+          }
+        };
+        nextSlide();
+        if (answer) {
+          const key = q.format === "mcq" ? `${answerText(q)}. ${q.options[q.answerIndex] ?? q.answer}` : q.answer || answerText(q);
+          await addContent(`**Correct answer:** ${key}`);
+          if (q.rationale) await addContent(q.rationale);
+        } else {
+          await addContent(q.stem);
+          if (q.graph) await addContent(q.graph);
+          if (q.format === "solution" || q.format === "identification") {
+            await addContent(q.format === "solution" ? "Show your working on paper." : "Your answer: ____________________");
+          } else {
+            for (const [oi, option] of (q.format === "truefalse" ? ["True", "False"] : q.options).entries()) {
+              await addContent(`**${String.fromCharCode(65 + oi)}.** ${option}`);
+            }
+          }
+        }
+      }
     }
-    if (q.topic) {
-      qs.addText(`Topic: ${q.topic}`, {
-        x: 0.55,
-        y: 5.05,
-        w: 5,
-        h: 0.3,
-        fontFace: "Arial",
-        fontSize: 9,
-        color: FADED,
-      });
-    }
-    pageFoot(qs, i * 2 + 2);
-
-    // Answer slide
-    const as = baseSlide(pptx);
-    sectionTag(as, `Answer · Item ${i + 1}`);
-    as.addText(q.stem, {
-      x: 0.55,
-      y: 0.62,
-      w: 8.9,
-      h: 0.95,
-      fontFace: "Georgia",
-      fontSize: 13,
-      color: FADED,
-      valign: "top",
-    });
-    as.addText(answerText(q), {
-      x: 0.55,
-      y: 1.85,
-      w: 8.9,
-      h: 1.1,
-      fontFace: "Georgia",
-      fontSize: 40,
-      color: BRASS,
-      align: "center",
-    });
-    if (q.rationale) {
-      as.addText(q.rationale, {
-        x: 1.0,
-        y: 3.25,
-        w: 8.0,
-        h: 1.5,
-        fontFace: "Arial",
-        fontSize: 13,
-        color: PARCHMENT,
-        align: "center",
-        valign: "top",
-      });
-    }
-    pageFoot(as, i * 2 + 3);
-  });
+  } finally {
+    capture.close();
+  }
 }
 
 function flashcardsPptx(pptx: PptxGenJS, gen: Generation): void {
@@ -354,7 +294,7 @@ export async function savePptx(gen: Generation, notebookName: string, base: stri
   switch (gen.kind) {
     case "quiz":
     case "exam":
-      quizExamPptx(pptx, gen);
+      await quizExamPptx(pptx, gen);
       break;
     case "flashcards":
       flashcardsPptx(pptx, gen);
