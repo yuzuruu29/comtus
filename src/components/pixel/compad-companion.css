@@ -1,0 +1,64 @@
+.compad-sprite-button {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+}
+
+.compad-sprite-button:focus-visible,
+.compad-resize-handle:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 4px;
+}
+
+.compad-sprite-button[data-dragging="true"] { cursor: grabbing; }
+
+.compad-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  opacity: 0;
+  cursor: nwse-resize;
+  touch-action: none;
+  transition: opacity 150ms ease;
+}
+
+.cozy-pixel-battery-companion:hover .compad-resize-handle,
+.cozy-pixel-battery-companion:focus-within .compad-resize-handle,
+.compad-resize-handle[data-resizing="true"] { opacity: 1; }
+
+.compad-menu-anchor {
+  position: fixed;
+  z-index: 70;
+  width: max-content;
+  max-width: min(360px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  font-family: "Instrument Sans", sans-serif;
+  user-select: text;
+  touch-action: auto;
+}
+
+.compad-menu-anchor > * { max-width: 100%; }
+
+@media (pointer: coarse) {
+  .compad-resize-handle { width: 44px; height: 44px; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compad-resize-handle { transition: none; }
+}

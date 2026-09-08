@@ -3,7 +3,9 @@ import { AnimatePresence, motion } from "motion/react";
 import {
   BookOpen,
   ArrowCounterClockwise,
+  ArrowUpRight,
   Briefcase,
+  CaretDown,
   ClockCounterClockwise,
   FileText,
   GraduationCap,
@@ -34,7 +36,7 @@ import type {
   DocPayload,
   NotePayload,
 } from "../lib/types";
-import { SOFT, Spotlight } from "./fx";
+import { SOFT } from "./fx";
 import { Toast } from "./Toast";
 import { timeAgo, Modal, Field, inputCls, btnLamp, btnGhost } from "./ui";
 import ExportMenu from "./ExportMenu";
@@ -51,6 +53,8 @@ import {
 } from "./generators/AidsFlow";
 import { useDesk } from "./DeskContext";
 import { kindAccent } from "../lib/milestones";
+import { Button, IconButton } from "../ui";
+import "./study-tools.css";
 
 type Flow = "quiz" | "exam" | "essay" | "flashcards" | "presentation" | "aids" | null;
 type DeletedGenerationNotice = {
@@ -58,32 +62,45 @@ type DeletedGenerationNotice = {
   focusUndo: boolean;
 };
 
-const QUICK_AID_PILLS: { kind: GenerationKind; icon: typeof BookOpen; name: string; kindVar: string }[] = [
-  { kind: "study-guide", icon: BookOpen, name: "Study guide", kindVar: "var(--brass)" },
-  { kind: "brief", icon: Briefcase, name: "Briefing doc", kindVar: "var(--candle)" },
-  { kind: "faq", icon: Question, name: "FAQ", kindVar: "var(--sage)" },
-  { kind: "timeline", icon: ClockCounterClockwise, name: "Timeline", kindVar: "var(--brasspale)" },
+const DOCUMENT_TOOLS: { kind: GenerationKind; icon: typeof BookOpen; name: string }[] = [
+  { kind: "study-guide", icon: BookOpen, name: "Study guide" },
+  { kind: "brief", icon: Briefcase, name: "Briefing doc" },
+  { kind: "faq", icon: Question, name: "FAQ" },
+  { kind: "timeline", icon: ClockCounterClockwise, name: "Timeline" },
 ];
 
-const MORE_TOOLS: {
+const PRACTICE_TOOLS: {
   flow: Exclude<Flow, null>;
   icon: typeof ListChecks;
   name: string;
   line: string;
   kindVar: string;
 }[] = [
-  { flow: "quiz", icon: ListChecks, name: "Practice Quiz", line: "Instant checks & rationales", kindVar: "var(--brass)" },
-  { flow: "exam", icon: GraduationCap, name: "Mock Exam", line: "Timed simulation & board review", kindVar: "var(--rust)" },
-  { flow: "essay", icon: PenNib, name: "Essay Coach", line: "Writing rubric feedback", kindVar: "var(--candle)" },
-  { flow: "flashcards", icon: Stack, name: "Flashcards", line: "Spaced repetition deck", kindVar: "var(--sage)" },
-  { flow: "presentation", icon: Presentation, name: "Slides & Deck", line: "Visual presentation outline", kindVar: "var(--brasspale)" },
+  { flow: "quiz", icon: ListChecks, name: "Practice quiz", line: "Check what you know", kindVar: "var(--brass)" },
+  { flow: "flashcards", icon: Stack, name: "Flashcards", line: "Remember the key ideas", kindVar: "var(--sage)" },
+  { flow: "exam", icon: GraduationCap, name: "Mock exam", line: "Practice under time pressure", kindVar: "var(--rust)" },
 ];
 
 const KIND_CSS: Record<ReturnType<typeof kindAccent>, string> = {
   brass: "var(--brass)",
-  moon: "var(--candle)",
+  moon: "var(--moon)",
   sage: "var(--sage)",
   rust: "var(--rust)",
+};
+
+const KIND_LABELS: Record<GenerationKind, string> = {
+  quiz: "Quiz",
+  exam: "Mock exam",
+  "essay-review": "Essay feedback",
+  "study-guide": "Study guide",
+  brief: "Briefing doc",
+  faq: "FAQ",
+  timeline: "Timeline",
+  flashcards: "Flashcards",
+  presentation: "Presentation",
+  slideshow: "Slideshow",
+  note: "Note",
+  "audio-overview": "Audio overview",
 };
 
 const FLOW_TITLES: Record<string, string> = {
@@ -117,7 +134,6 @@ export default function StudioPane({
   const [deleteError, setDeleteError] = useState("");
   const artifactButtonRefs = useRef(new Map<string, HTMLButtonElement>());
 
-  // Note editor modal
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Generation | null>(null);
   const [noteTitle, setNoteTitle] = useState("");
@@ -153,7 +169,6 @@ export default function StudioPane({
     };
   }, [notebookId, onPendingGenerationConsumed, pendingGenerationId]);
 
-  // Find latest audio overview if any
   const openAid = (kind: GenerationKind) => {
     setAidKind(kind);
     setFlow("aids");
@@ -217,161 +232,119 @@ export default function StudioPane({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-surface/40">
-      {/* Studio Header matching Screenshot 2 */}
-      <div className="flex items-center justify-between border-b border-hairline px-4 py-3.5">
-        <h2 className="font-display text-[15.5px] font-[450] text-ink">Studio</h2>
+    <div className="study-tools">
+      <div className="study-tools-header">
+        <h2>Study tools</h2>
         {onCollapse && (
-          <button
+          <IconButton
             onClick={onCollapse}
-            className="rounded-[var(--radius-control)] p-1 text-muted transition-colors hover:bg-ink/5 hover:text-ink"
+            size="sm"
             aria-label="Collapse studio pane"
             title="Collapse studio"
           >
-            <SidebarSimple size={17} weight="light" />
-          </button>
+            <SidebarSimple size={17} aria-hidden="true" />
+          </IconButton>
         )}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3.5 py-4 space-y-6">
-        {/* Section 1: Audio Overview — Coming Soon */}
-        <section aria-labelledby="audio-overview-title">
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-center gap-1.5">
-              <h3 id="audio-overview-title" className="font-display text-[14px] font-[450] text-ink">
-                Audio Overview
-              </h3>
-              <span className="rounded-full border border-brass/30 bg-brass/10 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-brasspale font-semibold">
-                Coming Soon
-              </span>
-            </div>
+      <div className="study-tools-body scroll-thin">
+        <section aria-labelledby="create-study-title">
+          <div className="study-tools-intro">
+            <span className="study-tools-eyebrow">Put your learning to work</span>
+            <h3 id="create-study-title">Make something from your sources.</h3>
+            <p>Choose a format. Make it your own.</p>
           </div>
-
-          <div className="rounded-2xl border border-hairline bg-surface/80 p-4 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brass/10 text-brass">
-                  <ClockCounterClockwise size={18} weight="light" />
-                </div>
-                <div className="min-w-0">
-                  <span className="block truncate text-[13px] font-[450] text-ink">
-                    2-host audio deep dive
-                  </span>
-                  <span className="block text-[11px] text-muted line-clamp-1">
-                    Interactive conversation analyzing your sources — coming soon
-                  </span>
-                </div>
-              </div>
-
-              <button
-                disabled
-                className="shrink-0 rounded-full border border-hairline-strong bg-surface px-4 py-1.5 text-[12px] font-medium text-muted cursor-not-allowed opacity-70"
+          <div className="practice-tools">
+            {PRACTICE_TOOLS.map((tool) => (
+              <Button
+                key={tool.flow}
+                variant="secondary"
+                className="practice-tool"
+                onClick={() => setFlow(tool.flow)}
+                style={{ ["--kind" as string]: tool.kindVar }}
               >
-                Soon
-              </button>
-            </div>
+                <span className="practice-tool-icon"><tool.icon size={19} aria-hidden="true" /></span>
+                <span className="practice-tool-copy">
+                  <strong>{tool.name}</strong>
+                  <span>{tool.line}</span>
+                </span>
+                <ArrowUpRight className="practice-tool-arrow" size={15} aria-hidden="true" />
+              </Button>
+            ))}
           </div>
+          <details className="study-tools-more">
+            <summary>
+              <span>More ways to study<small>Guides, writing & presentations</small></span>
+              <CaretDown size={16} aria-hidden="true" />
+            </summary>
+            <div className="study-tools-secondary">
+              {DOCUMENT_TOOLS.map((tool) => (
+                <Button key={tool.kind} variant="ghost" size="sm" onClick={() => openAid(tool.kind)}>
+                  <tool.icon size={16} aria-hidden="true" />
+                  {tool.name}
+                </Button>
+              ))}
+              <Button variant="ghost" size="sm" onClick={() => setFlow("essay")}>
+                <PenNib size={16} aria-hidden="true" />Essay coach
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setFlow("presentation")}>
+                <Presentation size={16} aria-hidden="true" />Slides & deck
+              </Button>
+            </div>
+          </details>
         </section>
 
-        {/* Section 2: Notes & Study Tools matching Screenshot 2 */}
-        <section aria-labelledby="notes-section-title">
-          <div className="flex items-center justify-between mb-2.5">
-            <h3 id="notes-section-title" className="font-display text-[14px] font-[450] text-ink">
-              Notes
-            </h3>
-          </div>
-
-          {/* + Add note button (Screenshot 2 primary button) */}
-          <button
-            onClick={() => {
-              setEditingNote(null);
-              setNoteTitle("");
-              setNoteContent("");
-              setNoteModalOpen(true);
-            }}
-            className="flex w-full items-center justify-center gap-2 rounded-full border border-hairline-strong bg-surface px-4 py-2.5 text-[13px] font-medium text-ink shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brass/50 hover:bg-raised hover:shadow-[0_4px_16px_-2px_rgba(227,176,75,0.18)] active:scale-[0.98]"
-          >
-            <Plus size={15} weight="bold" className="text-brass" />
-            <span>Add note</span>
-          </button>
-
-          {/* Quick Tool Grid (Screenshot 2 4-pill layout) */}
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {QUICK_AID_PILLS.map((t) => (
-              <button
-                key={t.kind}
-                onClick={() => openAid(t.kind)}
-                className="kind-tile flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-[12px] font-medium text-ink/90 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)] active:translate-y-0.5 active:scale-[0.99]"
-                style={{ ["--kind" as string]: t.kindVar }}
-              >
-                <t.icon size={14} weight="light" className="kind-icon shrink-0" />
-                <span className="truncate">{t.name}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Extended Tools Drawer (Quiz, Exam, Essay, Flashcards, Slides) */}
-          <div className="mt-3 space-y-1 border-t border-hairline pt-3">
-            <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brasspale mb-1 px-1 font-semibold">
-              More Study Generators
+        <section className="study-saved" aria-labelledby="saved-work-title">
+          <div className="study-saved-heading">
+            <div className="study-saved-title">
+              <h3 id="saved-work-title">Saved work</h3>
+              <span>{gens.length}</span>
             </div>
-            {MORE_TOOLS.map((t) => (
-              <button
-                key={t.flow}
-                onClick={() => {
-                  setFlow(t.flow);
-                }}
-                className="kind-tile flex w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)] active:translate-y-0.5 active:scale-[0.99]"
-                style={{ ["--kind" as string]: t.kindVar }}
-              >
-                <t.icon size={15} weight="light" className="kind-icon shrink-0" />
-                <div className="min-w-0">
-                  <span className="block text-[12.5px] font-medium text-ink">{t.name}</span>
-                  <span className="block text-[10.5px] text-muted">{t.line}</span>
-                </div>
-              </button>
-            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<Plus size={14} aria-hidden="true" />}
+              onClick={() => {
+                setEditingNote(null);
+                setNoteTitle("");
+                setNoteContent("");
+                setNoteModalOpen(true);
+              }}
+            >
+              Add note
+            </Button>
           </div>
 
-          {/* Saved Notes & Artifacts List matching Screenshot 2 */}
-          <div className="mt-5 space-y-2">
-            <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted px-1">
-              Saved Work & Notes ({gens.length})
-            </div>
-
+          <div className="study-saved-list">
             <AnimatePresence initial={false}>
               {gens.map((g) => {
                 const isNote = g.kind === "note";
 
                 return (
-                  <Spotlight key={g.id} className="rounded-xl" radius={180}>
                     <motion.div
+                      key={g.id}
                       layout
                       initial={{ opacity: 0, y: -6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -10, transition: { duration: 0.15 } }}
                       transition={SOFT}
-                      className="desk-row group flex items-start gap-3 rounded-xl border border-hairline bg-surface/70 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-brass/40 hover:bg-surface hover:shadow-[0_6px_20px_-4px_rgba(0,0,0,0.4),0_0_14px_-3px_rgba(227,176,75,0.14)]"
+                      className="study-saved-row group"
                     >
-                      {/* Note Icon (Yellow/Gold Notebook icon matching Screenshot 2) */}
                       <div
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border mt-0.5"
+                        className="study-saved-icon"
                         style={{
                           ["--kind" as string]: KIND_CSS[kindAccent(g.kind)],
-                          background: "color-mix(in srgb, var(--kind) 14%, transparent)",
-                          color: "var(--kind)",
-                          borderColor: "color-mix(in srgb, var(--kind) 30%, transparent)",
                         }}
                       >
                         {isNote ? (
-                          <NotePencil size={16} weight="fill" />
+                          <NotePencil size={18} aria-hidden="true" />
                         ) : (
-                          <FileText size={16} weight="fill" />
+                          <FileText size={18} aria-hidden="true" />
                         )}
                       </div>
 
-                      {/* Title & Preview */}
                       <button
+                        type="button"
                         ref={(node) => {
                           if (node) artifactButtonRefs.current.set(g.id, node);
                           else artifactButtonRefs.current.delete(g.id);
@@ -383,47 +356,46 @@ export default function StudioPane({
                             setViewing(g);
                           }
                         }}
-                        className="min-w-0 flex-1 text-left"
+                        className="study-saved-open"
                       >
-                        <h4 className="truncate text-[13px] font-[500] text-ink group-hover:text-brasspale">
-                          {g.title}
-                        </h4>
-                        <span className="block font-mono text-[10px] uppercase tracking-[0.1em] text-muted/70 mt-0.5">
-                          {g.kind} · {timeAgo(g.createdAt)}
+                        <h4>{g.title}</h4>
+                        <span>
+                          {KIND_LABELS[g.kind]} · {timeAgo(g.createdAt)}
                         </span>
                       </button>
 
-                      {/* Actions */}
-                      <div className="artifact-actions flex items-center gap-0.5 transition-opacity">
+                      <div className="artifact-actions study-saved-actions">
                         {isNote && (
-                          <button
+                          <IconButton
+                            size="sm"
                             onClick={() => openEditNote(g)}
-                            className="flex h-7 w-7 items-center justify-center rounded text-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/70"
                             aria-label={`Edit note ${g.title}`}
                             title="Edit note"
                           >
-                            <PencilSimple size={13} />
-                          </button>
+                            <PencilSimple size={15} aria-hidden="true" />
+                          </IconButton>
                         )}
-                        <button
+                        <IconButton
+                          size="sm"
+                          variant="danger"
                           onClick={(event) => void handleDeleteGen(g, event.detail === 0)}
-                          className="flex h-7 w-7 items-center justify-center rounded text-muted hover:bg-rust/10 hover:text-rust focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rust/70"
                           aria-label={`${isNote ? "Delete note" : "Delete saved item"} ${g.title}`}
                           title={isNote ? "Delete note" : "Delete saved item"}
                         >
-                          <Trash size={13} />
-                        </button>
+                          <Trash size={15} aria-hidden="true" />
+                        </IconButton>
                       </div>
                     </motion.div>
-                  </Spotlight>
                 );
               })}
             </AnimatePresence>
 
             {gens.length === 0 && (
-              <p className="px-2 py-6 text-center text-[12px] leading-relaxed text-muted">
-                Notes you add and study guides, quizzes, or audio overviews you generate will appear here.
-              </p>
+              <div className="study-saved-empty">
+                <NotePencil size={24} aria-hidden="true" />
+                <h4>Your work, all in one place.</h4>
+                <p>Add a note or try a study tool above. Everything you create stays with this notebook.</p>
+              </div>
             )}
 
             {deleteError && (

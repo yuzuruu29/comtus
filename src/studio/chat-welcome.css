@@ -1,0 +1,35 @@
+.chat-welcome {
+  max-width: 36rem;
+  margin: clamp(20px, 6vh, 64px) auto 40px;
+  font-family: var(--font-ui);
+}
+
+.chat-welcome-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 24px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-dialog);
+  background: var(--surface);
+  color: var(--brass);
+  box-shadow: var(--elev-card);
+}
+
+.chat-welcome-context { margin-bottom: 8px; color: var(--muted); font-size: var(--text-label); }
+.chat-welcome h1 { max-width: 24ch; font-family: var(--font-read); font-size: calc(var(--text-title) * 1.25); font-weight: 450; line-height: 1.35; letter-spacing: -0.025em; text-wrap: balance; }
+.chat-welcome-copy { max-width: 47ch; margin: 16px 0 24px; color: var(--muted); font-size: var(--text-body); line-height: 1.75; }
+.chat-welcome-hint { margin-top: 14px; color: var(--muted); font-size: var(--text-label); }
+
+.chat-starters { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.chat-starters button { min-height: 44px; padding: 10px 16px; border: 1px solid var(--hairline-strong); border-radius: var(--radius-control); background: var(--surface); color: var(--ink); font-size: var(--text-body); text-align: left; transition: color var(--dur-fast), background var(--dur-fast), border-color var(--dur-fast); }
+.chat-starters button:hover { border-color: var(--brass); background: var(--raised); color: var(--brass); }
+
+@media (max-width: 639px) {
+  .chat-welcome { margin: 16px auto 24px; }
+  .chat-welcome-mark { margin-bottom: 16px; }
+  .chat-welcome h1 { font-size: var(--text-title); }
+  .chat-welcome-copy { margin-block: 12px 20px; }
+}

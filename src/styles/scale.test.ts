@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
  *  studio ended up with dozens of near-identical sizes. This is a ratchet: it
  *  is green at today's count and may only ever go down. Task 2.5 sets it to 0
  *  outside src/landing, which Task 4.1 rebuilds. */
-const CEILING = 533;
+const CEILING = 457;
 
 /** How far below CEILING the count may drift before the ratchet is stale. */
 const SLACK = 25;

@@ -1,256 +1,47 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import gsap from "gsap";
-import { scrollToSection } from "../lib/scroll";
-import { ComtusEmblem } from "../components/brand/ComtusLogo";
-import { PIXEL_HOP } from "./pixelMotion";
-import type { SubjectOption } from "./OnboardingModal";
+import { List, X } from "@phosphor-icons/react";
+import "../ui/ui.css";
+import "./landing.css";
 
 const LINKS = [
-  { label: "Console", hash: "#hero" },
-  { label: "Power-Ups", hash: "#features" },
-  { label: "Free Play", hash: "#byok-guide" },
-  { label: "Help & FAQ", hash: "#faq" },
+  { label: "How it works", hash: "#how-it-works" },
+  { label: "Model access", hash: "#model-access" },
+  { label: "Questions", hash: "#faq" },
 ];
 
-export interface NavProps {
-  ready: boolean;
-  onStartStudying?: () => void;
-  activeDiscipline?: SubjectOption | null;
-  onReplayOnboarding?: () => void;
-}
-
-export default function Nav({
-  ready,
-  onStartStudying,
-  activeDiscipline,
-  onReplayOnboarding,
-}: NavProps) {
+export default function Nav({ onLanding = false }: { onLanding?: boolean }) {
   const [open, setOpen] = useState(false);
-  const desktopRef = useRef<HTMLElement>(null);
-  const mobileRef = useRef<HTMLElement>(null);
-  const lastY = useRef(0);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const navigationRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (!ready) return;
-    const targets = [desktopRef.current, mobileRef.current].filter(
-      (el): el is HTMLElement => !!el,
-    );
-    if (targets.length === 0) return;
-    gsap.fromTo(
-      targets,
-      { y: -24, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.55, ease: PIXEL_HOP, delay: 0.28, stagger: 0.05 },
-    );
-    const el = desktopRef.current;
-    if (!el) return;
-
-    const onScroll = () => {
-      const y = window.scrollY;
-      const goingDown = y > lastY.current && y > 140;
-      gsap.to(el, {
-        yPercent: goingDown ? -130 : 0,
-        duration: 0.5,
-        ease: "power3.out",
-        overwrite: "auto",
-      });
-      lastY.current = y;
+    if (!open) return;
+    navigationRef.current?.querySelector<HTMLAnchorElement>("a")?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        toggleRef.current?.focus();
+      }
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [ready]);
-
-  const go = (hash: string) => {
-    setOpen(false);
-    // Let the overlay close before travelling.
-    window.setTimeout(() => scrollToSection(hash), open ? 350 : 0);
-  };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [open]);
 
   return (
-    <>
-      <header
-        ref={desktopRef}
-        className="fixed inset-x-0 top-5 z-[100] mx-auto hidden w-max items-center gap-1 border border-hairline bg-surface/95 py-2 pl-6 pr-2 backdrop-blur-xl opacity-0 md:flex rounded-full shadow-card"
-      >
-        <Link
-          to="/"
-          className="mr-4 flex items-center gap-2.5"
-          data-cursor
-          aria-label="Comtus home"
-        >
-          <img
-            src="/app-icon.jpg"
-            alt="Comtus Logo"
-            className="h-6 w-6 rounded-full border border-hairline object-cover"
-          />
-          <span className="font-display text-[15px] font-[600] tracking-[0.14em] text-ink">
-            COMTUS
-          </span>
-        </Link>
-
-        {LINKS.map((l) => (
-          <button
-            key={l.hash}
-            type="button"
-            onClick={() => go(l.hash)}
-            className="group relative px-3 py-1.5 text-[12.5px] font-medium text-muted transition-colors duration-200 hover:text-ink cursor-pointer"
-          >
-            {l.label}
-            <span className="absolute inset-x-3 -bottom-px h-0.5 origin-left scale-x-0 bg-brass transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-x-100" />
+    <header className="landing-nav">
+      <div className="landing-container landing-nav-inner">
+        <Link to="/" className="landing-wordmark" aria-label="Comtus home">comtus<span aria-hidden="true">.</span></Link>
+        <nav ref={navigationRef} id="landing-navigation" className="landing-nav-links" aria-label="Main navigation" data-open={open}>
+          {LINKS.map((link) => <a href={`${onLanding ? "" : "/"}${link.hash}`} key={link.hash} onClick={() => setOpen(false)}>{link.label}</a>)}
+        </nav>
+        <div className="landing-nav-actions">
+          <Link to="/studio" className="btn btn-primary btn-sm">Open Studio</Link>
+          <button ref={toggleRef} className="landing-nav-toggle" type="button" aria-label={open ? "Close navigation" : "Open navigation"} aria-expanded={open} aria-controls="landing-navigation" onClick={() => setOpen(!open)}>
+            {open ? <X size={22} aria-hidden="true" /> : <List size={22} aria-hidden="true" />}
           </button>
-        ))}
-
-        {activeDiscipline && (
-          <span className="hidden xl:inline-flex items-center gap-1.5 rounded-full border border-brass/30 bg-brass/10 px-2.5 py-1 text-[11px] font-mono text-brass">
-            <span className="text-xs">{activeDiscipline.icon}</span>
-            <span className="font-semibold">{activeDiscipline.shortLabel}</span>
-          </span>
-        )}
-
-        {onReplayOnboarding && (
-          <button
-            type="button"
-            onClick={onReplayOnboarding}
-            className="hidden lg:inline-flex items-center gap-1 rounded-full border border-hairline px-2.5 py-1 text-[11px] font-mono text-muted hover:border-brass hover:text-ink transition-colors cursor-pointer"
-            title="Replay Scholar Onboarding"
-          >
-            <span>Intro</span>
-          </button>
-        )}
-
-        <div className="ml-2 flex items-center gap-2">
-          {onStartStudying ? (
-            <button
-              type="button"
-              onClick={onStartStudying}
-              className="group flex items-center gap-2 rounded-full grad-lamp text-night py-1.5 pl-4 pr-2 text-[12px] font-medium shadow-card hover:brightness-105 transition-all cursor-pointer"
-            >
-              <span>Start Studying</span>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 transition-transform duration-200 group-hover:translate-x-0.5">
-                <svg width="10" height="10" viewBox="0 0 11 11" fill="none">
-                  <path
-                    d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-            </button>
-          ) : (
-            <Link
-              to="/studio"
-              className="group flex items-center gap-2 rounded-full grad-lamp text-night py-1.5 pl-4 pr-2 text-[12px] font-medium shadow-card hover:brightness-105 transition-all cursor-pointer"
-            >
-              <span>Start Studying</span>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 transition-transform duration-200 group-hover:translate-x-0.5">
-                <svg width="10" height="10" viewBox="0 0 11 11" fill="none">
-                  <path
-                    d="M1.5 9.5L9.5 1.5M9.5 1.5H3M9.5 1.5V8"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-            </Link>
-          )}
-        </div>
-      </header>
-
-      {/* Mobile bar */}
-      <header
-        ref={mobileRef}
-        className="fixed inset-x-4 top-[calc(1rem+var(--sat))] z-[100] flex items-center justify-between border border-hairline bg-surface/95 py-2.5 pl-5 pr-2.5 backdrop-blur-xl opacity-0 md:hidden rounded-full shadow-card"
-      >
-        <Link to="/" className="flex items-center gap-2" aria-label="Comtus home">
-          <img
-            src="/app-icon.jpg"
-            alt="Comtus Logo"
-            className="h-5 w-5 rounded-full border border-hairline object-cover"
-          />
-          <span className="font-display text-sm font-[600] tracking-[0.14em] text-ink">COMTUS</span>
-        </Link>
-        <button
-          onClick={() => setOpen((v) => !v)}
-          aria-label={open ? "Close menu" : "Open menu"}
-          aria-expanded={open}
-          className="relative flex h-9 w-9 items-center justify-center rounded-full border border-hairline bg-raised/60 text-ink active:scale-95"
-        >
-          <span
-            className={`absolute left-1/2 top-1/2 h-0.5 w-4 -translate-x-1/2 bg-ink transition-all duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] ${
-              open ? "rotate-45" : "-translate-y-[3.5px]"
-            }`}
-          />
-          <span
-            className={`absolute left-1/2 top-1/2 h-0.5 w-4 -translate-x-1/2 bg-ink transition-all duration-300 ease-[cubic-bezier(0.76,0,0.24,1)] ${
-              open ? "-rotate-45" : "translate-y-[3.5px]"
-            }`}
-          />
-        </button>
-      </header>
-
-      {/* Mobile overlay */}
-      <div
-        className={`fixed inset-0 z-[90] flex flex-col justify-center bg-ground/98 px-8 pb-[calc(2rem+var(--sab))] pt-[calc(4rem+var(--sat))] backdrop-blur-2xl transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] md:hidden ${
-          open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-        }`}
-      >
-        {[...LINKS, { label: "Start Studying", hash: "/studio" }].map((l, i) => (
-          <div key={l.label} className="overflow-hidden py-1">
-            <button
-              onClick={() =>
-                l.hash.startsWith("/") ? (window.location.href = l.hash) : go(l.hash)
-              }
-              className={`font-display text-[2rem] font-[480] text-ink transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95 text-left ${
-                open ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
-              }`}
-              style={{ transitionDelay: open ? `${100 + i * 50}ms` : "0ms" }}
-            >
-              {l.label}
-            </button>
-          </div>
-        ))}
-        {onReplayOnboarding && (
-          <div className="overflow-hidden py-1">
-            <button
-              onClick={() => {
-                setOpen(false);
-                onReplayOnboarding();
-              }}
-              className={`font-display text-[1.4rem] font-[480] text-brass transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-95 text-left ${
-                open ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
-              }`}
-              style={{ transitionDelay: open ? "350ms" : "0ms" }}
-            >
-              Replay Onboarding
-            </button>
-          </div>
-        )}
-        {activeDiscipline && (
-          <div
-            className={`mt-4 inline-flex items-center gap-1.5 rounded-full border border-brass/30 bg-brass/10 px-3 py-1 font-mono text-xs text-brass transition-opacity duration-500 ${
-              open ? "opacity-100" : "opacity-0"
-            }`}
-            style={{ transitionDelay: open ? "380ms" : "0ms" }}
-          >
-            <span>{activeDiscipline.icon}</span>
-            <span>Focus: {activeDiscipline.label}</span>
-          </div>
-        )}
-        <div
-          className={`label-mono mt-6 transition-opacity duration-500 text-px-muted ${
-            open ? "opacity-90" : "opacity-0"
-          }`}
-          style={{ transitionDelay: open ? "420ms" : "0ms" }}
-        >
-          Your AI Study Companion · Rough thought, polished.
         </div>
       </div>
-    </>
+    </header>
   );
-}
-
-export function FlameMark({ className = "h-6 w-6" }: { className?: string }) {
-  return <ComtusEmblem size={24} className={className} />;
 }

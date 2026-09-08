@@ -1,0 +1,27 @@
+.settings-preferences {
+  font-family: var(--font-ui);
+}
+
+.settings-preferences .segmented {
+  display: flex;
+  width: 100%;
+}
+
+.settings-preferences .segmented-option {
+  flex: 1;
+  justify-content: center;
+  font-size: 0.875rem;
+}
+
+.settings-preferences .segmented-option,
+.settings-preferences .btn,
+.settings-preferences input[type="range"] {
+  min-height: 44px;
+}
+
+.settings-preferences .segmented-option-selected,
+.settings-preferences .btn[aria-pressed="true"] {
+  border-color: var(--hairline-strong);
+  background: var(--raised);
+  color: var(--ink);
+}

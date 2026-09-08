@@ -13,6 +13,7 @@ import { MilestoneUiProvider } from "./companion/milestoneUi";
 import { cycleLayout, loadLayout, saveLayout, togglePane, type LayoutMode } from "./layout";
 import { matchesShortcut } from "./shortcuts";
 import type { SettingsTab } from "./SettingsModal";
+import { CompadChatProvider } from "./CompadChatContext";
 
 function hasOpenModal(): boolean {
   return Boolean(document.querySelector('[role="dialog"][aria-modal="true"]'));
@@ -26,6 +27,7 @@ export default function DeskShell({
   onImport,
   onNewNotebook,
   onHome,
+  onFocusChat,
 }: {
   children: ReactNode;
   layout?: LayoutMode;
@@ -34,6 +36,7 @@ export default function DeskShell({
   onImport?: () => void;
   onNewNotebook?: () => void;
   onHome?: () => void;
+  onFocusChat?: () => void;
 }) {
   const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -85,12 +88,12 @@ export default function DeskShell({
       cycleLayout: (dir) => setLayout(cycleLayout(current, dir)),
       toggleSources: () => setLayout(togglePane(current, "sources", compact)),
       toggleStudio: () => setLayout(togglePane(current, "studio", compact)),
-      focusChat: () => setLayout("focus"),
+      focusChat: () => { setLayout("focus"); onFocusChat?.(); },
       importFiles: () => onImport?.(),
       openPalette: () => setPaletteOpen(true),
       openMilestones: () => setMilestonesOpen(true),
     };
-  }, [compact, layout, navigate, onHome, onImport, onNewNotebook, onSettings, setLayout]);
+  }, [compact, layout, navigate, onHome, onImport, onNewNotebook, onSettings, onFocusChat, setLayout]);
   const actionsRef = useRef(actions);
 
   useEffect(() => {
@@ -179,6 +182,7 @@ export default function DeskShell({
   return (
     <DeskContext.Provider value={actions}>
       <MilestoneUiProvider value={{ count: milestoneCount, open: () => setMilestonesOpen(true) }}>
+        <CompadChatProvider>
         {children}
         <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
         <FreeLimitWarningModal onOpenSettings={() => onSettings?.("models")} />
@@ -188,6 +192,7 @@ export default function DeskShell({
           onPanelOpenChange={setMilestonesOpen}
           onCount={setMilestoneCount}
         />
+        </CompadChatProvider>
       </MilestoneUiProvider>
     </DeskContext.Provider>
   );

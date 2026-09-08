@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check } from "@phosphor-icons/react";
 import { loadFocus } from "./focus";
 import {
@@ -23,8 +24,11 @@ import { useVoiceInput } from "./useVoiceInput";
 import SessionMenu from "./SessionMenu";
 import MessageList from "./MessageList";
 import Composer from "./Composer";
+import CompadChat from "./CompadChat";
+import { useCompadChat } from "./CompadChatContext";
 
 const lastSessionKey = (notebookId: string) => `comtus:lastChat:${notebookId}`;
+type ChatRequest = { controller: AbortController; notebookId: string; token: number };
 
 export default function ChatPane({
   notebook,
@@ -34,6 +38,8 @@ export default function ChatPane({
   onOpenSettings,
   onAddSources,
   capabilities,
+  surfaceTarget,
+  focusRequest = 0,
 }: {
   notebook: Notebook | null;
   sourcesVersion: number;
@@ -44,17 +50,22 @@ export default function ChatPane({
   /** Task 3.3 supplies real model capabilities; until then callers may pass
    *  { thinking: false } to hide the composer's Think toggle. */
   capabilities?: { thinking?: boolean };
+  surfaceTarget?: HTMLElement | null;
+  focusRequest?: number;
 }) {
+  const { target: compadTarget } = useCompadChat();
   const cs = useCallSettings();
   const hasKey = useSettings((s) => s.hasKey);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   // Id of the assistant message that just handed off from the streaming slot;
   // that one bubble mounts entrance-free so the swap paints identically.
   const [settledId, setSettledId] = useState<string | null>(null);
   const [sourceCount, setSourceCount] = useState(0);
   const [input, setInput] = useState("");
+  const [preparing, setPreparing] = useState(false);
   // Voice input lands in the composer for review — never auto-sent.
   const voice = useVoiceInput((text) => setInput((prev) => appendTranscript(prev, text)));
   const [streaming, setStreaming] = useState<{
@@ -68,13 +79,17 @@ export default function ChatPane({
   const [searchBanner, setSearchBanner] = useState<WebSearchMeta | null>(null);
   const [toastNoteSaved, setToastNoteSaved] = useState(false);
   const [dismissedFollowUps, setDismissedFollowUps] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
+  const requestRef = useRef<ChatRequest | null>(null);
+  const notebookIdRef = useRef(notebook?.id);
+  notebookIdRef.current = notebook?.id;
   // How the live stream is ending — written BEFORE setStreaming(null) so the
   // streaming slot can pick its exit: "commit" swaps instantly into the
   // identical persisted bubble, "abort" fades away.
   const streamEndRef = useRef<"commit" | "abort">("abort");
   const searchMetaRef = useRef<WebSearchMeta | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fullChatRef = useRef<HTMLDivElement>(null);
+  const focusedRequest = useRef(0);
   const stickBottom = useRef(true);
   const loadToken = useRef(0);
   const [showJump, setShowJump] = useState(false);
@@ -89,17 +104,36 @@ export default function ChatPane({
     reply: ChatReply;
     sessionId: string;
     notebookId: string;
-    token: number;
+    request: ChatRequest;
   } | null>(null);
   const [finalizeTick, setFinalizeTick] = useState(0);
 
   const activeSession = sessions.find((s) => s.id === activeId) ?? null;
+  const requestIsCurrent = useCallback((request: ChatRequest) =>
+    requestRef.current === request && request.token === loadToken.current &&
+    notebookIdRef.current === request.notebookId && !request.controller.signal.aborted, []);
+  const cancelRequest = useCallback(() => {
+    requestRef.current?.controller.abort();
+    requestRef.current = null;
+    finalizeRef.current = null;
+    streamEndRef.current = "abort";
+    setStreaming(null);
+    setPreparing(false);
+    setSearchBanner(null);
+  }, []);
 
   useEffect(() => {
-    abortRef.current?.abort();
+    cancelRequest();
+    const token = ++loadToken.current;
+    setSessionReady(false);
+    setSessions([]);
+    setActiveId(null);
+    setMessages([]);
+    setInput("");
+    setError("");
+    setSourceCount(0);
     const nbId = notebook?.id;
     if (!nbId) return;
-    const token = ++loadToken.current;
     void (async () => {
       const list = await ensureChatSessions(nbId);
       if (token !== loadToken.current) return;
@@ -112,22 +146,34 @@ export default function ChatPane({
         : [];
       if (token !== loadToken.current) return;
       setMessages(msgs);
-    })();
-  }, [notebook?.id]);
+      setSessionReady(true);
+    })().catch((err) => { if (token === loadToken.current) setError(friendlyError(err)); });
+  }, [notebook?.id, cancelRequest]);
 
   useEffect(() => {
     if (!notebook) return;
+    let current = true;
     void db.sources
       .where("notebookId")
       .equals(notebook.id)
       .count()
-      .then(setSourceCount);
+      .then((count) => { if (current) setSourceCount(count); })
+      .catch((err) => { if (current) setError(friendlyError(err)); });
+    return () => { current = false; };
   }, [notebook, sourcesVersion]);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (el && stickBottom.current) el.scrollTop = el.scrollHeight;
-  }, [streaming, messages, smoothed.text]);
+  }, [streaming, messages, smoothed.text, surfaceTarget]);
+
+  useEffect(() => {
+    if (preparing || !focusRequest || focusedRequest.current === focusRequest) return;
+    const composer = fullChatRef.current?.querySelector<HTMLTextAreaElement>("textarea");
+    if (!composer) return;
+    composer.focus({ preventScroll: true });
+    if (document.activeElement === composer) focusedRequest.current = focusRequest;
+  }, [focusRequest, surfaceTarget, notebook?.id, preparing]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.visualViewport) return;
@@ -145,7 +191,13 @@ export default function ChatPane({
   }, []);
 
   useEffect(() => {
-    return () => abortRef.current?.abort();
+    const epoch = loadToken;
+    return () => {
+      ++epoch.current;
+      requestRef.current?.controller.abort();
+      requestRef.current = null;
+      finalizeRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
@@ -178,9 +230,13 @@ export default function ChatPane({
 
   const selectSession = useCallback(
     (id: string) => {
-      if (!notebook || id === activeId) return;
-      abortRef.current?.abort();
+      if (!notebook || (id === activeId && sessionReady)) return;
+      cancelRequest();
       const token = ++loadToken.current;
+      setSessionReady(false);
+      setMessages([]);
+      setInput("");
+      setError("");
       setActiveId(id);
       rememberActive(notebook.id, id);
       void db.messages
@@ -192,24 +248,37 @@ export default function ChatPane({
           setMessages(msgs);
           setDismissedFollowUps(false);
           stickBottom.current = true;
-        });
+          setSessionReady(true);
+        }).catch((err) => { if (token === loadToken.current) setError(friendlyError(err)); });
     },
-    [notebook, activeId],
+    [notebook, activeId, sessionReady, cancelRequest],
   );
 
   const newSession = useCallback(async () => {
     if (!notebook) return;
-    abortRef.current?.abort();
+    cancelRequest();
     const token = ++loadToken.current;
-    const session = await createChatSession(notebook.id);
-    if (token !== loadToken.current) return;
-    setSessions((prev) => [session, ...prev]);
-    setActiveId(session.id);
-    rememberActive(notebook.id, session.id);
-    setMessages([]);
-    stickBottom.current = true;
+    setSessionReady(false);
     setError("");
-  }, [notebook]);
+    const previousDraft = input;
+    setInput("");
+    try {
+      const session = await createChatSession(notebook.id);
+      if (token !== loadToken.current) return;
+      setSessions((prev) => [session, ...prev]);
+      setActiveId(session.id);
+      setMessages([]);
+      rememberActive(notebook.id, session.id);
+      stickBottom.current = true;
+      setSessionReady(true);
+    } catch (err) {
+      if (token === loadToken.current) {
+        setError(friendlyError(err));
+        setInput((draft) => draft || previousDraft);
+        setSessionReady(true);
+      }
+    }
+  }, [notebook, cancelRequest, input]);
 
   const handleRenameSession = useCallback(async (id: string, title: string) => {
     await renameChatSession(id, title);
@@ -223,31 +292,32 @@ export default function ChatPane({
   const removeSession = useCallback(
     async (id: string) => {
       if (!notebook) return;
-      await deleteChatSession(id);
-      const rest = sessions.filter((s) => s.id !== id);
-      setSessions(rest);
-      if (id !== activeId) return;
-
-      abortRef.current?.abort();
-      const token = ++loadToken.current;
-      const next = rest[0];
-      if (!next) {
-        const fresh = await createChatSession(notebook.id);
+      const selected = id === activeId;
+      if (selected) { cancelRequest(); setSessionReady(false); }
+      const token = selected ? ++loadToken.current : loadToken.current;
+      try {
+        await deleteChatSession(id);
         if (token !== loadToken.current) return;
-        setSessions([fresh]);
-        setActiveId(fresh.id);
-        rememberActive(notebook.id, fresh.id);
+        const rest = sessions.filter((session) => session.id !== id);
+        setSessions(rest);
+        if (!selected) return;
+        setInput("");
         setMessages([]);
-        return;
+        const next = rest[0] ?? await createChatSession(notebook.id);
+        if (token !== loadToken.current) return;
+        if (!rest.length) setSessions([next]);
+        setActiveId(next.id);
+        rememberActive(notebook.id, next.id);
+        const msgs = await db.messages.where("sessionId").equals(next.id).sortBy("createdAt");
+        if (token !== loadToken.current) return;
+        setMessages(msgs);
+        setSessionReady(true);
+        stickBottom.current = true;
+      } catch (err) {
+        if (token === loadToken.current) setError(friendlyError(err));
       }
-      setActiveId(next.id);
-      rememberActive(notebook.id, next.id);
-      const msgs = await db.messages.where("sessionId").equals(next.id).sortBy("createdAt");
-      if (token !== loadToken.current) return;
-      setMessages(msgs);
-      stickBottom.current = true;
     },
-    [notebook, sessions, activeId],
+    [notebook, sessions, activeId, cancelRequest],
   );
 
   const handleSaveToNote = useCallback(
@@ -265,70 +335,53 @@ export default function ChatPane({
   const send = useCallback(
     async (raw?: string) => {
       const question = (raw ?? input).trim();
-      if (!question || !notebook || streaming) return;
-      if (!hasKey()) {
-        setError("Add your API key in Settings (or select a local/free model) first — the lamp needs it.");
-        return;
-      }
+      if (!question || !notebook || requestRef.current) return;
+      if (!sessionReady) { setError("Your conversation is still opening. Try again in a moment."); return; }
+      if (!hasKey()) { setError("Choose a model or add your API key in AI Models to chat."); return; }
+
+      const request: ChatRequest = { controller: new AbortController(), notebookId: notebook.id, token: loadToken.current };
+      requestRef.current = request;
       setError("");
       setSearchBanner(null);
       searchMetaRef.current = null;
-      setInput("");
-
-      let sessionId = activeId;
-      let untitled = activeSession ? !activeSession.title : true;
-      if (!sessionId) {
-        const createToken = ++loadToken.current;
-        const created = await createChatSession(notebook.id);
-        if (createToken !== loadToken.current) {
-          setError("Switched threads mid-send — try again.");
-          return;
-        }
-        sessionId = created.id;
-        untitled = true;
-        setSessions((prev) => [created, ...prev]);
-        setActiveId(created.id);
-        rememberActive(notebook.id, created.id);
-      }
-
-      const userMsg: ChatMessage = {
-        id: uid(),
-        notebookId: notebook.id,
-        sessionId,
-        role: "user",
-        content: question,
-        createdAt: Date.now(),
-      };
-      await saveMessage(userMsg);
-
-      if (untitled) {
-        const title = deriveSessionTitle(question);
-        if (title) {
-          await renameChatSession(sessionId, title);
-          setSessions((prev) =>
-            prev.map((s) =>
-              s.id === sessionId ? { ...s, title, updatedAt: Date.now() } : s,
-            ),
-          );
-        }
-      }
-
-      const history = [...messages, userMsg];
-      setMessages(history);
-      setDismissedFollowUps(false);
-      stickBottom.current = true;
+      setPreparing(true);
       setThinkingOpen(true);
       streamEndRef.current = "abort";
-      setStreaming({
-        text: "",
-        thinking: "",
-        phase: webSearchEnabled ? "searching" : "reading",
-      });
 
-      const controller = new AbortController();
-      abortRef.current = controller;
       try {
+        let sessionId = activeId;
+        let untitled = !activeSession?.title;
+        if (!sessionId) {
+          const created = await createChatSession(notebook.id);
+          if (!requestIsCurrent(request)) return;
+          sessionId = created.id;
+          untitled = true;
+          setSessions((prev) => [created, ...prev]);
+          setActiveId(created.id);
+          rememberActive(notebook.id, created.id);
+        }
+
+        const userMsg: ChatMessage = { id: uid(), notebookId: notebook.id, sessionId, role: "user", content: question, createdAt: Date.now() };
+        await saveMessage(userMsg);
+        if (!requestIsCurrent(request)) return;
+        const history = [...messages, userMsg];
+        setMessages(history);
+        setInput((draft) => draft.trim() === question ? "" : draft);
+        setDismissedFollowUps(false);
+        stickBottom.current = true;
+
+        if (untitled) {
+          const title = deriveSessionTitle(question);
+          if (title) {
+            await renameChatSession(sessionId, title);
+            if (!requestIsCurrent(request)) return;
+            setSessions((prev) => prev.map((session) => session.id === sessionId ? { ...session, title, updatedAt: Date.now() } : session));
+          }
+        }
+
         const focusedSources = loadFocus(notebook.id);
+        setPreparing(false);
+        setStreaming({ text: "", thinking: "", phase: webSearchEnabled ? "searching" : "reading" });
         const reply = await streamChat({
           ...cs,
           notebookId: notebook.id,
@@ -338,81 +391,73 @@ export default function ChatPane({
           sourceIds: focusedSources !== null ? focusedSources : undefined,
           reasoning: reasoningEnabled,
           webSearch: webSearchEnabled,
-          signal: controller.signal,
-          onSearchStart: () =>
-            setStreaming((s) => (s ? { ...s, phase: "searching" } : s)),
-          onSearchDone: (meta) => {
-            searchMetaRef.current = meta;
-            setStreaming((s) => (s ? { ...s, phase: "reading", webSearch: meta } : s));
+          signal: request.controller.signal,
+          onSearchStart: () => {
+            if (requestIsCurrent(request)) setStreaming((value) => value ? { ...value, phase: "searching" } : value);
           },
-          onThinking: (_d, full) =>
-            setStreaming((s) => (s ? { ...s, thinking: full, phase: "thinking" } : s)),
-          onText: (_d, full) => {
-            setStreaming((s) => (s ? { ...s, text: full, phase: "answering" } : s));
+          onSearchDone: (meta) => {
+            if (!requestIsCurrent(request)) return;
+            searchMetaRef.current = meta;
+            setStreaming((value) => value ? { ...value, phase: "reading", webSearch: meta } : value);
+          },
+          onThinking: (_delta, full) => {
+            if (requestIsCurrent(request)) setStreaming((value) => value ? { ...value, thinking: full, phase: "thinking" } : value);
+          },
+          onText: (_delta, full) => {
+            if (!requestIsCurrent(request)) return;
+            setStreaming((value) => value ? { ...value, text: full, phase: "answering" } : value);
             setThinkingOpen(false);
           },
         });
-        // Answer complete — hold it until the typewriter catches up so the
-        // tail doesn't pop in at network speed (commit happens in the drain
-        // effect below).
-        finalizeRef.current = {
-          reply,
-          sessionId,
-          notebookId: notebook.id,
-          token: loadToken.current,
-        };
-        // From here every render of the streaming slot carries the instant
-        // exit — when the drain commits, the persisted twin replaces it in
-        // the same paint instead of stacking behind a fade.
+        if (!requestIsCurrent(request)) return;
+        finalizeRef.current = { reply, sessionId, notebookId: notebook.id, request };
         streamEndRef.current = "commit";
-        abortRef.current = null;
-        setFinalizeTick((n) => n + 1);
+        setFinalizeTick((tick) => tick + 1);
       } catch (err) {
-        abortRef.current = null;
+        if (!requestIsCurrent(request)) return;
+        requestRef.current = null;
         finalizeRef.current = null;
         streamEndRef.current = "abort";
         setStreaming(null);
-        if (!isAbort(err) && !controller.signal.aborted) {
+        setPreparing(false);
+        setInput((current) => current || question);
+        if (!isAbort(err)) {
           setError(friendlyError(err));
           if (searchMetaRef.current) setSearchBanner(searchMetaRef.current);
         }
       }
     },
-    [input, notebook, streaming, hasKey, cs, messages, activeId, activeSession, reasoningEnabled, webSearchEnabled],
+    [input, notebook, sessionReady, hasKey, cs, messages, activeId, activeSession, reasoningEnabled, webSearchEnabled, requestIsCurrent],
   );
 
   const stop = useCallback(() => {
-    // While the typewriter drains a finished answer, Stop just finishes the
-    // reveal now instead of aborting.
-    if (finalizeRef.current) smoothed.flush();
-    else abortRef.current?.abort();
-  }, [smoothed]);
+    if (streamEndRef.current === "commit") smoothed.flush();
+    else cancelRequest();
+  }, [smoothed, cancelRequest]);
 
   useEffect(() => {
     const fin = finalizeRef.current;
-    if (!fin || !smoothed.caughtUp) return;
+    if (!fin || !smoothed.caughtUp || !requestIsCurrent(fin.request)) return;
     finalizeRef.current = null;
+    const assistant: ChatMessage = {
+      id: uid(), notebookId: fin.notebookId, sessionId: fin.sessionId, role: "assistant",
+      content: fin.reply.text, thinking: fin.reply.thinking, citations: fin.reply.citations,
+      webSearch: fin.reply.webSearch, createdAt: Date.now(),
+    };
     void (async () => {
-      const assistant: ChatMessage = {
-        id: uid(),
-        notebookId: fin.notebookId,
-        sessionId: fin.sessionId,
-        role: "assistant",
-        content: fin.reply.text,
-        thinking: fin.reply.thinking,
-        citations: fin.reply.citations,
-        webSearch: fin.reply.webSearch,
-        createdAt: Date.now(),
-      };
-      await saveMessage(assistant);
+      let persistenceError = "";
+      try { await saveMessage(assistant); }
+      catch { persistenceError = "This answer could not be saved. Copy it before leaving this notebook."; }
+      if (!requestIsCurrent(fin.request)) return;
+      requestRef.current = null;
       setStreaming(null);
       setSearchBanner(null);
-      if (fin.token !== loadToken.current) return;
       setSettledId(assistant.id);
-      setMessages((m) => [...m, assistant]);
+      setMessages((current) => [...current, assistant]);
       bumpSession(fin.sessionId);
+      if (persistenceError) setError(persistenceError);
     })();
-  }, [finalizeTick, smoothed.caughtUp]);
+  }, [finalizeTick, smoothed.caughtUp, requestIsCurrent]);
 
   const tkEstimate = useMemo(
     () =>
@@ -422,10 +467,10 @@ export default function ChatPane({
     [input, messages],
   );
 
-  if (!notebook) return <div className="flex-1" />;
+  if (!notebook) return surfaceTarget === undefined ? <div className="flex-1" /> : null;
 
-  return (
-    <div className="flex h-full min-h-0 flex-col bg-ground">
+  const fullChat = (
+    <div ref={fullChatRef} className="flex h-full min-h-0 flex-col bg-ground">
       <SessionMenu
         sessions={sessions}
         activeId={activeId}
@@ -448,6 +493,7 @@ export default function ChatPane({
         onCite={onNavigateSources}
         onSaveToNote={(title, text) => void handleSaveToNote(title, text)}
         onSend={(prompt) => void send(prompt)}
+        onAddSources={onAddSources}
         scrollRef={scrollRef}
         onScroll={onScroll}
         error={error}
@@ -455,6 +501,7 @@ export default function ChatPane({
         leave={streamEndRef.current === "commit" ? "instant" : "fade"}
       />
 
+      {preparing && <p role="status" className="px-5 py-2 text-[12px] text-muted">Preparing your question…</p>}
       <Composer
         notebook={notebook}
         sourcesVersion={sourcesVersion}
@@ -467,6 +514,7 @@ export default function ChatPane({
         onSend={(prompt) => void send(prompt)}
         onStop={stop}
         streaming={streaming}
+        preparing={preparing}
         showJump={showJump}
         onJumpToLatest={() => {
           const el = scrollRef.current;
@@ -499,4 +547,29 @@ export default function ChatPane({
       </Toast>
     </div>
   );
+
+  return <>
+    {surfaceTarget === undefined ? fullChat : surfaceTarget ? createPortal(fullChat, surfaceTarget) : null}
+    {compadTarget && createPortal(<CompadChat
+      notebook={notebook}
+      modelLabel={modelLabel}
+      sourceCount={sourceCount}
+      messages={messages}
+      activeSessionId={activeId}
+      input={input}
+      onInputChange={setInput}
+      onSend={() => void send()}
+      onStop={stop}
+      streaming={streaming}
+      smoothedText={smoothed.text}
+      error={error}
+      hasModel={hasKey()}
+      ready={sessionReady}
+      preparing={preparing}
+      onOpenSettings={onOpenSettings}
+      onAddSources={onAddSources}
+      onCite={onNavigateSources}
+      onSaveToNote={(title, text) => void handleSaveToNote(title, text)}
+    />, compadTarget)}
+  </>;
 }

@@ -60,6 +60,7 @@ export default function Composer({
   onSend,
   onStop,
   streaming,
+  preparing = false,
   showJump,
   onJumpToLatest,
   reasoningEnabled,
@@ -85,6 +86,7 @@ export default function Composer({
   onSend: (prompt?: string) => void;
   onStop: () => void;
   streaming: { phase?: StreamPhase } | null;
+  preparing?: boolean;
   showJump: boolean;
   onJumpToLatest: () => void;
   reasoningEnabled: boolean;
@@ -99,7 +101,7 @@ export default function Composer({
 }) {
   const [focused, setFocused] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
-  const hasText = !!input.trim();
+  const hasText = !!input.trim() && !preparing;
   const thinkingCapable = capabilities?.thinking !== false;
 
   useEffect(() => {
@@ -110,7 +112,7 @@ export default function Composer({
   }, [input]);
 
   return (
-    <div className="relative shrink-0 px-4 pb-[0.9rem] pt-2 sm:px-5 sm:pb-[0.95rem] lg:pb-[calc(0.95rem+var(--sab))]">
+    <div aria-busy={preparing} className="relative shrink-0 px-4 pb-[0.9rem] pt-2 sm:px-5 sm:pb-[0.95rem] lg:pb-[calc(0.95rem+var(--sab))]">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 -top-7 h-7 bg-gradient-to-b from-transparent to-ground"
@@ -196,6 +198,7 @@ export default function Composer({
               <textarea
                 ref={taRef}
                 aria-label="Ask Comtus"
+                readOnly={preparing}
                 value={input}
                 onChange={(e) => onInputChange(e.target.value)}
                 onFocus={() => setFocused(true)}
@@ -203,7 +206,7 @@ export default function Composer({
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    onSend();
+                    if (!preparing) onSend();
                   }
                 }}
                 rows={1}
@@ -324,7 +327,7 @@ export default function Composer({
                 <motion.button
                   whileTap={{ scale: 0.88 }}
                   onClick={voice.toggle}
-                  disabled={voice.state === "transcribing"}
+                  disabled={preparing || voice.state === "transcribing"}
                   data-armed={voice.state !== "idle"}
                   title="Voice input — your browser's speech engine, or your own key for clip transcription"
                   aria-label="Voice input"
@@ -375,6 +378,7 @@ export default function Composer({
                     whileTap={{ scale: 0.88 }}
                     transition={SPRING}
                     onClick={() => onSend()}
+                    aria-label="Send message"
                     disabled={!hasText}
                     className="relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[12px] grad-lamp text-night disabled:cursor-not-allowed"
                   >

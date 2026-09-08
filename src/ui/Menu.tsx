@@ -1,5 +1,5 @@
 import { cloneElement, useEffect, useRef, useState } from "react";
-import type { ReactElement, ReactNode } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, ReactElement, ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 export interface MenuItem {
@@ -12,6 +12,7 @@ export interface MenuItem {
 
 type MenuTrigger = ReactElement<{
   onClick?: () => void;
+  onKeyDown?: (event: ReactKeyboardEvent<HTMLButtonElement>) => void;
   "aria-haspopup"?: string;
   "aria-expanded"?: boolean;
 }>;
@@ -32,14 +33,21 @@ export function Menu({
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const openAtEnd = useRef(false);
 
   useEffect(() => {
     if (!open) return;
+    const entries = rootRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)');
+    entries?.[openAtEnd.current ? entries.length - 1 : 0]?.focus();
     const onDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+        rootRef.current?.querySelector<HTMLButtonElement>(":scope > button")?.focus();
+      }
     };
     window.addEventListener("pointerdown", onDown);
     window.addEventListener("keydown", onKey);
@@ -52,7 +60,16 @@ export function Menu({
   return (
     <div ref={rootRef} className="relative inline-block">
       {cloneElement(trigger, {
-        onClick: () => setOpen((value) => !value),
+        onClick: () => {
+          openAtEnd.current = false;
+          setOpen((value) => !value);
+        },
+        onKeyDown: (event) => {
+          if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+          event.preventDefault();
+          openAtEnd.current = event.key === "ArrowUp";
+          setOpen(true);
+        },
         "aria-haspopup": "menu",
         "aria-expanded": open,
       })}
@@ -65,6 +82,19 @@ export function Menu({
             transition={{ duration: 0.18 }}
             role="menu"
             aria-label={ariaLabel}
+            onKeyDown={(event) => {
+              if (event.key === "Tab") {
+                setOpen(false);
+                rootRef.current?.querySelector<HTMLButtonElement>(":scope > button")?.focus();
+                return;
+              }
+              if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+              event.preventDefault();
+              const entries = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)'));
+              const current = entries.indexOf(document.activeElement as HTMLButtonElement);
+              const next = event.key === "Home" ? 0 : event.key === "End" ? entries.length - 1 : (current + (event.key === "ArrowDown" ? 1 : -1) + entries.length) % entries.length;
+              entries[next]?.focus();
+            }}
             className={`menu-panel absolute z-[80] mt-1.5 min-w-[10rem] ${align === "end" ? "right-0" : "left-0"}`}
           >
             {items.map((item) => (
@@ -72,11 +102,13 @@ export function Menu({
                 key={item.key}
                 type="button"
                 role="menuitem"
+                tabIndex={-1}
                 disabled={item.disabled}
                 className="menu-item"
                 onClick={() => {
-                  item.onSelect();
                   setOpen(false);
+                  rootRef.current?.querySelector<HTMLButtonElement>(":scope > button")?.focus();
+                  item.onSelect();
                 }}
               >
                 {item.icon}

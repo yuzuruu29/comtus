@@ -1,130 +1,72 @@
-/* ==========================================================================
-   Comtus Studio Console Bezel Styles
-   High-Precision Cognitive Infrastructure Housing
-   ========================================================================== */
-
 .console-shell-root {
   display: flex;
   flex-direction: column;
   height: 100svh;
-  width: 100vw;
-  background-color: var(--ground);
-  padding: 6px;
-  box-sizing: border-box;
+  height: 100dvh;
+  width: 100%;
   overflow: hidden;
-  position: relative;
-  font-family: var(--font-display, sans-serif);
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-ui);
+}
+
+.workspace-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  min-height: calc(68px + var(--sat));
+  padding: var(--sat) 20px 0;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--surface);
+}
+
+.workspace-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  flex-shrink: 0;
+  padding-right: 16px;
+  border-right: 1px solid var(--hairline);
+  font-size: var(--text-body);
+  color: var(--muted);
+}
+
+.workspace-back:hover { color: var(--brass); }
+.workspace-bookmark { display: flex; color: var(--brass); }
+
+.workspace-title {
+  width: 100%;
+  max-width: 24rem;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-heading);
+  font-weight: 550;
+  text-overflow: ellipsis;
+}
+
+.workspace-title:hover { border-color: var(--hairline); }
+.workspace-title:focus { border-color: var(--brass); }
+
+.workspace-header .icon-btn { flex-shrink: 0; min-width: 44px; min-height: 44px; }
+
+@media (max-width: 1023px) {
+  .workspace-header .workspace-pane-toggle { display: none; }
 }
 
 @media (max-width: 639px) {
-  .console-shell-root {
-    padding: 0;
-  }
+  .workspace-header { min-height: calc(60px + var(--sat)); gap: 8px; padding-inline: 12px; }
+  .workspace-back { padding: 0; min-width: 44px; border: 0; }
+  .workspace-back span, .workspace-bookmark { display: none; }
+  .workspace-title { font-size: var(--text-body); }
 }
 
-/* Outer chassis. The desk is paper, not a bevelled console: no bezel border,
-   no drop shadow, no rounded screen. */
-.console-chassis {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  background-color: var(--surface);
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  overflow: hidden;
-  position: relative;
-}
-
-/* Console Header Status Strip */
-.console-status-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 30px;
-  background-color: var(--surface);
-  border-bottom: 1px solid var(--hairline);
-  padding: 0 14px;
-  font-family: var(--font-mono, monospace);
-  font-size: 11px;
-  color: var(--muted);
-  user-select: none;
-  z-index: 20;
-}
-
-.console-live-led {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: var(--brass);
-  box-shadow: 0 0 8px var(--brass);
-  animation: console-led-pulse 2s infinite ease-in-out;
-}
-
-@keyframes console-led-pulse {
-  0%, 100% { opacity: 0.7; transform: scale(0.95); }
-  50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 12px var(--brass); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .console-live-led {
-    animation: none;
-  }
-}
-
-.console-notebook-title {
-  color: var(--ink);
-  font-weight: 600;
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@media (min-width: 640px) {
-  .console-notebook-title {
-    max-width: 320px;
-  }
-}
-
-/* Workspace viewport */
-.console-screen-viewport {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--ground);
-  overflow: hidden;
-}
-
-html[data-theme="light"] .console-shell-root {
-  background-color: var(--ground);
-  padding: 0;
-}
-
-html[data-theme="light"] .console-chassis {
-  background-color: var(--ground);
-}
-
-html[data-theme="light"] .console-status-bar {
-  background-color: var(--surface);
-  border-bottom: 1px solid var(--hairline);
-  color: var(--muted);
-}
-
-html[data-theme="light"] .console-live-led {
-  background-color: var(--sage);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--sage) 55%, transparent);
-}
-
-html[data-theme="light"] .console-notebook-title,
-html[data-theme="light"] .console-accent {
-  color: var(--ink);
-}
-
-html[data-theme="light"] .console-screen-viewport {
-  background-color: var(--ground);
-}
-
+.workspace-header-mac { padding-left: 78px; }

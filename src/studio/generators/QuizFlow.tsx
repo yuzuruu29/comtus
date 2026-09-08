@@ -131,11 +131,8 @@ Constraints: MCQ always has exactly 4 options; truefalse has options ["True","Fa
             <button
               key={f}
               onClick={() => toggleFormat(f)}
-              className={`rounded-full border px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em] transition-colors ${
-                formats.includes(f)
-                  ? "border-brass/50 bg-brass/[0.1] text-brasspale"
-                  : "border-hairline text-muted hover:text-ink"
-              }`}
+              aria-pressed={formats.includes(f)}
+              className={btnGhost}
             >
               {f === "mcq"
                 ? "multiple choice"

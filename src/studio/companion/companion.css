@@ -1,6 +1,58 @@
 /* Desk companion shell — the lamp, the dock, dust motes, and milestones.
    Motion is light: flicker, drift. Reduced-motion rests the loops. */
 
+.compad-panel { width: 360px; max-width: 100%; overflow: hidden; border: 1px solid var(--hairline-strong); border-radius: 16px; background: var(--surface); color: var(--ink); box-shadow: var(--elev-modal); font-family: var(--font-ui); font-size: 13px; pointer-events: auto; }
+.compad-panel button { cursor: pointer; }
+.compad-panel button:focus-visible, .compad-panel summary:focus-visible, .compad-panel textarea:focus-visible, .compad-panel input:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
+.compad-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 15px 10px 19px; }
+.compad-panel-header h2 { margin: 0; font-family: var(--font-read); font-size: 24px; font-weight: 440; letter-spacing: -.04em; }
+.compad-panel-header p { margin: 2px 0 0; color: var(--sage); font-size: 11px; }
+.compad-panel-header > button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--muted); }
+.compad-panel-header > button:hover { background: var(--raised); color: var(--ink); }
+.compad-chat-target, .compad-chat { min-width: 0; }
+.compad-context { display: flex; flex-direction: column; gap: 3px; padding: 10px 19px; border-block: 1px solid var(--hairline); background: color-mix(in srgb, var(--raised) 38%, var(--surface)); }
+.compad-context strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; }
+.compad-context > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 11px; }
+.compad-transcript { height: 170px; overflow-y: auto; overflow-x: hidden; padding: 17px 19px; overscroll-behavior: contain; scrollbar-width: thin; }
+.compad-transcript:focus-visible { outline: 2px solid var(--brass); outline-offset: -3px; }
+.compad-empty > p { margin: 0 0 8px; font-family: var(--font-read); font-size: 18px; line-height: 1.4; letter-spacing: -.03em; }
+.compad-empty > span { display: block; max-width: 280px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.compad-empty button { min-height: 44px; margin-top: 7px; color: var(--brass); text-align: left; text-decoration: underline; text-underline-offset: 4px; font-size: 12px; }
+.compad-question { margin-bottom: 17px; padding: 11px 13px; border-radius: 10px; background: var(--raised); }
+.compad-question > span, .compad-answer-label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 10px; font-weight: 500; }
+.compad-question > p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.65; }
+.compad-answer { min-width: 0; margin-bottom: 20px; }
+.compad-answer .md { font-size: 13px; overflow-wrap: anywhere; }
+.compad-answer .md pre { max-width: 100%; overflow-x: auto; }
+.compad-answer button { min-height: 36px; }
+.compad-progress { margin: 5px 0; color: var(--muted); font-size: 12px; }
+.compad-model-notice, .compad-error { margin: 0; padding: 9px 19px; font-size: 12px; line-height: 1.65; }
+.compad-model-notice { background: color-mix(in srgb, var(--brass) 6%, transparent); color: var(--muted); }
+.compad-model-notice button { min-height: 36px; color: var(--brass); text-decoration: underline; text-underline-offset: 3px; }
+.compad-error { max-height: 96px; overflow: auto; color: var(--rust); }
+.compad-compose { display: flex; align-items: end; gap: 8px; margin: 8px 12px 0; padding: 7px; border: 1px solid var(--hairline-strong); border-radius: 12px; background: var(--ground); }
+.compad-compose textarea { min-width: 0; flex: 1; max-height: 150px; padding: 5px 6px; resize: none; border: 0; background: transparent; color: var(--ink); font-family: var(--font-ui); font-size: 13px; line-height: 1.6; }
+.compad-panel .compad-compose:focus-within { border-color: var(--brass); outline: 1px solid var(--brass); outline-offset: 1px; }
+.compad-panel .compad-compose textarea:focus, .compad-panel .compad-compose textarea:focus-visible { outline: none; box-shadow: none; }
+.compad-compose textarea::placeholder { color: var(--muted); }
+.compad-send { display: grid; flex-shrink: 0; place-items: center; width: 44px; height: 44px; border-radius: 8px; background: var(--brass); color: var(--ground); }
+.compad-send:disabled { opacity: .4; cursor: default; }
+.compad-panel-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 16px; }
+.compad-panel-actions button { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding-inline: 3px; color: var(--brass); font-size: 12px; }
+.compad-greeting { margin: 11px 18px 0; padding-left: 10px; border-left: 2px solid var(--sage); color: var(--sage); font-family: var(--font-read); font-size: 13px; line-height: 1.6; }
+.compad-options { border-top: 1px solid var(--hairline); }
+.compad-options summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 8px 19px; color: var(--muted); font-size: 12px; list-style: none; cursor: pointer; }
+.compad-options summary::-webkit-details-marker { display: none; }
+.compad-options[open] summary > svg { transform: rotate(180deg); }
+.compad-options-body { padding: 5px 19px 13px; }
+.compad-options-body label { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+.compad-options-body output { color: var(--muted); font-variant-numeric: tabular-nums; }
+.compad-options-body input { width: 100%; min-height: 44px; accent-color: var(--brass); cursor: ew-resize; }
+.compad-options-body > button { min-height: 40px; color: var(--brass); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.compad-shortcuts { display: flex; flex-wrap: wrap; gap: 4px 16px; padding-top: 7px; border-top: 1px solid var(--hairline); }
+.compad-shortcuts button { min-height: 40px; color: var(--muted); font-size: 12px; }
+@media (max-width: 480px) { .compad-compose textarea { font-size: 16px; } .compad-transcript { height: 150px; } }
+
 .desk-life {
   pointer-events: none;
   position: fixed;
@@ -108,4 +160,3 @@
     animation: none !important;
   }
 }
-

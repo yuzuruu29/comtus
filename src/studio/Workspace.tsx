@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Books, CaretLeft, ChatCircle, GearSix, Notebook, SidebarSimple, UserCircle } from "@phosphor-icons/react";
+import { Books, CaretLeft, ChartBar, ChatCircle, DotsThree, DownloadSimple, GearSix, Notebook, SidebarSimple } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
-import { useCallSettings, useSettings } from "../lib/settings";
-import { effortLabelFor, modelLabelFor } from "../lib/llm";
+import { useCallSettings } from "../lib/settings";
+import { modelLabelFor } from "../lib/llm";
 import { detectPlatform, isTauri } from "../lib/desktop";
-import StudyGlyph from "../components/icons/StudyGlyph";
-import { ByokBadge, ProBadge } from "../components/brand/BrandControls";
+import { IconButton, Menu } from "../ui";
 import { SPRING, SOFT, deskPane, useCountUp } from "./fx";
 import SourcesPane from "./SourcesPane";
 import ChatPane from "./ChatPane";
@@ -16,12 +15,12 @@ import SettingsModal, { type SettingsTab } from "./SettingsModal";
 import DeskShell from "./DeskShell";
 import CaptionButtons from "./Titlebar";
 import { useNotebookDesk } from "./useNotebookDesk";
-import { bpAtLeast, useBreakpoint } from "../lib/useBreakpoint";
+import { useMediaQuery } from "../lib/useMediaQuery";
 import { panesFor } from "./layout";
 import { usePaneResize } from "./usePaneResize";
 import { db } from "../lib/db";
 import { LampPulse, Modal, btnGhost } from "./ui";
-import MilestonesButton from "./companion/MilestonesButton";
+import { useDesk } from "./DeskContext";
 import ConsoleShell from "./ConsoleShell";
 
 type MobilePane = "sources" | "chat" | "studio";
@@ -48,7 +47,11 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   }, []);
   const [mobilePane, setMobilePane] = useState<MobilePane>("chat");
   const panes = panesFor(desk.layout);
-  const bp = useBreakpoint();
+  const desktop = useMediaQuery("(min-width: 1024px)");
+  const [desktopChatTarget, setDesktopChatTarget] = useState<HTMLElement | null>(null);
+  const [mobileChatTarget, setMobileChatTarget] = useState<HTMLElement | null>(null);
+  const [chatFocusRequest, setChatFocusRequest] = useState(0);
+  const focusChat = useCallback(() => { setMobilePane("chat"); setChatFocusRequest((request) => request + 1); }, []);
 
   const collapseSources = useCallback(
     () => setLayout(panes.studio ? "writing" : "focus"),
@@ -93,7 +96,6 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   );
 
   const modelLabel = modelLabelFor(cs.provider, cs.model);
-  const effortLabel = effortLabelFor(cs.effort);
 
   const isDropping = desk.dropping > 0;
   // Direction of the last mobile pane swap, read before the effect advances
@@ -120,10 +122,23 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
       onLayout={desk.setLayout}
       onSettings={openSettings}
       onImport={desk.requestImport}
+      onFocusChat={focusChat}
     >
+      <ChatPane
+        notebook={desk.notebook}
+        sourcesVersion={desk.sourcesVersion}
+        onNavigateSources={openSource}
+        modelLabel={modelLabel}
+        onOpenSettings={() => openSettings("models")}
+        onAddSources={() => {
+          if (desktop) desk.setLayout(panes.studio ? "standard" : "reading");
+          else setMobilePane("sources");
+        }}
+        surfaceTarget={desktop ? desktopChatTarget : mobilePane === "chat" ? mobileChatTarget : null}
+        focusRequest={chatFocusRequest}
+      />
       <ConsoleShell
         notebookName={desk.notebook?.name || "Course Notebook"}
-        modelLabel={modelLabel}
       >
         <div
           className="relative flex h-full flex-col overflow-hidden bg-ground text-ink"
@@ -185,12 +200,9 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             Drop onto this notebook
           </div>
         </div>
-        <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-[42vh] bg-[radial-gradient(55%_90%_at_50%_0%,rgba(227,176,75,0.13),transparent_68%),radial-gradient(40%_70%_at_88%_8%,rgba(127,168,201,0.10),transparent_62%)]" />
 
         <WorkspaceHeader
           notebook={desk.notebook}
-          modelLabel={modelLabel}
-          effortLabel={effortLabel}
           panes={panes}
           onToggleSources={toggleSources}
           onToggleStudio={toggleStudio}
@@ -247,22 +259,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           </aside>
 
           <main className="min-w-0 flex-1">
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={SOFT} className={`${deskPane} overflow-hidden`}>
-              <ChatPane
-                notebook={desk.notebook}
-                sourcesVersion={desk.sourcesVersion}
-                onNavigateSources={openSource}
-                modelLabel={modelLabel}
-                onOpenSettings={() => openSettings("models")}
-                onAddSources={() => {
-                  if (bpAtLeast(bp, "md")) {
-                    desk.setLayout(panes.studio ? "standard" : "reading");
-                  } else {
-                    setMobilePane("sources");
-                  }
-                }}
-              />
-            </motion.div>
+            <motion.div ref={setDesktopChatTarget} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={SOFT} className={`${deskPane} overflow-hidden`} />
           </main>
 
           {/* Right Sidebar: Studio (Retractable & Resizable) */}
@@ -326,16 +323,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               </div>
             )}
             {mobilePane === "chat" && (
-              <div key={mobilePane} className={paneWrapperClass}>
-                <ChatPane
-                  notebook={desk.notebook}
-                  sourcesVersion={desk.sourcesVersion}
-                  onNavigateSources={openSource}
-                  modelLabel={modelLabel}
-                  onOpenSettings={() => openSettings("models")}
-                  onAddSources={() => setMobilePane("sources")}
-                />
-              </div>
+              <div key={mobilePane} ref={setMobileChatTarget} className={paneWrapperClass} />
             )}
             {mobilePane === "studio" && (
               <div key={mobilePane} className={paneWrapperClass}>
@@ -359,7 +347,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 onClick={() => setMobilePane(id)}
                 aria-pressed={mobilePane === id}
                 className={`relative flex min-h-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-[var(--radius-control)] px-3 py-1.5 text-[10.5px] font-medium tracking-[0.08em] transition-colors duration-200 active:scale-95 ${
-                  mobilePane === id ? "text-brasspale" : "text-muted"
+                  mobilePane === id ? "text-brass" : "text-muted"
                 }`}
               >
                 {mobilePane === id && (
@@ -385,8 +373,6 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
 
 function WorkspaceHeader({
   notebook,
-  modelLabel,
-  effortLabel,
   panes,
   onToggleSources,
   onToggleStudio,
@@ -394,8 +380,6 @@ function WorkspaceHeader({
   onSettings,
 }: {
   notebook: NotebookRow | null;
-  modelLabel: string;
-  effortLabel: string;
   panes: { sources: boolean; studio: boolean };
   onToggleSources: () => void;
   onToggleStudio: () => void;
@@ -408,10 +392,7 @@ function WorkspaceHeader({
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [stats, setStats] = useState<{ sources: number; tokens: number; gens: number } | null>(null);
 
-  const isPro = useSettings((s) => Boolean(s.isPro && s.planTier !== "free"));
-  const tokenBalance = useSettings((s) => s.tokenBalance || 0);
-  const tokensUsed = useSettings((s) => s.tokensUsed || 0);
-  const remainingTokens = Math.max(0, tokenBalance - tokensUsed);
+  const actions = useDesk();
 
   const openAnalytics = async () => {
     if (!notebook) return;
@@ -422,7 +403,7 @@ function WorkspaceHeader({
     setAnalyticsOpen(true);
   };
 
-  const handleShare = async () => {
+  const handleExport = async () => {
     if (!notebook) return;
     const sources = await db.sources.where("notebookId").equals(notebook.id).toArray();
     const generations = await db.generations.where("notebookId").equals(notebook.id).toArray();
@@ -445,113 +426,72 @@ function WorkspaceHeader({
     <>
       <header
         data-tauri-drag-region={tauri ? true : undefined}
-        className={`desk-header relative z-[40] flex h-[calc(var(--desk-header)+var(--sat))] shrink-0 items-center gap-2 border-b border-hairline bg-ground px-2 pt-[var(--sat)] sm:gap-3 sm:px-3 ${macPad ? "pl-[78px]" : ""}`}
+        className={`desk-header workspace-header relative z-[40] ${macPad ? "workspace-header-mac" : ""}`}
       >
         <Link
           to="/studio"
-          className="no-drag flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
+          className="no-drag workspace-back"
           aria-label="All notebooks"
         >
-          <CaretLeft size={18} weight="light" />
+          <CaretLeft size={18} aria-hidden="true" />
+          <span>Library</span>
         </Link>
 
-        {/* Retract / Expand Left Sidebar Button */}
-        <button
+        <IconButton
           onClick={onToggleSources}
           title={panes.sources ? "Retract Sources Sidebar" : "Expand Sources Sidebar"}
           aria-label="Toggle sources sidebar"
           aria-pressed={panes.sources}
-          className={`no-drag hidden h-8 w-8 items-center justify-center rounded-[var(--radius-control)] transition-all sm:flex ${
+          className={`no-drag workspace-pane-toggle ${
             panes.sources
               ? "text-brass bg-brass/10 hover:bg-brass/20"
               : "text-muted hover:bg-ink/5 hover:text-ink"
           }`}
         >
           <SidebarSimple size={16} weight={panes.sources ? "fill" : "light"} />
-        </button>
+        </IconButton>
 
-        <StudyGlyph name={notebook?.name} size="sm" />
+        <span className="workspace-bookmark" aria-hidden="true"><Books size={19} /></span>
         <input
           defaultValue={notebook?.name}
           key={notebook?.name}
           onBlur={(e) => onRename(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-          className="no-drag min-w-0 max-w-[42vw] flex-none truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-1 font-display text-[15px] font-[450] outline-none hover:border-hairline focus:border-brass/40 sm:max-w-xs sm:text-[16px]"
+          className="no-drag workspace-title"
           aria-label="Notebook name"
         />
         <div className="no-drag ml-auto flex items-center gap-1.5">
-          <div className="hidden sm:inline-flex">
-            <MilestonesButton />
-          </div>
-          {notebook && (
-            <>
-              <button
-                onClick={() => void openAnalytics()}
-                className="hidden items-center gap-1 rounded-[var(--radius-control)] px-2.5 py-1.5 text-[12px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
-              >
-                Analytics
-              </button>
-              <button
-                onClick={() => void handleShare()}
-                className="hidden items-center gap-1 rounded-[var(--radius-control)] px-2.5 py-1.5 text-[12px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
-              >
-                Share
-              </button>
-            </>
-          )}
-          <button
-            onClick={() => onSettings("models")}
-            className="hidden items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-[12px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
-          >
-            {modelLabel} · {effortLabel}
-          </button>
-          <button
+          <Menu
+            align="end"
+            aria-label="Notebook actions"
+            trigger={<IconButton aria-label="Notebook actions"><DotsThree size={22} aria-hidden="true" /></IconButton>}
+            items={[
+              { key: "analytics", label: "Notebook details", icon: <ChartBar size={16} aria-hidden="true" />, disabled: !notebook, onSelect: () => void openAnalytics() },
+              { key: "export", label: "Export notebook", icon: <DownloadSimple size={16} aria-hidden="true" />, disabled: !notebook, onSelect: () => void handleExport() },
+              { key: "models", label: "AI models", onSelect: () => onSettings("models") },
+              { key: "milestones", label: "Study milestones", onSelect: actions.openMilestones },
+              { key: "commands", label: "Keyboard commands", onSelect: actions.openPalette },
+            ]}
+          />
+          <IconButton
             onClick={() => onSettings()}
-            className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
             aria-label="Settings"
           >
-            <GearSix size={17} weight="light" />
-          </button>
-
-          {/* Plan Tier Status Badge (PRO only if Anthropic plan availed, else BYOK) */}
-          {isPro ? (
-            <ProBadge
-              planTier="PRO"
-              remainingTokens={remainingTokens}
-              onClick={() => onSettings("models")}
-              className="hidden sm:flex"
-            />
-          ) : (
-            <ByokBadge
-              onClick={() => onSettings("models")}
-              className="hidden sm:flex"
-            />
-          )}
-
-          {/* Retract / Expand Right Sidebar (Studio) Button */}
-          <button
+            <GearSix size={19} aria-hidden="true" />
+          </IconButton>
+          <IconButton
             onClick={onToggleStudio}
             title={panes.studio ? "Retract Studio Sidebar" : "Expand Studio Sidebar"}
             aria-label="Toggle studio sidebar"
             aria-pressed={panes.studio}
-            className={`no-drag hidden h-8 w-8 items-center justify-center rounded-[var(--radius-control)] transition-all sm:flex ${
+            className={`no-drag workspace-pane-toggle ${
               panes.studio
                 ? "text-brass bg-brass/10 hover:bg-brass/20"
                 : "text-muted hover:bg-ink/5 hover:text-ink"
             }`}
           >
             <SidebarSimple size={16} weight={panes.studio ? "fill" : "light"} className="scale-x-[-1]" />
-          </button>
-
-          {/* Account & Settings */}
-          <button
-            onClick={() => onSettings()}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-brass transition-all hover:bg-brass/10 hover:text-brasspale active:scale-95"
-            title="Account & Settings"
-            aria-label="Account and settings"
-          >
-            <UserCircle size={21} weight="light" />
-          </button>
+          </IconButton>
         </div>
         <CaptionButtons />
       </header>

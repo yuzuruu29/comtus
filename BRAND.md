@@ -1,9 +1,12 @@
 # Comtus — Brand Kit
 
 > The essential brand kit. Every design decision in the product defers to this file.
-> Precision-instrument tech console with scholarly craft — Cantor8 royal sapphire on the
-> marketing surface, a calibrated study desk in the Studio, warm brass accents, and
-> 16-bit pixel texture used as an accent, never as the default reading voice.
+> A scholar's desk: warm paper, clear ink, restrained brass, and room to think.
+> Landing and Studio share the same visual language. The composer is the desk's lamp.
+> The optional pixel companion starts clear of the work. Users control its placement and size.
+>
+> Current direction: `docs/superpowers/specs/2026-09-04-frontier-study-desk-design.md`.
+> Live color values and contrast contracts belong to `src/styles/tokens.css`.
 
 ---
 
@@ -64,19 +67,11 @@ The master palette is a curated 16-color system calibrated for high readability 
 
 ### App Semantic Layer
 
-| Token | Daylight Paper (Default) | Lamplight Study (Dark Mode) | Role |
-|---|---|---|---|
-| `ground` | `#F5F1E8` (`--px-paper-ground`) | `#0F1420` (`--px-void`) | Page ground |
-| `surface` | `#FCFAF4` (`--px-paper-surface`)| `#171F32` (`--px-surface-dark`) | Raised surfaces, cards |
-| `raised` | `#EAE4D6` (`--px-paper-raised`) | `#222C44` | Hover / active surfaces |
-| `ink` | `#1B2334` (`--px-paper-ink`) | `#F5F0E6` | Primary high-contrast text |
-| `muted` | `#5A6274` (`--px-paper-muted`) | `#9099B0` | Muted text, labels at rest |
-| `hairline` | `rgba(92,61,30,0.14)` | `rgba(245,240,230,0.09)` | Borders and dividers |
-| `brass` | `#A5731C` (`--px-brass`) | `#E3B04B` | Primary accent |
-| `moon` | `#3D6E9E` (`--px-moon`) | `#6C98C2` | Secondary accent |
-| `sage` | `#4F8A5A` (`--px-sage`) | `#78B084` | Success / correct |
-| `rust` | `#B2554A` (`--px-rust`) | `#C85848` | Error / incorrect |
-| `candle` | `#D97724` (`--px-candle`) | `#FF9E43` | Amber hearth spark, milestone flares |
+The illustration palette above describes pixel assets. Product surfaces use the
+theme-aware `ground`, `surface`, `raised`, `ink`, `muted`, `hairline`, `brass`,
+`moon`, `sage`, and `rust` tokens from `src/styles/tokens.css`.
+Use `brass` for readable accent text. `brass-pale` is decorative light only.
+Primary buttons use `ground` text on `brass`. Avoid new local palette overrides.
 
 ### Texture & Dither Backdrops (CSS-Only)
 
@@ -91,22 +86,12 @@ The master palette is a curated 16-color system calibrated for high readability 
 
 All families are self-hosted via `@fontsource`. No Google Fonts CDN.
 
-Studio typography is a **curated preset system** (`src/lib/fontPresets.ts` + `src/styles/font-presets.css`),
-owned by `html[data-font-preset]` and selected in Settings → Typography. Presets are whole
-systems — never mix-and-match. Pixelify appears only as the Pixel Signal preset's display
-accent, never as body text.
-
-| Preset | Display | Body | Mono | Role |
-|---|---|---|---|---|
-| **Instrument** (default) | Instrument Serif | Instrument Sans | JetBrains Mono | Calibrated default — serif display, clean body |
-| **Pixel Signal** | Pixelify Sans Variable | Inter | JetBrains Mono | 16-bit display accents over readable body |
-| **Scholar** | Fraunces | Inter | JetBrains Mono | Classic study desk |
-| **Console** | JetBrains Mono | Inter | JetBrains Mono | Mono-forward terminal instrumentation |
-
-The landing owns its own type: Pixelify Sans Variable as display accent over the Cantor8
-console chrome. Never Press Start 2P. The landing skin sets `--font-display` only; body stays
-Instrument Sans and mono stays JetBrains Mono, so headings and `.font-display` are pixel while
-paragraphs, buttons and `.label-mono` readouts stay legible.
+Literata Variable (`--font-read`) carries long reading and editorial headings.
+Instrument Sans Variable (`--font-ui`) carries navigation, forms, actions, and interface copy.
+JetBrains Mono is reserved for measurements and code. Pixelify is an optional accent.
+The landing uses the same families and tokens as Studio. Reading size adjusts source text
+and answers while interface controls keep their size. Never set a whole workspace to the
+display family or use uppercase mono as the default form voice.
 
 Landing scale: hero `clamp(2.8rem, 7.5vw, 6.8rem)` · section titles `clamp(2.1rem, 4.6vw, 3.8rem)` · statement `clamp(2.4rem, 6vw, 5.2rem)` · body 16px.
 These live as `--text-landing-hero` / `--text-landing-section` / `--text-landing-statement` in
@@ -168,21 +153,20 @@ A warm scholar, not a hype startup. Second person. Plain, precise words. No excl
 
 ## 8 · Desk Life & Landing Specifications
 
-- **Landing Page** (marketing spectacle — the high-motion surface):
-  - Cantor8 royal sapphire console (`#044AB3` family) with paper-light interludes.
-  - Continuous scroll choreography: circuit pulse streams, pixel-matrix dissolves,
-    telemetry grid. Scrubbed transitions must fully resolve inside their section's
-    entrance — nothing rests half-transitioned mid-scroll.
-  - Precision Beam (raycast focus) de-emphasizes sections away from the cursor
-    gently — a reading aid, never a wash-out.
-  - Thin beam section dividers; Cantor8 prism emblem; leather-bound footer.
-  - The battery companion is quiet and rests in the Studio only.
-- **Studio & Desk** (fast and tactile — the instrument, not the show):
-  - Console chassis (`ConsoleShell`) frames the three-pane workspace.
-  - Typography from the curated preset system (Instrument default); pixel chrome
-    (brass-bevel palette, ink-press physics) is a separate Desk-chrome toggle.
-  - Blue battery companion rests bottom-right with position persistence
-    (`comtus:battery_pos`); its co-pilot menu reuses real desk actions and
-    reports real study state — quietly reactive, rare nudges, never interrupting.
-  - Study-craft milestones celebrate real progress without arcade gamification.
-  - Full dark Lamplight mode toggle preserved in Settings.
+- **Landing page**: Immediate access, an editorial thesis, and an interactive sample
+  notebook. Clearly label sample content. Show source citations and practice feedback.
+  Explain local storage and provider access accurately. Setup is optional.
+- **Studio**: A readable notebook library, one workspace header, and sources, chat,
+  and study tools in clear panes. Mobile uses one pane at a time with persistent tabs.
+  Keep primary practice tools visible and additional formats in a native disclosure.
+  Preserve saved-work Undo and keyboard pane resizing.
+- **Shared controls**: Reuse `src/ui`, native labels, visible focus, and generous touch
+  targets. Avoid duplicate controls, inactive feature teasers, and decorative telemetry.
+- **Companion**: Compad is a sage notebook character with cream page edges, a brass
+  bookmark, and an ink face. Optional in active notebook workspaces, including mobile
+  Sources and Studio. Start clear of the controls, then preserve the user's chosen
+  placement and size within the viewport. Offer direct dragging, resizing, keyboard
+  controls, and a position reset. Its compact chat shares the notebook conversation,
+  draft, model, and sources. Keep the library free of the companion.
+- **Themes and motion**: Preserve Daylight, dark Lamplight, reading size, and reduced
+  motion. Motion helps track a change and always leaves content immediately usable.

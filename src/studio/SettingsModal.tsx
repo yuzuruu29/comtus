@@ -22,6 +22,7 @@ import {
   Warning,
 } from "@phosphor-icons/react";
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, LampPulse } from "./ui";
+import { Button, Segmented } from "../ui";
 import { BorderBeam } from "./fx";
 import { useSettings } from "../lib/settings";
 import { DEFAULT_READING, READING_OPTIONS } from "../lib/fontPresets";
@@ -56,6 +57,7 @@ import SubscriptionConnect from "./SubscriptionConnect";
 import { isTauri } from "../lib/desktop";
 import { requestUpdateCheck } from "./useUpdater";
 import { startOpenRouterOAuth } from "../lib/openrouterAuth";
+import "./settings-preferences.css";
 
 /* Curated, verified working free study models for the Starter / Basic view */
 export interface CuratedFreeModel {
@@ -408,7 +410,7 @@ export default function SettingsModal({
 
   const versionRow = (
     <div className="flex items-center justify-between gap-3">
-      <span className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-muted/70">
+      <span className="font-ui text-xs text-muted">
         Comtus v{__APP_VERSION__}
         {isTauri() ? " · Desk App" : ""}
       </span>
@@ -416,7 +418,7 @@ export default function SettingsModal({
         <button
           type="button"
           onClick={requestUpdateCheck}
-          className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-muted/70 transition-colors hover:text-brasspale"
+          className="btn btn-ghost btn-sm font-ui"
         >
           Check for updates
         </button>
@@ -428,39 +430,23 @@ export default function SettingsModal({
     <>
       {/* Panel 1: studio preferences — gear icon, Ctrl+, CommandPalette */}
       <Modal open={open && tab === "settings"} onClose={onClose} title="Settings" wide>
-        <div className="space-y-6">
-          {/* Appearance Switcher */}
+        <div className="settings-preferences space-y-6">
           <div>
-            <div className="label-mono !text-[10px] mb-2">Appearance</div>
-            <div className="grid grid-cols-3 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
-              {(
-                [
-                  ["system", "System"],
-                  ["dark", "Dark"],
-                  ["light", "Daylight"],
-                ] as const
-              ).map(([id, label]) => {
-                const active = theme === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => useSettings.getState().update({ theme: id })}
-                    className={`flex min-h-[40px] items-center justify-center rounded-lg px-3 py-2 text-body font-medium transition-all active:scale-[0.97] ${
-                      active
-                        ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
-                        : "text-muted hover:text-ink"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
+            <div className="field-label">Appearance</div>
+            <Segmented
+              aria-label="Appearance"
+              value={theme}
+              onChange={(value) => useSettings.getState().update({ theme: value })}
+              options={[
+                { value: "system", label: "System" },
+                { value: "dark", label: "Dark" },
+                { value: "light", label: "Daylight" },
+              ]}
+            />
           </div>
 
           <div>
-            <div className="label-mono !text-[10px] mb-2">Reading size</div>
+            <div className="field-label">Reading size</div>
             <p className="mb-3 text-[12.5px] leading-relaxed text-muted">
               Sets how large source text and answers are set. Everything else keeps its size.
             </p>
@@ -498,121 +484,89 @@ export default function SettingsModal({
           </div>
 
           <div>
-            <div className="label-mono !text-[10px] mb-2">Desk chrome</div>
-            <p className="mb-3 text-[12.5px] leading-relaxed text-muted">
-              Cozy Pixel Bookshop applies 16-bit tactile ink-press physics and warm brass-bevel chrome across the studio. Scholar Study restores classic paper surfaces.
+            <div className="field-label">Desk style</div>
+            <p className="mb-3 text-sm leading-relaxed text-muted">
+              Choose classic paper surfaces or pixel accents for your desk.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
+            <div className="segmented" role="group" aria-label="Desk style">
               <button
                 type="button"
                 onClick={() => useSettings.getState().update({ pixelDesk: true })}
-                className={`flex min-h-[40px] items-center justify-center rounded-lg px-3 py-2 text-body font-medium transition-all active:scale-[0.97] ${
-                  pixelOn
-                    ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
-                    : "text-muted hover:text-ink"
-                }`}
+                aria-pressed={pixelOn}
+                className={`segmented-option ${pixelOn ? "segmented-option-selected" : ""}`}
               >
-                Cozy Pixel Bookshop (Default)
+                Pixel accents
               </button>
               <button
                 type="button"
                 onClick={() => useSettings.getState().update({ pixelDesk: false })}
-                className={`flex min-h-[40px] items-center justify-center rounded-lg px-3 py-2 text-body font-medium transition-all active:scale-[0.97] ${
-                  !pixelOn
-                    ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
-                    : "text-muted hover:text-ink"
-                }`}
+                aria-pressed={!pixelOn}
+                className={`segmented-option ${!pixelOn ? "segmented-option-selected" : ""}`}
               >
-                Scholar Study (Classic Serif)
+                Classic paper
               </button>
             </div>
           </div>
 
           <div>
-            <div className="label-mono !text-[10px] mb-2">Atmosphere & motion</div>
-            <p className="mb-3 text-[12.5px] leading-relaxed text-muted">
-              Choose your interaction intensity. Full Tactile provides book-press deals, warm spark motes, and milestone glints.
+            <div className="field-label">Motion</div>
+            <p className="mb-3 text-sm leading-relaxed text-muted">
+              Choose how much movement you see while studying.
             </p>
-            <div className="grid grid-cols-3 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
-              {(
-                [
-                  ["none", "None", "Focus / Static"],
-                  ["minimal", "Minimal", "Quiet Scholar"],
-                  ["full", "Full Tactile", "Tactile & Particles"],
-                ] as const
-              ).map(([id, label]) => {
-                const active = motionMode === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => useSettings.getState().update({ motionMode: id })}
-                    className={`flex min-h-[40px] flex-col items-center justify-center rounded-lg px-2 py-1.5 transition-all active:scale-[0.97] ${
-                      active
-                        ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
-                        : "text-muted hover:text-ink"
-                    }`}
-                  >
-                    <span className="text-body font-medium">{label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <Segmented
+              aria-label="Motion"
+              value={motionMode}
+              onChange={(value) => useSettings.getState().update({ motionMode: value })}
+              options={[
+                { value: "none", label: "None" },
+                { value: "minimal", label: "Minimal" },
+                { value: "full", label: "Full" },
+              ]}
+            />
           </div>
 
-
-
           <div>
-            <div className="label-mono !text-[10px] mb-2">Desk companion</div>
-            <p className="mb-3 text-[12.5px] leading-relaxed text-muted">
-              An energetic 16-bit warm brass battery companion that rests on your desk, celebrates study milestones, and keeps you company during long review sessions. Drag anywhere or double-click to reset.
+            <div className="field-label">Desk companion</div>
+            <p className="mb-3 text-sm leading-relaxed text-muted">
+              Keep Compad on your desk. Drag to move, resize from its corner, or tap to chat.
             </p>
-            <div className="grid grid-cols-2 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
-              <button
-                type="button"
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="secondary"
                 onClick={() => useSettings.getState().update({ companion: !companionOn })}
-                className={`flex min-h-[40px] items-center justify-center rounded-lg px-3 py-2 text-body font-medium transition-all active:scale-[0.97] ${
-                  companionOn
-                    ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
-                    : "text-muted hover:text-ink"
-                }`}
+                aria-pressed={companionOn}
               >
-                Battery {companionOn ? "on" : "off"}
-              </button>
-              <button
-                type="button"
+                Companion {companionOn ? "on" : "off"}
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={() => useSettings.getState().update({ companionSfx: !sfxOn })}
-                className={`flex min-h-[40px] items-center justify-center rounded-lg px-3 py-2 text-body font-medium transition-all active:scale-[0.97] ${
-                  sfxOn
-                    ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
-                    : "text-muted hover:text-ink"
-                }`}
+                aria-pressed={sfxOn}
               >
                 Chimes {sfxOn ? "on" : "off"}
-              </button>
+              </Button>
             </div>
           </div>
 
-          {/* Ambient Soundscape & Tactile Audio Section */}
-          <div className="rounded-2xl border border-hairline bg-surface/60 p-4 space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="space-y-4 border-t border-hairline pt-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-brass/20 text-brass">
-                    {audioMuted ? <SpeakerSimpleSlash size={14} /> : <SpeakerHigh size={14} />}
+                  <span className="text-muted" aria-hidden="true">
+                    {audioMuted ? <SpeakerSimpleSlash size={20} /> : <SpeakerHigh size={20} />}
                   </span>
-                  <span className="font-display text-[14px] font-medium text-ink">
-                    Ambient Soundscape & Tactile Audio
+                  <span className="font-ui text-sm font-semibold text-ink">
+                    Sound
                   </span>
                 </div>
-                <p className="mt-0.5 text-[11.5px] text-muted">
-                  Procedural, zero-download audio synthesizers for deep study focus and tactile micro-interactions.
+                <p className="mt-1 text-sm leading-relaxed text-muted">
+                  Background audio and short sounds for desk actions.
                 </p>
               </div>
 
-              {/* Master Mute Button */}
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                aria-pressed={!audioMuted}
                 onClick={() => {
                   const next = !audioMuted;
                   setMuted(next);
@@ -620,42 +574,37 @@ export default function SettingsModal({
                     playEngineSfx("lampChime");
                   }
                 }}
-                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 font-mono text-[11px] font-semibold transition-all active:scale-[0.97] ${
-                  !audioMuted
-                    ? "border-sage/40 bg-sage/15 text-sage"
-                    : "border-hairline bg-ground/80 text-muted hover:text-ink"
-                }`}
               >
-                {audioMuted ? <SpeakerSimpleSlash size={13} /> : <SpeakerHigh size={13} />}
-                <span>{audioMuted ? "Muted (Default)" : "Sound On"}</span>
-              </button>
+                {audioMuted ? <SpeakerSimpleSlash size={18} aria-hidden="true" /> : <SpeakerHigh size={18} aria-hidden="true" />}
+                <span>Sound {audioMuted ? "off" : "on"}</span>
+              </Button>
             </div>
 
-            {/* Ambient Sound Generator Picker */}
             <div>
-              <div className="label-mono !text-[10px] mb-2 flex items-center justify-between">
-                <span>Ambient Generator</span>
+              <div className="field-label flex items-center justify-between gap-3">
+                <span>Background sound</span>
                 {ambientType && (
-                  <span className="text-sage font-mono text-[9px] uppercase tracking-wider">
-                    ● Synthesizing {ambientType}
+                  <span className="text-xs font-normal text-muted">
+                    {audioMuted ? "Muted" : "Playing"}
                   </span>
                 )}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1 rounded-xl border border-hairline bg-ground/60 p-1">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5" role="group" aria-label="Background sound">
                 {(
                   [
-                    [null, "Off", "None"],
-                    ["rain", "Rain", "Pink Noise"],
-                    ["fireplace", "Fireplace", "Crackling"],
-                    ["lofi", "Lo-Fi", "Chords Pad"],
-                    ["all", "Hearth", "Full Mix"],
+                    [null, "Off"],
+                    ["rain", "Rain"],
+                    ["fireplace", "Fireplace"],
+                    ["lofi", "Lo-fi"],
+                    ["all", "All sounds"],
                   ] as const
-                ).map(([type, label, sub]) => {
+                ).map(([type, label]) => {
                   const active = ambientType === type;
                   return (
-                    <button
+                    <Button
                       key={label}
-                      type="button"
+                      variant="secondary"
+                      aria-pressed={active}
                       onClick={() => {
                         if (type === null) {
                           stopAmbient();
@@ -663,26 +612,20 @@ export default function SettingsModal({
                           startAmbient(type as AmbientSoundType);
                         }
                       }}
-                      className={`flex flex-col items-center justify-center rounded-lg px-2 py-1.5 transition-all active:scale-[0.97] ${
-                        active
-                          ? "grad-lamp font-semibold text-night shadow-[0_2px_12px_color-mix(in_srgb,var(--brass)_25%,transparent)]"
-                          : "text-muted hover:text-ink"
-                      }`}
+                      className="px-2 text-sm"
                     >
-                      <span className="text-body font-medium text-[12px]">{label}</span>
-                      <span className={`text-[9px] font-mono opacity-70 ${active ? "text-night" : "text-muted"}`}>{sub}</span>
-                    </button>
+                      {label}
+                    </Button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Volume Sliders Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <div>
-                <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="font-mono text-muted">Ambient Volume</span>
-                  <span className="font-mono text-ink">{Math.round(ambientVol * 100)}%</span>
+                <div className="mb-1 flex items-center justify-between text-sm">
+                  <span className="text-muted">Background volume</span>
+                  <span className="tabular-nums text-ink">{Math.round(ambientVol * 100)}%</span>
                 </div>
                 <input
                   type="range"
@@ -690,15 +633,17 @@ export default function SettingsModal({
                   max="1"
                   step="0.05"
                   value={ambientVol}
+                  aria-label="Background volume"
+                  aria-valuetext={`${Math.round(ambientVol * 100)}%`}
                   onChange={(e) => setAmbientVolume(parseFloat(e.target.value))}
                   className="w-full accent-brass cursor-pointer"
                 />
               </div>
 
               <div>
-                <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="font-mono text-muted">Tactile SFX Volume</span>
-                  <span className="font-mono text-ink">{Math.round(sfxVol * 100)}%</span>
+                <div className="mb-1 flex items-center justify-between text-sm">
+                  <span className="text-muted">Effects volume</span>
+                  <span className="tabular-nums text-ink">{Math.round(sfxVol * 100)}%</span>
                 </div>
                 <input
                   type="range"
@@ -706,37 +651,38 @@ export default function SettingsModal({
                   max="1"
                   step="0.05"
                   value={sfxVol}
+                  aria-label="Effects volume"
+                  aria-valuetext={`${Math.round(sfxVol * 100)}%`}
                   onChange={(e) => setSfxVolume(parseFloat(e.target.value))}
                   className="w-full accent-brass cursor-pointer"
                 />
               </div>
             </div>
 
-            {/* Tactile SFX Previews */}
             <div className="pt-2 border-t border-hairline/60">
-              <div className="label-mono !text-[10px] mb-2">Tactile SFX Preview</div>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1">
+              <div className="field-label">Preview sounds</div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {(
                   [
-                    ["inkPress", "Ink Tap"],
-                    ["pageTurn", "Page Turn"],
+                    ["inkPress", "Ink tap"],
+                    ["pageTurn", "Page turn"],
                     ["quillScratch", "Quill"],
-                    ["lampChime", "Lamp Bell"],
-                    ["sparkPop", "Spark Pop"],
+                    ["lampChime", "Lamp bell"],
+                    ["sparkPop", "Spark pop"],
                     ["celebration", "Arpeggio"],
                   ] as const
                 ).map(([sfxId, label]) => (
-                  <button
+                  <Button
                     key={sfxId}
-                    type="button"
+                    variant="secondary"
                     onClick={() => {
                       if (audioMuted) setMuted(false);
                       playEngineSfx(sfxId as SfxType);
                     }}
-                    className="flex min-h-[32px] items-center justify-center rounded-lg border border-hairline bg-ground/40 px-2 py-1 text-[11px] font-mono text-muted hover:border-brass/40 hover:text-ink transition-all active:scale-[0.96]"
+                    className="text-sm"
                   >
                     {label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>

@@ -64,7 +64,7 @@ vi.mock("./generators/EssayFlow", () => ({
   EssayFeedback: () => null,
 }));
 vi.mock("./generators/AidsFlow", () => ({
-  AidsConfigForm: () => null,
+  AidsConfigForm: ({ initialKind }: { initialKind?: string }) => <p>Configure {initialKind}</p>,
   DocViewer: () => null,
   FlashcardsConfigForm: () => null,
   FlashcardsView: () => null,
@@ -83,7 +83,7 @@ const note: Generation = {
   createdAt: 1_700_000_000_000,
 };
 
-describe("StudioPane saved-work deletion", () => {
+describe("StudioPane", () => {
   beforeEach(() => {
     database.rows.splice(0, database.rows.length, note as (typeof database.rows)[number]);
     vi.clearAllMocks();
@@ -92,6 +92,28 @@ describe("StudioPane saved-work deletion", () => {
   afterEach(() => {
     cleanup();
     vi.useRealTimers();
+  });
+
+  it("discloses secondary tools and opens the selected document generator", async () => {
+    render(<StudioPane notebookId="notebook-1" />);
+    await screen.findByRole("button", { name: "Delete note Keyboard note" });
+
+    expect(screen.getByRole("button", { name: /Practice quiz/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Flashcards/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Mock exam/ })).toBeVisible();
+    expect(screen.queryByText("Coming Soon")).not.toBeInTheDocument();
+
+    const summary = screen.getByText("More ways to study");
+    const disclosure = summary.closest("details");
+    expect(disclosure).not.toHaveAttribute("open");
+    fireEvent.click(summary);
+    expect(disclosure).toHaveAttribute("open");
+    expect(screen.getByRole("button", { name: "Essay coach" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Slides & deck" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Study guide" }));
+
+    expect(screen.getByRole("dialog", { name: "Study aid" })).toBeInTheDocument();
+    expect(screen.getByText("Configure study-guide")).toBeInTheDocument();
   });
 
   it("offers a focused Undo action and restores the exact deleted generation", async () => {

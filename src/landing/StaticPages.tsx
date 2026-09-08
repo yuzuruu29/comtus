@@ -1,8 +1,9 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
+import Nav from "./Nav";
 import Footer from "./Footer";
 import "./landing.css";
-import { ArrowLeft, BookOpen, Envelope, FileText, Shield, Sparkle } from "@phosphor-icons/react";
+import { BookOpen, Envelope, FileText, Shield, Sparkle } from "@phosphor-icons/react";
 
 interface StaticPageLayoutProps {
   title: string;
@@ -12,50 +13,19 @@ interface StaticPageLayoutProps {
 }
 
 export function StaticPageLayout({ title, subtitle, icon: Icon = BookOpen, children }: StaticPageLayoutProps) {
-  const navigate = useNavigate();
-
   return (
-    <div className="relative min-h-screen bg-ground text-ink selection:bg-brass selection:text-night">
-      <div className="grain" aria-hidden />
-
-      {/* Floating Back Navigation Header */}
-      <header className="fixed inset-x-0 top-5 z-[100] mx-auto flex w-max items-center gap-3 rounded-full border border-white/10 bg-night/65 px-5 py-2 backdrop-blur-xl">
-        <button
-          type="button"
-          onClick={() => navigate("/")}
-          className="flex items-center gap-2 font-mono text-[12px] text-faded hover:text-parchment transition-colors"
-        >
-          <ArrowLeft size={13} />
-          <span>Back to Home</span>
-        </button>
-        <span className="text-white/20">|</span>
-        <Link to="/studio" className="font-mono text-[12px] text-brasspale hover:underline">
-          Open Studio →
-        </Link>
-      </header>
-
-      <main className="mx-auto max-w-4xl px-6 pb-24 pt-32 sm:pt-40">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-brass/30 bg-brass/10 text-brasspale">
-            <Icon size={20} />
-          </span>
-          <span className="font-mono text-[11px] uppercase tracking-[0.24em] text-brass/80">
-            Comtus Documentation
-          </span>
+    <div className="landing-site">
+      <Nav />
+      <main className="landing-container landing-document">
+        <div className="landing-document-header">
+          <Icon size={28} weight="duotone" aria-hidden="true" />
+          <h1>{title}</h1>
+          <p>{subtitle}</p>
         </div>
-
-        <h1 className="mt-4 font-display text-[clamp(2.4rem,5.5vw,3.8rem)] font-[420] text-parchment leading-tight">
-          {title}
-        </h1>
-        <p className="mt-3 text-[16px] leading-relaxed text-faded max-w-2xl">
-          {subtitle}
-        </p>
-
-        <div className="mt-12 space-y-8 rounded-[2rem] border border-white/[0.08] bg-study/40 p-7 sm:p-12 text-[14.5px] leading-relaxed text-parchment/90 shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
+        <div className="landing-document-body">
           {children}
         </div>
       </main>
-
       <Footer />
     </div>
   );

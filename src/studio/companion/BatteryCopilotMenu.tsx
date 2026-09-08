@@ -1,106 +1,53 @@
-import { useEffect, useRef } from "react";
-import {
-  ChatCircle,
-  GearSix,
-  Medal,
-  Notebook,
-  Sparkle,
-} from "@phosphor-icons/react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { ArrowUpRight, CaretDown, X } from "@phosphor-icons/react";
+import type { CompanionControls } from "../../components/pixel/PixelBatteryCompanion";
 import { useDesk } from "../DeskContext";
-import { modLabel } from "../shortcuts";
-import { detectPlatform } from "../../lib/desktop";
+import { useCompadChat } from "../CompadChatContext";
 
-/** Study-state line for the co-pilot menu — real awareness, not flavor text. */
 export function copilotStatus(opts: { think: boolean; milestones: number }): string {
-  if (opts.think) return "Reading your sources…";
+  if (opts.think) return "Working on your question…";
   if (opts.milestones > 0) return `${opts.milestones} milestone${opts.milestones === 1 ? "" : "s"} unlocked`;
   return "Ready when you are";
 }
 
-const ITEMS = [
-  { id: "chat", label: "Focus chat", icon: ChatCircle, action: "focusChat" },
-  { id: "sources", label: "Add sources", icon: Notebook, action: "importFiles" },
-  { id: "milestones", label: "Milestones", icon: Medal, action: "openMilestones" },
-  { id: "settings", label: "Settings", icon: GearSix, action: "openSettings" },
-] as const;
-
-/** Lean co-pilot menu for the battery companion. Reuses existing Studio
- *  capabilities (DeskContext actions) instead of duplicating generators;
- *  everything else stays one hop away via the command palette. */
-export default function BatteryCopilotMenu({
-  onClose,
-  status,
-}: {
+export default function BatteryCopilotMenu({ onClose, status, controls }: {
   onClose: () => void;
   status: string;
+  controls: CompanionControls;
 }) {
   const desk = useDesk();
-  const platform = detectPlatform();
-  const mod = modLabel(platform);
+  const { setTarget } = useCompadChat();
+  const [greeting, setGreeting] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const opener = useRef(document.activeElement as HTMLElement | null);
+  const sizeId = useId();
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        onClose();
-      }
-    };
-    const onDown = (e: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) onClose();
-    };
-    window.addEventListener("keydown", onKey, true);
-    window.addEventListener("pointerdown", onDown, true);
-    return () => {
-      window.removeEventListener("keydown", onKey, true);
-      window.removeEventListener("pointerdown", onDown, true);
-    };
+  const close = useCallback(() => {
+    onClose();
+    if (opener.current?.isConnected) opener.current.focus({ preventScroll: true });
   }, [onClose]);
 
-  const run = (action: "focusChat" | "importFiles" | "openMilestones" | "openSettings" | "openPalette") => {
-    onClose();
-    desk[action]();
-  };
+  useEffect(() => { rootRef.current?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true }); }, []);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && rootRef.current?.contains(document.activeElement)) { event.stopPropagation(); close(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [close]);
 
   return (
-    <div
-      ref={rootRef}
-      role="menu"
-      aria-label="Companion menu"
-      className="w-56 overflow-hidden rounded-xl border border-hairline/80 bg-night/95 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl"
-    >
-      <div className="border-b border-hairline/60 px-3 py-2">
-        <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-brasspale">
-          Co-pilot
-        </div>
-        <div className="mt-0.5 text-[11.5px] text-parchment">{status}</div>
-      </div>
-      <div className="p-1">
-        {ITEMS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            role="menuitem"
-            onClick={() => run(item.action)}
-            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-parchment transition-colors hover:bg-surface/80"
-          >
-            <item.icon size={14} className="shrink-0 text-muted" />
-            <span className="flex-1">{item.label}</span>
-          </button>
-        ))}
-        <button
-          type="button"
-          role="menuitem"
-          onClick={() => run("openPalette" as const)}
-          className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] text-parchment transition-colors hover:bg-surface/80"
-        >
-          <Sparkle size={14} className="shrink-0 text-muted" />
-          <span className="flex-1">All commands</span>
-          <kbd className="rounded border border-hairline/60 px-1 font-mono text-[9px] text-muted">
-            {mod}+K
-          </kbd>
-        </button>
-      </div>
+    <div ref={rootRef} className="compad-panel" role="dialog" aria-modal="false" aria-label="Compad">
+      <header className="compad-panel-header"><div><h2>Compad</h2><p>{status}</p></div><button type="button" onClick={close} aria-label="Close Compad"><X size={19} aria-hidden="true" /></button></header>
+      <div ref={setTarget} className="compad-chat-target" />
+      {greeting && <p className="compad-greeting" role="status">Hello. One question at a time. I’m right here.</p>}
+      <div className="compad-panel-actions"><button type="button" onClick={() => { controls.react(); setGreeting(true); }}>Say hello</button><button type="button" onClick={() => { onClose(); desk.focusChat(); }}>Open full chat<ArrowUpRight size={16} aria-hidden="true" /></button></div>
+      <details className="compad-options"><summary>Make yourself comfortable<CaretDown size={15} aria-hidden="true" /></summary><div className="compad-options-body">
+        <label htmlFor={sizeId}>Compad size<output htmlFor={sizeId}>{Math.round(controls.width)} px</output></label>
+        <input id={sizeId} type="range" min={60} max={280} step={1} value={controls.width} onChange={(event) => controls.setWidth(Number(event.target.value))} />
+        <button type="button" onClick={controls.resetPlacement}>Reset position</button>
+        <div className="compad-shortcuts"><button type="button" onClick={() => { onClose(); desk.importFiles(); }}>Add sources</button><button type="button" onClick={() => { onClose(); desk.openMilestones(); }}>Milestones</button><button type="button" onClick={() => { onClose(); desk.openSettings(); }}>Settings</button></div>
+      </div></details>
     </div>
   );
 }

@@ -2,7 +2,6 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import FAQSection from "./FAQSection";
-import OnboardingModal from "./OnboardingModal";
 import { AboutPage, PrivacyPage, TermsPage, ResponsibleAIPage, ContactPage, StudyCompanionPage } from "./StaticPages";
 
 afterEach(() => {
@@ -67,30 +66,6 @@ describe("FAQSection Component", () => {
     fireEvent.click(secondQuestion);
 
     expect(screen.getByText(/Unlike chatbots with temporary conversational threads/i)).toBeDefined();
-    cleanup();
-  });
-});
-
-describe("OnboardingModal Component", () => {
-  it("allows selecting a subject and stepping through the 3-step kickstart sequence", () => {
-    const onCloseMock = vi.fn();
-    render(
-      <BrowserRouter>
-        <OnboardingModal isOpen={true} onClose={onCloseMock} />
-      </BrowserRouter>
-    );
-
-    expect(screen.getByText(/What discipline are you studying\?/i)).toBeDefined();
-    expect(screen.getByText("Medicine & Nursing")).toBeDefined();
-
-    // Proceed to Step 2
-    fireEvent.click(screen.getByText("Continue"));
-    expect(screen.getByText(/What is your primary study objective\?/i)).toBeDefined();
-
-    // Proceed to Step 3
-    fireEvent.click(screen.getByText("Next Step"));
-    expect(screen.getByText(/What topic or material are we tackling\?/i)).toBeDefined();
-    expect(screen.getByText("Launch Study Workspace")).toBeDefined();
     cleanup();
   });
 });

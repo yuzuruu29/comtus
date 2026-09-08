@@ -46,8 +46,21 @@ function renderComposer(overrides: Partial<ComponentProps<typeof Composer>> = {}
 }
 
 describe("Composer", () => {
+  it("keeps the draft focusable while preparation blocks another submission", () => {
+    const props = renderComposer({ preparing: true });
+    const editor = screen.getByLabelText("Ask Comtus");
+    editor.focus();
+    expect(editor).toHaveFocus();
+    expect(editor).toHaveValue("hello");
+    expect(editor).toHaveAttribute("readonly");
+    expect(screen.getByRole("button", { name: "Send message" })).toBeDisabled();
+    fireEvent.keyDown(editor, { key: "Enter" });
+    expect(props.onSend).not.toHaveBeenCalled();
+  });
+
   it("sends on Enter", () => {
     const props = renderComposer();
+    expect(screen.getByRole("button", { name: "Send message" })).toBeEnabled();
     fireEvent.keyDown(screen.getByLabelText("Ask Comtus"), { key: "Enter" });
     expect(props.onSend).toHaveBeenCalledTimes(1);
   });

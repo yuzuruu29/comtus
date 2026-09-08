@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { Button, Dialog, Field, Input } from "../ui";
 import { createNotebook } from "../lib/db";
 
-/** Owns its own name/pending/error state so Shelf only has to open/close
- *  it and react to the finished notebook id. */
 export default function NewNotebookDialog({
   open,
   onClose,
@@ -44,10 +42,14 @@ export default function NewNotebookDialog({
 
   return (
     <Dialog open={open} onClose={close} title="New notebook">
-      <div className="space-y-5">
-        <Field label="Name" hint="e.g. Comparison of Android 15 and iOS 18">
+      <div className="shelf-dialog space-y-5">
+        <p className="text-body leading-relaxed text-muted">
+          Give your subject a home. You can add sources and start a conversation inside.
+        </p>
+        <Field label="Notebook name" hint="A course, an exam, or a topic. You can rename it later.">
           <Input
             autoFocus
+            aria-label="Notebook name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {

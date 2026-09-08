@@ -3,26 +3,15 @@ import { render, screen } from "@testing-library/react";
 import ConsoleShell from "./ConsoleShell";
 
 describe("ConsoleShell Component", () => {
-  it("renders retro console chassis, status bar, and workspace content", () => {
+  it("names the workspace and leaves its content unobstructed", () => {
     render(
-      <ConsoleShell notebookName="Biochemistry 101" modelLabel="DeepSeek R1">
+      <ConsoleShell notebookName="Biochemistry 101">
         <div data-testid="workspace-content">Workspace 3-Pane Body</div>
       </ConsoleShell>
     );
 
-    // Root wrapper and chassis
-    expect(screen.getByTestId("console-shell-root")).toBeDefined();
-
-    // Status bar with custom notebook title and model
-    expect(screen.getByText("COMTUS")).toBeDefined();
-    expect(screen.getByText("Biochemistry 101")).toBeDefined();
-    expect(screen.getByText("DeepSeek R1")).toBeDefined();
-
-    // Children content rendered inside viewport
+    expect(screen.getByRole("region", { name: "Biochemistry 101 workspace" })).toBeDefined();
     expect(screen.getByTestId("workspace-content")).toBeDefined();
-
-    // Controller footer bar is gone
-    expect(screen.queryByText(/COMMANDS/)).toBeNull();
-    expect(screen.queryByText("COMTUS · COGNITIVE WORKSPACE")).toBeNull();
+    expect(screen.queryByRole("banner")).toBeNull();
   });
 });

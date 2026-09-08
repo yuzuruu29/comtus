@@ -1,0 +1,179 @@
+.field-guide {
+  overflow: clip;
+  padding-block: 98px 68px;
+  background: color-mix(in srgb, var(--sage) 13%, var(--ground));
+  color: var(--ink);
+}
+
+.field-guide-heading { position: relative; z-index: 2; }
+.field-guide-heading .landing-eyebrow { margin-bottom: 22px; color: var(--sage); }
+.field-guide-heading h2 { max-width: 910px; margin: 0; font-family: var(--font-read); font-size: var(--text-landing-section); font-weight: 430; letter-spacing: -.055em; line-height: 1.19; }
+.field-guide-heading h2 em { color: var(--sage); font-weight: 400; }
+.field-guide-heading > p:last-child { margin-top: 25px; color: var(--muted); font-size: 15px; line-height: 1.75; }
+.field-guide-figure { margin: 25px 0 0; }
+.field-guide-art { position: relative; min-height: 520px; container-type: inline-size; }
+
+.field-guide-source {
+  position: absolute;
+  z-index: 2;
+  top: 8%;
+  left: 1%;
+  width: 24%;
+  padding: 28px 26px 24px;
+  background: var(--surface);
+  box-shadow: var(--elev-card);
+  transform: rotate(-6deg);
+}
+
+.field-guide-source-meta { display: flex; justify-content: space-between; gap: 20px; padding-bottom: 17px; border-bottom: 1px solid var(--hairline); color: var(--muted); font-size: 11px; }
+.field-guide-source-meta > :last-child { font-family: var(--font-read); font-style: italic; }
+.field-guide-source h3 { margin: 20px 0 17px; font-family: var(--font-read); font-size: clamp(24px, 2.5cqi, 32px); font-weight: 450; letter-spacing: -.055em; line-height: 1.15; }
+.field-guide-source > p { margin-top: 17px; font-family: var(--font-read); font-size: 13px; line-height: 1.85; }
+.field-guide-source mark { padding: 2px 3px; background: color-mix(in srgb, var(--brass-pale) 30%, transparent); color: var(--ink); box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.field-guide-source-tail { display: flex; align-items: center; gap: 10px; margin-top: 26px; color: var(--brass); font-family: var(--font-read); font-size: 11px; font-style: italic; }
+.field-guide-source-tail > span { font-size: 24px; line-height: 1; }
+
+.field-guide-map { position: absolute; top: 0; left: 22%; width: 58%; height: 100%; }
+.field-guide-branches { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.field-guide-branches path { stroke: var(--sage); stroke-width: 1.7; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.field-guide-branches circle { fill: var(--sage); }
+.field-guide-branches .field-guide-map-underline { stroke: var(--brass); stroke-width: 1.5; }
+.field-guide-map h3 { position: absolute; z-index: 1; top: 39%; left: 28%; width: 45%; margin: 0; font-family: var(--font-read); font-size: clamp(26px, 3.35cqi, 43px); font-weight: 430; text-align: center; line-height: 1.12; letter-spacing: -.05em; }
+.field-guide-map h3 em { color: var(--sage); font-weight: 400; }
+.field-guide-map-label { position: absolute; max-width: 200px; margin: 0; }
+.field-guide-map-label strong { display: block; font-family: var(--font-read); font-size: 18px; font-weight: 450; line-height: 1.35; letter-spacing: -.025em; }
+.field-guide-map-label > span { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.65; }
+.field-guide-attention { top: 15%; left: 9%; transform: rotate(-5deg); }
+.field-guide-meaning { top: 2%; right: 1%; transform: rotate(3deg); }
+.field-guide-retrieval { left: 14%; bottom: 15%; transform: rotate(-4deg); }
+.field-guide-spacing { right: 18%; bottom: 12%; transform: rotate(4deg); }
+.field-guide-map-note { position: absolute; left: 23%; bottom: 0; color: var(--sage); font-family: var(--font-read); font-size: 13px; font-style: italic; transform: rotate(-4deg); }
+
+.field-guide-card {
+  position: absolute;
+  z-index: 3;
+  top: 30%;
+  right: .5%;
+  width: 24%;
+  background: var(--ground);
+  box-shadow: var(--elev-card);
+  transform: rotate(7deg);
+  perspective: 1000px;
+}
+
+.field-guide-card-turn { display: grid; transform-style: preserve-3d; transition: transform 750ms var(--ease-inout); }
+.field-guide-card-turn[data-turned="true"] { transform: rotateY(180deg); }
+.field-guide-card-face { grid-area: 1 / 1; min-width: 0; padding: 27px 25px 23px; background: var(--ground); backface-visibility: hidden; }
+.field-guide-card-answer { transform: rotateY(180deg); }
+.field-guide-card-kicker { color: var(--brass); font-size: 11px; font-weight: 500; }
+.field-guide-card-face h3 { margin: 24px 0 20px; font-family: var(--font-read); font-size: clamp(24px, 2.6cqi, 33px); font-weight: 440; letter-spacing: -.045em; line-height: 1.2; }
+.field-guide-card-face h3 em { color: var(--sage); font-weight: 400; }
+.field-guide-card-face > p { font-size: 13px; line-height: 1.75; }
+.field-guide-card > button { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; width: calc(100% - 50px); min-height: 48px; gap: 15px; margin: 0 25px 14px; border-top: 1px solid var(--hairline-strong); color: var(--brass); text-align: left; font-size: 12px; font-weight: 500; cursor: pointer; }
+.field-guide-card > button:hover { color: var(--ink); }
+.field-guide-card > button svg { flex-shrink: 0; }
+
+.field-guide-figure > figcaption { margin: 28px 0 0; color: var(--muted); text-align: center; font-size: 11px; }
+.field-guide-next { display: flex; align-items: center; justify-content: space-between; gap: 28px; margin-top: 46px; padding-top: 30px; border-top: 1px solid color-mix(in srgb, var(--sage) 25%, transparent); }
+.field-guide-next > p { font-family: var(--font-read); font-size: 21px; line-height: 1.5; letter-spacing: -.025em; }
+.field-guide-next > a { display: inline-flex; align-items: center; gap: 24px; min-height: 44px; color: var(--sage); font-size: 14px; font-weight: 500; text-decoration: underline; text-underline-offset: 6px; text-decoration-color: color-mix(in srgb, var(--sage) 40%, transparent); }
+.field-guide-next > a:hover { text-decoration-color: currentColor; }
+
+@keyframes field-guide-source-place { from { opacity: 0; transform: translate(-52px, 74px) rotate(-14deg); } to { opacity: 1; transform: rotate(-6deg); } }
+@keyframes field-guide-card-place { from { opacity: 0; transform: translate(54px, 90px) rotate(17deg); } to { opacity: 1; transform: rotate(7deg); } }
+@keyframes field-guide-ink-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes field-guide-note-appear { from { opacity: 0; translate: 0 24px; } to { opacity: 1; translate: 0 0; } }
+
+@supports (animation-timeline: view()) {
+  .field-guide-art { view-timeline-name: --field-guide-art; view-timeline-axis: block; }
+  .landing-home[data-motion="full"] .field-guide-source {
+    animation: field-guide-source-place linear both;
+    animation-timeline: --field-guide-art;
+    animation-range: entry 0% cover 37%;
+  }
+  .landing-home[data-motion="full"] .field-guide-card {
+    animation: field-guide-card-place linear both;
+    animation-timeline: --field-guide-art;
+    animation-range: entry 20% cover 52%;
+  }
+  .landing-home[data-motion="full"] .field-guide-branch {
+    animation: field-guide-ink-draw linear both;
+    animation-timeline: --field-guide-art;
+    animation-range: entry 10% cover 48%;
+  }
+  .landing-home[data-motion="full"] .field-guide-branch-meaning { animation-range: entry 20% cover 49%; }
+  .landing-home[data-motion="full"] .field-guide-branch-retrieval { animation-range: entry 30% cover 52%; }
+  .landing-home[data-motion="full"] .field-guide-branch-spacing { animation-range: entry 40% cover 55%; }
+  .landing-home[data-motion="full"] :is(.field-guide-map-label, .field-guide-map-note, .field-guide-map h3) {
+    animation: field-guide-note-appear linear both;
+    animation-timeline: --field-guide-art;
+    animation-range: entry 12% cover 43%;
+  }
+  .landing-home[data-motion="full"] .field-guide-spacing { animation-range: entry 40% cover 55%; }
+  .landing-home[data-motion="full"] .field-guide-map-note { animation-range: entry 45% cover 55%; }
+}
+
+.field-guide-art:focus-within :is(.field-guide-source, .field-guide-card, .field-guide-branch, .field-guide-map-label, .field-guide-map-note, .field-guide-map h3),
+.field-guide-card:is(:hover, [data-turned="true"]) { animation: none !important; }
+.landing-home:not([data-motion="full"]) .field-guide-card-turn { transition: none; }
+
+@media (min-width: 941px) and (max-width: 1050px) {
+  .field-guide-art { min-height: 590px; }
+  .field-guide-source { top: 5%; width: 29%; padding: 23px; }
+  .field-guide-map { left: 20%; width: 60%; }
+  .field-guide-map h3 { top: 43%; font-size: 30px; }
+  .field-guide-attention { top: 14%; left: 17%; }
+  .field-guide-meaning { right: -5%; top: 4%; }
+  .field-guide-retrieval { left: 25%; bottom: 17%; }
+  .field-guide-spacing { right: 25%; bottom: 12%; }
+  .field-guide-map-note { left: -10%; bottom: -1%; }
+  .field-guide-card { top: 34%; width: 29%; }
+  .field-guide-card-face { padding: 24px 21px 21px; }
+  .field-guide-card-face h3 { font-size: 27px; }
+  .field-guide-card > button { width: calc(100% - 42px); margin-inline: 21px; }
+}
+
+@media (max-width: 940px) {
+  .field-guide { padding-block: 64px 42px; }
+  .field-guide-heading h2 { font-size: clamp(2.2rem, 6.5vw, 3.4rem); }
+  .field-guide-heading h2 br { display: none; }
+  .field-guide-heading > p:last-child { margin-top: 22px; font-size: 14px; }
+  .field-guide-figure { margin-top: 45px; }
+  .field-guide-art { display: flex; flex-direction: column; min-height: 0; gap: 20px; }
+  .field-guide-source, .field-guide-map, .field-guide-card { position: relative; inset: auto; }
+  .field-guide-source { width: min(84%, 370px); margin-left: 3%; padding: 27px; }
+  .field-guide-source h3 { font-size: 29px; }
+  .field-guide-source > p { font-size: 14px; }
+  .field-guide-source-tail { font-size: 12px; }
+  .field-guide-map { width: 100%; height: 360px; margin-block: 10px 6px; }
+  .field-guide-branches { height: 100%; }
+  .field-guide-map h3 { top: 38%; left: 26%; width: 48%; font-size: clamp(26px, 6.5vw, 36px); }
+  .field-guide-map-label { max-width: 46%; }
+  .field-guide-map-label strong { font-size: 17px; }
+  .field-guide-map-label > span { max-width: 140px; font-size: 12px; line-height: 1.5; }
+  .field-guide-attention { top: 11%; left: 1%; }
+  .field-guide-meaning { top: 0; right: 0; }
+  .field-guide-retrieval { left: 0; bottom: 12%; }
+  .field-guide-spacing { right: 0; bottom: 5%; }
+  .field-guide-map-note { left: 6%; bottom: -8%; font-size: 12px; }
+  .field-guide-card { width: min(82%, 350px); margin: 45px 5% 10px auto; }
+  .field-guide-card-face { padding: 28px; }
+  .field-guide-card-kicker { font-size: 12px; }
+  .field-guide-card-face h3 { font-size: 31px; }
+  .field-guide-card-face > p { font-size: 14px; }
+  .field-guide-card > button { width: calc(100% - 56px); margin-inline: 28px; font-size: 13px; }
+  .field-guide-figure > figcaption { margin-top: 32px; font-size: 11px; line-height: 1.7; }
+  .field-guide-next { flex-direction: column; align-items: start; gap: 14px; margin-top: 32px; padding-top: 26px; }
+  .field-guide-next > p { max-width: 310px; font-size: 21px; }
+
+  @supports (animation-timeline: view()) {
+    .landing-home[data-motion="full"] :is(.field-guide-source, .field-guide-card) { animation-timeline: view(); animation-range: entry 0% cover 40%; }
+    .field-guide-map { view-timeline-name: --field-guide-map; view-timeline-axis: block; }
+    .landing-home[data-motion="full"] :is(.field-guide-branch, .field-guide-map-label, .field-guide-map-note, .field-guide-map h3) { animation-timeline: --field-guide-map; animation-range: entry 0% cover 46%; }
+    .landing-home[data-motion="full"] :is(.field-guide-branch-spacing, .field-guide-spacing, .field-guide-map-note) { animation-range: entry 15% cover 49%; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field-guide *, .field-guide *::before, .field-guide *::after { animation: none !important; transition: none !important; }
+}

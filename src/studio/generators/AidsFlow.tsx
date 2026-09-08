@@ -242,11 +242,8 @@ JSON shape: {"cards":[{"front":"...","back":"...","topic":"..."}]}`,
               key={p}
               type="button"
               onClick={() => setCount(p)}
-              className={`rounded-lg border px-3 py-1 font-mono text-[11px] transition-colors ${
-                count === p
-                  ? "border-brass/60 bg-brass/20 text-brasspale font-medium"
-                  : "border-hairline bg-ink/[0.02] text-muted hover:border-hairline-strong"
-              }`}
+              aria-pressed={count === p}
+              className={btnGhost}
             >
               {p} cards
             </button>
@@ -260,6 +257,7 @@ JSON shape: {"cards":[{"front":"...","back":"...","topic":"..."}]}`,
             value={count}
             onChange={(e) => setCount(Math.max(1, Math.min(100, +e.target.value)))}
             placeholder="Custom count (e.g. 15)"
+            aria-label="Number of flashcards"
             className={inputCls + " font-mono text-[13px] w-44"}
           />
           <span className="text-[12px] text-muted">Custom count (1–100)</span>
@@ -724,11 +722,8 @@ JSON shape:
                 key={n}
                 type="button"
                 onClick={() => setSlideCount(n)}
-                className={`rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-colors ${
-                  slideCount === n
-                    ? "border-brass/60 bg-brass/20 text-brasspale font-medium"
-                    : "border-hairline bg-ink/[0.02] text-muted"
-                }`}
+                aria-pressed={slideCount === n}
+                className={btnGhost}
               >
                 {n}
               </button>

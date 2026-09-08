@@ -1,149 +1,20 @@
 import { Link } from "react-router-dom";
-import { scrollToSection } from "../lib/scroll";
-import { FlameMark } from "./Nav";
+import "./landing.css";
 
 export default function Footer() {
   return (
-    <footer className="relative overflow-hidden border-t border-hairline bg-ground text-ink">
-      <div className="mx-auto w-full max-w-6xl px-6 pt-16">
-        <div className="grid grid-cols-1 gap-10 pb-14 sm:grid-cols-2 lg:grid-cols-12">
-          {/* Brand Info */}
-          <div className="lg:col-span-4">
-            <div className="flex items-center gap-2.5">
-              <FlameMark className="h-6 w-6 text-brass" />
-              <span className="font-display text-lg font-[600] tracking-[0.2em] text-ink">
-                COMTUS
-              </span>
-            </div>
-            <p className="mt-4 max-w-sm text-[13.5px] leading-relaxed text-muted">
-              Your AI Study Companion. Turn difficult lessons, scattered notes, and rough ideas into knowledge you can actually understand and retain.
-            </p>
-            <div className="mt-5 font-mono text-[11px] text-brass font-semibold">
-              Rough thought, polished.
-            </div>
-          </div>
-
-          {/* Column 1: Product */}
-          <div className="lg:col-span-3">
-            <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-brass font-semibold mb-4">
-              Infrastructure & Engines
-            </div>
-            <ul className="space-y-2.5 text-[13px] text-muted font-mono">
-              <li>
-                <button
-                  type="button"
-                  onClick={() => scrollToSection("#hero")}
-                  className="hover:text-ink transition-colors text-left cursor-pointer"
-                >
-                  Cognitive Strings Canvas
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => scrollToSection("#foundations")}
-                  className="hover:text-ink transition-colors text-left cursor-pointer"
-                >
-                  Study Foundations & Pulse
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => scrollToSection("#byok-guide")}
-                  className="hover:text-ink transition-colors text-left cursor-pointer"
-                >
-                  Free AI Models & BYOK
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => scrollToSection("#faq")}
-                  className="hover:text-ink transition-colors text-left cursor-pointer"
-                >
-                  Help & FAQ
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 2: Company & Ethics */}
-          <div className="lg:col-span-3">
-            <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-brass font-semibold mb-4">
-              Company & Learning
-            </div>
-            <ul className="space-y-2.5 text-[13px] text-muted font-mono">
-              <li>
-                <Link to="/about" className="hover:text-ink transition-colors">
-                  About Comtus
-                </Link>
-              </li>
-              <li>
-                <Link to="/study-companion" className="hover:text-ink transition-colors">
-                  Study Companion Guide
-                </Link>
-              </li>
-              <li>
-                <Link to="/responsible-ai" className="hover:text-ink transition-colors">
-                  Responsible AI
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="hover:text-ink transition-colors">
-                  Contact & Support
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 3: Legal & Action */}
-          <div className="lg:col-span-2">
-            <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-brass font-semibold mb-4">
-              Legal & Account
-            </div>
-            <ul className="space-y-2.5 text-[13px] text-muted font-mono">
-              <li>
-                <Link to="/privacy" className="hover:text-ink transition-colors">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link to="/terms" className="hover:text-ink transition-colors">
-                  Terms of Service
-                </Link>
-              </li>
-              <li className="pt-2">
-                <Link
-                  to="/studio"
-                  className="inline-flex items-center gap-1 border border-hairline bg-surface px-3 py-1.5 rounded text-ink font-mono text-[12px] font-semibold hover:bg-raised transition-all"
-                >
-                  Start Studying →
-                </Link>
-              </li>
-            </ul>
-          </div>
+    <footer className="landing-footer">
+      <div className="landing-container landing-footer-inner">
+        <div className="landing-footer-brand">
+          <Link to="/" className="landing-wordmark" aria-label="Comtus home">comtus<span aria-hidden="true">.</span></Link>
+          <p>A quiet place for the work<br />of understanding.</p>
         </div>
-
-        <div className="flex flex-col gap-2 border-t border-hairline py-6 font-mono text-[10.5px] uppercase tracking-[0.2em] text-muted sm:flex-row sm:items-center sm:justify-between">
-          <span>© 2026 Comtus — Your AI Study Companion</span>
-          <span className="normal-case tracking-[0.12em]">
-            Latin comptus — adorned, polished, refined
-          </span>
-        </div>
+        <nav className="landing-footer-links" aria-label="Footer navigation">
+          <div><span>At your desk</span><Link to="/studio">Open Studio</Link><Link to="/study-companion">Study guide</Link><Link to="/about">About Comtus</Link></div>
+          <div><span>Good to know</span><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link><Link to="/responsible-ai">Responsible AI</Link><Link to="/contact">Contact</Link></div>
+        </nav>
       </div>
-
-      {/* Ghost wordmark */}
-      <div
-        className="pointer-events-none select-none whitespace-nowrap text-center font-display font-[500] leading-[0.78] text-transparent"
-        style={{
-          fontSize: "clamp(90px, 19vw, 300px)",
-          WebkitTextStroke: "2px color-mix(in srgb, var(--ink) 12%, transparent)",
-        }}
-        aria-hidden
-      >
-        COMTUS
-      </div>
+      <div className="landing-container landing-footer-bottom"><span>Rough thought, polished.</span><span>Made for deliberate study.</span></div>
     </footer>
   );
 }

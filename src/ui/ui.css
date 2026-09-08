@@ -276,9 +276,25 @@
   color: var(--ink);
   padding: 0.625rem 0.875rem;
   font-size: 16px;
+  font-family: var(--font-ui);
   transition:
     border-color var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  font-weight: 550;
+}
+
+.btn-secondary[aria-pressed="true"] {
+  border-color: var(--brass);
+  background: color-mix(in oklab, var(--brass) 10%, var(--surface));
+  color: var(--brass);
 }
 .field-input::placeholder,
 .field-textarea::placeholder {

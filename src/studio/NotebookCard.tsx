@@ -1,6 +1,5 @@
-import { DotsThreeVertical, DownloadSimple, PencilSimple, Trash } from "@phosphor-icons/react";
+import { DotsThree, DownloadSimple, Notebook as NotebookIcon, PencilSimple, Trash } from "@phosphor-icons/react";
 import { IconButton, Menu } from "../ui";
-import StudyGlyph from "../components/icons/StudyGlyph";
 import type { Notebook } from "../lib/types";
 import { timeAgo } from "./ui";
 
@@ -8,10 +7,6 @@ export interface NotebookCardData extends Notebook {
   sourceCount: number;
 }
 
-/** One tile on the shelf: a leather-spined card (the left accent bar) whose
- *  whole body opens the notebook, with a "..." menu layered in the corner
- *  as a sibling — never nested inside the open button, which would be
- *  invalid, unreachable-by-keyboard markup. */
 export default function NotebookCard({
   notebook,
   onOpen,
@@ -26,51 +21,53 @@ export default function NotebookCard({
   onDelete: (id: string) => void;
 }) {
   return (
-    <div className="card-wake anim-rise relative h-full rounded-[var(--radius-dialog)] border border-l-4 border-hairline border-l-leather bg-surface shadow-card">
+    <div className="notebook-card">
       <button
         type="button"
         onClick={() => onOpen(notebook.id)}
-        className="group flex h-full min-h-[168px] w-full flex-col justify-between gap-3 rounded-[var(--radius-dialog)] p-5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brass focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+        aria-label={`Open ${notebook.name}`}
+        className="notebook-card-open"
       >
-        <StudyGlyph name={notebook.name} size="md" />
-        <h3 className="line-clamp-2 font-display text-lg font-[520] leading-snug text-ink transition-colors group-hover:text-brass">
+        <NotebookIcon className="notebook-card-glyph" size={30} weight="light" aria-hidden="true" />
+        <span className="notebook-card-title">
           {notebook.name}
-        </h3>
-        <div className="flex items-center gap-1.5 font-mono text-[11.5px] text-muted">
+        </span>
+        <span className="notebook-card-meta">
           <span>
             {notebook.sourceCount} {notebook.sourceCount === 1 ? "source" : "sources"}
           </span>
-          <span className="text-muted/50">·</span>
-          <span>{timeAgo(notebook.updatedAt)}</span>
-        </div>
+          <time dateTime={new Date(notebook.updatedAt).toISOString()}>
+            Updated {timeAgo(notebook.updatedAt)}
+          </time>
+        </span>
       </button>
 
-      <div className="absolute right-3 top-3">
+      <div className="notebook-card-menu">
         <Menu
           aria-label={`${notebook.name} options`}
           align="end"
           trigger={
-            <IconButton aria-label="Notebook options" size="sm">
-              <DotsThreeVertical size={16} weight="bold" />
+            <IconButton aria-label={`Notebook options for ${notebook.name}`}>
+              <DotsThree size={22} weight="bold" aria-hidden="true" />
             </IconButton>
           }
           items={[
             {
               key: "rename",
               label: "Rename",
-              icon: <PencilSimple size={13} />,
+              icon: <PencilSimple size={18} aria-hidden="true" />,
               onSelect: () => onRename(notebook),
             },
             {
               key: "export",
               label: "Export",
-              icon: <DownloadSimple size={13} />,
+              icon: <DownloadSimple size={18} aria-hidden="true" />,
               onSelect: () => onExport(notebook),
             },
             {
               key: "delete",
               label: "Delete",
-              icon: <Trash size={13} />,
+              icon: <Trash size={18} aria-hidden="true" />,
               onSelect: () => onDelete(notebook.id),
             },
           ]}

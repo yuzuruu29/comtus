@@ -214,13 +214,14 @@ Constraints: MCQ items have exactly 4 options with answerIndex pointing at the k
             <button
               key={p.id}
               onClick={() => pickPreset(p.id)}
+              aria-pressed={presetId === p.id}
               className={`rounded-xl border px-3.5 py-3 text-left transition-colors ${
                 presetId === p.id
                   ? "border-brass/50 bg-brass/[0.08]"
                   : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
               }`}
             >
-              <div className="font-mono text-[11px] font-medium tracking-[0.1em] text-brasspale">
+              <div className="text-body font-medium text-brass">
                 {p.name}
               </div>
               <div className="mt-1 text-[11.5px] leading-snug text-muted">{p.blurb}</div>

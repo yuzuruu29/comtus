@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { GearSix, ListDashes, MagnifyingGlass, Plus, SquaresFour } from "@phosphor-icons/react";
+import { BookOpen, GearSix, ListDashes, MagnifyingGlass, Plug, Plus, SquaresFour, X } from "@phosphor-icons/react";
 import { Button, Dialog, Empty, Field, IconButton, Input, Segmented, Skeleton } from "../ui";
 import { db, createNotebook, deleteNotebook, touchNotebook } from "../lib/db";
 import type { Notebook, Source } from "../lib/types";
-import ComtusLogo, { ComtusEmblem } from "../components/brand/ComtusLogo";
+import ComtusLogo from "../components/brand/ComtusLogo";
 import DeskShell from "./DeskShell";
 import SettingsModal, { type SettingsTab } from "./SettingsModal";
 import NotebookCard, { type NotebookCardData } from "./NotebookCard";
 import NewNotebookDialog from "./NewNotebookDialog";
+import { timeAgo } from "./ui";
+import "./shelf.css";
 
 type ViewMode = "grid" | "list";
-
-const GRID_COLS = "grid-cols-[repeat(auto-fill,minmax(240px,1fr))]";
 
 export default function Shelf({
   onOpen,
@@ -25,8 +25,8 @@ export default function Shelf({
   const [loaded, setLoaded] = useState(false);
   const [creating, setCreating] = useState(false);
   const [kickstartError, setKickstartError] = useState("");
-  const [settingsOpen, setSettingsOpen] = useState(needsKey);
-  const [settingsTab, setSettingsTab] = useState<SettingsTab>(needsKey ? "models" : "settings");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("settings");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -82,11 +82,12 @@ export default function Shelf({
     };
   }, [onOpen, refresh]);
 
+  const recentNotebooks = useMemo(() => [...notebooks].sort((a, b) => b.updatedAt - a.updatedAt), [notebooks]);
+  const latestNotebook = recentNotebooks[0];
   const processedNotebooks = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    const list = q ? notebooks.filter((nb) => nb.name.toLowerCase().includes(q)) : [...notebooks];
-    return list.sort((a, b) => b.updatedAt - a.updatedAt);
-  }, [notebooks, searchQuery]);
+    return q ? recentNotebooks.filter((nb) => nb.name.toLowerCase().includes(q)) : recentNotebooks;
+  }, [recentNotebooks, searchQuery]);
 
   const handleRename = async () => {
     if (!renamingNotebook) return;
@@ -125,121 +126,183 @@ export default function Shelf({
 
   return (
     <DeskShell onSettings={openSettings} onNewNotebook={() => setCreating(true)}>
-      <div className="min-h-[100svh] overflow-y-auto bg-ground">
-        <div className="mx-auto w-full max-w-6xl px-3 pb-24 sm:px-8 lg:px-12">
-          <header className="flex items-center justify-between gap-4 border-b border-hairline pb-6 pt-[calc(1.25rem+var(--sat))]">
-            <div className="flex items-center gap-3">
-              <Link to="/" aria-label="Back to landing" className="flex items-center">
-                <ComtusLogo variant="full" size="sm" />
-              </Link>
-              <span className="hidden h-5 w-px bg-hairline-strong sm:block" aria-hidden="true" />
-              <h1 className="hidden font-display text-title font-[550] text-ink sm:block">Your notebooks</h1>
-            </div>
-            <div className="flex items-center gap-2">
+      <div className="shelf-page">
+        <div className="shelf-content">
+          <header className="shelf-header">
+            <Link to="/" aria-label="Back to landing" className="shelf-brand">
+              <ComtusLogo variant="full" size="sm" />
+            </Link>
+            <div className="shelf-header-actions">
+              <span className="shelf-save-note">Saved on this device</span>
               <IconButton aria-label="Settings" onClick={() => openSettings("settings")}>
-                <GearSix size={17} weight="light" />
+                <GearSix size={20} aria-hidden="true" />
               </IconButton>
+            </div>
+          </header>
+
+          <main>
+            <div className="shelf-intro">
+              <div>
+                <h1>Your notebooks</h1>
+                <p>Your sources, conversations, and study tools, kept together.</p>
+              </div>
               {notebooks.length > 0 && (
-                <Button variant="primary" icon={<Plus size={15} weight="bold" />} onClick={() => setCreating(true)}>
+                <Button className="shelf-new" icon={<Plus size={18} aria-hidden="true" />} onClick={() => setCreating(true)}>
                   New notebook
                 </Button>
               )}
             </div>
-          </header>
 
-          {needsKey && (
-            <div className="mt-4 flex flex-col gap-3 rounded-[var(--radius-dialog)] border border-brass/30 bg-surface p-4 shadow-card sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <ComtusEmblem size={20} breathe className="mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-body font-semibold text-ink">Power up your model</p>
-                  <p className="mt-0.5 text-label text-muted">
-                    Connect OpenRouter with free models, Claude via PayPal, or run offline with Ollama or LM Studio.
-                  </p>
-                </div>
+            {kickstartError && (
+              <p className="shelf-error" role="alert">
+                {kickstartError}
+              </p>
+            )}
+
+            {!loaded ? (
+              <div className="shelf-grid" aria-label="Loading notebooks" aria-busy="true">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton.Card key={i} />
+                ))}
               </div>
-              <Button size="sm" onClick={() => openSettings("models")}>
-                Configure key
-              </Button>
-            </div>
-          )}
+            ) : notebooks.length === 0 ? (
+              <section className="shelf-start" aria-labelledby="shelf-start-title">
+                <div className="shelf-start-copy">
+                  <BookOpen size={36} weight="light" aria-hidden="true" />
+                  <h2 id="shelf-start-title">Start with what you’re learning.</h2>
+                  <p>Make a notebook for a course, an exam, or a question you want to work through.</p>
+                  <Button className="shelf-new" icon={<Plus size={18} aria-hidden="true" />} onClick={() => setCreating(true)}>
+                    New notebook
+                  </Button>
+                  <span className="shelf-start-note">Give it a name. Add your material when you’re ready.</span>
+                </div>
+                <ol className="shelf-start-steps" aria-label="How a notebook works">
+                  <li>
+                    <div>
+                      <h3>Add your sources</h3>
+                      <p>Bring in documents, links, or your own notes.</p>
+                    </div>
+                  </li>
+                  <li>
+                    <div>
+                      <h3>Talk it through</h3>
+                      <p>Ask questions and follow answers back to your sources.</p>
+                    </div>
+                  </li>
+                  <li>
+                    <div>
+                      <h3>Make it stick</h3>
+                      <p>Turn your material into quizzes, flashcards, and study guides.</p>
+                    </div>
+                  </li>
+                </ol>
+              </section>
+            ) : (
+              <>
+                {latestNotebook && (
+                  <section className="shelf-resume" aria-label="Continue studying">
+                    <BookOpen className="shelf-resume-icon" size={32} weight="light" aria-hidden="true" />
+                    <div className="shelf-resume-copy">
+                      <h2>{latestNotebook.name}</h2>
+                      <p>
+                        Updated {timeAgo(latestNotebook.updatedAt)}
+                        <span>{latestNotebook.sourceCount} {latestNotebook.sourceCount === 1 ? "source" : "sources"}</span>
+                      </p>
+                    </div>
+                    <Button variant="secondary" onClick={() => onOpen(latestNotebook.id)}>
+                      Continue studying
+                    </Button>
+                  </section>
+                )}
 
-          {kickstartError && (
-            <p className="mt-4 text-body text-rust" role="alert">
-              {kickstartError}
-            </p>
-          )}
+                <section className="shelf-collection" aria-labelledby="shelf-collection-title">
+                  <div className="shelf-toolbar">
+                    <div className="shelf-collection-heading">
+                      <h2 id="shelf-collection-title">All notebooks <span>{notebooks.length}</span></h2>
+                      <p>Most recently updated first</p>
+                    </div>
+                    <div className="shelf-search">
+                      <MagnifyingGlass size={18} aria-hidden="true" />
+                      <Input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search notebooks"
+                        aria-label="Search notebooks"
+                      />
+                      {searchQuery && (
+                        <IconButton aria-label="Clear search" className="shelf-search-clear" onClick={() => setSearchQuery("")}>
+                          <X size={16} aria-hidden="true" />
+                        </IconButton>
+                      )}
+                    </div>
+                    <Segmented
+                      aria-label="View"
+                      value={viewMode}
+                      onChange={setViewMode}
+                      options={[
+                        { value: "grid", label: "Grid", icon: <SquaresFour size={17} aria-hidden="true" /> },
+                        { value: "list", label: "List", icon: <ListDashes size={17} aria-hidden="true" /> },
+                      ]}
+                    />
+                  </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-            <div className="relative w-full sm:w-64">
-              <MagnifyingGlass
-                size={14}
-                weight="bold"
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
-              />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search notebooks…"
-                aria-label="Search notebooks"
-                className="pl-8"
-              />
-            </div>
-            <Segmented
-              aria-label="View"
-              value={viewMode}
-              onChange={setViewMode}
-              options={[
-                { value: "grid", label: "Grid", icon: <SquaresFour size={14} weight="bold" /> },
-                { value: "list", label: "List", icon: <ListDashes size={14} weight="bold" /> },
-              ]}
-            />
-          </div>
+                  {searchQuery.trim() && (
+                    <p className="shelf-search-count" role="status">
+                      {processedNotebooks.length} {processedNotebooks.length === 1 ? "notebook" : "notebooks"} found
+                    </p>
+                  )}
 
-          {!loaded ? (
-            <div className={`mt-6 grid gap-4 ${GRID_COLS}`}>
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton.Card key={i} />
-              ))}
-            </div>
-          ) : notebooks.length === 0 ? (
-            <Empty
-              title="Your shelf is empty."
-              body="Make a notebook for the course you are studying."
-              action={
-                <Button variant="primary" icon={<Plus size={15} weight="bold" />} onClick={() => setCreating(true)}>
-                  New notebook
+                  {processedNotebooks.length === 0 ? (
+                    <Empty
+                      title="No notebooks found"
+                      body="Try another title or clear your search to return to your shelf."
+                      action={<Button variant="secondary" onClick={() => setSearchQuery("")}>Clear search</Button>}
+                    />
+                  ) : (
+                    <ul className="shelf-grid" data-view={viewMode} aria-label="Notebooks">
+                      {processedNotebooks.map((nb) => (
+                        <li key={nb.id}>
+                          <NotebookCard
+                            notebook={nb}
+                            onOpen={onOpen}
+                            onRename={(notebook) => {
+                              setRenamingNotebook(notebook);
+                              setRenameDraft(notebook.name);
+                            }}
+                            onExport={(notebook) => void handleExport(notebook)}
+                            onDelete={setDeletingId}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              </>
+            )}
+
+            {needsKey && (
+              <aside className="shelf-model-setup" aria-label="Model setup">
+                <Plug size={20} aria-hidden="true" />
+                <p>
+                  <strong>Ready for questions and study tools?</strong>
+                  <span>Connect a model when you need one. You can organize your sources first.</span>
+                </p>
+                <Button variant="ghost" onClick={() => openSettings("models")}>
+                  Connect a model
                 </Button>
-              }
-            />
-          ) : processedNotebooks.length === 0 ? (
-            <Empty title="No matches." body="No notebooks match your search." />
-          ) : (
-            <div className={`mt-6 grid gap-4 ${viewMode === "grid" ? GRID_COLS : "grid-cols-1"}`}>
-              {processedNotebooks.map((nb) => (
-                <NotebookCard
-                  key={nb.id}
-                  notebook={nb}
-                  onOpen={onOpen}
-                  onRename={(notebook) => {
-                    setRenamingNotebook(notebook);
-                    setRenameDraft(notebook.name);
-                  }}
-                  onExport={(notebook) => void handleExport(notebook)}
-                  onDelete={setDeletingId}
-                />
-              ))}
-            </div>
-          )}
+              </aside>
+            )}
+          </main>
         </div>
 
         <NewNotebookDialog open={creating} onClose={() => setCreating(false)} onCreated={onOpen} />
 
         <Dialog open={renamingNotebook !== null} onClose={() => setRenamingNotebook(null)} title="Rename notebook">
-          <div className="space-y-5">
+          <div className="shelf-dialog space-y-5">
             <Field label="Notebook name">
               <Input
                 autoFocus
+                aria-label="Notebook name"
                 value={renameDraft}
                 onChange={(e) => setRenameDraft(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && void handleRename()}
@@ -257,7 +320,7 @@ export default function Shelf({
         </Dialog>
 
         <Dialog open={deletingId !== null} onClose={() => setDeletingId(null)} title="Delete notebook">
-          <div className="space-y-4">
+          <div className="shelf-dialog space-y-4">
             <p className="text-body leading-relaxed text-muted">
               Are you sure you want to delete this notebook? All sources, notes, and study history inside it will be
               permanently deleted from this device.

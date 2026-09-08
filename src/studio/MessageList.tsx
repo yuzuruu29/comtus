@@ -1,16 +1,16 @@
 import type { RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, Flame } from "@phosphor-icons/react";
+import { Books, Flame, Plus } from "@phosphor-icons/react";
 import type { ChatMessage, Notebook, WebSearchMeta } from "../lib/types";
-import StudyGlyph from "../components/icons/StudyGlyph";
+import { Button } from "../ui";
 import { DRIFT_X, SPRING } from "./fx";
 import AssistantMessage, { SearchStatusStrip } from "./AssistantMessage";
+import "./chat-welcome.css";
 
 const STARTERS = [
-  "Summarize the key ideas across my sources",
-  "What terms or concepts should I be able to define?",
-  "Where do my sources disagree, if anywhere?",
-  "Make me a 10-item quiz on the hardest part",
+  { label: "Find the key ideas", prompt: "Summarize the key ideas across my sources" },
+  { label: "Explain a difficult concept", prompt: "What terms or concepts should I be able to define?" },
+  { label: "Test my understanding", prompt: "Make me a 10-item quiz on the hardest part" },
 ];
 
 function UserBubble({ content }: { content: string }) {
@@ -43,6 +43,7 @@ export default function MessageList({
   onCite,
   onSaveToNote,
   onSend,
+  onAddSources,
   scrollRef,
   onScroll,
   error,
@@ -66,6 +67,7 @@ export default function MessageList({
   onCite: (sourceId: string, startChar?: number) => void;
   onSaveToNote: (title: string, content: string) => void;
   onSend: (prompt: string) => void;
+  onAddSources?: () => void;
   scrollRef: RefObject<HTMLDivElement | null>;
   onScroll: () => void;
   error: string;
@@ -81,44 +83,30 @@ export default function MessageList({
       className="chat-scroll min-h-0 flex-1 overflow-y-auto"
     >
       <div className="mx-auto w-full max-w-3xl px-6 pb-8 pt-6">
-        {/* Overview card */}
-        <div className="mb-8 rounded-2xl border border-hairline/80 bg-surface/50 p-6 shadow-sm">
-          <div className="flex items-center gap-3.5 mb-2">
-            <StudyGlyph name={notebook.name} size="lg" />
-            <div>
-              <h1 className="font-display text-title font-[500] leading-snug text-ink">
-                {notebook.name}
-              </h1>
-              <div className="font-mono text-label text-muted tracking-[0.06em]">
-                {sourceCount} {sourceCount === 1 ? "source" : "sources"}
+        {messages.length === 0 && !streaming && (
+          <section className="chat-welcome" aria-label="Start studying">
+            <div className="chat-welcome-mark" aria-hidden="true"><Books size={30} weight="light" /></div>
+            <p className="chat-welcome-context">{notebook.name}</p>
+            <h1>{sourceCount > 0 ? "What would you like to understand?" : "Start with your study material."}</h1>
+            <p className="chat-welcome-copy">
+              {sourceCount > 0
+                ? `Ask a question, connect ideas, or put your knowledge to the test. Your ${sourceCount === 1 ? "source is" : `${sourceCount} sources are`} here to keep the answers grounded.`
+                : "Bring a chapter, lecture notes, or a link. Turn what you are reading into something you understand."}
+            </p>
+            {sourceCount > 0 ? (
+              <div className="chat-starters">
+                {STARTERS.map(({ label, prompt }) => (
+                  <button key={label} type="button" onClick={() => onSend(prompt)}>{label}</button>
+                ))}
               </div>
-            </div>
-          </div>
-
-          <p className="mt-3 text-body leading-relaxed text-ink/80">
-            {sourceCount > 0
-              ? "Your sources are analyzed and indexed. Ask questions, explore comparisons, extract key concepts, or create study aids grounded in your material."
-              : "No sources added yet. Add documents or links in Sources to ground your discussions."}
-          </p>
-
-          {/* Quick Starters Grid — kept mounted; collapse-grid folds it away
-              once the conversation starts (no unmount layout snap). */}
-          <div className={`collapse-grid mt-5 ${messages.length === 0 ? "is-open" : ""}`}>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {STARTERS.map((s, i) => (
-                <button
-                  key={s}
-                  onClick={() => onSend(s)}
-                  style={{ ["--d" as string]: `${i * 30}ms` }}
-                  className="chip-in flex items-center justify-between rounded-xl border border-hairline bg-surface px-3.5 py-2.5 text-left text-[12.5px] text-ink/90 transition-all hover:border-brass/40 hover:bg-raised hover:text-brasspale active:scale-[0.98]"
-                >
-                  <span>{s}</span>
-                  <ArrowRight size={13} className="text-muted/60 shrink-0 ml-2" />
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+            ) : (
+              <>
+                {onAddSources && <Button icon={<Plus size={16} aria-hidden="true" />} onClick={onAddSources}>Add your first source</Button>}
+                <p className="chat-welcome-hint">You can also start with a question below.</p>
+              </>
+            )}
+          </section>
+        )}
 
         {/* Message List */}
         <div className="space-y-6">

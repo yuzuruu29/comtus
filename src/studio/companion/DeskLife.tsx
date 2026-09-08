@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useLocation } from "react-router-dom";
 import { DESK_ACTIVITY } from "../../lib/activity";
 import {
   evolveRecord,
@@ -16,6 +17,7 @@ import BatteryCopilotMenu, { copilotStatus } from "./BatteryCopilotMenu";
 import { PixelBatteryCompanion } from "../../components/pixel/PixelBatteryCompanion";
 import { playSfx, unlockSfx } from "./sfx";
 import { DEFAULT_IDLE_MS, useIdleWatch } from "./useIdleWatch";
+import { studioNotebookIdFromPath } from "../studioPath";
 import "./companion.css";
 
 const MOTE_LAYOUT = [
@@ -37,7 +39,8 @@ export default function DeskLife({
   onPanelOpenChange: (open: boolean) => void;
   onCount: (count: number) => void;
 }) {
-  const companion = useSettings((s) => s.companion !== false);
+  const { pathname } = useLocation();
+  const companion = useSettings((s) => s.companion !== false) && Boolean(studioNotebookIdFromPath(pathname));
   const sfxOn = useSettings((s) => s.companionSfx !== false);
   const [ignite, setIgnite] = useState(false);
   const [record, setRecord] = useState<MilestoneRecord>(() => loadMilestoneRecord());
@@ -137,7 +140,11 @@ export default function DeskLife({
     update();
     const observer = new MutationObserver(update);
     observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
+    window.addEventListener("resize", update, { passive: true });
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
   }, [companion]);
 
   // Battery glance: face the side of the desk the user last touched
@@ -157,20 +164,6 @@ export default function DeskLife({
     window.addEventListener("pointerdown", onDown, { passive: true });
     return () => window.removeEventListener("pointerdown", onDown);
   }, [companion]);
-
-  // Keep-out zones: avoid overlapping the dock, composer, and mobile navigation bar
-  const batteryAvoidRects = useCallback(() => {
-    const rects = [];
-    const dock = document.getElementById("study-focus-dock");
-    if (dock) rects.push(dock.getBoundingClientRect());
-    const composer = document.querySelector<HTMLElement>(".composer-shell");
-    if (composer) rects.push(composer.getBoundingClientRect());
-    const mobileNav =
-      document.getElementById("mobile-bottom-nav") ||
-      document.querySelector<HTMLElement>("nav.border-t");
-    if (mobileNav) rects.push(mobileNav.getBoundingClientRect());
-    return rects;
-  }, []);
 
   return (
     <div className="desk-life">
@@ -195,20 +188,23 @@ export default function DeskLife({
         <PixelBatteryCompanion
           mood={mood === "celebrate" ? "celebrate" : mood === "sleepy" ? "sleep" : mood === "cheer" ? "cheer" : undefined}
           showControls={false}
+          freePlacement
+          resizable
           think={batteryThink}
           face={batteryFace}
-          avoidRects={batteryAvoidRects}
+          avoidSelector="#study-focus-dock, .composer-shell, #mobile-bottom-nav, #workspace-sources-pane, #workspace-studio-pane, .workspace-header"
           onMenu={() => setCopilotOpen((v) => !v)}
           menuOpen={copilotOpen}
-          menu={
+          menu={(controls) => (
             <BatteryCopilotMenu
+              controls={controls}
               onClose={() => setCopilotOpen(false)}
               status={copilotStatus({
                 think: batteryThink,
                 milestones: Object.keys(record.unlockedAt).length,
               })}
             />
-          }
+          )}
         />
       )}
       <div className="pointer-events-auto fixed bottom-[calc(5.5rem+var(--sab))] left-4 z-[57] lg:bottom-6">
