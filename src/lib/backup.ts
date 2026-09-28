@@ -13,6 +13,7 @@ const TABLES = [
   "generations",
   "cardProgress",
   "attempts",
+  "highlights",
 ] as const;
 
 type TableName = (typeof TABLES)[number];

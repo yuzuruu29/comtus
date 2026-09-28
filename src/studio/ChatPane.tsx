@@ -42,6 +42,8 @@ export default function ChatPane({
   focusRequest = 0,
   pendingSessionId,
   onPendingSessionConsumed,
+  quoteRequest,
+  onQuoteConsumed,
 }: {
   notebook: Notebook | null;
   sourcesVersion: number;
@@ -57,6 +59,9 @@ export default function ChatPane({
   /** A conversation to switch to once sessions load (a search result). */
   pendingSessionId?: string | null;
   onPendingSessionConsumed?: () => void;
+  /** A passage quoted from the reader, to start the next question with. */
+  quoteRequest?: { text: string; nonce: number } | null;
+  onQuoteConsumed?: () => void;
 }) {
   const { target: compadTarget } = useCompadChat();
   const cs = useCallSettings();
@@ -177,8 +182,23 @@ export default function ChatPane({
     const composer = fullChatRef.current?.querySelector<HTMLTextAreaElement>("textarea");
     if (!composer) return;
     composer.focus({ preventScroll: true });
+    composer.setSelectionRange(composer.value.length, composer.value.length);
     if (document.activeElement === composer) focusedRequest.current = focusRequest;
   }, [focusRequest, surfaceTarget, notebook?.id, preparing]);
+
+  // A passage from the reader opens the next question, ahead of any draft,
+  // with the cursor after it.
+  useEffect(() => {
+    if (!quoteRequest || !sessionReady) return;
+    setInput((draft) => quoteRequest.text + draft.trimStart());
+    onQuoteConsumed?.();
+    window.setTimeout(() => {
+      const composer = fullChatRef.current?.querySelector<HTMLTextAreaElement>("textarea");
+      if (!composer) return;
+      composer.focus({ preventScroll: true });
+      composer.setSelectionRange(composer.value.length, composer.value.length);
+    }, 0);
+  }, [onQuoteConsumed, quoteRequest, sessionReady]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.visualViewport) return;

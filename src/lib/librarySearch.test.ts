@@ -21,7 +21,7 @@ describe("folding", () => {
 describe("library search", () => {
   beforeEach(async () => {
     await Promise.all(
-      [db.notebooks, db.sources, db.chatSessions, db.messages, db.generations].map((t) => t.clear()),
+      [db.notebooks, db.sources, db.chatSessions, db.messages, db.generations, db.highlights].map((t) => t.clear()),
     );
     await db.notebooks.bulkAdd([
       { id: "nb-1", name: "Pharmacology", createdAt: 1, updatedAt: 1 },
@@ -84,6 +84,31 @@ describe("library search", () => {
     const snapshot = await loadLibrarySnapshot();
     expect(searchSnapshot(snapshot, "cafe").map((h) => h.id)).toEqual(["work-note-1"]);
     expect(searchSnapshot(snapshot, "光合作用").map((h) => h.id)).toEqual(["source-s-2"]);
+  });
+
+  it("finds margin notes and opens the reader at their passage", async () => {
+    await db.highlights.bulkAdd([
+      {
+        id: "h-1",
+        notebookId: "nb-1",
+        sourceId: "s-1",
+        start: 20,
+        end: 28,
+        quote: "Warfarin",
+        note: "Check the antidote before the exam",
+        createdAt: 1,
+        updatedAt: 7,
+      },
+      // A plain highlight has no words of its own to find.
+      { id: "h-2", notebookId: "nb-1", sourceId: "s-1", start: 0, end: 7, quote: "Heparin", note: "", createdAt: 1, updatedAt: 1 },
+    ]);
+    const hits = searchSnapshot(await loadLibrarySnapshot(), "antidote");
+    expect(hits.map((h) => [h.id, h.title])).toEqual([
+      ["note-h-1", "Your note on Anticoagulants lecture"],
+      ["work-deck-1", "Flashcards · 1"],
+    ]);
+    expect(hitHref(hits[0])).toBe("/studio/nb-1?source=s-1&at=20");
+    expect(searchSnapshot(await loadLibrarySnapshot(), "heparin").map((h) => h.id)).not.toContain("note-h-2");
   });
 
   it("links each kind of hit to the right place", async () => {

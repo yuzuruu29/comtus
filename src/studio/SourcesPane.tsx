@@ -30,6 +30,7 @@ import { DRIFT_X, RISE_2, SOFT, Spotlight } from "./fx";
 import { ErrorNote } from "./ui";
 import AddSourceMenu from "./AddSourceMenu";
 import SourceReader from "./SourceReader";
+import { highlightCounts } from "../lib/highlights";
 import { UsageLimitsPanel } from "./UsageLimitsPanel";
 import { isTauri } from "../lib/desktop";
 
@@ -48,10 +49,14 @@ const KIND_ICON: Record<string, typeof FileText> = {
 
 /** The one fact a row shows beneath its title: page count when known,
  *  otherwise a rough word count. */
-function sourceFact(s: Source): string {
-  if (s.meta?.pages) return `${s.meta.pages} ${s.meta.pages === 1 ? "page" : "pages"}`;
+function sourceFact(s: Source, highlights = 0): string {
   const words = Math.round(s.chars / 5.5);
-  return words >= 1000 ? `${(words / 1000).toFixed(1)}k words` : `${words} words`;
+  const size = s.meta?.pages
+    ? `${s.meta.pages} ${s.meta.pages === 1 ? "page" : "pages"}`
+    : words >= 1000
+      ? `${(words / 1000).toFixed(1)}k words`
+      : `${words} words`;
+  return highlights ? `${size} · ${highlights} marked` : size;
 }
 
 async function chooseNativeFiles(): Promise<File[] | null> {
@@ -106,6 +111,7 @@ export default function SourcesPane({
   dropFiles,
   dropRequestId,
   onDropConsumed,
+  onAsk,
 }: {
   notebookId: string;
   version: number;
@@ -118,8 +124,11 @@ export default function SourcesPane({
   dropFiles?: FileList | null;
   dropRequestId?: number;
   onDropConsumed?: () => void;
+  /** Sends a quoted passage from the reader to the chat composer. */
+  onAsk?: (prompt: string) => void;
 }) {
   const [sources, setSources] = useState<Source[]>([]);
+  const [marks, setMarks] = useState<Map<string, number>>(new Map());
   const [importing, setImporting] = useState<{ done: number; total: number; current: string } | null>(
     null,
   );
@@ -150,6 +159,7 @@ export default function SourcesPane({
   const refresh = useCallback(async () => {
     const list = await db.sources.where("notebookId").equals(notebookId).sortBy("addedAt");
     setSources(list);
+    setMarks(await highlightCounts(notebookId).catch(() => new Map<string, number>()));
     const pruned = pruneFocus(notebookId, list.map((s) => s.id));
     setFocused(pruned);
   }, [notebookId]);
@@ -450,7 +460,7 @@ export default function SourcesPane({
                         {s.title}
                       </span>
                       <span className="block font-mono text-label uppercase tracking-[0.1em] text-muted/60">
-                        {sourceFact(s)}
+                        {sourceFact(s, marks.get(s.id))}
                       </span>
                     </span>
                   </button>
@@ -548,6 +558,10 @@ export default function SourcesPane({
           source={viewing.source}
           startChar={viewing.startChar}
           onClose={() => setViewing(null)}
+          onAsk={onAsk}
+          // Through the shared version, so every mounted sources list
+          // (the workspace keeps a desktop and a mobile one) recounts.
+          onHighlightsChanged={onChanged}
         />
       )}
     </div>

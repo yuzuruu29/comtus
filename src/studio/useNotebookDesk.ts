@@ -25,6 +25,8 @@ export function useNotebookDesk(notebookId?: string) {
     sourceId: string;
     startChar?: number;
   } | null>(null);
+  // A passage from the reader on its way to the chat composer.
+  const [chatQuote, setChatQuote] = useState<{ text: string; nonce: number } | null>(null);
 
   const setLayout = useCallback((mode: LayoutMode) => {
     setLayoutState(mode);
@@ -56,6 +58,7 @@ export function useNotebookDesk(notebookId?: string) {
     setDropping(0);
     setDropFiles(null);
     setPendingView(null);
+    setChatQuote(null);
     if (!notebookId) {
       setLoadState("idle");
       return () => {
@@ -116,6 +119,11 @@ export function useNotebookDesk(notebookId?: string) {
   const consumeImport = useCallback(() => setImportTick(0), []);
   const clearPendingView = useCallback(() => setPendingView(null), []);
   const retryLoad = useCallback(() => setLoadAttempt((attempt) => attempt + 1), []);
+  const askInChat = useCallback(
+    (text: string) => setChatQuote((prev) => ({ text, nonce: (prev?.nonce ?? 0) + 1 })),
+    [],
+  );
+  const clearChatQuote = useCallback(() => setChatQuote(null), []);
 
   return {
     notebook,
@@ -138,6 +146,9 @@ export function useNotebookDesk(notebookId?: string) {
     pendingChatId,
     clearPendingChat,
     clearPendingView,
+    chatQuote,
+    askInChat,
+    clearChatQuote,
     rename,
   };
 }

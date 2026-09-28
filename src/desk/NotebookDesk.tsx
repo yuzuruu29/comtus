@@ -34,6 +34,9 @@ export default function NotebookDesk({
   pendingChatId,
   onChatConsumed,
   onGenerationConsumed,
+  chatQuote,
+  onAsk,
+  onQuoteConsumed,
   modelLabel,
   onOpenSettings,
 }: {
@@ -55,6 +58,10 @@ export default function NotebookDesk({
   pendingChatId?: string | null;
   onChatConsumed?: () => void;
   onGenerationConsumed?: () => void;
+  /** A passage from the reader on its way to the chat composer. */
+  chatQuote?: { text: string; nonce: number } | null;
+  onAsk?: (prompt: string) => void;
+  onQuoteConsumed?: () => void;
   modelLabel?: string;
   onOpenSettings?: () => void;
 }) {
@@ -104,6 +111,7 @@ export default function NotebookDesk({
               onDropConsumed={() => {
                 if (dropRequest) onDropConsumed(dropRequest.id);
               }}
+              onAsk={onAsk}
             />
           </div>
         ) : (
@@ -134,6 +142,8 @@ export default function NotebookDesk({
             onAddSources={onAddSources}
             pendingSessionId={pendingChatId}
             onPendingSessionConsumed={onChatConsumed}
+            quoteRequest={chatQuote}
+            onQuoteConsumed={onQuoteConsumed}
           />
         </motion.div>
       </main>

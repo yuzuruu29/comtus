@@ -8,9 +8,10 @@ import type {
   ChatSession,
   Generation,
   CardProgress,
+  Highlight,
 } from "./types";
 import { DEFAULT_SESSION_TITLE, deriveSessionTitle } from "./sessionText";
-import { notifyDeskActivity } from "./activity";
+import { notifyDeskActivity, notifyWorkSaved } from "./activity";
 
 /** Local-first store. Everything lives in IndexedDB on this device.
  *  (Settings live in localStorage via zustand — not here.) */
@@ -23,6 +24,7 @@ class ComtusDB extends Dexie {
   generations!: Table<Generation, string>;
   cardProgress!: Table<CardProgress, string>;
   attempts!: Table<Attempt, string>;
+  highlights!: Table<Highlight, string>;
 
   constructor() {
     super("comtus");
@@ -94,6 +96,10 @@ class ComtusDB extends Dexie {
     this.version(3).stores({
       attempts: "id, notebookId, generationId, finishedAt",
     });
+    // v4 — highlights and margin notes on sources. A new table.
+    this.version(4).stores({
+      highlights: "id, notebookId, sourceId, updatedAt",
+    });
   }
 }
 
@@ -119,7 +125,17 @@ export async function touchNotebook(id: string) {
 export async function deleteNotebook(id: string) {
   await db.transaction(
     "rw",
-    [db.notebooks, db.sources, db.chunks, db.messages, db.chatSessions, db.generations, db.cardProgress, db.attempts],
+    [
+      db.notebooks,
+      db.sources,
+      db.chunks,
+      db.messages,
+      db.chatSessions,
+      db.generations,
+      db.cardProgress,
+      db.attempts,
+      db.highlights,
+    ],
     async () => {
       await db.notebooks.delete(id);
       await db.sources.where("notebookId").equals(id).delete();
@@ -129,6 +145,7 @@ export async function deleteNotebook(id: string) {
       await db.generations.where("notebookId").equals(id).delete();
       await db.cardProgress.where("notebookId").equals(id).delete();
       await db.attempts.where("notebookId").equals(id).delete();
+      await db.highlights.where("notebookId").equals(id).delete();
     },
   );
 }
@@ -148,10 +165,11 @@ export async function addSourceWithChunks(
 }
 
 export async function deleteSource(sourceId: string) {
-  const notebookId = await db.transaction("rw", db.sources, db.chunks, async () => {
+  const notebookId = await db.transaction("rw", db.sources, db.chunks, db.highlights, async () => {
     const source = await db.sources.get(sourceId);
     await db.sources.delete(sourceId);
     await db.chunks.where("sourceId").equals(sourceId).delete();
+    await db.highlights.where("sourceId").equals(sourceId).delete();
     return source?.notebookId;
   });
   if (notebookId) {
@@ -249,6 +267,7 @@ export async function saveGeneration(gen: Generation) {
   await db.generations.put(gen);
   await touchNotebook(gen.notebookId);
   notifyDeskActivity();
+  notifyWorkSaved(gen.notebookId);
 }
 
 export async function createCustomNote(
@@ -268,6 +287,7 @@ export async function createCustomNote(
   await db.generations.put(note);
   await touchNotebook(notebookId);
   notifyDeskActivity();
+  notifyWorkSaved(notebookId);
   return note;
 }
 

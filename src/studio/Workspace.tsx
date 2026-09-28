@@ -126,6 +126,15 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
     [openNotebookSource],
   );
 
+  const askAboutPassage = desk.askInChat;
+  const askInChat = useCallback(
+    (prompt: string) => {
+      askAboutPassage(prompt);
+      focusChat();
+    },
+    [askAboutPassage, focusChat],
+  );
+
   const modelLabel = modelLabelFor(cs.provider, cs.model);
 
   const isDropping = desk.dropping > 0;
@@ -169,6 +178,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
         focusRequest={chatFocusRequest}
         pendingSessionId={desk.pendingChatId}
         onPendingSessionConsumed={desk.clearPendingChat}
+        quoteRequest={desk.chatQuote}
+        onQuoteConsumed={desk.clearChatQuote}
       />
       <ConsoleShell
         notebookName={desk.notebook?.name || "Course Notebook"}
@@ -268,6 +279,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   onImportTriggered={desk.consumeImport}
                   dropFiles={desk.dropFiles}
                   onDropConsumed={() => desk.setDropFiles(null)}
+                  onAsk={askInChat}
                 />
               </div>
             ) : (
@@ -354,6 +366,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   onImportTriggered={desk.consumeImport}
                   dropFiles={desk.dropFiles}
                   onDropConsumed={() => desk.setDropFiles(null)}
+                  onAsk={askInChat}
                 />
               </div>
             )}

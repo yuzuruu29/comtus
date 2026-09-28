@@ -11,8 +11,8 @@ import type {
 } from "./types";
 
 /**
- * Search across the whole library — sources, conversations, notes and
- * saved study work — for the command palette. Everything stays on the
+ * Search across the whole library — sources, margin notes, conversations,
+ * notes and saved study work — for the command palette. Everything stays on the
  * device: the palette builds a snapshot when it opens and every keystroke
  * filters that snapshot in memory.
  *
@@ -112,12 +112,13 @@ function doc(input: Omit<Doc, "foldedTitle" | "foldedBody">): Doc {
 
 /** Reads the library once. Chat messages are grouped per conversation. */
 export async function loadLibrarySnapshot(): Promise<LibrarySnapshot> {
-  const [notebooks, sources, sessions, messages, generations] = await Promise.all([
+  const [notebooks, sources, sessions, messages, generations, highlights] = await Promise.all([
     db.notebooks.toArray(),
     db.sources.toArray(),
     db.chatSessions.toArray(),
     db.messages.toArray(),
     db.generations.toArray(),
+    db.highlights.toArray(),
   ]);
   const notebookNames = new Map(notebooks.map((nb) => [nb.id, nb.name]));
   const docs: Doc[] = [];
@@ -132,6 +133,25 @@ export async function loadLibrarySnapshot(): Promise<LibrarySnapshot> {
         body: s.content,
         updatedAt: s.addedAt,
         target: (at) => ({ kind: "source", sourceId: s.id, at }),
+      }),
+    );
+  }
+
+  // Margin notes are the student's own words about a passage; a match
+  // opens the reader at the passage they wrote it beside.
+  const sourceTitles = new Map(sources.map((src) => [src.id, src.title]));
+  for (const h of highlights) {
+    const sourceTitle = sourceTitles.get(h.sourceId);
+    if (!h.note || sourceTitle === undefined) continue;
+    docs.push(
+      doc({
+        id: `note-${h.id}`,
+        group: "Sources",
+        notebookId: h.notebookId,
+        title: `Your note on ${sourceTitle}`,
+        body: h.note,
+        updatedAt: h.updatedAt,
+        target: () => ({ kind: "source", sourceId: h.sourceId, at: h.start }),
       }),
     );
   }

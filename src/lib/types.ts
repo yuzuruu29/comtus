@@ -200,6 +200,24 @@ export interface Attempt {
   finishedAt: number;
 }
 
+/* ── Highlights: passages the student marked while reading ── */
+
+export interface Highlight {
+  id: string;
+  notebookId: string;
+  sourceId: string;
+  /** Character range in Source.content, end exclusive — the same offsets
+   *  citations and search results use. */
+  start: number;
+  end: number;
+  /** The words covered, kept for lists, notes and search. */
+  quote: string;
+  /** The student's margin note; "" for a plain highlight. */
+  note: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 /* ── Handwritten solution submissions ─────────────────────── */
 
 export type SolutionVerdict = "correct" | "partial" | "incorrect" | "unreadable";

@@ -243,6 +243,9 @@ export default function DeskApp() {
                     pendingGenerationId={pendingWorkId}
                     pendingChatId={desk.pendingChatId}
                     onChatConsumed={desk.clearPendingChat}
+                    chatQuote={desk.chatQuote}
+                    onAsk={desk.askInChat}
+                    onQuoteConsumed={desk.clearChatQuote}
                     onGenerationConsumed={clearPendingWork}
                     modelLabel={modelLabelFor(cs.provider, cs.model)}
                     onOpenSettings={() => setSettingsOpen(true)}

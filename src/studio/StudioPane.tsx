@@ -29,6 +29,7 @@ import {
 } from "../lib/db";
 import { purgeDeckProgress } from "../lib/reviews";
 import { latestAttempts } from "../lib/attempts";
+import { WORK_SAVED } from "../lib/activity";
 import type {
   Attempt,
   Generation,
@@ -168,6 +169,16 @@ export default function StudioPane({
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Notes saved from chat or the reader, and decks built from quiz misses,
+  // land in this list without a reload.
+  useEffect(() => {
+    const onSaved = (event: Event) => {
+      if ((event as CustomEvent<string>).detail === notebookId) void refresh();
+    };
+    window.addEventListener(WORK_SAVED, onSaved);
+    return () => window.removeEventListener(WORK_SAVED, onSaved);
+  }, [notebookId, refresh]);
 
   useEffect(() => {
     if (!pendingGenerationId) return;
