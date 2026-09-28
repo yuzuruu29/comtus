@@ -20,6 +20,11 @@ export const config = { runtime: "edge" };
 
 const UPSTREAM = "https://platform.claude.com/v1/oauth/token";
 
+/** The sign-in flow only ever exchanges a code or refreshes a token. */
+const ALLOWED_GRANTS = new Set(["authorization_code", "refresh_token"]);
+/** A token request is a few hundred bytes; 16 KB is generous. */
+const MAX_BODY_BYTES = 16 * 1024;
+
 /* Origins allowed to call the relay — mirrors api/compat.ts. */
 const ALLOWED_ORIGINS = new Set([
   "https://comtus-ai.vercel.app",
@@ -56,6 +61,16 @@ export default async function handler(req: Request): Promise<Response> {
 
   const body = await req.text();
   if (!body) return json(400, { error: "Missing request body" }, origin);
+  if (body.length > MAX_BODY_BYTES) return json(413, { error: "Request too large" }, origin);
+  let grant: unknown;
+  try {
+    grant = (JSON.parse(body) as { grant_type?: unknown })?.grant_type;
+  } catch {
+    return json(400, { error: "Request body must be JSON" }, origin);
+  }
+  if (typeof grant !== "string" || !ALLOWED_GRANTS.has(grant)) {
+    return json(400, { error: "Unsupported grant_type" }, origin);
+  }
 
   let upstream: Response;
   try {

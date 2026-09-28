@@ -149,15 +149,18 @@ async function deterministicJti(orderId: string, secret: string): Promise<string
   return (await hmacHex(`jti:${orderId}`, secret)).slice(0, 12);
 }
 
-/** Mint the buyer's pass token for a verified PayPal order (idempotent). */
-async function issuePassForOrder(plan: ServerPlan, orderId: string): Promise<string> {
+/** Mint the buyer's pass token for a verified PayPal order. Idempotent:
+ *  the jti derives from the order and the expiry from the capture time, so
+ *  re-submitting an old order returns the same pass instead of restarting
+ *  its clock. */
+async function issuePassForOrder(plan: ServerPlan, orderId: string, paidAtMs: number): Promise<string> {
   const secret = process.env.PASS_SIGNING_SECRET ?? "";
   if (!secret) throw new Error("PASS_SIGNING_SECRET is not configured");
   const j = await deterministicJti(orderId, secret);
   const payload: PassPayload = {
     j,
     q: plan.requests,
-    e: Math.floor(Date.now() / 1000) + plan.days * 86400,
+    e: Math.floor(paidAtMs / 1000) + plan.days * 86400,
     n: plan.name,
   };
   const payloadB64 = b64url(JSON.stringify(payload));
@@ -186,18 +189,21 @@ async function paypalOauthToken(id: string, secret: string): Promise<string> {
   return data.access_token;
 }
 
+/** `requestId` makes a POST idempotent at PayPal: a retry with the same id
+ *  replays the first response instead of acting twice. */
 async function paypal(
   path: string,
   method: "GET" | "POST",
   token: string,
-  body?: unknown,
+  opts: { body?: unknown; requestId?: string } = {},
 ): Promise<{ status: number; data: Json }> {
+  const { body, requestId } = opts;
   const res = await fetch(`${PAYPAL_BASE}${path}`, {
     method,
     headers: {
       Authorization: `Bearer ${token}`,
       "content-type": "application/json",
-      ...(method === "POST" ? { "paypal-request-id": `cap-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` } : {}),
+      ...(method === "POST" && requestId ? { "paypal-request-id": requestId } : {}),
     },
     body: method === "POST" ? JSON.stringify(body ?? {}) : undefined,
   });
@@ -217,6 +223,10 @@ async function handleCreateOrder(req: IncomingMessage, res: ServerResponse, orig
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
   if (!clientSecret) {
     return sendJson(res, 503, { error: "Checkout is temporarily unavailable. Please try again later." }, origin);
+  }
+
+  if (!(await withinIpThrottle(req, process.env.PASS_SIGNING_SECRET ?? "", 30))) {
+    return sendJson(res, 429, { error: "Too many checkout attempts. Try again later." }, origin);
   }
 
   const body = readBody<{ planId?: string }>(req);
@@ -265,10 +275,21 @@ async function handleCreateOrder(req: IncomingMessage, res: ServerResponse, orig
 
 interface OrderShape {
   status?: string;
+  create_time?: string;
+  update_time?: string;
   purchase_units?: Array<{
     amount?: { value?: string; currency_code?: string };
-    payments?: { captures?: Array<{ status?: string }> };
+    payments?: { captures?: Array<{ status?: string; create_time?: string }> };
   }>;
+}
+
+/** When the buyer paid: the capture's timestamp, else the order's. Never
+ *  later than now, so a skewed clock can't extend a pass. */
+function paidAt(order: OrderShape): number {
+  const stamp =
+    order.purchase_units?.[0]?.payments?.captures?.[0]?.create_time ?? order.update_time ?? order.create_time;
+  const ms = stamp ? Date.parse(stamp) : NaN;
+  return Number.isFinite(ms) ? Math.min(ms, Date.now()) : Date.now();
 }
 
 async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, origin?: string | string[]): Promise<void> {
@@ -312,7 +333,9 @@ async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, ori
     }
 
     if (order.status !== "COMPLETED") {
-      const cap = await paypal(`/v2/checkout/orders/${orderId}/capture`, "POST", token);
+      const cap = await paypal(`/v2/checkout/orders/${orderId}/capture`, "POST", token, {
+        requestId: `comtus-capture-${orderId}`,
+      });
       const alreadyCaptured =
         cap.status === 422 && (cap.data.details as Array<{ issue?: string }> | undefined)?.some((d) => d.issue === "ORDER_ALREADY_CAPTURED");
       if (cap.status !== 201 && !alreadyCaptured) {
@@ -331,7 +354,7 @@ async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, ori
       return sendJson(res, 409, { error: "The payment has not completed yet." }, origin);
     }
 
-    const passToken = await issuePassForOrder(plan, orderId);
+    const passToken = await issuePassForOrder(plan, orderId, paidAt(order));
 
     return sendJson(
       res,

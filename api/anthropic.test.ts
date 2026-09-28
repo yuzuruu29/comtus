@@ -191,5 +191,54 @@ describe("hosted Anthropic proxy", () => {
     const resBadJson = await handler(proxyReq("{not json", pass));
     expect(resBadJson.status).toBe(400);
   });
-});
 
+  it("refunds the pass when Anthropic refuses the request", async () => {
+    withProxyEnv();
+    const fetchMock = mockFetch({
+      upstream: new Response(JSON.stringify({ type: "error", error: { type: "overloaded_error" } }), {
+        status: 529,
+        headers: { "content-type": "application/json", "retry-after": "12" },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await handler(proxyReq({ model: "claude-sonnet-5", max_tokens: 100 }, signPass({ j: "refund01" })));
+    expect(res.status).toBe(529);
+    expect(res.headers.get("retry-after")).toBe("12");
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(urls.some((u) => u.endsWith("/decr/pass:refund01"))).toBe(true);
+  });
+
+  it("does not refund a served request", async () => {
+    withProxyEnv();
+    const fetchMock = mockFetch({});
+    vi.stubGlobal("fetch", fetchMock);
+    await handler(proxyReq({ model: "claude-sonnet-5", max_tokens: 100 }, signPass({ j: "served01" })));
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).includes("/decr/"))).toBe(false);
+  });
+
+  it("answers 502 with CORS and refunds when Anthropic is unreachable", async () => {
+    withProxyEnv();
+    const base = mockFetch({});
+    const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input).startsWith("https://api.anthropic.com")) throw new TypeError("fetch failed");
+      return base(input, init);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await handler(proxyReq({ model: "claude-opus-5", max_tokens: 100 }, signPass({ j: "down01" })));
+    expect(res.status).toBe(502);
+    expect(res.headers.get("access-control-allow-origin")).toBe("http://127.0.0.1:5199");
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).endsWith("/decr/pass:down01"))).toBe(true);
+  });
+
+  it("lets a pass counter expire a month after the pass", async () => {
+    withProxyEnv();
+    const fetchMock = mockFetch({ incrResult: 1 });
+    vi.stubGlobal("fetch", fetchMock);
+    const e = Math.floor(Date.now() / 1000) + 3600;
+    await handler(proxyReq({ model: "claude-opus-5", max_tokens: 100 }, signPass({ j: "ttl01", e })));
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(urls).toContain(`${UPSTASH}/expireat/pass:ttl01/${e + 30 * 86400}`);
+  });
+});
