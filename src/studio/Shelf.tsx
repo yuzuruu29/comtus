@@ -1,14 +1,33 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, GearSix, ListDashes, MagnifyingGlass, Plug, Plus, SquaresFour, X } from "@phosphor-icons/react";
-import { Button, Dialog, Empty, Field, IconButton, Input, Segmented, Skeleton } from "../ui";
+import {
+  BookOpen,
+  CaretDown,
+  DeviceMobile,
+  FileArrowUp,
+  FolderOpen,
+  GearSix,
+  ListDashes,
+  MagnifyingGlass,
+  Plug,
+  Plus,
+  SquaresFour,
+  X,
+} from "@phosphor-icons/react";
+import { Button, Dialog, Empty, Field, IconButton, Input, Menu, Segmented, Skeleton } from "../ui";
 import { db, createNotebook, deleteNotebook, touchNotebook } from "../lib/db";
-import type { Notebook, Source } from "../lib/types";
+import { exportNotebook, openNotebookText, readNotebookFileNative } from "../lib/backup";
+import type { Notebook } from "../lib/types";
 import ComtusLogo from "../components/brand/ComtusLogo";
 import DeskShell from "./DeskShell";
 import SettingsModal, { type SettingsTab } from "./SettingsModal";
 import NotebookCard, { type NotebookCardData } from "./NotebookCard";
 import NewNotebookDialog from "./NewNotebookDialog";
+import ReviewDueStrip from "./ReviewDueStrip";
+import { ReceiveFromDeviceDialog, SendToDeviceDialog, receiveCodeFromHash } from "./DeviceTransfer";
+import { useDesk } from "./DeskContext";
+import { modLabel } from "./shortcuts";
+import { detectPlatform, isTauri } from "../lib/desktop";
 import { timeAgo } from "./ui";
 import "./shelf.css";
 
@@ -16,9 +35,12 @@ type ViewMode = "grid" | "list";
 
 export default function Shelf({
   onOpen,
+  onReview,
   needsKey,
 }: {
   onOpen: (id: string) => void;
+  /** Opens a saved flashcard deck inside its notebook. */
+  onReview?: (notebookId: string, generationId: string) => void;
   needsKey: boolean;
 }) {
   const [notebooks, setNotebooks] = useState<NotebookCardData[]>([]);
@@ -33,6 +55,20 @@ export default function Shelf({
   const [renamingNotebook, setRenamingNotebook] = useState<Notebook | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [fileNotice, setFileNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [sending, setSending] = useState<Notebook | null>(null);
+  // A scanned transfer link ("#receive=<code>") opens straight into
+  // receiving; the code comes out of the address bar at once.
+  const [receiving, setReceiving] = useState<{ code: string } | null>(() => {
+    const code = typeof window === "undefined" ? null : receiveCodeFromHash(window.location.hash);
+    return code ? { code } : null;
+  });
+  useEffect(() => {
+    if (receiveCodeFromHash(window.location.hash)) {
+      window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    }
+  }, []);
 
   const openSettings = useCallback((tab: SettingsTab = "settings") => {
     setSettingsTab(tab);
@@ -107,22 +143,57 @@ export default function Shelf({
   };
 
   const handleExport = async (nb: Notebook) => {
-    const sources = await db.sources.where("notebookId").equals(nb.id).toArray();
-    const generations = await db.generations.where("notebookId").equals(nb.id).toArray();
-    const payload = {
-      notebook: nb,
-      exportedAt: new Date().toISOString(),
-      sources: sources.map((s: Source) => ({ title: s.title, kind: s.kind, content: s.content })),
-      generations,
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${nb.name.replace(/[^a-z0-9_-]/gi, "_")}_backup.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    await exportNotebook(nb).catch(() => undefined);
   };
+
+  /** A notebook someone exported (maybe you, on another device) opens
+   *  straight away; a full backup merges into the shelf. */
+  const openFileText = async (text: string | null) => {
+    if (text === null) return;
+    setFileNotice(null);
+    try {
+      const opened = await openNotebookText(text);
+      if (opened.kind === "notebook") {
+        onOpen(opened.notebookId);
+        return;
+      }
+      await refresh();
+      setFileNotice({ tone: "ok", text: `Restored ${opened.count.toLocaleString()} items from the backup.` });
+    } catch (error) {
+      setFileNotice({ tone: "error", text: error instanceof Error ? error.message : "That file could not be opened." });
+    }
+  };
+
+  const pickFile = () => {
+    if (!isTauri()) {
+      fileRef.current?.click();
+      return;
+    }
+    readNotebookFileNative()
+      .then(openFileText)
+      .catch(() => setFileNotice({ tone: "error", text: "That file could not be read." }));
+  };
+
+  const openMenu = (
+    <Menu
+      aria-label="Open a notebook"
+      align="end"
+      trigger={
+        <Button variant="secondary" icon={<FolderOpen size={18} aria-hidden="true" />} iconEnd={<CaretDown size={14} aria-hidden="true" />}>
+          Open
+        </Button>
+      }
+      items={[
+        { key: "file", label: "A notebook file", icon: <FileArrowUp size={18} aria-hidden="true" />, onSelect: pickFile },
+        {
+          key: "device",
+          label: "From another device",
+          icon: <DeviceMobile size={18} aria-hidden="true" />,
+          onSelect: () => setReceiving({ code: "" }),
+        },
+      ]}
+    />
+  );
 
   return (
     <DeskShell onSettings={openSettings} onNewNotebook={() => setCreating(true)}>
@@ -147,11 +218,32 @@ export default function Shelf({
                 <p>Your sources, conversations, and study tools, kept together.</p>
               </div>
               {notebooks.length > 0 && (
-                <Button className="shelf-new" icon={<Plus size={18} aria-hidden="true" />} onClick={() => setCreating(true)}>
-                  New notebook
-                </Button>
+                <div className="shelf-intro-actions">
+                  {openMenu}
+                  <Button className="shelf-new" icon={<Plus size={18} aria-hidden="true" />} onClick={() => setCreating(true)}>
+                    New notebook
+                  </Button>
+                </div>
               )}
             </div>
+
+            <input
+              ref={fileRef}
+              type="file"
+              hidden
+              accept=".json,application/json"
+              aria-label="Notebook file"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) void file.text().then(openFileText);
+              }}
+            />
+            {fileNotice && (
+              <p className={fileNotice.tone === "error" ? "shelf-error" : "shelf-file-note"} role={fileNotice.tone === "error" ? "alert" : "status"}>
+                {fileNotice.text}
+              </p>
+            )}
 
             {kickstartError && (
               <p className="shelf-error" role="alert">
@@ -175,6 +267,16 @@ export default function Shelf({
                     New notebook
                   </Button>
                   <span className="shelf-start-note">Give it a name. Add your material when you’re ready.</span>
+                  <span className="shelf-start-open-row">
+                    Already have a notebook?{" "}
+                    <button type="button" className="shelf-start-open" onClick={pickFile}>
+                      Open its file
+                    </button>{" "}
+                    or{" "}
+                    <button type="button" className="shelf-start-open" onClick={() => setReceiving({ code: "" })}>
+                      receive it from another device
+                    </button>
+                  </span>
                 </div>
                 <ol className="shelf-start-steps" aria-label="How a notebook works">
                   <li>
@@ -215,6 +317,8 @@ export default function Shelf({
                   </section>
                 )}
 
+                {onReview && <ReviewDueStrip onReview={onReview} />}
+
                 <section className="shelf-collection" aria-labelledby="shelf-collection-title">
                   <div className="shelf-toolbar">
                     <div className="shelf-collection-heading">
@@ -235,6 +339,7 @@ export default function Shelf({
                         </IconButton>
                       )}
                     </div>
+                    <SearchLibraryButton />
                     <Segmented
                       aria-label="View"
                       value={viewMode}
@@ -270,6 +375,7 @@ export default function Shelf({
                               setRenameDraft(notebook.name);
                             }}
                             onExport={(notebook) => void handleExport(notebook)}
+                            onSend={setSending}
                             onDelete={setDeletingId}
                           />
                         </li>
@@ -296,6 +402,17 @@ export default function Shelf({
         </div>
 
         <NewNotebookDialog open={creating} onClose={() => setCreating(false)} onCreated={onOpen} />
+        {sending && <SendToDeviceDialog notebook={sending} onClose={() => setSending(null)} />}
+        {receiving && (
+          <ReceiveFromDeviceDialog
+            initialCode={receiving.code}
+            onClose={() => setReceiving(null)}
+            onReceived={(result) => {
+              setReceiving(null);
+              onOpen(result.notebookId);
+            }}
+          />
+        )}
 
         <Dialog open={renamingNotebook !== null} onClose={() => setRenamingNotebook(null)} title="Rename notebook">
           <div className="shelf-dialog space-y-5">
@@ -339,5 +456,18 @@ export default function Shelf({
         <SettingsModal open={settingsOpen} initialTab={settingsTab} onClose={() => setSettingsOpen(false)} />
       </div>
     </DeskShell>
+  );
+}
+
+/** The title filter only sees names; this opens full-text search across
+ *  every source, chat and saved item. Rendered inside DeskShell so it
+ *  reaches the palette through desk context. */
+function SearchLibraryButton() {
+  const desk = useDesk();
+  return (
+    <Button variant="ghost" className="shelf-search-library" onClick={desk.openPalette}>
+      Search inside notebooks
+      <kbd aria-hidden="true">{modLabel(detectPlatform())} K</kbd>
+    </Button>
   );
 }

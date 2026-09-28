@@ -1,0 +1,65 @@
+/* Results follow-up: comparison, focused retake, cards from misses. Tokens only. */
+
+.attempt-follow-up {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-field);
+  background: var(--surface);
+  font-family: var(--font-ui);
+}
+
+.attempt-compare,
+.attempt-missed,
+.attempt-deck-note,
+.attempt-error {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.attempt-compare {
+  color: var(--muted);
+}
+
+.attempt-compare[data-trend="up"] {
+  color: var(--sage);
+}
+
+.attempt-missed {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.attempt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.attempt-deck-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  color: var(--sage);
+}
+
+.attempt-deck-note button {
+  color: var(--brass);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.attempt-deck-note button:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.attempt-error {
+  color: var(--rust);
+}

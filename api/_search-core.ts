@@ -171,7 +171,9 @@ export function parseDdgLite(html: string): SearchHit[] {
   );
 }
 
-/* ── Provider 2: Wikipedia anchors ────────────────────────── */export async function wikipediaSearch(query: string, limit = 4): Promise<SearchHit[]> {
+/* ── Provider 2: Wikipedia anchors ────────────────────────── */
+
+export async function wikipediaSearch(query: string, limit = 4): Promise<SearchHit[]> {
   const body = await fetchText(
     `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&srlimit=${limit}&utf8=1`,
     { headers: { Accept: "application/json" } },
@@ -241,6 +243,11 @@ export async function runSearch(query: string): Promise<{ results: SearchHit[]; 
     return null;
   };
 
+  // Wikipedia is the last resort; once the chain looks thin, start it early
+  // so it lands while DuckDuckGo retries instead of after. It never rejects.
+  let wiki: Promise<SearchHit[]> | null = null;
+  const wikipedia = () => (wiki ??= wikipediaSearch(query));
+
   // 0. Firecrawl — keyed search API; cleanest results when a key is set.
   const firecrawlKey = process.env.FIRECRAWL_API_KEY;
   if (firecrawlKey) push(await firecrawlSearch(query, firecrawlKey), "firecrawl");
@@ -252,6 +259,7 @@ export async function runSearch(query: string): Promise<{ results: SearchHit[]; 
     if (ddgHtml) push(parseDdgHtml(ddgHtml), "duckduckgo");
 
     if (merged.length < 4) {
+      void wikipedia();
       const liteHtml = await ddgPost("https://lite.duckduckgo.com/lite/");
       if (liteHtml) push(parseDdgLite(liteHtml), "duckduckgo-lite");
     }
@@ -259,7 +267,7 @@ export async function runSearch(query: string): Promise<{ results: SearchHit[]; 
 
   // 2. Wikipedia — encyclopedic anchor results. Vague one-word queries often
   //    draw sparse web hits, so keep these unless the web providers delivered.
-  if (merged.length < 5) push(await wikipediaSearch(query), "wikipedia");
+  if (merged.length < 5) push(await wikipedia(), "wikipedia");
 
   return { results: merged.slice(0, 8), provider: provider || "none" };
 }

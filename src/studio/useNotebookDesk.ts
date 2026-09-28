@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { db } from "../lib/db";
 import type { Notebook as NotebookRow } from "../lib/types";
 import { applyCitationOpen, loadLayout, saveLayout, type LayoutMode } from "./layout";
@@ -25,6 +25,8 @@ export function useNotebookDesk(notebookId?: string) {
     sourceId: string;
     startChar?: number;
   } | null>(null);
+  // A passage from the reader on its way to the chat composer.
+  const [chatQuote, setChatQuote] = useState<{ text: string; nonce: number } | null>(null);
 
   const setLayout = useCallback((mode: LayoutMode) => {
     setLayoutState(mode);
@@ -56,6 +58,7 @@ export function useNotebookDesk(notebookId?: string) {
     setDropping(0);
     setDropFiles(null);
     setPendingView(null);
+    setChatQuote(null);
     if (!notebookId) {
       setLoadState("idle");
       return () => {
@@ -84,11 +87,43 @@ export function useNotebookDesk(notebookId?: string) {
     };
   }, [loadAttempt, navigate, notebookId]);
 
+  // Deep links from search: ?source=<id>&at=<offset> opens the reader at a
+  // passage once the notebook is ready; ?chat=<sessionId> is handed to the
+  // chat pane, which switches to that conversation.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sourceParam = searchParams.get("source");
+  const atParam = searchParams.get("at");
+  const pendingChatId = searchParams.get("chat");
+  const dropParams = useCallback(
+    (...names: string[]) =>
+      setSearchParams(
+        (params) => {
+          const next = new URLSearchParams(params);
+          for (const name of names) next.delete(name);
+          return next;
+        },
+        { replace: true },
+      ),
+    [setSearchParams],
+  );
+  useEffect(() => {
+    if (loadState !== "ready" || !sourceParam) return;
+    const at = Number(atParam);
+    openSource(sourceParam, atParam !== null && Number.isFinite(at) && at >= 0 ? at : undefined);
+    dropParams("source", "at");
+  }, [atParam, dropParams, loadState, openSource, sourceParam]);
+  const clearPendingChat = useCallback(() => dropParams("chat"), [dropParams]);
+
   const bumpSources = useCallback(() => setSourcesVersion((value) => value + 1), []);
   const requestImport = useCallback(() => setImportTick((value) => value + 1), []);
   const consumeImport = useCallback(() => setImportTick(0), []);
   const clearPendingView = useCallback(() => setPendingView(null), []);
   const retryLoad = useCallback(() => setLoadAttempt((attempt) => attempt + 1), []);
+  const askInChat = useCallback(
+    (text: string) => setChatQuote((prev) => ({ text, nonce: (prev?.nonce ?? 0) + 1 })),
+    [],
+  );
+  const clearChatQuote = useCallback(() => setChatQuote(null), []);
 
   return {
     notebook,
@@ -108,7 +143,12 @@ export function useNotebookDesk(notebookId?: string) {
     setDropFiles,
     pendingView,
     openSource,
+    pendingChatId,
+    clearPendingChat,
     clearPendingView,
+    chatQuote,
+    askInChat,
+    clearChatQuote,
     rename,
   };
 }

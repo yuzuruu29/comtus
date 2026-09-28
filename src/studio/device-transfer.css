@@ -1,0 +1,105 @@
+/* Sending a notebook between devices. Tokens only. */
+
+.transfer-busy {
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 0;
+}
+
+.transfer-ready {
+  display: grid;
+  grid-template-columns: 11.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: 1.5rem;
+}
+
+/* Scanners want dark modules on a light ground, whatever the theme. */
+.qr-plate {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-field);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 0 0 1px var(--hairline);
+}
+
+html[data-theme="dark"] .qr-plate {
+  background: var(--ink);
+  color: var(--ground);
+}
+
+.transfer-copy {
+  display: grid;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: var(--text-body);
+  line-height: 1.6;
+}
+
+.transfer-copy p {
+  margin: 0;
+}
+
+.transfer-copy strong {
+  color: var(--ink);
+  font-weight: 560;
+}
+
+.transfer-code {
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-field);
+  background: color-mix(in oklab, var(--brass) 5%, var(--surface));
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  letter-spacing: 0.03em;
+  text-align: center;
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+
+.transfer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: -0.25rem;
+}
+
+.transfer-note {
+  font-size: var(--text-label);
+  line-height: 1.55;
+}
+
+.transfer-private {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.transfer-private svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: var(--sage);
+}
+
+.transfer-input {
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.transfer-input::placeholder {
+  text-transform: none;
+}
+
+@media (max-width: 520px) {
+  .transfer-ready {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .qr-plate {
+    max-width: 13rem;
+    margin: 0 auto;
+  }
+}

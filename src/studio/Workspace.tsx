@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Books, CaretLeft, ChartBar, ChatCircle, DotsThree, DownloadSimple, GearSix, Notebook, SidebarSimple } from "@phosphor-icons/react";
+import { Books, CaretLeft, ChartBar, ChatCircle, DeviceMobile, DotsThree, DownloadSimple, GearSix, Notebook, SidebarSimple } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
 import { useCallSettings } from "../lib/settings";
 import { modelLabelFor } from "../lib/llm";
@@ -19,9 +19,11 @@ import { useMediaQuery } from "../lib/useMediaQuery";
 import { panesFor } from "./layout";
 import { usePaneResize } from "./usePaneResize";
 import { db } from "../lib/db";
+import { exportNotebook } from "../lib/backup";
 import { LampPulse, Modal, btnGhost } from "./ui";
 import { useDesk } from "./DeskContext";
 import ConsoleShell from "./ConsoleShell";
+import { SendToDeviceDialog } from "./DeviceTransfer";
 
 type MobilePane = "sources" | "chat" | "studio";
 
@@ -52,6 +54,36 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   const [mobileChatTarget, setMobileChatTarget] = useState<HTMLElement | null>(null);
   const [chatFocusRequest, setChatFocusRequest] = useState(0);
   const focusChat = useCallback(() => { setMobilePane("chat"); setChatFocusRequest((request) => request + 1); }, []);
+
+  // `?work=<generationId>` opens a saved item (e.g. a deck due for review)
+  // in the studio pane. Only the visible StudioPane receives it: the hidden
+  // desktop tree stays mounted on mobile, and its dialogs would portal out.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pendingWork = searchParams.get("work");
+  useEffect(() => {
+    if (!pendingWork) return;
+    if (!desktop) setMobilePane("studio");
+    else if (!panes.studio) setLayout(panes.sources ? "standard" : "writing");
+  }, [desktop, panes.sources, panes.studio, pendingWork, setLayout]);
+  // Search deep links land on the pane that shows them on mobile.
+  const pendingChat = desk.pendingChatId;
+  const pendingSource = desk.pendingView;
+  useEffect(() => {
+    if (desktop) return;
+    if (pendingSource) setMobilePane("sources");
+    else if (pendingChat) setMobilePane("chat");
+  }, [desktop, pendingChat, pendingSource]);
+
+  const clearPendingWork = useCallback(() => {
+    setSearchParams(
+      (params) => {
+        const next = new URLSearchParams(params);
+        next.delete("work");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
 
   const collapseSources = useCallback(
     () => setLayout(panes.studio ? "writing" : "focus"),
@@ -95,6 +127,15 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
     [openNotebookSource],
   );
 
+  const askAboutPassage = desk.askInChat;
+  const askInChat = useCallback(
+    (prompt: string) => {
+      askAboutPassage(prompt);
+      focusChat();
+    },
+    [askAboutPassage, focusChat],
+  );
+
   const modelLabel = modelLabelFor(cs.provider, cs.model);
 
   const isDropping = desk.dropping > 0;
@@ -136,6 +177,10 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
         }}
         surfaceTarget={desktop ? desktopChatTarget : mobilePane === "chat" ? mobileChatTarget : null}
         focusRequest={chatFocusRequest}
+        pendingSessionId={desk.pendingChatId}
+        onPendingSessionConsumed={desk.clearPendingChat}
+        quoteRequest={desk.chatQuote}
+        onQuoteConsumed={desk.clearChatQuote}
       />
       <ConsoleShell
         notebookName={desk.notebook?.name || "Course Notebook"}
@@ -235,6 +280,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   onImportTriggered={desk.consumeImport}
                   dropFiles={desk.dropFiles}
                   onDropConsumed={() => desk.setDropFiles(null)}
+                  onAsk={askInChat}
                 />
               </div>
             ) : (
@@ -278,6 +324,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 <StudioPane
                   notebookId={notebookId}
                   onCollapse={() => desk.setLayout(panes.sources ? "reading" : "focus")}
+                  pendingGenerationId={desktop ? pendingWork : null}
+                  onPendingGenerationConsumed={clearPendingWork}
                 />
               </div>
             ) : (
@@ -319,6 +367,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   onImportTriggered={desk.consumeImport}
                   dropFiles={desk.dropFiles}
                   onDropConsumed={() => desk.setDropFiles(null)}
+                  onAsk={askInChat}
                 />
               </div>
             )}
@@ -327,7 +376,11 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             )}
             {mobilePane === "studio" && (
               <div key={mobilePane} className={paneWrapperClass}>
-                <StudioPane notebookId={notebookId} />
+                <StudioPane
+                  notebookId={notebookId}
+                  pendingGenerationId={desktop ? null : pendingWork}
+                  onPendingGenerationConsumed={clearPendingWork}
+                />
               </div>
             )}
           </div>
@@ -390,6 +443,7 @@ function WorkspaceHeader({
   const tauri = isTauri();
   const macPad = tauri && platform === "mac";
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
   const [stats, setStats] = useState<{ sources: number; tokens: number; gens: number } | null>(null);
 
   const actions = useDesk();
@@ -404,22 +458,7 @@ function WorkspaceHeader({
   };
 
   const handleExport = async () => {
-    if (!notebook) return;
-    const sources = await db.sources.where("notebookId").equals(notebook.id).toArray();
-    const generations = await db.generations.where("notebookId").equals(notebook.id).toArray();
-    const payload = {
-      notebook,
-      exportedAt: new Date().toISOString(),
-      sources: sources.map((s) => ({ title: s.title, kind: s.kind, content: s.content })),
-      generations,
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${notebook.name.replace(/[^a-z0-9_-]/gi, "_")}_backup.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (notebook) await exportNotebook(notebook).catch(() => undefined);
   };
 
   return (
@@ -468,9 +507,10 @@ function WorkspaceHeader({
             items={[
               { key: "analytics", label: "Notebook details", icon: <ChartBar size={16} aria-hidden="true" />, disabled: !notebook, onSelect: () => void openAnalytics() },
               { key: "export", label: "Export notebook", icon: <DownloadSimple size={16} aria-hidden="true" />, disabled: !notebook, onSelect: () => void handleExport() },
+              { key: "send", label: "Send to another device", icon: <DeviceMobile size={16} aria-hidden="true" />, disabled: !notebook, onSelect: () => setSendOpen(true) },
               { key: "models", label: "AI models", onSelect: () => onSettings("models") },
               { key: "milestones", label: "Study milestones", onSelect: actions.openMilestones },
-              { key: "commands", label: "Keyboard commands", onSelect: actions.openPalette },
+              { key: "commands", label: "Search and commands", onSelect: actions.openPalette },
             ]}
           />
           <IconButton
@@ -495,6 +535,8 @@ function WorkspaceHeader({
         </div>
         <CaptionButtons />
       </header>
+
+      {sendOpen && notebook && <SendToDeviceDialog notebook={notebook} onClose={() => setSendOpen(false)} />}
 
       {/* Analytics Modal */}
       {notebook && (

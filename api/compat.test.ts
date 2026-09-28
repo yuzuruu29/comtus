@@ -101,4 +101,22 @@ describe("compat relay", () => {
     expect(call.headers.authorization).toBe("Bearer sk-test");
     expect(call.body).toBe('{"model":"x"}');
   });
+
+  it("answers 502 with CORS when the provider is unreachable", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new TypeError("fetch failed"); }));
+    const res = await handler(req("/api/compat/zen/v1/chat/completions", { method: "POST", body: "{}" }));
+    expect(res.status).toBe(502);
+    expect(res.headers.get("access-control-allow-origin")).toBe(ORIGIN);
+    await expect(res.json()).resolves.toHaveProperty("error");
+  });
+
+  it("refuses oversized request bodies", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const res = await handler(
+      req("/api/compat/zen/v1/chat/completions", { method: "POST", body: "x".repeat(8 * 1024 * 1024 + 1) }),
+    );
+    expect(res.status).toBe(413);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

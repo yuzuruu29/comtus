@@ -1,9 +1,13 @@
+import "./polyfills";
 import * as pdfjs from "pdfjs-dist";
+import type { PDFDocumentProxy } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { estTokens } from "./retrieval";
 import type { SourceKind } from "./types";
+import type { VisionImage } from "./llm";
 import { uid } from "./db";
 import { loadChunk } from "./lazyChunk";
+import { chunkText } from "./chunking";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -14,27 +18,123 @@ export interface ExtractedDoc {
   meta?: { url?: string; pages?: number; origin?: string };
 }
 
+/* ── Reading photos and scanned pages ─────────────────────── */
+
+/** What the student is asked before any image leaves the device. */
+export interface VisionRequest {
+  fileName: string;
+  kind: "image" | "scan";
+  /** Pages that would be sent to the model. */
+  pages: number;
+  /** Pages without a text layer, before the per-file cap. */
+  scannedPages: number;
+}
+
+/** Supplied by the UI when a model is connected. Nothing is transcribed
+ *  unless `confirm` resolves true for that file. */
+export interface Transcriber {
+  confirm: (request: VisionRequest) => Promise<boolean>;
+  transcribe: (image: VisionImage, label: string) => Promise<string>;
+}
+
+/** Turns files and PDF pages into images; injectable for tests. */
+export interface Rasterizer {
+  image: (file: File) => Promise<VisionImage>;
+  pdfPage: (pdf: PDFDocumentProxy, pageNumber: number) => Promise<VisionImage>;
+}
+
+export interface ExtractOptions {
+  transcriber?: Transcriber;
+  onStatus?: (status: string) => void;
+  /** A problem that didn't stop the import, e.g. a page that couldn't be read. */
+  onNote?: (note: string) => void;
+  rasterizer?: Rasterizer;
+}
+
+/** Scanned pages read per file; a longer scan is best split. */
+export const MAX_SCAN_PAGES = 30;
+/** A page with less text than this has no real text layer. */
+const MIN_PAGE_CHARS = 25;
+const RASTER_EDGE = 1600;
+
+export const TRANSCRIBED_NOTE =
+  "[Transcribed from images by AI. Reading errors are possible; check anything surprising against the original.]";
+
+function canvasToVision(canvas: HTMLCanvasElement): VisionImage {
+  return { dataUrl: canvas.toDataURL("image/jpeg", 0.85), mediaType: "image/jpeg" };
+}
+
+const browserRasterizer: Rasterizer = {
+  async image(file) {
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const scale = Math.min(1, RASTER_EDGE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("This browser couldn't prepare the image.");
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    return canvasToVision(canvas);
+  },
+  async pdfPage(pdf, pageNumber) {
+    const page = await pdf.getPage(pageNumber);
+    const base = page.getViewport({ scale: 1 });
+    const viewport = page.getViewport({ scale: Math.min(2.5, RASTER_EDGE / Math.max(base.width, base.height)) });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("This browser couldn't render the page.");
+    ctx.fillStyle = "white"; // JPEG has no transparency; scans sit on paper.
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+    page.cleanup();
+    return canvasToVision(canvas);
+  },
+};
+
+const reason = (err: unknown) => (err instanceof Error ? err.message : "the model couldn't read it");
+
 /* ── File extraction ──────────────────────────────────────── */
 
-export async function extractFile(file: File): Promise<ExtractedDoc[]> {
+export async function extractFile(file: File, opts: ExtractOptions = {}): Promise<ExtractedDoc[]> {
   const name = file.name.replace(/\.[^.]+$/, "");
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const raster = opts.rasterizer ?? browserRasterizer;
 
   // Images & non-text visual sources
   if (
     file.type.startsWith("image/") ||
     ["png", "jpg", "jpeg", "webp", "bmp", "tiff", "gif", "avif"].includes(ext)
   ) {
+    const { transcriber } = opts;
+    if (transcriber && (await transcriber.confirm({ fileName: file.name, kind: "image", pages: 1, scannedPages: 1 }))) {
+      opts.onStatus?.(`Reading ${file.name}…`);
+      try {
+        const text = await transcriber.transcribe(await raster.image(file), `the photo “${file.name}”`);
+        return [
+          {
+            title: name,
+            kind: "img",
+            text: `${TRANSCRIBED_NOTE}\n\n${text}`,
+            meta: { pages: 1, origin: "image-transcribed" },
+          },
+        ];
+      } catch (err) {
+        opts.onNote?.(`added without its text — ${reason(err)}`);
+      }
+    }
     const text = `[Non-Text Visual Source: ${file.name}]
 Type: ${file.type || ext} · Size: ${(file.size / 1024).toFixed(1)} KB
 
 [IMAGE SOURCE — VISUAL CONTENT NOT MACHINE-READABLE YET]
-This source is an image. Grounded notebooks cannot read image contents
-(handwriting, diagrams, formulas) at the moment, so no text was extracted.
-If the student asks about this image, state plainly that its visual content
-is not readable here and suggest attaching the photo directly in chat or via
-Check My Solution, where a vision-capable model can view it. Never invent
-text for this image.
+This source is an image that was added without being read, so no text was
+extracted (handwriting, diagrams, formulas). If the student asks about it,
+state plainly that its content is not readable here and suggest adding the
+file again and choosing "Read the photo" when Comtus asks (this needs a
+vision-capable model), or attaching the photo in chat. Never invent text
+for this image.
 [END IMAGE SOURCE]`;
 
     return [
@@ -48,8 +148,18 @@ text for this image.
   }
 
   if (ext === "pdf" || file.type === "application/pdf") {
-    const text = await pdfToText(await file.arrayBuffer(), name);
-    return [{ title: name, kind: "pdf", text, meta: { pages: countPages(text) } }];
+    const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+    const pages = await pdfPageTexts(pdf);
+    const read = await transcribeScannedPages(pdf, pages, file.name, name, opts, raster);
+    const text = read ?? formatPdfText(pages, name, pdf.numPages);
+    return [
+      {
+        title: name,
+        kind: "pdf",
+        text,
+        meta: { pages: countPages(text), ...(read ? { origin: "scan-transcribed" } : {}) },
+      },
+    ];
   }
   if (ext === "docx") {
     const mammoth = await loadChunk(() => import("mammoth/mammoth.browser"));
@@ -74,11 +184,9 @@ text for this image.
   ];
 }
 
-async function pdfToText(buffer: ArrayBuffer, title = "PDF Document"): Promise<string> {
-  const pdf = await pdfjs.getDocument({ data: buffer }).promise;
+/** Text of each page, in order; an empty string for a page with no text layer. */
+async function pdfPageTexts(pdf: PDFDocumentProxy): Promise<string[]> {
   const pages: string[] = [];
-  let totalExtractedChars = 0;
-
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
@@ -98,29 +206,76 @@ async function pdfToText(buffer: ArrayBuffer, title = "PDF Document"): Promise<s
       }
     }
     if (line) out.push(line);
-    const pageContent = out.join("\n");
-    totalExtractedChars += pageContent.replace(/\s+/g, "").length;
-    pages.push(`[page ${i}]\n${pageContent}`);
+    pages.push(out.join("\n"));
   }
+  return pages;
+}
 
-  let text = pages.join("\n\n");
+const joinPages = (pages: string[]) => pages.map((t, i) => `[page ${i + 1}]\n${t}`).join("\n\n");
 
-  // Scanned / Non-text PDF Detection
-  if (totalExtractedChars < 80 && pdf.numPages > 0) {
-    text = `[Non-Text / Scanned PDF Source: ${title} (${pdf.numPages} page(s))]
+/** The text layer as-is, flagged when the document is essentially scanned. */
+function formatPdfText(pages: string[], title: string, numPages: number): string {
+  const text = joinPages(pages);
+  const totalExtractedChars = pages.reduce((n, p) => n + p.replace(/\s+/g, "").length, 0);
+  if (totalExtractedChars >= 80 || numPages === 0) return text;
+  return `[Non-Text / Scanned PDF Source: ${title} (${numPages} page(s))]
 [Notice: Embedded text layer is sparse (${totalExtractedChars} readable characters). This document is primarily scanned image pages.]
 
 [SCANNED PDF — VISUAL CONTENT NOT MACHINE-READABLE YET]
-Only the sparse embedded text layer (above, if any) was extracted. Grounded
-notebooks cannot OCR scanned pages yet. If the student asks about the visual
-pages, state plainly that the page images are not readable here and suggest
-attaching photos of the relevant pages in chat or via Check My Solution,
-where a vision-capable model can view them. Never invent text for pages that
-were not extracted.
+Only the sparse embedded text layer (above, if any) was extracted; the
+scanned pages were added without being read. If the student asks about
+them, state plainly that the page images are not readable here and suggest
+adding the file again and choosing to read the scanned pages when Comtus
+asks (this needs a vision-capable model), or attaching photos of the pages
+in chat. Never invent text for pages that were not extracted.
 [END SCANNED PDF]\n\n` + text;
+}
+
+/**
+ * Reads the pages that have no text layer with the student's model, if
+ * they agree. Returns the finished text, or null to keep the text layer
+ * as it is. A page that fails after the first is marked and skipped; if
+ * the first fails (usually a model that can't see images), nothing is
+ * spent further and the file keeps its text layer.
+ */
+async function transcribeScannedPages(
+  pdf: PDFDocumentProxy,
+  pages: string[],
+  fileName: string,
+  title: string,
+  opts: ExtractOptions,
+  raster: Rasterizer,
+): Promise<string | null> {
+  const { transcriber } = opts;
+  if (!transcriber) return null;
+  const scanned = pages.flatMap((t, i) => (t.replace(/\s+/g, "").length < MIN_PAGE_CHARS ? [i] : []));
+  if (scanned.length === 0) return null;
+  const toRead = scanned.slice(0, MAX_SCAN_PAGES);
+  if (!(await transcriber.confirm({ fileName, kind: "scan", pages: toRead.length, scannedPages: scanned.length }))) {
+    return null;
   }
 
-  return text;
+  const result = [...pages];
+  for (const [k, i] of toRead.entries()) {
+    opts.onStatus?.(`Reading ${fileName} — page ${i + 1} (${k + 1} of ${toRead.length})`);
+    try {
+      const image = await raster.pdfPage(pdf, i + 1);
+      result[i] = await transcriber.transcribe(image, `page ${i + 1} of ${pdf.numPages} of “${title}”`);
+    } catch (err) {
+      if (k === 0) {
+        opts.onNote?.(`added without its scanned pages — ${reason(err)}`);
+        return null;
+      }
+      result[i] = "[This page could not be read.]";
+      opts.onNote?.(`page ${i + 1} could not be read — ${reason(err)}`);
+    }
+  }
+
+  const skipped = scanned.slice(MAX_SCAN_PAGES);
+  const skippedNote = skipped.length
+    ? `\n[${skipped.length} more scanned ${skipped.length === 1 ? "page was" : "pages were"} not read (from page ${skipped[0] + 1}). Comtus reads up to ${MAX_SCAN_PAGES} per file; add the rest as a separate file.]`
+    : "";
+  return `${TRANSCRIBED_NOTE}${skippedNote}\n\n${joinPages(result)}`;
 }
 
 const countPages = (text: string) => (text.match(/\[page \d+\]/g) ?? []).length;
@@ -184,64 +339,53 @@ export async function extractUrl(rawUrl: string): Promise<ExtractedDoc> {
     signal: AbortSignal.timeout(25_000),
   });
   if (!res.ok) throw new Error(`Couldn't read that page (${res.status}).`);
-  const text = await res.text();
-  if (text.trim().length < 40)
+  const { title, body } = parseReaderResponse(await res.text());
+  if (body.trim().length < 40)
     throw new Error("That page returned nothing readable.");
-  return { title: hostname, kind: "url", text, meta: { url } };
+  return { title: title || hostname, kind: "url", text: body, meta: { url } };
+}
+
+/** Jina's reader prefixes the page with a small header block —
+ *  "Title: …", "URL Source: …", "Published Time: …", then
+ *  "Markdown Content:". Keep the title, drop the header from the text. */
+export function parseReaderResponse(raw: string): { title: string; body: string } {
+  const marker = raw.match(/^Markdown Content:[ \t]*\r?\n/m);
+  const header = marker ? raw.slice(0, marker.index) : raw.slice(0, 1200);
+  const title = header.match(/^Title:[ \t]*(.+)$/m)?.[1].trim().slice(0, 200) ?? "";
+  const body = marker ? raw.slice(marker.index! + marker[0].length) : raw;
+  return { title, body: body.trim() };
 }
 
 /* ── Chunking ─────────────────────────────────────────────── */
 
-const TARGET_CHARS = 4600; // ≈ 1,150 tokens
-const OVERLAP_CHARS = 550;
-
-export function chunkText(text: string): string[] {
-  const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
-  const chunks: string[] = [];
-  let buf = "";
-
-  const flush = () => {
-    const t = buf.trim();
-    if (t) chunks.push(t);
-    buf = t.length > OVERLAP_CHARS ? t.slice(-OVERLAP_CHARS) : "";
-  };
-
-  for (const p of paragraphs) {
-    if (p.length > TARGET_CHARS) {
-      // Very long paragraph — split on sentence boundaries.
-      const sentences = p.split(/(?<=[.!?])\s+/);
-      for (const s of sentences) {
-        if (buf.length + s.length > TARGET_CHARS) flush();
-        buf += (buf && !buf.endsWith("\n") ? " " : "") + s;
-      }
-      continue;
-    }
-    if (buf.length + p.length > TARGET_CHARS) flush();
-    buf += (buf ? "\n\n" : "") + p;
-  }
-  const t = buf.trim();
-  if (t && chunks[chunks.length - 1] !== t) chunks.push(t);
-  return chunks;
-}
+export { chunkText };
 
 export interface ImportOutcome {
   added: number;
   failed: { name: string; reason: string }[];
+  /** Added, but with something worth knowing (e.g. a page not read). */
+  notes: { name: string; reason: string }[];
 }
 
-/** Extract → chunk → persist. Reports per-file outcomes. */
+/** Extract → chunk → persist. Reports per-file outcomes. With a
+ *  transcriber, photos and scanned pages can be read by the model. */
 export async function importFiles(
   files: File[],
   notebookId: string,
   onProgress?: (done: number, total: number, current: string) => void,
+  transcriber?: Transcriber,
 ): Promise<ImportOutcome> {
   const { addSourceWithChunks } = await loadChunk(() => import("./db"));
-  const outcome: ImportOutcome = { added: 0, failed: [] };
+  const outcome: ImportOutcome = { added: 0, failed: [], notes: [] };
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     onProgress?.(i, files.length, file.name);
     try {
-      const docs = await extractFile(file);
+      const docs = await extractFile(file, {
+        transcriber,
+        onStatus: (status) => onProgress?.(i, files.length, status),
+        onNote: (note) => outcome.notes.push({ name: file.name, reason: note }),
+      });
       for (const doc of docs) {
         const id = uid();
         const pieces = chunkText(doc.text);

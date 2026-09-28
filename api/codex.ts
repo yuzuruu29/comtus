@@ -148,9 +148,18 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     res.end(await upstreamRes.text());
     return;
   }
-  // SSE must token-flow, not buffer until completion.
-  await pipeline(
-    Readable.fromWeb(upstreamRes.body as unknown as WebReadableStream<Uint8Array>),
-    res,
-  );
+  // SSE must token-flow, not buffer until completion. A reader who closes
+  // the tab mid-answer aborts the pipe; that is normal, not a relay fault.
+  try {
+    await pipeline(
+      Readable.fromWeb(upstreamRes.body as unknown as WebReadableStream<Uint8Array>),
+      res,
+    );
+  } catch (err) {
+    if (!res.writableEnded) res.end();
+    const code = (err as NodeJS.ErrnoException | undefined)?.code;
+    if (code !== "ERR_STREAM_PREMATURE_CLOSE" && code !== "ABORT_ERR") {
+      console.error("codex relay stream error:", err instanceof Error ? err.message : err);
+    }
+  }
 }

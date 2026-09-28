@@ -157,4 +157,64 @@ describe("PayPal checkout", () => {
     const expected = createHmac("sha256", SECRET).update(payloadB64).digest("hex");
     expect(rest.slice(dot + 1)).toBe(expected);
   });
+
+  it("anchors pass expiry to the capture, so re-submitting an order can't extend it", async () => {
+    process.env.PASS_SIGNING_SECRET = SECRET;
+    process.env.PAYPAL_CLIENT_SECRET = "secret";
+    const capturedAt = "2026-06-01T10:00:00Z";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        const u = String(input instanceof Request ? input.url : input);
+        if (u.includes("/oauth2/token")) return new Response(JSON.stringify({ access_token: "t" }), { status: 200 });
+        return new Response(
+          JSON.stringify({
+            status: "COMPLETED",
+            purchase_units: [
+              {
+                amount: { value: "6.99", currency_code: "USD" },
+                payments: { captures: [{ status: "COMPLETED", create_time: capturedAt }] },
+              },
+            ],
+          }),
+          { status: 200 },
+        );
+      }),
+    );
+
+    const res = await call(paypalReq("capture-order", { orderId: "OLDORDER1", planId: "scholar" }));
+    const { passToken } = res.json() as { passToken: string };
+    const payloadB64 = passToken.slice("comtus-pass-v1.".length, passToken.lastIndexOf("."));
+    const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString()) as { e: number };
+    expect(payload.e).toBe(Date.parse(capturedAt) / 1000 + 120 * 86400);
+  });
+
+  it("captures with an idempotency key tied to the order", async () => {
+    process.env.PASS_SIGNING_SECRET = SECRET;
+    process.env.PAYPAL_CLIENT_SECRET = "secret";
+    let captured = false;
+    const fetchMock = vi.fn(async (input: string | URL | Request, _init?: RequestInit) => {
+      void _init;
+      const u = String(input instanceof Request ? input.url : input);
+      if (u.includes("/oauth2/token")) return new Response(JSON.stringify({ access_token: "t" }), { status: 200 });
+      if (u.endsWith("/capture")) {
+        captured = true;
+        return new Response("{}", { status: 201 });
+      }
+      return new Response(
+        JSON.stringify({
+          status: captured ? "COMPLETED" : "APPROVED",
+          purchase_units: [{ amount: { value: "2.99", currency_code: "USD" }, payments: { captures: [{ status: "COMPLETED" }] } }],
+        }),
+        { status: 200 },
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await call(paypalReq("capture-order", { orderId: "NEWORDER1", planId: "sprint" }));
+    expect(res.status).toBe(200);
+    const captureCall = fetchMock.mock.calls.find((c) => String(c[0]).endsWith("/capture"));
+    const headers = (captureCall?.[1] as RequestInit).headers as Record<string, string>;
+    expect(headers["paypal-request-id"]).toBe("comtus-capture-NEWORDER1");
+  });
 });

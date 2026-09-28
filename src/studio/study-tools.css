@@ -305,3 +305,243 @@
     transition: none;
   }
 }
+
+/* ── Where you stand ─────────────────────────────────────── */
+
+/* ── Exam date and today's plan ─────────────────────────── */
+
+.exam-plan {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-field);
+  background: color-mix(in oklab, var(--brass) 4%, var(--surface));
+}
+
+.exam-plan-quiet {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 4px 10px;
+  padding: 12px 14px;
+  border-color: var(--hairline);
+  background: transparent;
+}
+
+.exam-plan-quiet > svg {
+  margin-top: 2px;
+  color: var(--brass);
+}
+
+.exam-plan-quiet p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.exam-plan-quiet strong {
+  color: var(--ink);
+  font-weight: 560;
+}
+
+.exam-plan-quiet .btn {
+  grid-column: 2;
+  justify-self: start;
+  min-height: 30px;
+  margin-left: -10px;
+  color: var(--brass);
+}
+
+.exam-plan-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.exam-plan-head h3 {
+  color: var(--ink);
+  font-family: var(--font-read);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.exam-plan-head p {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.exam-plan-edit.btn {
+  min-width: 32px;
+  min-height: 32px;
+  margin: -6px -8px 0 0;
+  padding: 0;
+  color: var(--muted);
+}
+
+.exam-plan-label {
+  margin-top: 14px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.exam-plan-note {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.exam-plan-list {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exam-plan-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.exam-plan-item:first-child {
+  border-top: 0;
+}
+
+.exam-plan-copy {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.exam-plan-copy strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 560;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exam-plan-copy span {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.exam-plan-item .btn {
+  flex-shrink: 0;
+  min-height: 30px;
+  color: var(--brass);
+}
+
+.study-standing {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--hairline);
+}
+
+.study-standing-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+}
+
+.study-standing-heading > svg {
+  color: var(--brass);
+}
+
+.study-standing-heading h3 {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.study-standing-note {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.study-standing-list {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.study-standing-list > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.study-standing-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.study-standing-topic {
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.study-standing-count {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.study-standing-bar {
+  grid-column: 1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--hairline);
+}
+
+.study-standing-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--rust);
+  transform: scaleX(var(--ratio, 0));
+  transform-origin: left center;
+}
+
+.study-standing-bar > span[data-level="mid"] {
+  background: var(--brass);
+}
+
+.study-standing-practice.btn {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  min-height: 32px;
+  color: var(--brass);
+}
+
+.study-saved-score {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}

@@ -17,6 +17,11 @@ export default function StudioApp() {
     (id: string) => navigate(`/studio/${id}`, { flushSync: true }),
     [navigate],
   );
+  const openWork = useCallback(
+    (id: string, generationId: string) =>
+      navigate(`/studio/${id}?work=${encodeURIComponent(generationId)}`, { flushSync: true }),
+    [navigate],
+  );
   const hasKey = useSettings((s) => s.hasKey());
 
   useEffect(() => {
@@ -39,7 +44,7 @@ export default function StudioApp() {
   return (
     <MotionPrefs>
       {!notebookId ? (
-        <Shelf onOpen={openNotebook} needsKey={!hasKey} />
+        <Shelf onOpen={openNotebook} onReview={openWork} needsKey={!hasKey} />
       ) : (
         <Workspace key={notebookId} notebookId={notebookId} />
       )}

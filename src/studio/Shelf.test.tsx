@@ -55,6 +55,27 @@ describe("Shelf", () => {
     expect((await db.notebooks.get(onOpen.mock.calls[0][0]))?.name).toBe("Pharmacology");
   });
 
+  it("opens an exported notebook file and reports a file it can't read", async () => {
+    const onOpen = vi.fn();
+    render(<MemoryRouter><Shelf onOpen={onOpen} needsKey /></MemoryRouter>);
+    expect(await screen.findByRole("button", { name: "Open its file" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "receive it from another device" })).toBeInTheDocument();
+
+    const exported = JSON.stringify({
+      app: "comtus",
+      schema: 2,
+      scope: "notebook",
+      data: { notebooks: [{ id: "shared-nb", name: "Shared notes", createdAt: 1, updatedAt: 1 }] },
+    });
+    const input = screen.getByLabelText("Notebook file");
+    fireEvent.change(input, { target: { files: [new File([exported], "shared.json", { type: "application/json" })] } });
+    await waitFor(() => expect(onOpen).toHaveBeenCalledWith("shared-nb"));
+    expect((await db.notebooks.get("shared-nb"))?.name).toBe("Shared notes");
+
+    fireEvent.change(input, { target: { files: [new File(["not json"], "broken.json")] } });
+    expect(await screen.findByRole("alert")).toHaveTextContent("That file isn't valid JSON.");
+  });
+
   it("opens model settings only when requested", async () => {
     render(<MemoryRouter><Shelf onOpen={() => {}} needsKey /></MemoryRouter>);
 

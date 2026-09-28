@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { DownloadSimple, FilePdf, FilePpt, Warning } from "@phosphor-icons/react";
+import { Cards, DownloadSimple, FileCsv, FilePdf, FilePpt, Warning } from "@phosphor-icons/react";
 import { db } from "../lib/db";
 import {
   exportFormatsFor,
@@ -12,6 +12,8 @@ import type { Generation } from "../lib/types";
 const FORMAT_META: Record<ExportFormat, { icon: typeof FilePdf; label: string; hint: string }> = {
   pdf: { icon: FilePdf, label: "PDF — print", hint: "Crisp Letter pages" },
   pptx: { icon: FilePpt, label: "PowerPoint", hint: "Brand-styled deck" },
+  anki: { icon: Cards, label: "Anki deck", hint: "In Anki: File → Import" },
+  csv: { icon: FileCsv, label: "Spreadsheet (CSV)", hint: "Excel, Sheets, Quizlet" },
 };
 
 /** Download control for a saved artifact — lives in the viewer modal header. */
@@ -75,7 +77,7 @@ export default function ExportMenu({ gen }: { gen: Generation }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -3, transition: { duration: 0.12 } }}
             transition={{ duration: 0.16 }}
-            className="absolute right-0 top-full z-10 mt-1.5 w-52 overflow-hidden rounded-xl border border-hairline bg-surface py-1 shadow-[0_16px_50px_-12px_rgba(0,0,0,0.7)]"
+            className="absolute right-0 top-full z-10 mt-1.5 w-56 overflow-hidden rounded-xl border border-hairline bg-surface py-1 shadow-[0_16px_50px_-12px_rgba(0,0,0,0.7)]"
           >
             {formats.map((f) => {
               const meta = FORMAT_META[f];

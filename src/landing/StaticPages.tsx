@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import Nav from "./Nav";
 import Footer from "./Footer";
 import "./landing.css";
-import { BookOpen, Envelope, FileText, Shield, Sparkle } from "@phosphor-icons/react";
+import { BookOpen, Compass, Envelope, FileText, Shield, Sparkle } from "@phosphor-icons/react";
 
 interface StaticPageLayoutProps {
   title: string;
@@ -120,6 +120,8 @@ export function PrivacyPage() {
           <li><strong>Anthropic</strong> — hosts the Claude models behind paid Smarter Models passes; your prompts and source text are processed by Anthropic under their commercial data terms.</li>
           <li><strong>BYOK providers</strong> — with Bring-Your-Own-Key mode (OpenRouter, Groq, Cerebras, Google AI Studio, DeepSeek, Together, Nous, OpenCode Zen, Mistral, or your own custom endpoint), requests go directly to that provider under their privacy terms. For Zen and Mistral, requests relay through our server solely to reach their APIs.</li>
           <li><strong>Vercel</strong> — application hosting, serverless functions, and Vercel Analytics.</li>
+          <li><strong>Your model provider, for photos and scans</strong> — only when you agree to have a photo or scanned page read, that image is sent to the model you connected (Anthropic or your BYOK provider above) to transcribe it. Comtus keeps the transcription as the source's text, not the image.</li>
+          <li><strong>Upstash, for sending between devices</strong> — when you send a notebook to another device, it is encrypted on your device first and the sealed copy waits on our relay (stored with Upstash) for at most an hour, then is deleted when the other device picks it up. The key is part of the transfer code, which never reaches our server, so neither we nor Upstash can read it.</li>
           <li><strong>r.jina.ai</strong> — when you import a URL, the page is fetched through Jina's reader service to extract readable text.</li>
           <li><strong>Wikipedia / DuckDuckGo</strong> — public search results used when you enable web-grounded answers (relayed through our server).</li>
         </ul>
@@ -363,6 +365,24 @@ export function StudyCompanionPage() {
             <span>→</span>
           </Link>
         </div>
+      </div>
+    </StaticPageLayout>
+  );
+}
+
+/** Any address the router doesn't know. Honest and calm: nothing was lost. */
+export function NotFoundPage() {
+  return (
+    <StaticPageLayout
+      title="This page isn’t on the shelf."
+      subtitle="The address may be mistyped, or the page has moved. Your notebooks are untouched — they live on this device."
+      icon={Compass}
+    >
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+        <Link to="/studio" className="btn btn-primary btn-md">
+          Open your notebooks
+        </Link>
+        <Link to="/">Return to the home page</Link>
       </div>
     </StaticPageLayout>
   );

@@ -15,22 +15,28 @@ export function Dialog({
   title,
   children,
   wide = false,
+  onEscape,
 }: {
   open: boolean;
   onClose: () => void;
   title: ReactNode;
   children: ReactNode;
   wide?: boolean;
+  /** Runs first on Escape; return true when it closed something smaller
+   *  inside the dialog (a popover), so the dialog itself stays open. */
+  onEscape?: () => boolean;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const instanceRef = useRef(Symbol("comtus-dialog"));
   const onCloseRef = useRef(onClose);
+  const onEscapeRef = useRef(onEscape);
   const titleId = useId();
 
   useEffect(() => {
     onCloseRef.current = onClose;
-  }, [onClose]);
+    onEscapeRef.current = onEscape;
+  }, [onClose, onEscape]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,6 +74,7 @@ export function Dialog({
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
+        if (onEscapeRef.current?.()) return;
         onCloseRef.current();
         return;
       }

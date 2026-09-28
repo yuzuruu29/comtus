@@ -19,7 +19,10 @@ import { ComtusEmblem } from "../components/brand/ComtusLogo";
 import { loadFocus, pruneFocus, saveFocus, subscribeFocus } from "./focus";
 import { db, deleteSource } from "../lib/db";
 import type { Source } from "../lib/types";
-import { importFiles, extractUrl, chunkText } from "../lib/import";
+import { importFiles, extractUrl, chunkText, type Transcriber, type VisionRequest } from "../lib/import";
+import { modelLabelFor, transcribeImage } from "../lib/llm";
+import { useCallSettings, useSettings } from "../lib/settings";
+import VisionConsentDialog from "./VisionConsentDialog";
 import { estTokens } from "../lib/retrieval";
 import { uid } from "../lib/db";
 import { addSourceWithChunks } from "../lib/db";
@@ -27,6 +30,7 @@ import { DRIFT_X, RISE_2, SOFT, Spotlight } from "./fx";
 import { ErrorNote } from "./ui";
 import AddSourceMenu from "./AddSourceMenu";
 import SourceReader from "./SourceReader";
+import { highlightCounts } from "../lib/highlights";
 import { UsageLimitsPanel } from "./UsageLimitsPanel";
 import { isTauri } from "../lib/desktop";
 
@@ -45,10 +49,14 @@ const KIND_ICON: Record<string, typeof FileText> = {
 
 /** The one fact a row shows beneath its title: page count when known,
  *  otherwise a rough word count. */
-function sourceFact(s: Source): string {
-  if (s.meta?.pages) return `${s.meta.pages} ${s.meta.pages === 1 ? "page" : "pages"}`;
+function sourceFact(s: Source, highlights = 0): string {
   const words = Math.round(s.chars / 5.5);
-  return words >= 1000 ? `${(words / 1000).toFixed(1)}k words` : `${words} words`;
+  const size = s.meta?.pages
+    ? `${s.meta.pages} ${s.meta.pages === 1 ? "page" : "pages"}`
+    : words >= 1000
+      ? `${(words / 1000).toFixed(1)}k words`
+      : `${words} words`;
+  return highlights ? `${size} · ${highlights} marked` : size;
 }
 
 async function chooseNativeFiles(): Promise<File[] | null> {
@@ -103,6 +111,7 @@ export default function SourcesPane({
   dropFiles,
   dropRequestId,
   onDropConsumed,
+  onAsk,
 }: {
   notebookId: string;
   version: number;
@@ -115,13 +124,24 @@ export default function SourcesPane({
   dropFiles?: FileList | null;
   dropRequestId?: number;
   onDropConsumed?: () => void;
+  /** Sends a quoted passage from the reader to the chat composer. */
+  onAsk?: (prompt: string) => void;
 }) {
   const [sources, setSources] = useState<Source[]>([]);
+  const [marks, setMarks] = useState<Map<string, number>>(new Map());
   const [importing, setImporting] = useState<{ done: number; total: number; current: string } | null>(
     null,
   );
   const [flushed, setFlushed] = useState(false);
   const [failed, setFailed] = useState<string[]>([]);
+  const [importNotes, setImportNotes] = useState<string[]>([]);
+  const cs = useCallSettings();
+  const hasKey = useSettings((s) => s.hasKey());
+  const [visionAsk, setVisionAsk] = useState<{
+    request: VisionRequest;
+    offerApplyToRest: boolean;
+    resolve: (read: boolean, applyToRest: boolean) => void;
+  } | null>(null);
   const [urlOpen, setUrlOpen] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [viewing, setViewing] = useState<{ source: Source; startChar?: number } | null>(null);
@@ -139,6 +159,7 @@ export default function SourcesPane({
   const refresh = useCallback(async () => {
     const list = await db.sources.where("notebookId").equals(notebookId).sortBy("addedAt");
     setSources(list);
+    setMarks(await highlightCounts(notebookId).catch(() => new Map<string, number>()));
     const pruned = pruneFocus(notebookId, list.map((s) => s.id));
     setFocused(pruned);
   }, [notebookId]);
@@ -148,19 +169,50 @@ export default function SourcesPane({
       if (!files || files.length === 0) return;
       const selected = Array.from(files);
       setFailed([]);
+      setImportNotes([]);
       setFlushed(false);
       setImporting({ done: 0, total: selected.length, current: selected[0].name });
-      const outcome = await importFiles(selected, notebookId, (done, total, current) => {
-        setImporting({ done, total, current });
-        if (done >= total) setFlushed(true);
-      });
+      // Photos and scanned pages are read by the model only with consent,
+      // asked per file unless the student answers for the whole import.
+      let standing: boolean | null = null;
+      const transcriber: Transcriber | undefined = hasKey
+        ? {
+            confirm: (request) =>
+              standing !== null
+                ? Promise.resolve(standing)
+                : new Promise<boolean>((resolve) =>
+                    setVisionAsk({
+                      request,
+                      offerApplyToRest: selected.length > 1,
+                      resolve: (read, applyToRest) => {
+                        if (applyToRest) standing = read;
+                        setVisionAsk(null);
+                        resolve(read);
+                      },
+                    }),
+                  ),
+            transcribe: (image, label) => transcribeImage({ ...cs, image, label }),
+          }
+        : undefined;
+      const outcome = await importFiles(
+        selected,
+        notebookId,
+        (done, total, current) => {
+          setImporting({ done, total, current });
+          if (done >= total) setFlushed(true);
+        },
+        transcriber,
+      );
       if (outcome.failed.length) {
         setFailed(outcome.failed.map((failure) => `${failure.name}: ${failure.reason}`));
+      }
+      if (outcome.notes.length) {
+        setImportNotes(outcome.notes.map((note) => `${note.name} was ${note.reason}`));
       }
       onChanged();
       void refresh();
     },
-    [notebookId, onChanged, refresh],
+    [cs, hasKey, notebookId, onChanged, refresh],
   );
 
   const handleFilesRef = useRef(handleFiles);
@@ -340,6 +392,15 @@ export default function SourcesPane({
             ))}
           </div>
         )}
+        {importNotes.length > 0 && (
+          <div role="status" className="mt-3 space-y-1.5">
+            {importNotes.map((note) => (
+              <p key={note} className="rounded-xl border border-hairline bg-surface px-3.5 py-2.5 text-label leading-relaxed text-muted">
+                {note}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
 
       {sources.length > 0 && (
@@ -399,7 +460,7 @@ export default function SourcesPane({
                         {s.title}
                       </span>
                       <span className="block font-mono text-label uppercase tracking-[0.1em] text-muted/60">
-                        {sourceFact(s)}
+                        {sourceFact(s, marks.get(s.id))}
                       </span>
                     </span>
                   </button>
@@ -486,11 +547,21 @@ export default function SourcesPane({
           void refresh();
         }}
       />
+      <VisionConsentDialog
+        request={visionAsk?.request ?? null}
+        modelLabel={modelLabelFor(cs.provider, cs.model)}
+        offerApplyToRest={visionAsk?.offerApplyToRest ?? false}
+        onAnswer={(read, applyToRest) => visionAsk?.resolve(read, applyToRest)}
+      />
       {viewing && (
         <SourceReader
           source={viewing.source}
           startChar={viewing.startChar}
           onClose={() => setViewing(null)}
+          onAsk={onAsk}
+          // Through the shared version, so every mounted sources list
+          // (the workspace keeps a desktop and a mobile one) recounts.
+          onHighlightsChanged={onChanged}
         />
       )}
     </div>

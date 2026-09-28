@@ -14,6 +14,10 @@ export interface Notebook {
   id: string;
   name: string;
   description?: string;
+  /** Local midnight of the exam this notebook is for, when one is set. */
+  examAt?: number;
+  /** What the exam is called ("Midterm", "Board exam"); optional. */
+  examName?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -107,6 +111,9 @@ export interface Generation {
   /** Fully-formed, kind-specific payload — see generators/*.ts */
   payload: unknown;
   createdAt: number;
+  /** When an edit last changed it (a note rewritten, cards added); absent
+   *  on work never edited. Settles which copy wins when devices merge. */
+  updatedAt?: number;
 }
 
 /* ── Quiz & exam payloads ─────────────────────────────────── */
@@ -174,6 +181,49 @@ export interface ExamPayload {
 }
 
 export type ExamMode = "simulated" | "drill";
+
+/* ── Attempts: what happened when the student sat a quiz or exam ── */
+
+export interface AttemptItem {
+  /** QuizQuestion.id within the attempted generation. */
+  questionId: string;
+  topic: string;
+  /** 0 wrong, 0.5 partially correct solution, 1 correct. */
+  credit: number;
+  /** False when the item was left blank. */
+  answered: boolean;
+}
+
+export interface Attempt {
+  id: string;
+  notebookId: string;
+  generationId: string;
+  kind: "quiz" | "exam";
+  /** "misses" = a retake of only the items missed last time. */
+  scope: "full" | "misses";
+  score: number;
+  total: number;
+  items: AttemptItem[];
+  finishedAt: number;
+}
+
+/* ── Highlights: passages the student marked while reading ── */
+
+export interface Highlight {
+  id: string;
+  notebookId: string;
+  sourceId: string;
+  /** Character range in Source.content, end exclusive — the same offsets
+   *  citations and search results use. */
+  start: number;
+  end: number;
+  /** The words covered, kept for lists, notes and search. */
+  quote: string;
+  /** The student's margin note; "" for a plain highlight. */
+  note: string;
+  createdAt: number;
+  updatedAt: number;
+}
 
 /* ── Handwritten solution submissions ─────────────────────── */
 
@@ -269,6 +319,8 @@ export interface CardProgress {
   intervalDays: number;
   dueAt: number;
   reps: number;
+  /** Times a graduated card was forgotten ("again"); absent on older rows. */
+  lapses?: number;
 }
 
 /* ── Study aid payloads (markdown documents) ──────────────── */

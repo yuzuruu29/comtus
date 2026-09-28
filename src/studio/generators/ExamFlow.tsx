@@ -13,6 +13,8 @@ import type {
 } from "../../lib/types";
 import { generateJSON, checkSolution, friendlyError } from "../../lib/llm";
 import { useCallSettings } from "../../lib/settings";
+import { scoreItems } from "../../lib/attempts";
+import AttemptFollowUp from "./AttemptFollowUp";
 import { saveGeneration } from "../../lib/db";
 import { SOFT, SPRING, useCountUp } from "../fx";
 import {
@@ -20,7 +22,6 @@ import {
   ASSESSMENT_FORMAT_RULES,
   buildSourceBlock,
   sanitizeQuestions,
-  solutionCredit,
   fmtScore,
 } from "./common";
 import {
@@ -347,12 +348,73 @@ Constraints: MCQ items have exactly 4 options with answerIndex pointing at the k
 
 /* ── Runner ───────────────────────────────────────────────── */
 
+interface ExamRunSpec {
+  key: number;
+  payload: ExamPayload;
+  scope: "full" | "misses";
+}
+
+/** Only the missed items, on a clock scaled to their share of the exam. */
+function missesExam(payload: ExamPayload, missed: QuizQuestion[]): ExamPayload {
+  const { blueprint } = payload;
+  const share = missed.length / Math.max(1, payload.questions.length);
+  return {
+    questions: missed,
+    blueprint: {
+      ...blueprint,
+      title: `${blueprint.title} · missed items`,
+      totalItems: missed.length,
+      minutes: Math.max(5, Math.round(blueprint.minutes * share)),
+    },
+  };
+}
+
+/** An exam sitting. Retakes start a fresh run in place; with `gen`, each
+ *  graded run is saved as an attempt. */
 export function ExamRunner({
   payload,
+  gen,
   onExit,
+  onOpenGeneration,
 }: {
   payload: ExamPayload;
+  gen?: Generation;
   onExit?: () => void;
+  onOpenGeneration?: (gen: Generation) => void;
+}) {
+  const [run, setRun] = useState<ExamRunSpec>({ key: 0, payload, scope: "full" });
+  return (
+    <ExamSitting
+      key={run.key}
+      payload={run.payload}
+      scope={run.scope}
+      gen={gen}
+      onExit={onExit}
+      onOpenGeneration={onOpenGeneration}
+      onRetake={() => setRun((r) => ({ key: r.key + 1, payload, scope: "full" }))}
+      onRetakeMisses={(missed) =>
+        setRun((r) => ({ key: r.key + 1, payload: missesExam(payload, missed), scope: "misses" }))
+      }
+    />
+  );
+}
+
+function ExamSitting({
+  payload,
+  scope,
+  gen,
+  onExit,
+  onOpenGeneration,
+  onRetake,
+  onRetakeMisses,
+}: {
+  payload: ExamPayload;
+  scope: "full" | "misses";
+  gen?: Generation;
+  onExit?: () => void;
+  onOpenGeneration?: (gen: Generation) => void;
+  onRetake: () => void;
+  onRetakeMisses: (missed: QuizQuestion[]) => void;
 }) {
   const cs = useCallSettings();
   const [mode, setMode] = useState<ExamMode | null>(null);
@@ -463,20 +525,12 @@ export function ExamRunner({
         setChecks={setChecks}
         callSettings={cs}
         typed={typed}
+        scope={scope}
+        gen={gen}
         onExit={onExit}
-        onRetake={() => {
-          setMode(null);
-          setAnswers(qs.map(() => null));
-          setTyped(qs.map(() => ""));
-          setSubs(qs.map(() => null));
-          setChecks(qs.map(() => null));
-          setCheckErrors(qs.map(() => ""));
-          setCheckingIdx(null);
-          setRevealed(qs.map(() => false));
-          setFinished(false);
-          setIdx(0);
-          setSecondsLeft(payload.blueprint.minutes * 60);
-        }}
+        onRetake={onRetake}
+        onRetakeMisses={onRetakeMisses}
+        onOpenGeneration={onOpenGeneration}
       />
     );
   }
@@ -697,8 +751,12 @@ function ExamResults({
   setChecks,
   callSettings,
   typed,
+  scope,
+  gen,
   onExit,
   onRetake,
+  onRetakeMisses,
+  onOpenGeneration,
 }: {
   title: string;
   questions: QuizQuestion[];
@@ -708,14 +766,21 @@ function ExamResults({
   setChecks: (fn: (c: (SolutionCheck | null)[]) => (SolutionCheck | null)[]) => void;
   callSettings: ReturnType<typeof useCallSettings>;
   typed: string[];
+  scope: "full" | "misses";
+  gen?: Generation;
   onExit?: () => void;
   onRetake: () => void;
+  onRetakeMisses: (missed: QuizQuestion[]) => void;
+  onOpenGeneration?: (gen: Generation) => void;
 }) {
   // Simulated runs defer AI grading until now — grade each submitted
   // photo sequentially so the pass token spends gently and progress is
-  // visible.
+  // visible. The attempt is saved once grading settles.
   const [grading, setGrading] = useState(false);
   const [progress, setProgress] = useState("");
+  const [graded, setGraded] = useState(
+    () => !questions.some((q, i) => q.format === "solution" && subs[i] && !checks[i]),
+  );
 
   useEffect(() => {
     const pending = questions
@@ -748,6 +813,7 @@ function ExamResults({
       if (!cancelled) {
         setGrading(false);
         setProgress("");
+        setGraded(true);
       }
     })();
     return () => {
@@ -758,27 +824,23 @@ function ExamResults({
   }, []);
 
   const hasSolutions = questions.some((q) => q.format === "solution");
-  const earned = useMemo(
+  const items = useMemo(
     () =>
-      questions.reduce(
-        (n, q, i) =>
-          q.format === "solution"
-            ? n + solutionCredit(checks[i])
-            : n + (answers[i] === q.answerIndex ? 1 : 0),
-        0,
+      scoreItems(
+        questions,
+        questions.map((_, i) => ({ picked: answers[i], typed: typed[i] ?? "", check: checks[i] })),
       ),
-    [questions, answers, checks],
+    [questions, answers, typed, checks],
   );
+  const earned = items.reduce((n, it) => n + it.credit, 0);
   const pct = Math.round((earned / questions.length) * 100);
   const shownPct = useCountUp(pct, 1100);
   const byTopic = new Map<string, { c: number; t: number }>();
-  questions.forEach((q, i) => {
-    const t = byTopic.get(q.topic) ?? { c: 0, t: 0 };
+  items.forEach((it) => {
+    const t = byTopic.get(it.topic) ?? { c: 0, t: 0 };
     t.t++;
-    if (q.format === "solution") {
-      if (checks[i]) t.c += solutionCredit(checks[i]);
-    } else if (answers[i] === q.answerIndex) t.c++;
-    byTopic.set(q.topic, t);
+    t.c += it.credit;
+    byTopic.set(it.topic, t);
   });
   const verdict =
     pct >= 75 ? "Passing pace." : pct >= 60 ? "Getting close — drill the weak sections." : "The lamp stays on. Review, then retake.";
@@ -796,7 +858,7 @@ function ExamResults({
         transition={{ ...SPRING, delay: 0.08 }}
         className="rounded-2xl border border-hairline bg-ink/[0.02] p-7 text-center"
       >
-        <div className="label-mono">{title} — Result</div>
+        <div className="label-mono">{title} — {scope === "misses" ? "Retake of missed items" : "Result"}</div>
         <div className={`mt-3 font-display text-[2.8rem] font-[420] leading-none sm:text-[3.4rem] ${pct >= 75 ? "text-sage" : "text-lamp"}`}>
           {shownPct}%
         </div>
@@ -833,7 +895,7 @@ function ExamResults({
           {questions.map((q, i) => {
             const isSol = q.format === "solution";
             const chk = isSol ? checks[i] : null;
-            const credit = isSol ? solutionCredit(chk) : answers[i] === q.answerIndex ? 1 : 0;
+            const credit = items[i].credit;
             return (
               <div key={i} className="rounded-xl border border-hairline bg-ink/[0.02] p-4">
                 <div className="flex items-start gap-3">
@@ -890,10 +952,21 @@ function ExamResults({
           })}
         </div>
       </div>
+      <AttemptFollowUp
+        gen={gen}
+        kind="exam"
+        scope={scope}
+        questions={questions}
+        items={items}
+        ready={graded}
+        onRetakeMisses={onRetakeMisses}
+        onOpenGeneration={onOpenGeneration}
+      />
       <div className="flex justify-end gap-3">
         {onExit && <button className={btnGhost} onClick={onExit}>Done</button>}
         <button className={btnLamp} onClick={onRetake}>
-          <ArrowCounterClockwise size={13} className="mr-1.5 inline" /> Retake
+          <ArrowCounterClockwise size={13} className="mr-1.5 inline" />
+          {scope === "misses" ? "Retake the whole exam" : "Retake"}
         </button>
       </div>
     </motion.div>

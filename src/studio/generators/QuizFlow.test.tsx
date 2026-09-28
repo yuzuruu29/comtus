@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import "fake-indexeddb/auto";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import type { QuizPayload, QuizQuestion } from "../../lib/types";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { FlashcardsPayload, Generation, QuizPayload, QuizQuestion } from "../../lib/types";
 
 const fx = vi.hoisted(() => ({
   triggerConfettiCannon: vi.fn(),
@@ -46,6 +47,8 @@ vi.mock("../companion/sfx", () => ({
 }));
 
 import { QuizTaker } from "./QuizFlow";
+import { db } from "../../lib/db";
+import { missesDeckId } from "../../lib/attempts";
 
 const mcq = (id: string, stem: string): QuizQuestion => ({
   id,
@@ -81,7 +84,7 @@ function answerCurrentCorrect() {
 
 describe("QuizTaker juice", () => {
   it("does not show combo / FIRE after consecutive correct answers", () => {
-    render(<QuizTaker payload={payload} onRetake={() => {}} />);
+    render(<QuizTaker payload={payload} />);
     answerCurrentCorrect();
     fireEvent.click(screen.getByRole("button", { name: /next item/i }));
     answerCurrentCorrect();
@@ -93,7 +96,7 @@ describe("QuizTaker juice", () => {
   });
 
   it("does not fire confetti, shake, or a streak badge on results", () => {
-    render(<QuizTaker payload={payload} onRetake={() => {}} />);
+    render(<QuizTaker payload={payload} />);
     answerCurrentCorrect();
     fireEvent.click(screen.getByRole("button", { name: /next item/i }));
     answerCurrentCorrect();
@@ -102,5 +105,89 @@ describe("QuizTaker juice", () => {
     expect(fx.triggerScreenShake).not.toHaveBeenCalled();
     expect(screen.queryByText(/streak/i)).toBeNull();
     expect(screen.queryByText(/🔥/)).toBeNull();
+  });
+});
+
+function answer(optionLabel: RegExp) {
+  const options = screen.getAllByRole("button", { name: optionLabel });
+  fireEvent.click(options.find((b) => !b.hasAttribute("disabled")) ?? options[options.length - 1]);
+  const checkBtns = screen.getAllByRole("button", { name: /check answer/i });
+  fireEvent.click(checkBtns.find((b) => !b.hasAttribute("disabled")) ?? checkBtns[checkBtns.length - 1]);
+}
+
+describe("QuizTaker attempts", () => {
+  const gen: Generation = { id: "quiz-1", notebookId: "nb-1", kind: "quiz", title: "Quiz", payload, createdAt: 1 };
+
+  async function finishWithOneMiss() {
+    answer(/2/); // q1 right
+    fireEvent.click(screen.getByRole("button", { name: /next item/i }));
+    answer(/^C/); // q2 wrong
+    fireEvent.click(screen.getByRole("button", { name: /see results/i }));
+    await screen.findByText("1 item to work on.");
+  }
+
+  beforeEach(async () => {
+    await Promise.all([db.attempts.clear(), db.generations.clear(), db.notebooks.clear()]);
+    await db.notebooks.add({ id: "nb-1", name: "Maths", createdAt: 1, updatedAt: 1 });
+  });
+
+  it("saves the attempt and compares it with the last one", async () => {
+    await db.attempts.add({
+      id: "earlier",
+      notebookId: "nb-1",
+      generationId: "quiz-1",
+      kind: "quiz",
+      scope: "full",
+      score: 0,
+      total: 2,
+      items: [],
+      finishedAt: 1,
+    });
+    render(<QuizTaker payload={payload} gen={gen} />);
+    await finishWithOneMiss();
+
+    expect(await screen.findByText("Up 50 points from last time (0%).")).toBeInTheDocument();
+    const saved = await db.attempts.where("generationId").equals("quiz-1").sortBy("finishedAt");
+    expect(saved).toHaveLength(2);
+    expect(saved[1]).toMatchObject({ scope: "full", score: 1, total: 2 });
+    expect(saved[1].items.map((it) => it.credit)).toEqual([1, 0]);
+  });
+
+  it("turns misses into cards and hands off to the deck", async () => {
+    const onOpenGeneration = vi.fn();
+    render(<QuizTaker payload={payload} gen={gen} onOpenGeneration={onOpenGeneration} />);
+    await finishWithOneMiss();
+
+    fireEvent.click(screen.getByRole("button", { name: "Make a flashcard from them" }));
+    expect(await screen.findByText("Added 1 card to Missed questions.")).toBeInTheDocument();
+    const deck = await db.generations.get(missesDeckId("nb-1"));
+    expect((deck?.payload as FlashcardsPayload).cards.map((c) => c.id)).toEqual(["m-quiz-1-q2"]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Review the deck" }));
+    expect(onOpenGeneration).toHaveBeenCalledWith(expect.objectContaining({ id: missesDeckId("nb-1") }));
+  });
+
+  it("retakes only the missed items, in place", async () => {
+    render(<QuizTaker payload={payload} gen={gen} />);
+    await finishWithOneMiss();
+
+    fireEvent.click(screen.getByRole("button", { name: "Retake the 1 I missed" }));
+    expect(screen.getByText(/Item 1 \/ 1/)).toBeInTheDocument();
+    expect(screen.getByText("What is 3-1?")).toBeInTheDocument();
+
+    answer(/2/);
+    fireEvent.click(screen.getByRole("button", { name: /see results/i }));
+    expect(await screen.findByText("Every missed item is right this time.")).toBeInTheDocument();
+    expect(screen.getByText("Retake of missed items")).toBeInTheDocument();
+    await waitFor(async () =>
+      expect((await db.attempts.toArray()).map((a) => a.scope).sort()).toEqual(["full", "misses"]),
+    );
+  });
+
+  it("restarts the whole quiz in place", async () => {
+    render(<QuizTaker payload={payload} gen={gen} />);
+    await finishWithOneMiss();
+    fireEvent.click(screen.getByRole("button", { name: /^Retake$/ }));
+    expect(screen.getByText(/Item 1 \/ 2/)).toBeInTheDocument();
   });
 });

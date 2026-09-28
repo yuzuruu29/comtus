@@ -1,5 +1,6 @@
 import Dexie, { type Table } from "dexie";
 import type {
+  Attempt,
   Notebook,
   Source,
   Chunk,
@@ -7,9 +8,10 @@ import type {
   ChatSession,
   Generation,
   CardProgress,
+  Highlight,
 } from "./types";
 import { DEFAULT_SESSION_TITLE, deriveSessionTitle } from "./sessionText";
-import { notifyDeskActivity } from "./activity";
+import { notifyDeskActivity, notifyWorkSaved } from "./activity";
 
 /** Local-first store. Everything lives in IndexedDB on this device.
  *  (Settings live in localStorage via zustand — not here.) */
@@ -21,6 +23,8 @@ class ComtusDB extends Dexie {
   chatSessions!: Table<ChatSession, string>;
   generations!: Table<Generation, string>;
   cardProgress!: Table<CardProgress, string>;
+  attempts!: Table<Attempt, string>;
+  highlights!: Table<Highlight, string>;
 
   constructor() {
     super("comtus");
@@ -88,6 +92,14 @@ class ComtusDB extends Dexie {
           });
         }
       });
+    // v3 — quiz and exam attempts. A new table; nothing to migrate.
+    this.version(3).stores({
+      attempts: "id, notebookId, generationId, finishedAt",
+    });
+    // v4 — highlights and margin notes on sources. A new table.
+    this.version(4).stores({
+      highlights: "id, notebookId, sourceId, updatedAt",
+    });
   }
 }
 
@@ -113,7 +125,17 @@ export async function touchNotebook(id: string) {
 export async function deleteNotebook(id: string) {
   await db.transaction(
     "rw",
-    [db.notebooks, db.sources, db.chunks, db.messages, db.chatSessions, db.generations, db.cardProgress],
+    [
+      db.notebooks,
+      db.sources,
+      db.chunks,
+      db.messages,
+      db.chatSessions,
+      db.generations,
+      db.cardProgress,
+      db.attempts,
+      db.highlights,
+    ],
     async () => {
       await db.notebooks.delete(id);
       await db.sources.where("notebookId").equals(id).delete();
@@ -122,6 +144,8 @@ export async function deleteNotebook(id: string) {
       await db.chatSessions.where("notebookId").equals(id).delete();
       await db.generations.where("notebookId").equals(id).delete();
       await db.cardProgress.where("notebookId").equals(id).delete();
+      await db.attempts.where("notebookId").equals(id).delete();
+      await db.highlights.where("notebookId").equals(id).delete();
     },
   );
 }
@@ -141,10 +165,17 @@ export async function addSourceWithChunks(
 }
 
 export async function deleteSource(sourceId: string) {
-  await db.transaction("rw", db.sources, db.chunks, async () => {
+  const notebookId = await db.transaction("rw", db.sources, db.chunks, db.highlights, async () => {
+    const source = await db.sources.get(sourceId);
     await db.sources.delete(sourceId);
     await db.chunks.where("sourceId").equals(sourceId).delete();
+    await db.highlights.where("sourceId").equals(sourceId).delete();
+    return source?.notebookId;
   });
+  if (notebookId) {
+    await touchNotebook(notebookId);
+    notifyDeskActivity();
+  }
 }
 
 /* ── Chat sessions ────────────────────────────────────────── */
@@ -236,6 +267,7 @@ export async function saveGeneration(gen: Generation) {
   await db.generations.put(gen);
   await touchNotebook(gen.notebookId);
   notifyDeskActivity();
+  notifyWorkSaved(gen.notebookId);
 }
 
 export async function createCustomNote(
@@ -255,6 +287,7 @@ export async function createCustomNote(
   await db.generations.put(note);
   await touchNotebook(notebookId);
   notifyDeskActivity();
+  notifyWorkSaved(notebookId);
   return note;
 }
 
@@ -270,6 +303,7 @@ export async function updateCustomNote(
     ...existing,
     title: title.trim() || existing.title,
     payload: { content, tags },
+    updatedAt: Date.now(),
   };
   await db.generations.put(updated);
   await touchNotebook(existing.notebookId);

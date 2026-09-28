@@ -15,6 +15,7 @@ const TermsPage = lazy(() => loadChunk(() => import("./landing/StaticPages")).th
 const ResponsibleAIPage = lazy(() => loadChunk(() => import("./landing/StaticPages")).then((m) => ({ default: m.ResponsibleAIPage })));
 const ContactPage = lazy(() => loadChunk(() => import("./landing/StaticPages")).then((m) => ({ default: m.ContactPage })));
 const StudyCompanionPage = lazy(() => loadChunk(() => import("./landing/StaticPages")).then((m) => ({ default: m.StudyCompanionPage })));
+const NotFoundPage = lazy(() => loadChunk(() => import("./landing/StaticPages")).then((m) => ({ default: m.NotFoundPage })));
 const OpenRouterCallback = lazy(() => loadChunk(() => import("./auth/OpenRouterCallback")));
 // Dev-only screenshot surface for the src/ui primitive kit — never routed to in production.
 const KitPreview = import.meta.env.DEV
@@ -57,6 +58,10 @@ export default function App() {
           <Route path="/responsible-ai" element={<ResponsibleAIPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/study-companion" element={<StudyCompanionPage />} />
+          <Route
+            path="*"
+            element={deskShell ? <Navigate to="/studio" replace /> : <NotFoundPage />}
+          />
         </Routes>
       </ErrorBoundary>
       {!deskShell && <Analytics />}

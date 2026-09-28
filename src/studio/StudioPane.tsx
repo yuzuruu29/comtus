@@ -27,7 +27,11 @@ import {
   deleteGeneration,
   restoreGeneration,
 } from "../lib/db";
+import { purgeDeckProgress } from "../lib/reviews";
+import { latestAttempts } from "../lib/attempts";
+import { WORK_SAVED } from "../lib/activity";
 import type {
+  Attempt,
   Generation,
   GenerationKind,
   QuizPayload,
@@ -52,6 +56,9 @@ import {
   SlideshowView,
 } from "./generators/AidsFlow";
 import { useDesk } from "./DeskContext";
+import StudyStanding from "./StudyStanding";
+import ExamPlan from "./ExamPlan";
+import { fmtScore } from "./generators/common";
 import { kindAccent } from "../lib/milestones";
 import { Button, IconButton } from "../ui";
 import "./study-tools.css";
@@ -114,6 +121,12 @@ const FLOW_TITLES: Record<string, string> = {
 
 const UNDO_DELETE_MS = 5_000;
 
+/** Undo keeps a deleted deck's review schedule; once the deletion is final,
+ *  the schedule goes too. Best effort — orphaned rows are never counted. */
+function commitDeletion(generation: Generation | undefined) {
+  if (generation?.kind === "flashcards") void purgeDeckProgress(generation.id).catch(() => {});
+}
+
 export default function StudioPane({
   notebookId,
   onCollapse,
@@ -127,7 +140,10 @@ export default function StudioPane({
 }) {
   const desk = useDesk();
   const [gens, setGens] = useState<Generation[]>([]);
+  const [lastAttempts, setLastAttempts] = useState<Map<string, Attempt>>(new Map());
+  const [historyVersion, setHistoryVersion] = useState(0);
   const [flow, setFlow] = useState<Flow>(null);
+  const [quizScope, setQuizScope] = useState("");
   const [aidKind, setAidKind] = useState<GenerationKind | undefined>(undefined);
   const [viewing, setViewing] = useState<Generation | null>(null);
   const [deleteNotice, setDeleteNotice] = useState<DeletedGenerationNotice | null>(null);
@@ -146,11 +162,24 @@ export default function StudioPane({
       .reverse()
       .sortBy("createdAt");
     setGens(rows);
+    // Scores are a convenience; a failed read leaves the list intact.
+    setLastAttempts(await latestAttempts(notebookId).catch(() => new Map<string, Attempt>()));
+    setHistoryVersion((v) => v + 1);
   }, [notebookId]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Notes saved from chat or the reader, and decks built from quiz misses,
+  // land in this list without a reload.
+  useEffect(() => {
+    const onSaved = (event: Event) => {
+      if ((event as CustomEvent<string>).detail === notebookId) void refresh();
+    };
+    window.addEventListener(WORK_SAVED, onSaved);
+    return () => window.removeEventListener(WORK_SAVED, onSaved);
+  }, [notebookId, refresh]);
 
   useEffect(() => {
     if (!pendingGenerationId) return;
@@ -168,6 +197,23 @@ export default function StudioPane({
       current = false;
     };
   }, [notebookId, onPendingGenerationConsumed, pendingGenerationId]);
+
+  const openQuiz = (scope = "") => {
+    setQuizScope(scope);
+    setFlow("quiz");
+  };
+
+  /** Closing a saved item may have produced an attempt or a new deck. */
+  const closeViewer = () => {
+    setViewing(null);
+    void refresh();
+  };
+
+  /** Swap the viewer to another saved item, e.g. the Missed questions deck. */
+  const openGeneration = (generation: Generation) => {
+    setViewing(generation);
+    void refresh();
+  };
 
   const openAid = (kind: GenerationKind) => {
     setAidKind(kind);
@@ -208,6 +254,8 @@ export default function StudioPane({
     try {
       const deleted = await deleteGeneration(generation.id);
       if (!deleted) return;
+      // A second delete replaces the open notice, which makes the first final.
+      commitDeletion(deleteNotice?.generation);
       setDeleteNotice({ generation: deleted, focusUndo });
       await refresh();
     } catch {
@@ -260,7 +308,7 @@ export default function StudioPane({
                 key={tool.flow}
                 variant="secondary"
                 className="practice-tool"
-                onClick={() => setFlow(tool.flow)}
+                onClick={() => (tool.flow === "quiz" ? openQuiz() : setFlow(tool.flow))}
                 style={{ ["--kind" as string]: tool.kindVar }}
               >
                 <span className="practice-tool-icon"><tool.icon size={19} aria-hidden="true" /></span>
@@ -293,6 +341,16 @@ export default function StudioPane({
             </div>
           </details>
         </section>
+
+        <ExamPlan
+          notebookId={notebookId}
+          version={historyVersion}
+          onOpenDeck={openGeneration}
+          onPractice={(topic) => openQuiz(topic ?? "")}
+          onMockExam={() => setFlow("exam")}
+        />
+
+        <StudyStanding notebookId={notebookId} version={historyVersion} onPractice={openQuiz} />
 
         <section className="study-saved" aria-labelledby="saved-work-title">
           <div className="study-saved-heading">
@@ -361,6 +419,14 @@ export default function StudioPane({
                         <h4>{g.title}</h4>
                         <span>
                           {KIND_LABELS[g.kind]} · {timeAgo(g.createdAt)}
+                          {lastAttempts.has(g.id) && (
+                            <>
+                              {" · "}
+                              <span className="study-saved-score">
+                                Last {fmtScore(lastAttempts.get(g.id)!.score)}/{lastAttempts.get(g.id)!.total}
+                              </span>
+                            </>
+                          )}
                         </span>
                       </button>
 
@@ -413,7 +479,10 @@ export default function StudioPane({
         key={deleteNotice?.generation.id ?? "none"}
         notice={deleteNotice}
         onUndo={() => void handleUndoDelete()}
-        onExpire={() => setDeleteNotice(null)}
+        onExpire={() => {
+          commitDeletion(deleteNotice?.generation);
+          setDeleteNotice(null);
+        }}
       />
 
       {/* Generator modals */}
@@ -427,7 +496,12 @@ export default function StudioPane({
         wide
       >
         {flow === "quiz" && (
-          <QuizConfigForm notebookId={notebookId} onDone={done} onCancel={() => setFlow(null)} />
+          <QuizConfigForm
+            notebookId={notebookId}
+            defaultScope={quizScope}
+            onDone={done}
+            onCancel={() => setFlow(null)}
+          />
         )}
         {flow === "exam" && (
           <ExamConfigForm notebookId={notebookId} onDone={done} onCancel={() => setFlow(null)} />
@@ -507,7 +581,7 @@ export default function StudioPane({
       {/* Artifact Viewer Modal */}
       <Modal
         open={viewing !== null}
-        onClose={() => setViewing(null)}
+        onClose={closeViewer}
         title={
           <span className="flex items-center gap-3">
             <span className="min-w-0 truncate">{viewing?.title ?? ""}</span>
@@ -518,9 +592,15 @@ export default function StudioPane({
       >
         {viewing && (
           <ArtifactView
+            key={viewing.id}
             gen={viewing}
             notebookId={notebookId}
-            onRetake={() => setViewing(null)}
+            onClose={closeViewer}
+            onNewQuiz={() => {
+              closeViewer();
+              openQuiz();
+            }}
+            onOpenGeneration={openGeneration}
           />
         )}
       </Modal>
@@ -578,17 +658,35 @@ function UndoDeleteToast({
 function ArtifactView({
   gen,
   notebookId,
-  onRetake,
+  onClose,
+  onNewQuiz,
+  onOpenGeneration,
 }: {
   gen: Generation;
   notebookId: string;
-  onRetake: () => void;
+  onClose: () => void;
+  onNewQuiz: () => void;
+  onOpenGeneration: (gen: Generation) => void;
 }) {
   switch (gen.kind) {
     case "quiz":
-      return <QuizTaker payload={gen.payload as QuizPayload} onRetake={onRetake} onRegenerate={onRetake} />;
+      return (
+        <QuizTaker
+          payload={gen.payload as QuizPayload}
+          gen={gen}
+          onRegenerate={onNewQuiz}
+          onOpenGeneration={onOpenGeneration}
+        />
+      );
     case "exam":
-      return <ExamRunner payload={gen.payload as ExamPayload} onExit={onRetake} />;
+      return (
+        <ExamRunner
+          payload={gen.payload as ExamPayload}
+          gen={gen}
+          onExit={onClose}
+          onOpenGeneration={onOpenGeneration}
+        />
+      );
     case "essay-review":
       return <EssayFeedback payload={gen.payload as EssayReviewPayload} />;
     case "flashcards":

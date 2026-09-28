@@ -30,6 +30,8 @@ function corsHeaders(origin?: string | null): HeadersInit {
         "access-control-allow-origin": origin,
         "access-control-allow-headers": "content-type,x-api-key,anthropic-version",
         "access-control-allow-methods": "POST,OPTIONS",
+        "access-control-expose-headers": "retry-after,request-id",
+        vary: "origin",
       }
     : {};
 }
@@ -61,8 +63,8 @@ async function withinIpThrottle(req: Request, secret: string, limitPerHour: numb
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token || !secret) return true;
   const ip =
-    req.headers.get("x-real-ip") ??
-    (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ??
+    req.headers.get("x-real-ip") ||
+    (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
     "unknown";
   const bucket = Math.floor(Date.now() / 3600_000);
   const key = `ipthrottle:${await hmacHex(`${ip}:${bucket}`, secret)}`;
@@ -140,19 +142,42 @@ async function verifyPass(token: string): Promise<PassPayload | null> {
   }
 }
 
+/** Counters outlive their pass by this long, then Redis drops them. */
+const COUNTER_GRACE_S = 30 * 86400;
+
 /** Per-pass request count. Fails CLOSED: without a working counter the
     proxy refuses to spend Anthropic money it cannot bound. */
-async function withinQuota(jti: string, quota: number): Promise<boolean> {
+async function withinQuota(pass: PassPayload): Promise<boolean> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) throw new Error("quota backend not configured");
-  const res = await fetch(`${url}/incr/pass:${jti}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const auth = { headers: { Authorization: `Bearer ${token}` } };
+  const res = await fetch(`${url}/incr/pass:${pass.j}`, auth);
   const { result } = (await res.json()) as { result?: number };
   if (typeof result !== "number") throw new Error("quota counter unreadable");
-  return result <= quota;
+  if (result === 1) {
+    // First use: let the counter expire after the pass does.
+    await fetch(`${url}/expireat/pass:${pass.j}/${pass.e + COUNTER_GRACE_S}`, auth).catch(() => undefined);
+  }
+  return result <= pass.q;
 }
+
+/** Hands back a request Anthropic refused or never served — failed calls
+    are not billed, so they shouldn't spend the buyer's pass either.
+    Best effort: a lost refund errs toward the buyer paying one request. */
+async function refundQuota(jti: string): Promise<void> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return;
+  try {
+    await fetch(`${url}/decr/pass:${jti}`, { headers: { Authorization: `Bearer ${token}` } });
+  } catch {
+    /* counted once — acceptable */
+  }
+}
+
+/** Upstream headers worth passing through to the client. */
+const FORWARDED_HEADERS = ["retry-after", "request-id"] as const;
 
 /* ── Route dispatch ─────────────────────────────────────── */
 
@@ -226,7 +251,7 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
       : MAX_TOKENS_CEILING;
 
   try {
-    if (!(await withinQuota(pass.j, pass.q))) {
+    if (!(await withinQuota(pass))) {
       return json(402, { error: "This pass has reached its request limit." }, origin);
     }
   } catch (e) {
@@ -237,21 +262,41 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
     );
   }
 
-  const upstream = await fetch(`${ANTHROPIC_ORIGIN}/v1/messages`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify(parsed),
-  });
+  let upstream: Response;
+  try {
+    upstream = await fetch(`${ANTHROPIC_ORIGIN}/v1/messages`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify(parsed),
+    });
+  } catch (e) {
+    console.error("anthropic upstream unreachable:", e instanceof Error ? e.message : e);
+    await refundQuota(pass.j);
+    return json(
+      502,
+      { error: "Claude could not be reached. This request was not counted against your pass." },
+      origin,
+    );
+  }
+
+  if (!upstream.ok) await refundQuota(pass.j);
+
+  const passthrough: Record<string, string> = {};
+  for (const name of FORWARDED_HEADERS) {
+    const value = upstream.headers.get(name);
+    if (value) passthrough[name] = value;
+  }
 
   return new Response(upstream.body, {
     status: upstream.status,
     headers: {
       "content-type": upstream.headers.get("content-type") ?? "application/json",
       "cache-control": "no-store",
+      ...passthrough,
       ...corsHeaders(origin),
     },
   });

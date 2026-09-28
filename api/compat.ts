@@ -49,6 +49,9 @@ function corsHeaders(origin: string | null): Record<string, string> {
     : {};
 }
 
+/** Chat payloads with pasted sources run large; anything past this is abuse. */
+const MAX_BODY_BYTES = 8 * 1024 * 1024;
+
 function json(status: number, body: Record<string, string>, origin: string | null): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -95,11 +98,25 @@ export default async function handler(req: Request): Promise<Response> {
   if (contentType) headers["content-type"] = contentType;
   if (authorization) headers["authorization"] = authorization;
 
-  const res = await fetch(upstream, {
-    method: req.method,
-    headers,
-    ...(req.method === "POST" ? { body: await req.text() } : {}),
-  });
+  let body: string | undefined;
+  if (req.method === "POST") {
+    if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) {
+      return json(413, { error: "Request too large." }, origin);
+    }
+    body = await req.text();
+    if (body.length > MAX_BODY_BYTES) return json(413, { error: "Request too large." }, origin);
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(upstream, { method: req.method, headers, ...(body !== undefined ? { body } : {}) });
+  } catch (err) {
+    return json(
+      502,
+      { error: `The ${provider} relay couldn't reach the provider: ${err instanceof Error ? err.message : "unknown"}` },
+      origin,
+    );
+  }
 
   return new Response(res.body, {
     status: res.status,

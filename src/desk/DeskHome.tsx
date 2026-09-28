@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import {
   DotsThreeVertical,
+  DeviceMobile,
   DownloadSimple,
+  FolderOpen,
   ListDashes,
   MagnifyingGlass,
   PencilSimple,
@@ -13,14 +15,19 @@ import {
 } from "@phosphor-icons/react";
 import { liveQuery } from "dexie";
 import { db, createNotebook, deleteNotebook, touchNotebook } from "../lib/db";
-import type { Notebook, Source } from "../lib/types";
+import { exportNotebook, openNotebookText, readNotebookFileNative } from "../lib/backup";
+import { isTauri } from "../lib/desktop";
+import { ReceiveFromDeviceDialog, SendToDeviceDialog } from "../studio/DeviceTransfer";
+import type { Notebook } from "../lib/types";
 import StudyGlyph from "../components/icons/StudyGlyph";
 import ComtusLogo from "../components/brand/ComtusLogo";
 import { ByokBadge, ProBadge, SettingsButton, CreateNotebookEmblem } from "../components/brand/BrandControls";
 import { SOFT, Spotlight, staggerDelay } from "../studio/fx";
 import { Modal, Field, inputCls, btnLamp, btnGhost, timeAgo } from "../studio/ui";
+import { examCountdown } from "../lib/exam";
 import { AnimatePresence, motion } from "motion/react";
 import { useSettings } from "../lib/settings";
+import ReviewDueStrip from "../studio/ReviewDueStrip";
 
 type SortOption = "recent" | "az" | "oldest" | "sources";
 
@@ -31,6 +38,7 @@ interface NotebookWithCount extends Notebook {
 export default function DeskHome({
   hasKey: _hasKey,
   onOpenResume,
+  onOpenWork,
   onNew: _onNew,
   onSettings,
 }: {
@@ -182,21 +190,34 @@ export default function DeskHome({
 
   const handleExport = async (nb: Notebook) => {
     setMenuOpenId(null);
-    const sources = await db.sources.where("notebookId").equals(nb.id).toArray();
-    const generations = await db.generations.where("notebookId").equals(nb.id).toArray();
-    const payload = {
-      notebook: nb,
-      exportedAt: new Date().toISOString(),
-      sources: sources.map((s: Source) => ({ title: s.title, kind: s.kind, content: s.content })),
-      generations,
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${nb.name.replace(/[^a-z0-9_-]/gi, "_")}_backup.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    await exportNotebook(nb).catch(() => undefined);
+  };
+
+  // An exported notebook opens straight away; a full backup merges in and
+  // the live query picks it up.
+  const [fileNotice, setFileNotice] = useState("");
+  const [sending, setSending] = useState<Notebook | null>(null);
+  const [receiving, setReceiving] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const openFileText = async (text: string | null) => {
+    if (text === null) return;
+    setFileNotice("");
+    try {
+      const opened = await openNotebookText(text);
+      if (opened.kind === "notebook") onOpenResume(opened.notebookId);
+      else setFileNotice(`Restored ${opened.count.toLocaleString()} items from the backup.`);
+    } catch (error) {
+      setFileNotice(error instanceof Error ? error.message : "That file could not be opened.");
+    }
+  };
+  const pickFile = () => {
+    if (!isTauri()) {
+      fileRef.current?.click();
+      return;
+    }
+    readNotebookFileNative()
+      .then(openFileText)
+      .catch(() => setFileNotice("That file could not be read."));
   };
 
   const formatDate = (ts: number) => {
@@ -361,6 +382,33 @@ export default function DeskHome({
               </AnimatePresence>
             </div>
 
+            <input
+              ref={fileRef}
+              type="file"
+              hidden
+              accept=".json,application/json"
+              aria-label="Notebook file"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) void file.text().then(openFileText);
+              }}
+            />
+            <button
+              onClick={pickFile}
+              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3.5 text-[13px] text-ink/85 hover:border-hairline-strong hover:text-ink transition-colors"
+            >
+              <FolderOpen size={15} />
+              <span>Open a file</span>
+            </button>
+            <button
+              onClick={() => setReceiving(true)}
+              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3.5 text-[13px] text-ink/85 hover:border-hairline-strong hover:text-ink transition-colors"
+            >
+              <DeviceMobile size={15} />
+              <span>From another device</span>
+            </button>
+
             {/* + Create New Button */}
             <button
               onClick={openCreateModal}
@@ -371,6 +419,14 @@ export default function DeskHome({
             </button>
           </div>
         </div>
+
+        {fileNotice && (
+          <p role="status" className="mt-4 text-[13px] text-muted">
+            {fileNotice}
+          </p>
+        )}
+
+        <ReviewDueStrip onReview={onOpenWork} />
 
         {/* Section Heading */}
         <div className="mt-8 mb-5 flex items-baseline justify-between">
@@ -472,6 +528,17 @@ export default function DeskHome({
                                   <DownloadSimple size={13} />
                                   Export
                                 </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMenuOpenId(null);
+                                    setSending(nb);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
+                                >
+                                  <DeviceMobile size={13} />
+                                  Send to device
+                                </button>
                                 <div className="my-1 border-t border-hairline" />
                                 <button
                                   onClick={(e) => {
@@ -506,6 +573,12 @@ export default function DeskHome({
                         <span>
                           {nb.sourceCount} {nb.sourceCount === 1 ? "source" : "sources"}
                         </span>
+                        {examCountdown(nb) && (
+                          <>
+                            <span className="mx-1.5 text-muted/60">·</span>
+                            <span className="font-[560] text-brass">{examCountdown(nb)}</span>
+                          </>
+                        )}
                       </div>
                     </motion.div>
                   </Spotlight>
@@ -536,6 +609,9 @@ export default function DeskHome({
                   </button>
 
                   <div className="flex items-center gap-6 text-[12px] text-muted">
+                    {examCountdown(nb) && (
+                      <span className="font-[560] text-brass">{examCountdown(nb)}</span>
+                    )}
                     <span className="rounded-full bg-ink/[0.04] px-2.5 py-0.5 font-mono text-[11px]">
                       {nb.sourceCount} {nb.sourceCount === 1 ? "source" : "sources"}
                     </span>
@@ -676,6 +752,17 @@ export default function DeskHome({
           </div>
         </div>
       </Modal>
+
+      {sending && <SendToDeviceDialog notebook={sending} onClose={() => setSending(null)} />}
+      {receiving && (
+        <ReceiveFromDeviceDialog
+          onClose={() => setReceiving(false)}
+          onReceived={(result) => {
+            setReceiving(false);
+            onOpenResume(result.notebookId);
+          }}
+        />
+      )}
     </main>
   );
 }

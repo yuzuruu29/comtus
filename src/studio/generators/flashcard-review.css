@@ -1,0 +1,273 @@
+/* Flashcard review — tokens only (src/styles/tokens.css). */
+
+.fc-review {
+  display: grid;
+  gap: 1rem;
+}
+
+.fc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-meta-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.625rem;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.fc-meta-mode {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.fc-meta-state[data-state="new"] {
+  color: var(--moon);
+}
+.fc-meta-state[data-state="review"] {
+  color: var(--sage);
+}
+.fc-meta-state[data-state="relearning"] {
+  color: var(--rust);
+}
+
+.fc-progress {
+  height: 3px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--hairline);
+}
+
+.fc-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brass);
+  transform: scaleX(var(--done, 0));
+  transform-origin: left center;
+  transition: transform var(--dur-med) var(--ease-out);
+}
+
+.fc-stage {
+  perspective: 1400px;
+}
+
+/* Both faces share one grid cell, so the card is as tall as its taller
+   face (a question with four options, a worked answer) and still flips. */
+.fc-card {
+  position: relative;
+  display: grid;
+  width: 100%;
+  min-height: 272px;
+  transform-style: preserve-3d;
+  border-radius: var(--radius-dialog);
+  cursor: pointer;
+}
+
+.fc-card:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+}
+
+.fc-face {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-dialog);
+  background: var(--surface);
+  box-shadow: var(--elev-card);
+  text-align: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.fc-face-back {
+  border-color: color-mix(in oklab, var(--brass) 35%, var(--hairline-strong));
+  transform: rotateY(180deg);
+}
+
+.fc-face-body {
+  margin-block: auto;
+  padding-inline: 0.25rem;
+  color: var(--ink);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+/* Card text is Markdown with math (cards made from quiz misses carry
+   options and worked answers); paragraphs stack, and a multi-paragraph
+   face reads left-aligned. */
+.fc-face-body .assessment-paragraph {
+  display: block;
+}
+
+.fc-face-body:has(.assessment-paragraph + .assessment-paragraph) {
+  align-self: stretch;
+  text-align: left;
+}
+
+.fc-face-front {
+  font-family: var(--font-read);
+  font-size: 1.3rem;
+  font-weight: 450;
+  line-height: 1.45;
+}
+
+.fc-face-front:has(.assessment-paragraph + .assessment-paragraph) {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+.fc-face-hint {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.fc-review kbd,
+.fc-face-hint kbd {
+  padding: 0 0.3rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 4px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+}
+
+.fc-reveal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.fc-rate-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.fc-rate {
+  --tone: var(--muted);
+  display: grid;
+  justify-items: center;
+  gap: 0.125rem;
+  min-height: 64px;
+  padding: 0.5rem 0.25rem;
+  border: 1px solid color-mix(in oklab, var(--tone) 40%, var(--hairline));
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.fc-rate:hover {
+  background: color-mix(in oklab, var(--tone) 8%, var(--surface));
+}
+
+.fc-rate:active {
+  transform: translateY(1px);
+}
+
+.fc-rate:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+.fc-rate[data-rating="again"] {
+  --tone: var(--rust);
+}
+.fc-rate[data-rating="hard"] {
+  --tone: var(--brass);
+}
+.fc-rate[data-rating="good"],
+.fc-rate[data-rating="easy"] {
+  --tone: var(--sage);
+}
+
+.fc-rate-label {
+  color: var(--tone);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.fc-rate-next {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-rest {
+  display: grid;
+  justify-items: center;
+  gap: 0.625rem;
+  padding: 1.5rem 0.5rem;
+  text-align: center;
+}
+
+.fc-rest-icon {
+  color: var(--sage);
+}
+
+.fc-rest h3 {
+  margin: 0;
+  font-family: var(--font-read);
+  font-size: 1.5rem;
+  font-weight: 450;
+  letter-spacing: -0.02em;
+}
+
+.fc-rest p {
+  max-width: 44ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.fc-rest-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 639px) {
+  .fc-card {
+    min-height: 236px;
+  }
+
+  .fc-rate-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-progress > span,
+  .fc-rate {
+    transition: none;
+  }
+}
