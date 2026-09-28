@@ -19,6 +19,7 @@ import { useMediaQuery } from "../lib/useMediaQuery";
 import { panesFor } from "./layout";
 import { usePaneResize } from "./usePaneResize";
 import { db } from "../lib/db";
+import { exportNotebook } from "../lib/backup";
 import { LampPulse, Modal, btnGhost } from "./ui";
 import { useDesk } from "./DeskContext";
 import ConsoleShell from "./ConsoleShell";
@@ -431,22 +432,7 @@ function WorkspaceHeader({
   };
 
   const handleExport = async () => {
-    if (!notebook) return;
-    const sources = await db.sources.where("notebookId").equals(notebook.id).toArray();
-    const generations = await db.generations.where("notebookId").equals(notebook.id).toArray();
-    const payload = {
-      notebook,
-      exportedAt: new Date().toISOString(),
-      sources: sources.map((s) => ({ title: s.title, kind: s.kind, content: s.content })),
-      generations,
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${notebook.name.replace(/[^a-z0-9_-]/gi, "_")}_backup.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (notebook) await exportNotebook(notebook).catch(() => undefined);
   };
 
   return (

@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { BookOpen, GearSix, ListDashes, MagnifyingGlass, Plug, Plus, SquaresFour, X } from "@phosphor-icons/react";
 import { Button, Dialog, Empty, Field, IconButton, Input, Segmented, Skeleton } from "../ui";
 import { db, createNotebook, deleteNotebook, touchNotebook } from "../lib/db";
-import type { Notebook, Source } from "../lib/types";
+import { exportNotebook } from "../lib/backup";
+import type { Notebook } from "../lib/types";
 import ComtusLogo from "../components/brand/ComtusLogo";
 import DeskShell from "./DeskShell";
 import SettingsModal, { type SettingsTab } from "./SettingsModal";
@@ -111,21 +112,7 @@ export default function Shelf({
   };
 
   const handleExport = async (nb: Notebook) => {
-    const sources = await db.sources.where("notebookId").equals(nb.id).toArray();
-    const generations = await db.generations.where("notebookId").equals(nb.id).toArray();
-    const payload = {
-      notebook: nb,
-      exportedAt: new Date().toISOString(),
-      sources: sources.map((s: Source) => ({ title: s.title, kind: s.kind, content: s.content })),
-      generations,
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${nb.name.replace(/[^a-z0-9_-]/gi, "_")}_backup.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    await exportNotebook(nb).catch(() => undefined);
   };
 
   return (

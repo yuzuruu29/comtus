@@ -1,5 +1,6 @@
 import type { Table } from "dexie";
 import { db } from "./db";
+import type { Notebook } from "./types";
 import { isTauri } from "./desktop";
 import { useSettings } from "./settings";
 
@@ -19,6 +20,8 @@ export interface BackupPayload {
   app?: string;
   schema?: number;
   exportedAt?: string;
+  /** "notebook" when the file holds a single notebook; absent for a full backup. */
+  scope?: "notebook";
   data?: Partial<Record<TableName, unknown[]>>;
 }
 
@@ -37,6 +40,31 @@ async function buildPayload(): Promise<BackupPayload> {
   };
 }
 
+/** One notebook with everything that hangs off it — sources, chunks, chats,
+ *  saved work and review history — in the same shape as a full backup, so
+ *  Settings → Restore merges it straight back in. */
+export async function buildNotebookPayload(notebookId: string): Promise<BackupPayload> {
+  const notebook = await db.notebooks.get(notebookId);
+  if (!notebook) throw new Error("This notebook is no longer on this device.");
+  const data: Partial<Record<TableName, unknown[]>> = { notebooks: [notebook] };
+  for (const t of TABLES) {
+    if (t === "notebooks") continue;
+    data[t] = await db[t].where("notebookId").equals(notebookId).toArray();
+  }
+  return {
+    app: "comtus",
+    schema: 2,
+    scope: "notebook",
+    exportedAt: new Date().toISOString(),
+    data,
+  };
+}
+
+function notebookFilename(name: string): string {
+  const slug = name.trim().replace(/[^\p{L}\p{N}_-]+/gu, "_").replace(/^_+|_+$/g, "").slice(0, 60) || "notebook";
+  return `${slug}-comtus-${new Date().toISOString().slice(0, 10)}.json`;
+}
+
 function markBackedUp(): void {
   useSettings.getState().update({ lastBackupAt: Date.now() });
 }
@@ -51,11 +79,8 @@ function downloadBlob(json: string, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
-/** Full local store → native save dialog on Tauri, browser download otherwise. */
-export async function exportBackup(): Promise<boolean> {
-  const json = JSON.stringify(await buildPayload());
-  const filename = backupFilename();
-
+/** Native save dialog on Tauri, browser download otherwise. False = cancelled. */
+async function saveJson(json: string, filename: string): Promise<boolean> {
   if (isTauri()) {
     const { save } = await import("@tauri-apps/plugin-dialog");
     const { writeTextFile } = await import("@tauri-apps/plugin-fs");
@@ -68,8 +93,19 @@ export async function exportBackup(): Promise<boolean> {
   } else {
     downloadBlob(json, filename);
   }
-  markBackedUp();
   return true;
+}
+
+/** Full local store → a file. */
+export async function exportBackup(): Promise<boolean> {
+  const saved = await saveJson(JSON.stringify(await buildPayload()), backupFilename());
+  if (saved) markBackedUp();
+  return saved;
+}
+
+/** One notebook → a restorable file. */
+export async function exportNotebook(notebook: Pick<Notebook, "id" | "name">): Promise<boolean> {
+  return saveJson(JSON.stringify(await buildNotebookPayload(notebook.id)), notebookFilename(notebook.name));
 }
 
 export function parseBackupPayload(text: string): BackupPayload {
