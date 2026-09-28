@@ -15,6 +15,7 @@ import { generateJSON, generateMarkdown, friendlyError } from "../../lib/llm";
 import { useCallSettings } from "../../lib/settings";
 import { saveGeneration } from "../../lib/db";
 import { GENERATOR_SYSTEM, buildSourceBlock, sanitizeCards } from "./common";
+import DeckImport from "./DeckImport";
 import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote } from "../ui";
 import { ArrowsIn, ArrowsOut, CaretLeft, CaretRight, Check, Copy, Crown, Presentation, Stack } from "@phosphor-icons/react";
 
@@ -279,6 +280,8 @@ JSON shape: {"cards":[{"front":"...","back":"...","topic":"..."}]}`,
           {busy ? "Distilling…" : `Make ${count} cards`}
         </button>
       </div>
+
+      {!busy && <DeckImport notebookId={notebookId} onDone={onDone} />}
     </div>
   );
 }

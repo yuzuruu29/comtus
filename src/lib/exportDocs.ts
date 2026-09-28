@@ -7,15 +7,16 @@ import type {
 } from "./types";
 import { loadChunk } from "./lazyChunk";
 
-export type ExportFormat = "pdf" | "pptx";
+export type ExportFormat = "pdf" | "pptx" | "anki" | "csv";
 
 /** Which download formats make sense per artifact kind. */
 export function exportFormatsFor(kind: Generation["kind"]): ExportFormat[] {
   switch (kind) {
     case "quiz":
     case "exam":
-    case "flashcards":
       return ["pdf", "pptx"];
+    case "flashcards":
+      return ["anki", "csv", "pdf", "pptx"];
     case "presentation":
     case "slideshow":
       return ["pptx"];
@@ -47,6 +48,27 @@ export async function exportGeneration(
   format: ExportFormat,
 ): Promise<void> {
   const base = `${slug(notebookName)}-${slug(gen.title)}-${dateStamp()}`;
+  if (format === "anki" || format === "csv") {
+    const [{ deckToAnki, deckToCsv }, { saveTextFile }] = await Promise.all([
+      import("./cardInterop"),
+      import("./saveFile"),
+    ]);
+    const cards = (gen.payload as FlashcardsPayload | undefined)?.cards ?? [];
+    if (format === "anki") {
+      await saveTextFile(deckToAnki(cards, `${notebookName}::${gen.title}`), `${base}-anki.txt`, {
+        name: "Anki notes",
+        extensions: ["txt"],
+        mime: "text/plain;charset=utf-8",
+      });
+    } else {
+      await saveTextFile(deckToCsv(cards), `${base}.csv`, {
+        name: "CSV",
+        extensions: ["csv"],
+        mime: "text/csv;charset=utf-8",
+      });
+    }
+    return;
+  }
   if (format === "pdf") {
     const { savePdf } = await loadChunk(() => import("./pdfExport"));
     await savePdf(gen, notebookName, base);

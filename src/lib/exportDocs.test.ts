@@ -77,7 +77,7 @@ describe("exportFormatsFor", () => {
   it("offers PDF and PowerPoint for quiz, exam, and flashcards", () => {
     expect(exportFormatsFor("quiz")).toEqual(["pdf", "pptx"]);
     expect(exportFormatsFor("exam")).toEqual(["pdf", "pptx"]);
-    expect(exportFormatsFor("flashcards")).toEqual(["pdf", "pptx"]);
+    expect(exportFormatsFor("flashcards")).toEqual(["anki", "csv", "pdf", "pptx"]);
   });
 
   it("offers PDF for study aids and PPT for decks", () => {

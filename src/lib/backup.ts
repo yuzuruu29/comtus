@@ -1,7 +1,7 @@
 import type { Table } from "dexie";
 import { db } from "./db";
 import type { Notebook } from "./types";
-import { isTauri } from "./desktop";
+import { saveTextFile } from "./saveFile";
 import { useSettings } from "./settings";
 
 const TABLES = [
@@ -71,32 +71,10 @@ function markBackedUp(): void {
   useSettings.getState().update({ lastBackupAt: Date.now() });
 }
 
-function downloadBlob(json: string, filename: string): void {
-  const blob = new Blob([json], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+const JSON_FILE = { name: "JSON", extensions: ["json"], mime: "application/json" };
 
 /** Native save dialog on Tauri, browser download otherwise. False = cancelled. */
-async function saveJson(json: string, filename: string): Promise<boolean> {
-  if (isTauri()) {
-    const { save } = await import("@tauri-apps/plugin-dialog");
-    const { writeTextFile } = await import("@tauri-apps/plugin-fs");
-    const path = await save({
-      defaultPath: filename,
-      filters: [{ name: "JSON", extensions: ["json"] }],
-    });
-    if (!path) return false;
-    await writeTextFile(path, json);
-  } else {
-    downloadBlob(json, filename);
-  }
-  return true;
-}
+const saveJson = (json: string, filename: string) => saveTextFile(json, filename, JSON_FILE);
 
 /** Full local store → a file. */
 export async function exportBackup(): Promise<boolean> {
