@@ -11,6 +11,9 @@ import SettingsModal, { type SettingsTab } from "./SettingsModal";
 import NotebookCard, { type NotebookCardData } from "./NotebookCard";
 import NewNotebookDialog from "./NewNotebookDialog";
 import ReviewDueStrip from "./ReviewDueStrip";
+import { useDesk } from "./DeskContext";
+import { modLabel } from "./shortcuts";
+import { detectPlatform } from "../lib/desktop";
 import { timeAgo } from "./ui";
 import "./shelf.css";
 
@@ -228,6 +231,7 @@ export default function Shelf({
                         </IconButton>
                       )}
                     </div>
+                    <SearchLibraryButton />
                     <Segmented
                       aria-label="View"
                       value={viewMode}
@@ -332,5 +336,18 @@ export default function Shelf({
         <SettingsModal open={settingsOpen} initialTab={settingsTab} onClose={() => setSettingsOpen(false)} />
       </div>
     </DeskShell>
+  );
+}
+
+/** The title filter only sees names; this opens full-text search across
+ *  every source, chat and saved item. Rendered inside DeskShell so it
+ *  reaches the palette through desk context. */
+function SearchLibraryButton() {
+  const desk = useDesk();
+  return (
+    <Button variant="ghost" className="shelf-search-library" onClick={desk.openPalette}>
+      Search inside notebooks
+      <kbd aria-hidden="true">{modLabel(detectPlatform())} K</kbd>
+    </Button>
   );
 }

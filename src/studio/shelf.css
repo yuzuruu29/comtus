@@ -278,6 +278,28 @@
   right: 2px;
 }
 
+.shelf-search-library.btn {
+  gap: 0.625rem;
+  color: var(--brass);
+  font-weight: 500;
+}
+
+.shelf-search-library kbd {
+  padding: 0 0.35rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 4px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.6;
+}
+
+@media (hover: none) {
+  .shelf-search-library kbd {
+    display: none;
+  }
+}
+
 .shelf-page .segmented-option-selected {
   background: var(--raised);
   color: var(--ink);

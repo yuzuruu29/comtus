@@ -64,6 +64,15 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
     if (!desktop) setMobilePane("studio");
     else if (!panes.studio) setLayout(panes.sources ? "standard" : "writing");
   }, [desktop, panes.sources, panes.studio, pendingWork, setLayout]);
+  // Search deep links land on the pane that shows them on mobile.
+  const pendingChat = desk.pendingChatId;
+  const pendingSource = desk.pendingView;
+  useEffect(() => {
+    if (desktop) return;
+    if (pendingSource) setMobilePane("sources");
+    else if (pendingChat) setMobilePane("chat");
+  }, [desktop, pendingChat, pendingSource]);
+
   const clearPendingWork = useCallback(() => {
     setSearchParams(
       (params) => {
@@ -158,6 +167,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
         }}
         surfaceTarget={desktop ? desktopChatTarget : mobilePane === "chat" ? mobileChatTarget : null}
         focusRequest={chatFocusRequest}
+        pendingSessionId={desk.pendingChatId}
+        onPendingSessionConsumed={desk.clearPendingChat}
       />
       <ConsoleShell
         notebookName={desk.notebook?.name || "Course Notebook"}
@@ -483,7 +494,7 @@ function WorkspaceHeader({
               { key: "export", label: "Export notebook", icon: <DownloadSimple size={16} aria-hidden="true" />, disabled: !notebook, onSelect: () => void handleExport() },
               { key: "models", label: "AI models", onSelect: () => onSettings("models") },
               { key: "milestones", label: "Study milestones", onSelect: actions.openMilestones },
-              { key: "commands", label: "Keyboard commands", onSelect: actions.openPalette },
+              { key: "commands", label: "Search and commands", onSelect: actions.openPalette },
             ]}
           />
           <IconButton

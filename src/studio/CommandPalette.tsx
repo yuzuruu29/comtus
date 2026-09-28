@@ -1,18 +1,30 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Books,
   ChatCircle,
+  ChatsCircle,
   Cpu,
+  FileText,
   GearSix,
   House,
   MagnifyingGlass,
   Medal,
   Notebook,
+  NotePencil,
   Plus,
   SidebarSimple,
 } from "@phosphor-icons/react";
 import { db } from "../lib/db";
+import {
+  hitHref,
+  isSearchable,
+  loadLibrarySnapshot,
+  searchSnapshot,
+  type LibraryHit,
+  type LibrarySnapshot,
+} from "../lib/librarySearch";
 import type { Notebook as NotebookRow } from "../lib/types";
 import { detectPlatform } from "../lib/desktop";
 import { SOFT } from "./fx";
@@ -25,8 +37,18 @@ type Item = {
   group: string;
   label: string;
   hint?: string;
+  /** Notebook a search result lives in. */
+  meta?: string;
+  /** Text around a search match. */
+  snippet?: LibraryHit["snippet"];
   icon: typeof GearSix;
   run: () => void;
+};
+
+const HIT_ICONS: Record<LibraryHit["group"], typeof GearSix> = {
+  Sources: FileText,
+  "Saved work": NotePencil,
+  Conversations: ChatsCircle,
 };
 
 /** Subsequence fuzzy match; higher is better, -1 means no match. */
@@ -57,8 +79,11 @@ export default function CommandPalette({
   onClose: () => void;
 }) {
   const desk = useDesk();
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [notebooks, setNotebooks] = useState<NotebookRow[]>([]);
+  const [snapshot, setSnapshot] = useState<LibrarySnapshot | null>(null);
+  const searchQuery = useDeferredValue(query);
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -72,6 +97,11 @@ export default function CommandPalette({
     setQuery("");
     setActive(0);
     void db.notebooks.orderBy("updatedAt").reverse().toArray().then(setNotebooks);
+    // A fresh snapshot per opening, so search always sees today's library.
+    setSnapshot(null);
+    void loadLibrarySnapshot()
+      .then(setSnapshot)
+      .catch(() => setSnapshot({ docs: [], notebookNames: new Map() }));
     const t = window.setTimeout(() => inputRef.current?.focus(), 30);
     return () => {
       window.clearTimeout(t);
@@ -114,12 +144,27 @@ export default function CommandPalette({
     }));
     const all = [...nbItems, ...actions];
     if (!q) return all;
-    return all
+    const commands = all
       .map((item) => ({ item, score: fuzzyScore(item.label, item.group, q) }))
       .filter(({ score }) => score >= 0)
       .sort((a, b) => b.score - a.score)
       .map(({ item }) => item);
-  }, [desk, mod, notebooks, query]);
+    const hits: Item[] =
+      snapshot && isSearchable(searchQuery)
+        ? searchSnapshot(snapshot, searchQuery).map((hit) => ({
+            id: `hit-${hit.id}`,
+            group: hit.group,
+            label: hit.title,
+            meta: hit.notebookName,
+            snippet: hit.snippet,
+            icon: HIT_ICONS[hit.group],
+            run: () => navigate(hitHref(hit), { flushSync: true }),
+          }))
+        : [];
+    return [...commands, ...hits];
+  }, [desk, mod, navigate, notebooks, query, searchQuery, snapshot]);
+
+  const searching = isSearchable(query) && (snapshot === null || query !== searchQuery);
 
   useEffect(() => {
     setActive(0);
@@ -201,7 +246,7 @@ export default function CommandPalette({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8, transition: { duration: 0.14 } }}
             transition={SOFT}
-            className="relative w-full max-w-lg overflow-hidden rounded-[var(--radius-field)] border border-hairline bg-surface shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"
+            className="relative w-full max-w-xl overflow-hidden rounded-[var(--radius-field)] border border-hairline bg-surface shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"
           >
             <h2 id="command-palette-title" className="sr-only">
               Command palette
@@ -212,9 +257,9 @@ export default function CommandPalette({
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Open a notebook, change layout, or jump to settings"
+                placeholder="Search your notebooks, or type a command"
                 role="combobox"
-                aria-label="Search commands and notebooks"
+                aria-label="Search your library and commands"
                 aria-autocomplete="list"
                 aria-expanded="true"
                 aria-controls="command-palette-results"
@@ -227,11 +272,13 @@ export default function CommandPalette({
             <div
               id="command-palette-results"
               role="listbox"
-              aria-label="Commands and notebooks"
-              className="max-h-[min(52vh,22rem)] overflow-y-auto py-1.5"
+              aria-label="Results"
+              className="max-h-[min(60vh,28rem)] overflow-y-auto py-1.5"
             >
               {items.length === 0 && (
-                <div className="px-4 py-8 text-center text-[13px] text-muted">Nothing matches.</div>
+                <div className="px-4 py-8 text-center text-[13px] text-muted">
+                  {searching ? "Searching your library…" : "Nothing in your library matches."}
+                </div>
               )}
               {items.map((item, i) => {
                 const showGroup = i === 0 || item.group !== items[i - 1]?.group;
@@ -250,12 +297,32 @@ export default function CommandPalette({
                       type="button"
                       onMouseEnter={() => setActive(i)}
                       onClick={() => run(item)}
-                      className={`flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[13.5px] ${
-                        i === active ? "bg-brass/[0.1] text-ink" : "text-ink/85"
-                      }`}
+                      className={`flex w-full gap-2.5 px-3.5 py-2 text-left text-[13.5px] ${
+                        item.snippet ? "items-start" : "items-center"
+                      } ${i === active ? "bg-brass/[0.1] text-ink" : "text-ink/85"}`}
                     >
-                      <item.icon size={16} weight="light" className="shrink-0 text-muted" />
-                      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                      <item.icon
+                        size={16}
+                        weight="light"
+                        className={`shrink-0 text-muted ${item.snippet ? "mt-0.5" : ""}`}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-baseline gap-2">
+                          <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                          {item.meta && (
+                            <span className="max-w-[40%] shrink-0 truncate text-[11.5px] text-muted">{item.meta}</span>
+                          )}
+                        </span>
+                        {item.snippet && (
+                          <span className="mt-0.5 line-clamp-2 block text-[12px] leading-snug text-muted">
+                            {item.snippet.text.slice(0, item.snippet.start)}
+                            <mark className="rounded-[2px] bg-brass/20 px-0.5 text-ink">
+                              {item.snippet.text.slice(item.snippet.start, item.snippet.end)}
+                            </mark>
+                            {item.snippet.text.slice(item.snippet.end)}
+                          </span>
+                        )}
+                      </span>
                       {item.hint && (
                         <span className="font-mono text-[10px] text-muted/55">{item.hint}</span>
                       )}

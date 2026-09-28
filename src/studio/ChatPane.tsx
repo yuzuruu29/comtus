@@ -40,6 +40,8 @@ export default function ChatPane({
   capabilities,
   surfaceTarget,
   focusRequest = 0,
+  pendingSessionId,
+  onPendingSessionConsumed,
 }: {
   notebook: Notebook | null;
   sourcesVersion: number;
@@ -52,6 +54,9 @@ export default function ChatPane({
   capabilities?: { thinking?: boolean };
   surfaceTarget?: HTMLElement | null;
   focusRequest?: number;
+  /** A conversation to switch to once sessions load (a search result). */
+  pendingSessionId?: string | null;
+  onPendingSessionConsumed?: () => void;
 }) {
   const { target: compadTarget } = useCompadChat();
   const cs = useCallSettings();
@@ -253,6 +258,12 @@ export default function ChatPane({
     },
     [notebook, activeId, sessionReady, cancelRequest],
   );
+
+  useEffect(() => {
+    if (!pendingSessionId || !sessionReady) return;
+    if (sessions.some((s) => s.id === pendingSessionId)) selectSession(pendingSessionId);
+    onPendingSessionConsumed?.();
+  }, [onPendingSessionConsumed, pendingSessionId, selectSession, sessionReady, sessions]);
 
   const newSession = useCallback(async () => {
     if (!notebook) return;

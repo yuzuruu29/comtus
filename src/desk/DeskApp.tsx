@@ -241,6 +241,8 @@ export default function DeskApp() {
                     openSource={desk.openSource}
                     clearPendingView={desk.clearPendingView}
                     pendingGenerationId={pendingWorkId}
+                    pendingChatId={desk.pendingChatId}
+                    onChatConsumed={desk.clearPendingChat}
                     onGenerationConsumed={clearPendingWork}
                     modelLabel={modelLabelFor(cs.provider, cs.model)}
                     onOpenSettings={() => setSettingsOpen(true)}

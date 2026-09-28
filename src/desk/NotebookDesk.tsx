@@ -31,6 +31,8 @@ export default function NotebookDesk({
   openSource,
   clearPendingView,
   pendingGenerationId,
+  pendingChatId,
+  onChatConsumed,
   onGenerationConsumed,
   modelLabel,
   onOpenSettings,
@@ -50,6 +52,8 @@ export default function NotebookDesk({
   openSource: (sourceId: string, startChar?: number) => void;
   clearPendingView: () => void;
   pendingGenerationId?: string | null;
+  pendingChatId?: string | null;
+  onChatConsumed?: () => void;
   onGenerationConsumed?: () => void;
   modelLabel?: string;
   onOpenSettings?: () => void;
@@ -128,6 +132,8 @@ export default function NotebookDesk({
             modelLabel={modelLabel}
             onOpenSettings={onOpenSettings}
             onAddSources={onAddSources}
+            pendingSessionId={pendingChatId}
+            onPendingSessionConsumed={onChatConsumed}
           />
         </motion.div>
       </main>
