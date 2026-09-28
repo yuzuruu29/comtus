@@ -389,6 +389,11 @@
   line-height: 1.5;
 }
 
+.notebook-card-exam {
+  color: var(--brass);
+  font-weight: 560;
+}
+
 .notebook-card-menu {
   position: absolute;
   top: 0.75rem;

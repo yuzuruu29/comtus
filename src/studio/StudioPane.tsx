@@ -57,6 +57,7 @@ import {
 } from "./generators/AidsFlow";
 import { useDesk } from "./DeskContext";
 import StudyStanding from "./StudyStanding";
+import ExamPlan from "./ExamPlan";
 import { fmtScore } from "./generators/common";
 import { kindAccent } from "../lib/milestones";
 import { Button, IconButton } from "../ui";
@@ -340,6 +341,14 @@ export default function StudioPane({
             </div>
           </details>
         </section>
+
+        <ExamPlan
+          notebookId={notebookId}
+          version={historyVersion}
+          onOpenDeck={openGeneration}
+          onPractice={(topic) => openQuiz(topic ?? "")}
+          onMockExam={() => setFlow("exam")}
+        />
 
         <StudyStanding notebookId={notebookId} version={historyVersion} onPractice={openQuiz} />
 

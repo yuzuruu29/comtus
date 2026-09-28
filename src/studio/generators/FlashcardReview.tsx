@@ -4,6 +4,8 @@ import { ArrowCounterClockwise, CheckCircle, Plus, Stack } from "@phosphor-icons
 import { db } from "../../lib/db";
 import { loadDeckProgress, recordRating } from "../../lib/reviews";
 import { isCloze, reviewCards } from "../../lib/cloze";
+import { daysUntil } from "../../lib/exam";
+import { newCardPace } from "../../lib/studyPlan";
 import {
   RATINGS,
   buildReviewQueue,
@@ -57,6 +59,9 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
   const [flipped, setFlipped] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [addOpen, setAddOpen] = useState(false);
+  const [examAt, setExamAt] = useState<number | undefined>(undefined);
+  // New cards were held back to the exam pace; the rest come on later days.
+  const [paced, setPaced] = useState(false);
   const rating = useRef(false);
 
   const deck = useMemo(() => ({ id: gen.id, notebookId }), [gen.id, notebookId]);
@@ -65,13 +70,21 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
   const cardsById = useMemo(() => new Map(studyCards.map((c) => [c.id, c])), [studyCards]);
 
   // Open the deck on today's work; an empty queue means the deck is resting.
+  // With an exam ahead, new cards come at the pace that shows every card
+  // by the day before it.
   useEffect(() => {
     let current = true;
-    loadDeckProgress(gen.id)
-      .then((rows) => {
+    Promise.all([loadDeckProgress(gen.id), db.notebooks.get(notebookId).catch(() => undefined)])
+      .then(([rows, notebook]) => {
         if (!current) return;
         const initialCards = reviewCards((gen.payload as FlashcardsPayload)?.cards ?? []);
-        const queue = buildReviewQueue(initialCards, rows, Date.now());
+        const now = Date.now();
+        const days = notebook?.examAt ? daysUntil(notebook.examAt, now) : -1;
+        const unseen = initialCards.filter((c) => !rows.has(c.id)).length;
+        const newLimit = days > 0 ? newCardPace(unseen, days) : Infinity;
+        const queue = buildReviewQueue(initialCards, rows, now, newLimit);
+        setExamAt(days >= 0 ? notebook?.examAt : undefined);
+        setPaced(days > 0 && unseen > newLimit);
         setProgress(rows);
         setSession(queue.length ? newSession(queue, "due") : null);
       })
@@ -81,7 +94,7 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
     return () => {
       current = false;
     };
-  }, [gen.id, gen.payload]);
+  }, [gen.id, gen.payload, notebookId]);
 
   const currentId = session?.queue[0];
   const card = currentId ? cardsById.get(currentId) : undefined;
@@ -206,6 +219,9 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
               {plural(reviewed, "card")} reviewed
               {relearned > 0 ? `, ${relearned} with another pass.` : "."}
               {status.due + status.fresh === 0 && nextDue ? ` The next review is ${nextDue}.` : ""}
+              {paced && status.fresh > 0
+                ? ` ${plural(status.fresh, "new card")} ${status.fresh === 1 ? "is" : "are"} spread over the days before your exam.`
+                : ""}
             </p>
           </>
         ) : (
@@ -242,7 +258,7 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
   const remaining = new Set(session.queue).size;
   const cardProgress = progress.get(card.id);
   const cardState = session.relearned.has(card.id) ? "Relearning" : cardProgress ? "Review" : "New";
-  const previews = previewIntervals(cardProgress, now);
+  const previews = previewIntervals(cardProgress, now, examAt);
 
   return (
     <div className="fc-review">

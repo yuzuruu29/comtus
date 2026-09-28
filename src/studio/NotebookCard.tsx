@@ -2,6 +2,7 @@ import { DotsThree, DownloadSimple, Notebook as NotebookIcon, PencilSimple, Tras
 import { IconButton, Menu } from "../ui";
 import type { Notebook } from "../lib/types";
 import { timeAgo } from "./ui";
+import { examCountdown } from "../lib/exam";
 
 export interface NotebookCardData extends Notebook {
   sourceCount: number;
@@ -20,6 +21,7 @@ export default function NotebookCard({
   onExport: (notebook: Notebook) => void;
   onDelete: (id: string) => void;
 }) {
+  const countdown = examCountdown(notebook);
   return (
     <div className="notebook-card">
       <button
@@ -36,6 +38,7 @@ export default function NotebookCard({
           <span>
             {notebook.sourceCount} {notebook.sourceCount === 1 ? "source" : "sources"}
           </span>
+          {countdown && <span className="notebook-card-exam">{countdown}</span>}
           <time dateTime={new Date(notebook.updatedAt).toISOString()}>
             Updated {timeAgo(notebook.updatedAt)}
           </time>

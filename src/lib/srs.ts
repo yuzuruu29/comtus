@@ -71,6 +71,20 @@ export function schedule(prev: CardSchedule | undefined, rating: Rating, now: nu
   };
 }
 
+/**
+ * With an exam ahead, no review is pushed past it: a graduated card due
+ * after the exam comes back the day before instead (or tomorrow, if the
+ * exam is that close), so everything gets one more look in time. Once
+ * the exam has passed, scheduling is ordinary again.
+ */
+export function capToExam(next: CardSchedule, now: number, examAt?: number): CardSchedule {
+  if (!examAt || next.intervalDays === 0 || examAt <= startOfLocalDay(now)) return next;
+  const latest = Math.max(startOfLocalDay(now, 1), startOfLocalDay(examAt, -1));
+  if (next.dueAt <= latest) return next;
+  const intervalDays = Math.max(1, Math.round((latest - startOfLocalDay(now)) / DAY_MS));
+  return { ...next, dueAt: latest, intervalDays };
+}
+
 /** Human interval for the rating buttons: "10 min", "1 day", "3 wk"… */
 export function formatInterval(next: CardSchedule, now: number): string {
   if (next.intervalDays === 0) {
@@ -85,11 +99,10 @@ export function formatInterval(next: CardSchedule, now: number): string {
 }
 
 /** Interval preview for every rating, keyed by rating. */
-export function previewIntervals(prev: CardSchedule | undefined, now: number): Record<Rating, string> {
-  return Object.fromEntries(RATINGS.map((r) => [r, formatInterval(schedule(prev, r, now), now)])) as Record<
-    Rating,
-    string
-  >;
+export function previewIntervals(prev: CardSchedule | undefined, now: number, examAt?: number): Record<Rating, string> {
+  return Object.fromEntries(
+    RATINGS.map((r) => [r, formatInterval(capToExam(schedule(prev, r, now), now, examAt), now)]),
+  ) as Record<Rating, string>;
 }
 
 export const progressId = (generationId: string, cardId: string) => `${generationId}:${cardId}`;
@@ -125,12 +138,14 @@ export function deckStatus(
 
 /**
  * Today's session order: due reviews first (most overdue leading), then
- * cards never studied, in deck order. Resting cards stay out until due.
+ * cards never studied, in deck order — at most `newLimit` of them when a
+ * pace is set. Resting cards stay out until due.
  */
 export function buildReviewQueue(
   cards: Flashcard[],
   progress: ReadonlyMap<string, CardSchedule>,
   now: number,
+  newLimit = Infinity,
 ): string[] {
   const due = cards
     .filter((c) => {
@@ -140,7 +155,7 @@ export function buildReviewQueue(
     .sort((a, b) => progress.get(a.id)!.dueAt - progress.get(b.id)!.dueAt)
     .map((c) => c.id);
   const fresh = cards.filter((c) => !progress.has(c.id)).map((c) => c.id);
-  return [...due, ...fresh];
+  return [...due, ...fresh.slice(0, newLimit)];
 }
 
 /** "tomorrow", "in 3 days", "later today" — for the caught-up state. */

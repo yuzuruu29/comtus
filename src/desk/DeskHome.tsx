@@ -20,6 +20,7 @@ import ComtusLogo from "../components/brand/ComtusLogo";
 import { ByokBadge, ProBadge, SettingsButton, CreateNotebookEmblem } from "../components/brand/BrandControls";
 import { SOFT, Spotlight, staggerDelay } from "../studio/fx";
 import { Modal, Field, inputCls, btnLamp, btnGhost, timeAgo } from "../studio/ui";
+import { examCountdown } from "../lib/exam";
 import { AnimatePresence, motion } from "motion/react";
 import { useSettings } from "../lib/settings";
 import ReviewDueStrip from "../studio/ReviewDueStrip";
@@ -497,6 +498,12 @@ export default function DeskHome({
                         <span>
                           {nb.sourceCount} {nb.sourceCount === 1 ? "source" : "sources"}
                         </span>
+                        {examCountdown(nb) && (
+                          <>
+                            <span className="mx-1.5 text-muted/60">·</span>
+                            <span className="font-[560] text-brass">{examCountdown(nb)}</span>
+                          </>
+                        )}
                       </div>
                     </motion.div>
                   </Spotlight>
@@ -527,6 +534,9 @@ export default function DeskHome({
                   </button>
 
                   <div className="flex items-center gap-6 text-[12px] text-muted">
+                    {examCountdown(nb) && (
+                      <span className="font-[560] text-brass">{examCountdown(nb)}</span>
+                    )}
                     <span className="rounded-full bg-ink/[0.04] px-2.5 py-0.5 font-mono text-[11px]">
                       {nb.sourceCount} {nb.sourceCount === 1 ? "source" : "sources"}
                     </span>

@@ -14,6 +14,10 @@ export interface Notebook {
   id: string;
   name: string;
   description?: string;
+  /** Local midnight of the exam this notebook is for, when one is set. */
+  examAt?: number;
+  /** What the exam is called ("Midterm", "Board exam"); optional. */
+  examName?: string;
   createdAt: number;
   updatedAt: number;
 }

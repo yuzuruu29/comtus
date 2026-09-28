@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { notifyDeskActivity } from "./activity";
-import { progressId, schedule, type Rating } from "./srs";
+import { capToExam, progressId, schedule, type Rating } from "./srs";
 import type { CardProgress, FlashcardsPayload, Generation } from "./types";
 import { reviewCards } from "./cloze";
 
@@ -19,7 +19,8 @@ export async function loadDeckProgress(generationId: string): Promise<Map<string
   return new Map(rows.map((row) => [cardIdOf(row), row]));
 }
 
-/** Schedules one answer and stores it. Returns the written row. */
+/** Schedules one answer and stores it, keeping reviews inside the
+ *  notebook's exam date when one is set. Returns the written row. */
 export async function recordRating(
   gen: Pick<Generation, "id" | "notebookId">,
   cardId: string,
@@ -27,13 +28,14 @@ export async function recordRating(
   now = Date.now(),
 ): Promise<CardProgress> {
   const id = progressId(gen.id, cardId);
-  const row = await db.transaction("rw", db.cardProgress, async () => {
+  const row = await db.transaction("rw", db.cardProgress, db.notebooks, async () => {
     const existing = await db.cardProgress.get(id);
+    const examAt = (await db.notebooks.get(gen.notebookId))?.examAt;
     const next: CardProgress = {
       id,
       generationId: gen.id,
       notebookId: gen.notebookId,
-      ...schedule(existing, rating, now),
+      ...capToExam(schedule(existing, rating, now), now, examAt),
     };
     await db.cardProgress.put(next);
     return next;
