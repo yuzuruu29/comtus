@@ -381,6 +381,21 @@ html[data-theme="dark"] .reader-mark:hover {
   font-size: var(--text-body);
 }
 
+.reader-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.reader-notice {
+  margin: 0;
+  color: var(--sage);
+  font-size: var(--text-body);
+  line-height: 1.5;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reader-toolbar[data-placed],
   .reader-editor[data-placed] {

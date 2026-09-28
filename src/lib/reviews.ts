@@ -2,6 +2,7 @@ import { db } from "./db";
 import { notifyDeskActivity } from "./activity";
 import { progressId, schedule, type Rating } from "./srs";
 import type { CardProgress, FlashcardsPayload, Generation } from "./types";
+import { reviewCards } from "./cloze";
 
 /**
  * Flashcard review persistence: the IndexedDB side of src/lib/srs.ts.
@@ -82,7 +83,7 @@ export async function listDueDecks(now = Date.now()): Promise<DueDeck[]> {
   for (const gen of decks) {
     const notebookName = notebookNames.get(gen.notebookId);
     if (notebookName === undefined) continue;
-    const cards = (gen.payload as FlashcardsPayload)?.cards ?? [];
+    const cards = reviewCards((gen.payload as FlashcardsPayload)?.cards ?? []);
     const dueIds = dueCards.get(gen.id)!;
     const due = cards.filter((card) => dueIds.has(card.id)).length;
     if (due === 0) continue;

@@ -1,6 +1,7 @@
-import { db, touchNotebook, uid } from "./db";
+import { db, saveGeneration, touchNotebook, uid } from "./db";
 import { notifyDeskActivity } from "./activity";
-import type { Highlight, Source } from "./types";
+import type { Flashcard, FlashcardsPayload, Highlight, Source } from "./types";
+import { clozeFromSelection } from "./cloze";
 import { stripInline } from "./readerBlocks";
 
 /**
@@ -160,4 +161,45 @@ export function passagePrompt(sourceTitle: string, passage: string): string {
   const line = quoteLine(passage);
   const clipped = line.length > ASK_QUOTE_LIMIT ? `${line.slice(0, ASK_QUOTE_LIMIT).trimEnd()}…` : line;
   return `About this passage from “${sourceTitle}”:\n> ${clipped}\n\n`;
+}
+
+/* ── Cards from reading ──────────────────────────────────── */
+
+export const READING_DECK = "From your reading";
+
+/** One deck per notebook collects the cards made while reading. */
+export const readingDeckId = (notebookId: string) => `reading-${notebookId}`;
+
+/** Turns a selected passage into a cloze card — its sentence with the
+ *  selection blanked — in the notebook's reading deck. `added` is false
+ *  when the same card is already there. */
+export async function addReadingCard(
+  source: Pick<Source, "id" | "notebookId" | "title" | "content">,
+  start: number,
+  end: number,
+  page?: number,
+  now = Date.now(),
+): Promise<{ added: boolean } | null> {
+  const range = tidyRange(source.content, start, end);
+  const front = range && clozeFromSelection(source.content, range.start, range.end);
+  if (!front) return null;
+  const deckId = readingDeckId(source.notebookId);
+  const existing = await db.generations.get(deckId);
+  const cards = existing?.kind === "flashcards" ? ((existing.payload as FlashcardsPayload).cards ?? []) : [];
+  if (cards.some((c) => c.front === front)) return { added: false };
+  const card: Flashcard = {
+    id: `r-${uid()}`,
+    front,
+    back: `From “${source.title}”${page ? `, page ${page}` : ""}.`,
+    topic: source.title.slice(0, 60),
+  };
+  await saveGeneration({
+    id: deckId,
+    notebookId: source.notebookId,
+    kind: "flashcards",
+    title: READING_DECK,
+    payload: { cards: [...cards, card] } satisfies FlashcardsPayload,
+    createdAt: existing?.createdAt ?? now,
+  });
+  return { added: true };
 }

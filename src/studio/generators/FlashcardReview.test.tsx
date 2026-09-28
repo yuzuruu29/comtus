@@ -96,6 +96,35 @@ describe("FlashcardsView", () => {
   });
 });
 
+describe("cloze cards", () => {
+  const clozeDeck: Generation = {
+    ...deck,
+    id: "deck-cloze",
+    payload: {
+      cards: [{ id: "k", front: "The {{c1::Krebs cycle}} runs in the {{c2::matrix}}.", back: "Chapter 4", topic: "Energy" }],
+    },
+  };
+
+  beforeEach(async () => {
+    await Promise.all([db.generations.clear(), db.cardProgress.clear()]);
+    await db.generations.add(clozeDeck);
+  });
+
+  it("reviews each blank as its own card with its own schedule", async () => {
+    render(<FlashcardsView gen={clozeDeck} notebookId="nb-1" />);
+    expect(await screen.findByText("2 cards left")).toBeInTheDocument();
+    const front = document.querySelector(".fc-face-front")!;
+    expect(front).toHaveTextContent("The […] runs in the matrix.");
+
+    await reveal();
+    expect(document.querySelector(".fc-face-back")).toHaveTextContent("The Krebs cycle runs in the matrix. Chapter 4");
+    fireEvent.click(screen.getByRole("button", { name: /^Good:/ }));
+
+    await waitFor(() => expect(document.querySelector(".fc-face-front")).toHaveTextContent("The Krebs cycle runs in the […]."));
+    await waitFor(async () => expect(await db.cardProgress.get("deck-cloze:k~c1")).toBeDefined());
+  });
+});
+
 describe("ReviewDueStrip", () => {
   beforeEach(async () => {
     await Promise.all([db.notebooks.clear(), db.generations.clear(), db.cardProgress.clear()]);

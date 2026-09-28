@@ -1,4 +1,5 @@
 import PptxGenJS from "pptxgenjs";
+import { reviewCards } from "./cloze";
 import { createAssessmentCapture } from "./assessmentExport";
 import type { Generation } from "./types";
 import type {
@@ -159,7 +160,7 @@ async function quizExamPptx(pptx: PptxGenJS, gen: Generation): Promise<void> {
 }
 
 function flashcardsPptx(pptx: PptxGenJS, gen: Generation): void {
-  const cards = (gen.payload as FlashcardsPayload).cards ?? [];
+  const cards = reviewCards((gen.payload as FlashcardsPayload).cards ?? []);
   titleSlide(pptx, gen.title, [`${cards.length} cards`, "Advance for each answer"]);
 
   cards.forEach((card, i) => {

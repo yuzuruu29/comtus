@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { ArrowCounterClockwise, CheckCircle, Plus, Stack } from "@phosphor-icons/react";
 import { db } from "../../lib/db";
 import { loadDeckProgress, recordRating } from "../../lib/reviews";
+import { isCloze, reviewCards } from "../../lib/cloze";
 import {
   RATINGS,
   buildReviewQueue,
@@ -59,7 +60,9 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
   const rating = useRef(false);
 
   const deck = useMemo(() => ({ id: gen.id, notebookId }), [gen.id, notebookId]);
-  const cardsById = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards]);
+  // Each cloze number is its own card with its own schedule.
+  const studyCards = useMemo(() => reviewCards(cards), [cards]);
+  const cardsById = useMemo(() => new Map(studyCards.map((c) => [c.id, c])), [studyCards]);
 
   // Open the deck on today's work; an empty queue means the deck is resting.
   useEffect(() => {
@@ -67,7 +70,7 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
     loadDeckProgress(gen.id)
       .then((rows) => {
         if (!current) return;
-        const initialCards = (gen.payload as FlashcardsPayload)?.cards ?? [];
+        const initialCards = reviewCards((gen.payload as FlashcardsPayload)?.cards ?? []);
         const queue = buildReviewQueue(initialCards, rows, Date.now());
         setProgress(rows);
         setSession(queue.length ? newSession(queue, "due") : null);
@@ -124,7 +127,7 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
 
   const studyAll = () => {
     setFlipped(false);
-    setSession(newSession(cards.map((c) => c.id), "all"));
+    setSession(newSession(studyCards.map((c) => c.id), "all"));
   };
 
   // Space flips, 1–4 answer once the answer is showing.
@@ -154,6 +157,7 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
   const addCard = async (draft: Omit<Flashcard, "id">) => {
     const newCard: Flashcard = { id: `custom-${Date.now().toString(36)}`, ...draft };
     const updated = [...cards, newCard];
+    const newIds = reviewCards([newCard]).map((c) => c.id);
     await db.generations.put({
       ...gen,
       title: /^Flashcards · \d+$/.test(gen.title) ? `Flashcards · ${updated.length}` : gen.title,
@@ -163,7 +167,7 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
     setAddOpen(false);
     // A new card joins today's session, or opens one if the deck was resting.
     setSession((s) =>
-      s && s.queue.length > 0 ? { ...s, queue: [...s.queue, newCard.id] } : newSession([newCard.id], "due"),
+      s && s.queue.length > 0 ? { ...s, queue: [...s.queue, ...newIds] } : newSession(newIds, "due"),
     );
   };
 
@@ -181,7 +185,7 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
   }
 
   const now = Date.now();
-  const status = deckStatus(cards, progress, now);
+  const status = deckStatus(studyCards, progress, now);
   const nextDue = describeNextDue(status.nextDueAt, now);
 
   if (!session || finished) {
@@ -215,9 +219,9 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
           </>
         )}
         <div className="fc-rest-actions">
-          {cards.length > 0 && (
+          {studyCards.length > 0 && (
             <Button variant="secondary" icon={<ArrowCounterClockwise size={15} aria-hidden="true" />} onClick={studyAll}>
-              Study all {plural(cards.length, "card")}
+              Study all {plural(studyCards.length, "card")}
             </Button>
           )}
           <Button variant="ghost" icon={<Plus size={15} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
@@ -334,8 +338,11 @@ function AddCardDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const cloze = isCloze(front);
+  const ready = front.trim().length > 0 && (cloze || back.trim().length > 0);
+
   const save = async () => {
-    if (!front.trim() || !back.trim() || saving) return;
+    if (!ready || saving) return;
     setSaving(true);
     setError("");
     try {
@@ -353,7 +360,7 @@ function AddCardDialog({
   return (
     <Dialog open={open} onClose={onClose} title="Add a card">
       <div className="space-y-4">
-        <Field label="Front" hint="A question or term — avoid yes/no prompts.">
+        <Field label="Front" hint="A question or term, or a sentence with {{c1::a word}} to blank out.">
           <Input
             autoFocus
             value={front}
@@ -361,7 +368,7 @@ function AddCardDialog({
             placeholder="e.g. Cranial nerve VII function"
           />
         </Field>
-        <Field label="Back">
+        <Field label="Back" hint={cloze ? "Optional for a cloze card: extra notes shown with the answer." : undefined}>
           <Textarea
             rows={3}
             value={back}
@@ -377,7 +384,7 @@ function AddCardDialog({
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={() => void save()} loading={saving} disabled={!front.trim() || !back.trim()}>
+          <Button onClick={() => void save()} loading={saving} disabled={!ready}>
             Save card
           </Button>
         </div>

@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { clozePlain } from "./cloze";
 import type {
   ChatMessage,
   ChatSession,
@@ -93,7 +94,9 @@ function generationText(gen: Generation): string {
     case "note":
       return (p as NotePayload | undefined)?.content ?? "";
     case "flashcards":
-      return ((p as FlashcardsPayload | undefined)?.cards ?? []).map((c) => `${c.front}\n${c.back}`).join("\n\n");
+      return ((p as FlashcardsPayload | undefined)?.cards ?? [])
+        .map((c) => `${clozePlain(c.front)}\n${c.back}`)
+        .join("\n\n");
     case "quiz":
     case "exam":
       return ((p as QuizPayload | ExamPayload | undefined)?.questions ?? [])

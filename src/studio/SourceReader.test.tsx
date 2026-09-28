@@ -29,8 +29,16 @@ const source: Source = {
   meta: { pages: 2 },
 };
 
+/** The dialog moves focus into itself shortly after opening, which would
+ *  clear a selection made before it; people select after that, and so do
+ *  these tests. */
+async function settled() {
+  await waitFor(() => expect(screen.getByRole("dialog")).toContainElement(document.activeElement as HTMLElement));
+}
+
 /** Selects [start, end) of the source inside the rendered reader. */
-function selectSource(start: number, end: number) {
+async function selectSource(start: number, end: number) {
+  await settled();
   const runs = [...document.querySelectorAll<HTMLElement>("[data-at]")];
   const point = (offset: number): [Node, number] => {
     const run = runs.filter((el) => Number(el.dataset.at) <= offset).pop()!;
@@ -76,7 +84,7 @@ describe("SourceReader", () => {
     const onChanged = vi.fn();
     render(<SourceReader source={source} onClose={() => {}} onHighlightsChanged={onChanged} />);
     const start = content.indexOf("make ATP");
-    selectSource(start + 1, start + 8); // "ake ATP" grows to the whole word
+    await selectSource(start + 1, start + 8); // "ake ATP" grows to the whole word
 
     fireEvent.click(await screen.findByRole("button", { name: "Note" }));
     const note = await screen.findByLabelText("Your note");
@@ -96,10 +104,31 @@ describe("SourceReader", () => {
     const onClose = vi.fn();
     render(<SourceReader source={source} onClose={onClose} onAsk={onAsk} />);
     const start = content.indexOf("Ribosomes");
-    selectSource(start, start + "Ribosomes build proteins".length);
+    await selectSource(start, start + "Ribosomes build proteins".length);
     fireEvent.click(await screen.findByRole("button", { name: "Ask" }));
     expect(onAsk).toHaveBeenCalledWith("About this passage from “Cell energy”:\n> Ribosomes build proteins\n\n");
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("makes a cloze card from the sentence around a selection", async () => {
+    render(<SourceReader source={source} onClose={() => {}} />);
+    const start = content.indexOf("ATP");
+    await selectSource(start, start + 3);
+    fireEvent.click(await screen.findByRole("button", { name: "Card" }));
+    expect(await screen.findByText("Added a cloze card to “From your reading” in your study tools.")).toBeInTheDocument();
+    const deck = await db.generations.get("reading-nb1");
+    expect(deck?.title).toBe("From your reading");
+    expect((deck?.payload as { cards: { front: string; back: string }[] }).cards).toEqual([
+      expect.objectContaining({
+        front: "Mitochondria make {{c1::ATP}} through cellular respiration.",
+        back: "From “Cell energy”, page 1.",
+      }),
+    ]);
+
+    // The same card twice is not added twice.
+    await selectSource(start, start + 3);
+    fireEvent.click(await screen.findByRole("button", { name: "Card" }));
+    expect(await screen.findByText("That card is already in “From your reading”.")).toBeInTheDocument();
   });
 
   it("lists highlights with their pages and saves them as a note", async () => {
@@ -124,9 +153,7 @@ describe("SourceReader", () => {
     const [saved] = await db.generations.toArray();
     expect(saved.title).toBe("Highlights · Cell energy");
     expect((saved.payload as { content: string }).content).toContain("> Ribosomes (p. 2)\n\nProtein factories");
-    await waitFor(() =>
-      expect(screen.getByRole("status")).toHaveTextContent("Saved “Highlights · Cell energy” to your notes."),
-    );
+    expect(await screen.findByText("Saved “Highlights · Cell energy” to your notes.")).toBeInTheDocument();
   });
 });
 

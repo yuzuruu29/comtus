@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { reviewCards } from "./cloze";
 import { createAssessmentCapture } from "./assessmentExport";
 import type { Generation } from "./types";
 import type {
@@ -301,7 +302,8 @@ function cardSheet(
 }
 
 function flashcardsPdf(doc: Doc, gen: Generation, notebookName: string): void {
-  const cards = (gen.payload as FlashcardsPayload).cards ?? [];
+  // Printed cloze cards show the blank on the front and the answer behind.
+  const cards = reviewCards((gen.payload as FlashcardsPayload).cards ?? []);
   const flow = chrome(doc, gen.title, metaLineFor(gen), notebookName);
   wrapped(
     flow,

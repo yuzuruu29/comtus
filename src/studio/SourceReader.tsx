@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
-import { ChatCircleText, Highlighter, NotePencil, Trash, X } from "@phosphor-icons/react";
+import { Cards, ChatCircleText, Highlighter, NotePencil, Trash, X } from "@phosphor-icons/react";
 import { Button, Dialog, Segmented, Textarea } from "../ui";
 import type { Highlight, Source } from "../lib/types";
 import { createCustomNote } from "../lib/db";
 import {
+  READING_DECK,
   addHighlight,
+  addReadingCard,
   highlightsMarkdown,
   listSourceHighlights,
   passagePrompt,
@@ -65,6 +67,7 @@ export default function SourceReader({
   const [flash, setFlash] = useState<{ block: number; tick: number } | null>(null);
   const [pendingJump, setPendingJump] = useState<number | null>(null);
   const [saved, setSaved] = useState("");
+  const [notice, setNotice] = useState("");
   const toolbarPressed = useRef(false);
 
   const reload = useCallback(async () => {
@@ -172,6 +175,18 @@ export default function SourceReader({
       setDraft(saved.note);
       setEditing({ id: saved.id, focusNote: true });
     }
+  };
+
+  const makeCard = async () => {
+    if (!selection) return;
+    const result = await addReadingCard(source, selection.start, selection.end, pageOf(selection.start));
+    clearSelection();
+    if (!result) return;
+    setNotice(
+      result.added
+        ? `Added a cloze card to “${READING_DECK}” in your study tools.`
+        : `That card is already in “${READING_DECK}”.`,
+    );
   };
 
   const askAbout = (passage: string) => {
@@ -423,6 +438,10 @@ export default function SourceReader({
                 <NotePencil size={15} aria-hidden="true" />
                 Note
               </button>
+              <button type="button" onClick={() => void makeCard()} title="Make a fill-in-the-blank card from this sentence">
+                <Cards size={15} aria-hidden="true" />
+                Card
+              </button>
               {onAsk && (
                 <button type="button" onClick={() => askAbout(source.content.slice(selection.start, selection.end))}>
                   <ChatCircleText size={15} aria-hidden="true" />
@@ -524,7 +543,10 @@ export default function SourceReader({
         </div>
       )}
 
-      <div className="mt-5 flex justify-end">
+      <div className="reader-foot">
+        <p role="status" className="reader-notice">
+          {notice}
+        </p>
         <Button variant="ghost" onClick={onClose} icon={<X size={13} weight="light" />}>
           Close
         </Button>
