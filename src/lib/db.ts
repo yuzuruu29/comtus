@@ -1,5 +1,6 @@
 import Dexie, { type Table } from "dexie";
 import type {
+  Attempt,
   Notebook,
   Source,
   Chunk,
@@ -21,6 +22,7 @@ class ComtusDB extends Dexie {
   chatSessions!: Table<ChatSession, string>;
   generations!: Table<Generation, string>;
   cardProgress!: Table<CardProgress, string>;
+  attempts!: Table<Attempt, string>;
 
   constructor() {
     super("comtus");
@@ -88,6 +90,10 @@ class ComtusDB extends Dexie {
           });
         }
       });
+    // v3 — quiz and exam attempts. A new table; nothing to migrate.
+    this.version(3).stores({
+      attempts: "id, notebookId, generationId, finishedAt",
+    });
   }
 }
 
@@ -113,7 +119,7 @@ export async function touchNotebook(id: string) {
 export async function deleteNotebook(id: string) {
   await db.transaction(
     "rw",
-    [db.notebooks, db.sources, db.chunks, db.messages, db.chatSessions, db.generations, db.cardProgress],
+    [db.notebooks, db.sources, db.chunks, db.messages, db.chatSessions, db.generations, db.cardProgress, db.attempts],
     async () => {
       await db.notebooks.delete(id);
       await db.sources.where("notebookId").equals(id).delete();
@@ -122,6 +128,7 @@ export async function deleteNotebook(id: string) {
       await db.chatSessions.where("notebookId").equals(id).delete();
       await db.generations.where("notebookId").equals(id).delete();
       await db.cardProgress.where("notebookId").equals(id).delete();
+      await db.attempts.where("notebookId").equals(id).delete();
     },
   );
 }

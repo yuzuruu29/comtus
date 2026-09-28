@@ -57,15 +57,16 @@
 }
 
 .fc-stage {
-  height: 272px;
   perspective: 1400px;
 }
 
+/* Both faces share one grid cell, so the card is as tall as its taller
+   face (a question with four options, a worked answer) and still flips. */
 .fc-card {
   position: relative;
-  display: block;
+  display: grid;
   width: 100%;
-  height: 100%;
+  min-height: 272px;
   transform-style: preserve-3d;
   border-radius: var(--radius-dialog);
   cursor: pointer;
@@ -77,8 +78,7 @@
 }
 
 .fc-face {
-  position: absolute;
-  inset: 0;
+  grid-area: 1 / 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -100,9 +100,7 @@
 }
 
 .fc-face-body {
-  max-height: 100%;
   margin-block: auto;
-  overflow-y: auto;
   padding-inline: 0.25rem;
   color: var(--ink);
   font-size: 0.9375rem;
@@ -110,11 +108,28 @@
   overflow-wrap: anywhere;
 }
 
+/* Card text is Markdown with math (cards made from quiz misses carry
+   options and worked answers); paragraphs stack, and a multi-paragraph
+   face reads left-aligned. */
+.fc-face-body .assessment-paragraph {
+  display: block;
+}
+
+.fc-face-body:has(.assessment-paragraph + .assessment-paragraph) {
+  align-self: stretch;
+  text-align: left;
+}
+
 .fc-face-front {
   font-family: var(--font-read);
   font-size: 1.3rem;
   font-weight: 450;
   line-height: 1.45;
+}
+
+.fc-face-front:has(.assessment-paragraph + .assessment-paragraph) {
+  font-size: 1.0625rem;
+  line-height: 1.6;
 }
 
 .fc-face-hint {
@@ -241,8 +256,8 @@
 }
 
 @media (max-width: 639px) {
-  .fc-stage {
-    height: 236px;
+  .fc-card {
+    min-height: 236px;
   }
 
   .fc-rate-grid {

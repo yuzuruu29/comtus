@@ -12,6 +12,7 @@ const TABLES = [
   "chatSessions",
   "generations",
   "cardProgress",
+  "attempts",
 ] as const;
 
 type TableName = (typeof TABLES)[number];

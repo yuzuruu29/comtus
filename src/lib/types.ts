@@ -175,6 +175,31 @@ export interface ExamPayload {
 
 export type ExamMode = "simulated" | "drill";
 
+/* ── Attempts: what happened when the student sat a quiz or exam ── */
+
+export interface AttemptItem {
+  /** QuizQuestion.id within the attempted generation. */
+  questionId: string;
+  topic: string;
+  /** 0 wrong, 0.5 partially correct solution, 1 correct. */
+  credit: number;
+  /** False when the item was left blank. */
+  answered: boolean;
+}
+
+export interface Attempt {
+  id: string;
+  notebookId: string;
+  generationId: string;
+  kind: "quiz" | "exam";
+  /** "misses" = a retake of only the items missed last time. */
+  scope: "full" | "misses";
+  score: number;
+  total: number;
+  items: AttemptItem[];
+  finishedAt: number;
+}
+
 /* ── Handwritten solution submissions ─────────────────────── */
 
 export type SolutionVerdict = "correct" | "partial" | "incorrect" | "unreadable";

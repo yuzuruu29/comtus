@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 import type { QuizConfig, QuizPayload, QuizQuestion, QuizFormat, Generation, SolutionCheck } from "../../lib/types";
+import { scoreItems, typedAnswerMatches } from "../../lib/attempts";
+import AttemptFollowUp from "./AttemptFollowUp";
 import { generateJSON, checkSolution, friendlyError } from "../../lib/llm";
 import { useCallSettings, useSettings } from "../../lib/settings";
 import { saveGeneration } from "../../lib/db";
@@ -170,14 +172,56 @@ Constraints: MCQ always has exactly 4 options; truefalse has options ["True","Fa
 
 /* ── Taker ────────────────────────────────────────────────── */
 
+interface QuizRunSpec {
+  key: number;
+  questions: QuizQuestion[];
+  scope: "full" | "misses";
+}
+
+/** A quiz sitting. Retakes — of everything, or of only what was missed —
+ *  start a fresh run in place. With `gen`, each finished run is saved. */
 export function QuizTaker({
   payload,
-  onRetake,
+  gen,
   onRegenerate,
+  onOpenGeneration,
 }: {
   payload: QuizPayload;
-  onRetake: () => void;
+  gen?: Generation;
   onRegenerate?: () => void;
+  onOpenGeneration?: (gen: Generation) => void;
+}) {
+  const [run, setRun] = useState<QuizRunSpec>({ key: 0, questions: payload.questions, scope: "full" });
+  return (
+    <QuizRun
+      key={run.key}
+      payload={{ ...payload, questions: run.questions }}
+      scope={run.scope}
+      gen={gen}
+      onRetake={() => setRun((r) => ({ key: r.key + 1, questions: payload.questions, scope: "full" }))}
+      onRetakeMisses={(missed) => setRun((r) => ({ key: r.key + 1, questions: missed, scope: "misses" }))}
+      onRegenerate={onRegenerate}
+      onOpenGeneration={onOpenGeneration}
+    />
+  );
+}
+
+function QuizRun({
+  payload,
+  scope,
+  gen,
+  onRetake,
+  onRetakeMisses,
+  onRegenerate,
+  onOpenGeneration,
+}: {
+  payload: QuizPayload;
+  scope: "full" | "misses";
+  gen?: Generation;
+  onRetake: () => void;
+  onRetakeMisses: (missed: QuizQuestion[]) => void;
+  onRegenerate?: () => void;
+  onOpenGeneration?: (gen: Generation) => void;
 }) {
   const cs = useCallSettings();
   const sfxOn = useSettings((s) => s.companionSfx !== false);
@@ -247,12 +291,15 @@ export function QuizTaker({
     return (
       <QuizResults
         payload={payload}
-        score={score}
+        scope={scope}
+        gen={gen}
         picked={picked}
         typed={typed}
         checks={checks}
         onRetake={onRetake}
+        onRetakeMisses={onRetakeMisses}
         onRegenerate={onRegenerate}
+        onOpenGeneration={onOpenGeneration}
       />
     );
   }
@@ -284,32 +331,44 @@ export function QuizTaker({
 
 function QuizResults({
   payload,
-  score,
+  scope,
+  gen,
   picked,
   typed,
   checks,
   onRetake,
+  onRetakeMisses,
   onRegenerate,
+  onOpenGeneration,
 }: {
   payload: QuizPayload;
-  score: number;
+  scope: "full" | "misses";
+  gen?: Generation;
   picked: (number | null)[];
   typed: string[];
   checks: (SolutionCheck | null)[];
   onRetake: () => void;
+  onRetakeMisses: (missed: QuizQuestion[]) => void;
   onRegenerate?: () => void;
+  onOpenGeneration?: (gen: Generation) => void;
 }) {
+  // Answers are final once results show; score them once.
+  const [items] = useState(() =>
+    scoreItems(
+      payload.questions,
+      payload.questions.map((_, i) => ({ picked: picked[i], typed: typed[i], check: checks[i] })),
+    ),
+  );
+  const score = items.reduce((s, it) => s + it.credit, 0);
   const pct = Math.round((score / payload.questions.length) * 100);
   const shownPct = useCountUp(pct, 1000);
   const isMaster = pct >= 80;
   const byTopic = new Map<string, { c: number; t: number }>();
-  payload.questions.forEach((qq, i) => {
-    const t = byTopic.get(qq.topic) ?? { c: 0, t: 0 };
+  items.forEach((it) => {
+    const t = byTopic.get(it.topic) ?? { c: 0, t: 0 };
     t.t++;
-    if (qq.format === "solution") {
-      if (checks[i]) t.c += solutionCredit(checks[i]);
-    } else if (isCorrect(qq, picked[i], typed[i])) t.c++;
-    byTopic.set(qq.topic, t);
+    t.c += it.credit;
+    byTopic.set(it.topic, t);
   });
 
   return (
@@ -339,12 +398,13 @@ function QuizResults({
         transition={{ ...SPRING, delay: 0.08 }}
         className="rounded-2xl border border-hairline bg-ink/[0.02] p-7 text-center"
       >
-        <div className="label-mono">Result</div>
+        <div className="label-mono">{scope === "misses" ? "Retake of missed items" : "Result"}</div>
         <div className="mt-3 font-display text-[3.2rem] font-[420] leading-none text-lamp">
           {shownPct}%
         </div>
         <div className="mt-2 text-[13px] text-muted">
-          {fmtScore(score)} of {payload.questions.length} correct · partially-correct solutions earn half credit
+          {fmtScore(score)} of {payload.questions.length} correct
+          {payload.questions.some((q) => q.format === "solution") && " · partially-correct solutions earn half credit"}
         </div>
       </motion.div>
       <div>
@@ -367,9 +427,19 @@ function QuizResults({
           ))}
         </div>
       </div>
+      <AttemptFollowUp
+        gen={gen}
+        kind="quiz"
+        scope={scope}
+        questions={payload.questions}
+        items={items}
+        onRetakeMisses={onRetakeMisses}
+        onOpenGeneration={onOpenGeneration}
+      />
       <div className="flex flex-wrap justify-end gap-3">
         <button className={btnGhost} onClick={onRetake}>
-          <ArrowCounterClockwise size={13} className="mr-1.5 inline" /> Retake
+          <ArrowCounterClockwise size={13} className="mr-1.5 inline" />
+          {scope === "misses" ? "Retake the whole quiz" : "Retake"}
         </button>
         {onRegenerate && (
           <button className={btnLamp} onClick={onRegenerate}>New quiz</button>
@@ -635,9 +705,6 @@ function QuizQuestionView({
 }
 
 function isCorrect(q: QuizQuestion, picked: number | null, typed: string): boolean {
-  if (q.format === "identification") {
-    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim();
-    return norm(typed) === norm(q.answer) || (norm(typed).length > 3 && norm(q.answer).includes(norm(typed)));
-  }
+  if (q.format === "identification") return typedAnswerMatches(typed, q.answer);
   return picked === q.answerIndex;
 }

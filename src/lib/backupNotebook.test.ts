@@ -14,6 +14,7 @@ async function seed() {
     db.chatSessions.clear(),
     db.generations.clear(),
     db.cardProgress.clear(),
+    db.attempts.clear(),
   ]);
   for (const id of ["keep", "other"]) {
     await db.notebooks.add({ id, name: `Notebook ${id}`, createdAt: NOW, updatedAt: NOW });
@@ -32,6 +33,7 @@ async function seed() {
     await db.messages.add({ id: `${id}-m1`, notebookId: id, sessionId: `${id}-chat`, role: "user", content: "What makes ATP?", createdAt: NOW });
     await db.generations.add({ id: `${id}-deck`, notebookId: id, kind: "flashcards", title: "Deck", payload: { cards: [] }, createdAt: NOW });
     await db.cardProgress.add({ id: `${id}-deck:c0`, generationId: `${id}-deck`, notebookId: id, ease: 2.5, intervalDays: 1, dueAt: NOW, reps: 1 });
+    await db.attempts.add({ id: `${id}-try`, notebookId: id, generationId: `${id}-quiz`, kind: "quiz", scope: "full", score: 1, total: 2, items: [], finishedAt: NOW });
   }
 }
 
@@ -42,7 +44,7 @@ describe("notebook export", () => {
     const payload = await buildNotebookPayload("keep");
     expect(payload).toMatchObject({ app: "comtus", schema: 2, scope: "notebook" });
     const data = payload.data!;
-    for (const table of ["notebooks", "sources", "chunks", "messages", "chatSessions", "generations", "cardProgress"] as const) {
+    for (const table of ["notebooks", "sources", "chunks", "messages", "chatSessions", "generations", "cardProgress", "attempts"] as const) {
       expect(data[table], table).toHaveLength(1);
       expect(JSON.stringify(data[table])).not.toContain("other");
     }
@@ -50,11 +52,12 @@ describe("notebook export", () => {
 
   it("restores through the ordinary backup import", async () => {
     const json = JSON.stringify(await buildNotebookPayload("keep"));
-    for (const t of [db.notebooks, db.sources, db.chunks, db.messages, db.chatSessions, db.generations, db.cardProgress]) {
+    for (const t of [db.notebooks, db.sources, db.chunks, db.messages, db.chatSessions, db.generations, db.cardProgress, db.attempts]) {
       await t.clear();
     }
 
-    expect(await importBackupText(json)).toBe(7);
+    expect(await importBackupText(json)).toBe(8);
+    expect(await db.attempts.get("keep-try")).toBeDefined();
     expect(await db.notebooks.get("keep")).toMatchObject({ name: "Notebook keep" });
     expect(await db.messages.where("notebookId").equals("keep").count()).toBe(1);
     expect(await db.cardProgress.get("keep-deck:c0")).toBeDefined();

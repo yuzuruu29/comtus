@@ -17,6 +17,7 @@ import { Button, Dialog, Field, Input, Textarea } from "../../ui";
 import { SPRING } from "../fx";
 import { playSfx } from "../companion/sfx";
 import { ErrorNote, LampPulse } from "../ui";
+import { AssessmentContent } from "../../components/AssessmentContent";
 import "./flashcard-review.css";
 
 const RATING_LABEL: Record<Rating, string> = { again: "Again", hard: "Hard", good: "Good", easy: "Easy" };
@@ -266,13 +267,17 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
           className="fc-card"
         >
           <span className="fc-face" aria-hidden={flipped}>
-            <span className="fc-face-body fc-face-front">{card.front}</span>
+            <span className="fc-face-body fc-face-front">
+              <AssessmentContent inline>{card.front}</AssessmentContent>
+            </span>
             <span className="fc-face-hint">
               Select to reveal <kbd>Space</kbd>
             </span>
           </span>
           <span className="fc-face fc-face-back" aria-hidden={!flipped}>
-            <span className="fc-face-body">{card.back}</span>
+            <span className="fc-face-body">
+              <AssessmentContent inline>{card.back}</AssessmentContent>
+            </span>
             <span className="fc-face-hint">
               How well did you recall it?
             </span>
