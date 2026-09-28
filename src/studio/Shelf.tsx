@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, GearSix, ListDashes, MagnifyingGlass, Plug, Plus, SquaresFour, X } from "@phosphor-icons/react";
+import { BookOpen, FolderOpen, GearSix, ListDashes, MagnifyingGlass, Plug, Plus, SquaresFour, X } from "@phosphor-icons/react";
 import { Button, Dialog, Empty, Field, IconButton, Input, Segmented, Skeleton } from "../ui";
 import { db, createNotebook, deleteNotebook, touchNotebook } from "../lib/db";
-import { exportNotebook } from "../lib/backup";
+import { exportNotebook, openNotebookText, readNotebookFileNative } from "../lib/backup";
 import type { Notebook } from "../lib/types";
 import ComtusLogo from "../components/brand/ComtusLogo";
 import DeskShell from "./DeskShell";
@@ -13,7 +13,7 @@ import NewNotebookDialog from "./NewNotebookDialog";
 import ReviewDueStrip from "./ReviewDueStrip";
 import { useDesk } from "./DeskContext";
 import { modLabel } from "./shortcuts";
-import { detectPlatform } from "../lib/desktop";
+import { detectPlatform, isTauri } from "../lib/desktop";
 import { timeAgo } from "./ui";
 import "./shelf.css";
 
@@ -41,6 +41,8 @@ export default function Shelf({
   const [renamingNotebook, setRenamingNotebook] = useState<Notebook | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [fileNotice, setFileNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const openSettings = useCallback((tab: SettingsTab = "settings") => {
     setSettingsTab(tab);
@@ -118,6 +120,40 @@ export default function Shelf({
     await exportNotebook(nb).catch(() => undefined);
   };
 
+  /** A notebook someone exported (maybe you, on another device) opens
+   *  straight away; a full backup merges into the shelf. */
+  const openFileText = async (text: string | null) => {
+    if (text === null) return;
+    setFileNotice(null);
+    try {
+      const opened = await openNotebookText(text);
+      if (opened.kind === "notebook") {
+        onOpen(opened.notebookId);
+        return;
+      }
+      await refresh();
+      setFileNotice({ tone: "ok", text: `Restored ${opened.count.toLocaleString()} items from the backup.` });
+    } catch (error) {
+      setFileNotice({ tone: "error", text: error instanceof Error ? error.message : "That file could not be opened." });
+    }
+  };
+
+  const pickFile = () => {
+    if (!isTauri()) {
+      fileRef.current?.click();
+      return;
+    }
+    readNotebookFileNative()
+      .then(openFileText)
+      .catch(() => setFileNotice({ tone: "error", text: "That file could not be read." }));
+  };
+
+  const openFileButton = (
+    <Button variant="secondary" icon={<FolderOpen size={18} aria-hidden="true" />} onClick={pickFile}>
+      Open a file
+    </Button>
+  );
+
   return (
     <DeskShell onSettings={openSettings} onNewNotebook={() => setCreating(true)}>
       <div className="shelf-page">
@@ -141,11 +177,32 @@ export default function Shelf({
                 <p>Your sources, conversations, and study tools, kept together.</p>
               </div>
               {notebooks.length > 0 && (
-                <Button className="shelf-new" icon={<Plus size={18} aria-hidden="true" />} onClick={() => setCreating(true)}>
-                  New notebook
-                </Button>
+                <div className="shelf-intro-actions">
+                  {openFileButton}
+                  <Button className="shelf-new" icon={<Plus size={18} aria-hidden="true" />} onClick={() => setCreating(true)}>
+                    New notebook
+                  </Button>
+                </div>
               )}
             </div>
+
+            <input
+              ref={fileRef}
+              type="file"
+              hidden
+              accept=".json,application/json"
+              aria-label="Notebook file"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) void file.text().then(openFileText);
+              }}
+            />
+            {fileNotice && (
+              <p className={fileNotice.tone === "error" ? "shelf-error" : "shelf-file-note"} role={fileNotice.tone === "error" ? "alert" : "status"}>
+                {fileNotice.text}
+              </p>
+            )}
 
             {kickstartError && (
               <p className="shelf-error" role="alert">
@@ -169,6 +226,9 @@ export default function Shelf({
                     New notebook
                   </Button>
                   <span className="shelf-start-note">Give it a name. Add your material when you’re ready.</span>
+                  <button type="button" className="shelf-start-open" onClick={pickFile}>
+                    Have a notebook file? Open it
+                  </button>
                 </div>
                 <ol className="shelf-start-steps" aria-label="How a notebook works">
                   <li>

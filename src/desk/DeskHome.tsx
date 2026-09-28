@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import {
   DotsThreeVertical,
   DownloadSimple,
+  FolderOpen,
   ListDashes,
   MagnifyingGlass,
   PencilSimple,
@@ -13,7 +14,8 @@ import {
 } from "@phosphor-icons/react";
 import { liveQuery } from "dexie";
 import { db, createNotebook, deleteNotebook, touchNotebook } from "../lib/db";
-import { exportNotebook } from "../lib/backup";
+import { exportNotebook, openNotebookText, readNotebookFileNative } from "../lib/backup";
+import { isTauri } from "../lib/desktop";
 import type { Notebook } from "../lib/types";
 import StudyGlyph from "../components/icons/StudyGlyph";
 import ComtusLogo from "../components/brand/ComtusLogo";
@@ -189,6 +191,31 @@ export default function DeskHome({
     await exportNotebook(nb).catch(() => undefined);
   };
 
+  // An exported notebook opens straight away; a full backup merges in and
+  // the live query picks it up.
+  const [fileNotice, setFileNotice] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const openFileText = async (text: string | null) => {
+    if (text === null) return;
+    setFileNotice("");
+    try {
+      const opened = await openNotebookText(text);
+      if (opened.kind === "notebook") onOpenResume(opened.notebookId);
+      else setFileNotice(`Restored ${opened.count.toLocaleString()} items from the backup.`);
+    } catch (error) {
+      setFileNotice(error instanceof Error ? error.message : "That file could not be opened.");
+    }
+  };
+  const pickFile = () => {
+    if (!isTauri()) {
+      fileRef.current?.click();
+      return;
+    }
+    readNotebookFileNative()
+      .then(openFileText)
+      .catch(() => setFileNotice("That file could not be read."));
+  };
+
   const formatDate = (ts: number) => {
     const d = new Date(ts);
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -351,6 +378,26 @@ export default function DeskHome({
               </AnimatePresence>
             </div>
 
+            <input
+              ref={fileRef}
+              type="file"
+              hidden
+              accept=".json,application/json"
+              aria-label="Notebook file"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) void file.text().then(openFileText);
+              }}
+            />
+            <button
+              onClick={pickFile}
+              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3.5 text-[13px] text-ink/85 hover:border-hairline-strong hover:text-ink transition-colors"
+            >
+              <FolderOpen size={15} />
+              <span>Open a file</span>
+            </button>
+
             {/* + Create New Button */}
             <button
               onClick={openCreateModal}
@@ -361,6 +408,12 @@ export default function DeskHome({
             </button>
           </div>
         </div>
+
+        {fileNotice && (
+          <p role="status" className="mt-4 text-[13px] text-muted">
+            {fileNotice}
+          </p>
+        )}
 
         <ReviewDueStrip onReview={onOpenWork} />
 

@@ -502,6 +502,13 @@
     width: 100%;
   }
 
+  /* Side by side: opening a file sits beside the main action, smaller. */
+  .shelf-intro .shelf-intro-actions {
+    display: grid;
+    width: 100%;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
   .shelf-start {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -581,4 +588,42 @@
   .notebook-card-title {
     transition: none;
   }
+}
+
+/* Opening an exported notebook or a backup from the shelf. */
+.shelf-intro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.shelf-file-note {
+  margin: 1rem 0 0;
+  color: var(--sage);
+  font-size: 0.875rem;
+}
+
+.shelf-start-open {
+  margin-top: 0.75rem;
+  padding: 0.25rem 0;
+  border: 0;
+  background: none;
+  color: var(--brass);
+  font: inherit;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--brass) 40%, transparent);
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.shelf-start-open:hover {
+  text-decoration-color: var(--brass);
+}
+
+.shelf-start-open:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
 }
