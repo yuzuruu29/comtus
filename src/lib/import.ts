@@ -184,10 +184,21 @@ export async function extractUrl(rawUrl: string): Promise<ExtractedDoc> {
     signal: AbortSignal.timeout(25_000),
   });
   if (!res.ok) throw new Error(`Couldn't read that page (${res.status}).`);
-  const text = await res.text();
-  if (text.trim().length < 40)
+  const { title, body } = parseReaderResponse(await res.text());
+  if (body.trim().length < 40)
     throw new Error("That page returned nothing readable.");
-  return { title: hostname, kind: "url", text, meta: { url } };
+  return { title: title || hostname, kind: "url", text: body, meta: { url } };
+}
+
+/** Jina's reader prefixes the page with a small header block —
+ *  "Title: …", "URL Source: …", "Published Time: …", then
+ *  "Markdown Content:". Keep the title, drop the header from the text. */
+export function parseReaderResponse(raw: string): { title: string; body: string } {
+  const marker = raw.match(/^Markdown Content:[ \t]*\r?\n/m);
+  const header = marker ? raw.slice(0, marker.index) : raw.slice(0, 1200);
+  const title = header.match(/^Title:[ \t]*(.+)$/m)?.[1].trim().slice(0, 200) ?? "";
+  const body = marker ? raw.slice(marker.index! + marker[0].length) : raw;
+  return { title, body: body.trim() };
 }
 
 /* ── Chunking ─────────────────────────────────────────────── */

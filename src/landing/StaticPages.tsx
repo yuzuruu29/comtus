@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import Nav from "./Nav";
 import Footer from "./Footer";
 import "./landing.css";
-import { BookOpen, Envelope, FileText, Shield, Sparkle } from "@phosphor-icons/react";
+import { BookOpen, Compass, Envelope, FileText, Shield, Sparkle } from "@phosphor-icons/react";
 
 interface StaticPageLayoutProps {
   title: string;
@@ -363,6 +363,24 @@ export function StudyCompanionPage() {
             <span>→</span>
           </Link>
         </div>
+      </div>
+    </StaticPageLayout>
+  );
+}
+
+/** Any address the router doesn't know. Honest and calm: nothing was lost. */
+export function NotFoundPage() {
+  return (
+    <StaticPageLayout
+      title="This page isn’t on the shelf."
+      subtitle="The address may be mistyped, or the page has moved. Your notebooks are untouched — they live on this device."
+      icon={Compass}
+    >
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+        <Link to="/studio" className="btn btn-primary btn-md">
+          Open your notebooks
+        </Link>
+        <Link to="/">Return to the home page</Link>
       </div>
     </StaticPageLayout>
   );

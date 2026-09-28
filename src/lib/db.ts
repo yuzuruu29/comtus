@@ -141,10 +141,16 @@ export async function addSourceWithChunks(
 }
 
 export async function deleteSource(sourceId: string) {
-  await db.transaction("rw", db.sources, db.chunks, async () => {
+  const notebookId = await db.transaction("rw", db.sources, db.chunks, async () => {
+    const source = await db.sources.get(sourceId);
     await db.sources.delete(sourceId);
     await db.chunks.where("sourceId").equals(sourceId).delete();
+    return source?.notebookId;
   });
+  if (notebookId) {
+    await touchNotebook(notebookId);
+    notifyDeskActivity();
+  }
 }
 
 /* ── Chat sessions ────────────────────────────────────────── */
