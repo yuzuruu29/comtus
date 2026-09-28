@@ -111,6 +111,9 @@ export interface Generation {
   /** Fully-formed, kind-specific payload — see generators/*.ts */
   payload: unknown;
   createdAt: number;
+  /** When an edit last changed it (a note rewritten, cards added); absent
+   *  on work never edited. Settles which copy wins when devices merge. */
+  updatedAt?: number;
 }
 
 /* ── Quiz & exam payloads ─────────────────────────────────── */

@@ -303,6 +303,7 @@ export async function updateCustomNote(
     ...existing,
     title: title.trim() || existing.title,
     payload: { content, tags },
+    updatedAt: Date.now(),
   };
   await db.generations.put(updated);
   await touchNotebook(existing.notebookId);

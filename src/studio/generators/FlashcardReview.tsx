@@ -175,6 +175,7 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
       ...gen,
       title: /^Flashcards · \d+$/.test(gen.title) ? `Flashcards · ${updated.length}` : gen.title,
       payload: { cards: updated } satisfies FlashcardsPayload,
+      updatedAt: Date.now(),
     });
     setCards(updated);
     setAddOpen(false);

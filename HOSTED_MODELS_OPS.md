@@ -45,7 +45,7 @@ Browser (pass token only) ──▶ /api/anthropic (Vercel Edge)
 | `PAYPAL_CLIENT_SECRET` | yes | Server-side order create/capture. Checkout fails closed without it. |
 | `PAYPAL_CLIENT_ID` | no | Defaults to the public web SDK id. |
 | `PAYPAL_API_BASE` | no | Default live `https://api-m.paypal.com`; point at sandbox for testing. |
-| `UPSTASH_REDIS_REST_URL` | yes | Per-pass + per-IP quota counters — the proxy refuses traffic without them. Pass counters expire 30 days after their pass. |
+| `UPSTASH_REDIS_REST_URL` | yes | Per-pass + per-IP quota counters — the proxy refuses traffic without them. Pass counters expire 30 days after their pass. Also holds device transfers (below). |
 | `UPSTASH_REDIS_REST_TOKEN` | yes | Same. |
 | `HOSTED_PROXY_OFF` | no | `1` = global kill switch (503 for all proxied calls). |
 
@@ -83,3 +83,18 @@ then re-issue passes to active buyers.
 The desktop shell calls the proxy at `https://comtus-ai.vercel.app/api/anthropic`
 via `VITE_API_ORIGIN` — set it when building the native app (already allowed
 in the Tauri CSP).
+
+## Device transfers (`/api/relay`)
+
+"Send to another device" relays a notebook through `api/relay.ts`, which
+uses the same Upstash database. What it stores is sealed on the sending
+device (AES-GCM, key derived from the transfer code); the code travels
+only between the two devices, so the relay holds text it cannot read.
+
+- Keys: `relay:<id>:meta`, `relay:<id>:<part>`, `relay:<id>:done`, all with
+  a one-hour TTL and deleted once the receiver has the notebook. Budget
+  counters are `relaybudget:<hashed ip>`, one hour.
+- Limits: 32 parts of 700,000 characters per transfer (about 16 MB sealed,
+  after gzip), 20 new transfers and 600 reads per network per hour.
+- Without the Upstash variables the relay answers 503 and the app tells the
+  student sending isn't set up; exporting a file still works.

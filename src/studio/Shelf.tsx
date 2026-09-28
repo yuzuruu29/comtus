@@ -1,7 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, FolderOpen, GearSix, ListDashes, MagnifyingGlass, Plug, Plus, SquaresFour, X } from "@phosphor-icons/react";
-import { Button, Dialog, Empty, Field, IconButton, Input, Segmented, Skeleton } from "../ui";
+import {
+  BookOpen,
+  CaretDown,
+  DeviceMobile,
+  FileArrowUp,
+  FolderOpen,
+  GearSix,
+  ListDashes,
+  MagnifyingGlass,
+  Plug,
+  Plus,
+  SquaresFour,
+  X,
+} from "@phosphor-icons/react";
+import { Button, Dialog, Empty, Field, IconButton, Input, Menu, Segmented, Skeleton } from "../ui";
 import { db, createNotebook, deleteNotebook, touchNotebook } from "../lib/db";
 import { exportNotebook, openNotebookText, readNotebookFileNative } from "../lib/backup";
 import type { Notebook } from "../lib/types";
@@ -11,6 +24,7 @@ import SettingsModal, { type SettingsTab } from "./SettingsModal";
 import NotebookCard, { type NotebookCardData } from "./NotebookCard";
 import NewNotebookDialog from "./NewNotebookDialog";
 import ReviewDueStrip from "./ReviewDueStrip";
+import { ReceiveFromDeviceDialog, SendToDeviceDialog, receiveCodeFromHash } from "./DeviceTransfer";
 import { useDesk } from "./DeskContext";
 import { modLabel } from "./shortcuts";
 import { detectPlatform, isTauri } from "../lib/desktop";
@@ -43,6 +57,18 @@ export default function Shelf({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [fileNotice, setFileNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [sending, setSending] = useState<Notebook | null>(null);
+  // A scanned transfer link ("#receive=<code>") opens straight into
+  // receiving; the code comes out of the address bar at once.
+  const [receiving, setReceiving] = useState<{ code: string } | null>(() => {
+    const code = typeof window === "undefined" ? null : receiveCodeFromHash(window.location.hash);
+    return code ? { code } : null;
+  });
+  useEffect(() => {
+    if (receiveCodeFromHash(window.location.hash)) {
+      window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    }
+  }, []);
 
   const openSettings = useCallback((tab: SettingsTab = "settings") => {
     setSettingsTab(tab);
@@ -148,10 +174,25 @@ export default function Shelf({
       .catch(() => setFileNotice({ tone: "error", text: "That file could not be read." }));
   };
 
-  const openFileButton = (
-    <Button variant="secondary" icon={<FolderOpen size={18} aria-hidden="true" />} onClick={pickFile}>
-      Open a file
-    </Button>
+  const openMenu = (
+    <Menu
+      aria-label="Open a notebook"
+      align="end"
+      trigger={
+        <Button variant="secondary" icon={<FolderOpen size={18} aria-hidden="true" />} iconEnd={<CaretDown size={14} aria-hidden="true" />}>
+          Open
+        </Button>
+      }
+      items={[
+        { key: "file", label: "A notebook file", icon: <FileArrowUp size={18} aria-hidden="true" />, onSelect: pickFile },
+        {
+          key: "device",
+          label: "From another device",
+          icon: <DeviceMobile size={18} aria-hidden="true" />,
+          onSelect: () => setReceiving({ code: "" }),
+        },
+      ]}
+    />
   );
 
   return (
@@ -178,7 +219,7 @@ export default function Shelf({
               </div>
               {notebooks.length > 0 && (
                 <div className="shelf-intro-actions">
-                  {openFileButton}
+                  {openMenu}
                   <Button className="shelf-new" icon={<Plus size={18} aria-hidden="true" />} onClick={() => setCreating(true)}>
                     New notebook
                   </Button>
@@ -226,9 +267,16 @@ export default function Shelf({
                     New notebook
                   </Button>
                   <span className="shelf-start-note">Give it a name. Add your material when you’re ready.</span>
-                  <button type="button" className="shelf-start-open" onClick={pickFile}>
-                    Have a notebook file? Open it
-                  </button>
+                  <span className="shelf-start-open-row">
+                    Already have a notebook?{" "}
+                    <button type="button" className="shelf-start-open" onClick={pickFile}>
+                      Open its file
+                    </button>{" "}
+                    or{" "}
+                    <button type="button" className="shelf-start-open" onClick={() => setReceiving({ code: "" })}>
+                      receive it from another device
+                    </button>
+                  </span>
                 </div>
                 <ol className="shelf-start-steps" aria-label="How a notebook works">
                   <li>
@@ -327,6 +375,7 @@ export default function Shelf({
                               setRenameDraft(notebook.name);
                             }}
                             onExport={(notebook) => void handleExport(notebook)}
+                            onSend={setSending}
                             onDelete={setDeletingId}
                           />
                         </li>
@@ -353,6 +402,17 @@ export default function Shelf({
         </div>
 
         <NewNotebookDialog open={creating} onClose={() => setCreating(false)} onCreated={onOpen} />
+        {sending && <SendToDeviceDialog notebook={sending} onClose={() => setSending(null)} />}
+        {receiving && (
+          <ReceiveFromDeviceDialog
+            initialCode={receiving.code}
+            onClose={() => setReceiving(null)}
+            onReceived={(result) => {
+              setReceiving(null);
+              onOpen(result.notebookId);
+            }}
+          />
+        )}
 
         <Dialog open={renamingNotebook !== null} onClose={() => setRenamingNotebook(null)} title="Rename notebook">
           <div className="shelf-dialog space-y-5">

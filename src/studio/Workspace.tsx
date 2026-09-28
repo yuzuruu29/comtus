@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Books, CaretLeft, ChartBar, ChatCircle, DotsThree, DownloadSimple, GearSix, Notebook, SidebarSimple } from "@phosphor-icons/react";
+import { Books, CaretLeft, ChartBar, ChatCircle, DeviceMobile, DotsThree, DownloadSimple, GearSix, Notebook, SidebarSimple } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
 import { useCallSettings } from "../lib/settings";
 import { modelLabelFor } from "../lib/llm";
@@ -23,6 +23,7 @@ import { exportNotebook } from "../lib/backup";
 import { LampPulse, Modal, btnGhost } from "./ui";
 import { useDesk } from "./DeskContext";
 import ConsoleShell from "./ConsoleShell";
+import { SendToDeviceDialog } from "./DeviceTransfer";
 
 type MobilePane = "sources" | "chat" | "studio";
 
@@ -442,6 +443,7 @@ function WorkspaceHeader({
   const tauri = isTauri();
   const macPad = tauri && platform === "mac";
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
   const [stats, setStats] = useState<{ sources: number; tokens: number; gens: number } | null>(null);
 
   const actions = useDesk();
@@ -505,6 +507,7 @@ function WorkspaceHeader({
             items={[
               { key: "analytics", label: "Notebook details", icon: <ChartBar size={16} aria-hidden="true" />, disabled: !notebook, onSelect: () => void openAnalytics() },
               { key: "export", label: "Export notebook", icon: <DownloadSimple size={16} aria-hidden="true" />, disabled: !notebook, onSelect: () => void handleExport() },
+              { key: "send", label: "Send to another device", icon: <DeviceMobile size={16} aria-hidden="true" />, disabled: !notebook, onSelect: () => setSendOpen(true) },
               { key: "models", label: "AI models", onSelect: () => onSettings("models") },
               { key: "milestones", label: "Study milestones", onSelect: actions.openMilestones },
               { key: "commands", label: "Search and commands", onSelect: actions.openPalette },
@@ -532,6 +535,8 @@ function WorkspaceHeader({
         </div>
         <CaptionButtons />
       </header>
+
+      {sendOpen && notebook && <SendToDeviceDialog notebook={notebook} onClose={() => setSendOpen(false)} />}
 
       {/* Analytics Modal */}
       {notebook && (

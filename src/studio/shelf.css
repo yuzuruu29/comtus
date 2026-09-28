@@ -604,9 +604,16 @@
   font-size: 0.875rem;
 }
 
-.shelf-start-open {
+.shelf-start-open-row {
+  display: block;
   margin-top: 0.75rem;
-  padding: 0.25rem 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.shelf-start-open {
+  padding: 0;
   border: 0;
   background: none;
   color: var(--brass);

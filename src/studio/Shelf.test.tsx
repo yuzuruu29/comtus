@@ -58,7 +58,8 @@ describe("Shelf", () => {
   it("opens an exported notebook file and reports a file it can't read", async () => {
     const onOpen = vi.fn();
     render(<MemoryRouter><Shelf onOpen={onOpen} needsKey /></MemoryRouter>);
-    expect(await screen.findByRole("button", { name: "Have a notebook file? Open it" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Open its file" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "receive it from another device" })).toBeInTheDocument();
 
     const exported = JSON.stringify({
       app: "comtus",

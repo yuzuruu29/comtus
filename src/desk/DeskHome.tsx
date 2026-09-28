@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import {
   DotsThreeVertical,
+  DeviceMobile,
   DownloadSimple,
   FolderOpen,
   ListDashes,
@@ -16,6 +17,7 @@ import { liveQuery } from "dexie";
 import { db, createNotebook, deleteNotebook, touchNotebook } from "../lib/db";
 import { exportNotebook, openNotebookText, readNotebookFileNative } from "../lib/backup";
 import { isTauri } from "../lib/desktop";
+import { ReceiveFromDeviceDialog, SendToDeviceDialog } from "../studio/DeviceTransfer";
 import type { Notebook } from "../lib/types";
 import StudyGlyph from "../components/icons/StudyGlyph";
 import ComtusLogo from "../components/brand/ComtusLogo";
@@ -194,6 +196,8 @@ export default function DeskHome({
   // An exported notebook opens straight away; a full backup merges in and
   // the live query picks it up.
   const [fileNotice, setFileNotice] = useState("");
+  const [sending, setSending] = useState<Notebook | null>(null);
+  const [receiving, setReceiving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const openFileText = async (text: string | null) => {
     if (text === null) return;
@@ -397,6 +401,13 @@ export default function DeskHome({
               <FolderOpen size={15} />
               <span>Open a file</span>
             </button>
+            <button
+              onClick={() => setReceiving(true)}
+              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3.5 text-[13px] text-ink/85 hover:border-hairline-strong hover:text-ink transition-colors"
+            >
+              <DeviceMobile size={15} />
+              <span>From another device</span>
+            </button>
 
             {/* + Create New Button */}
             <button
@@ -516,6 +527,17 @@ export default function DeskHome({
                                 >
                                   <DownloadSimple size={13} />
                                   Export
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMenuOpenId(null);
+                                    setSending(nb);
+                                  }}
+                                  className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
+                                >
+                                  <DeviceMobile size={13} />
+                                  Send to device
                                 </button>
                                 <div className="my-1 border-t border-hairline" />
                                 <button
@@ -730,6 +752,17 @@ export default function DeskHome({
           </div>
         </div>
       </Modal>
+
+      {sending && <SendToDeviceDialog notebook={sending} onClose={() => setSending(null)} />}
+      {receiving && (
+        <ReceiveFromDeviceDialog
+          onClose={() => setReceiving(false)}
+          onReceived={(result) => {
+            setReceiving(false);
+            onOpenResume(result.notebookId);
+          }}
+        />
+      )}
     </main>
   );
 }

@@ -117,6 +117,7 @@ export async function addMissesToDeck(
     title: "Missed questions",
     payload: { cards: [...cards, ...fresh] } satisfies FlashcardsPayload,
     createdAt: existing?.createdAt ?? Date.now(),
+    updatedAt: Date.now(),
   };
   if (fresh.length > 0 || !existing) await saveGeneration(deck);
   return { deck, added: fresh.length };

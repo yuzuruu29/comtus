@@ -19,6 +19,8 @@ What a notebook holds:
 - **An exam date** — a short plan for each day, and reviews that all land
   before the exam.
 - **Cmd/Ctrl-K** — search inside every notebook.
+- **Send to another device** — no account: the notebook is encrypted before
+  it leaves, relayed for up to an hour, and merged on the other side.
 
 See `BRAND.md` for the design system.
 

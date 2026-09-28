@@ -200,6 +200,7 @@ export async function addReadingCard(
     title: READING_DECK,
     payload: { cards: [...cards, card] } satisfies FlashcardsPayload,
     createdAt: existing?.createdAt ?? now,
+    updatedAt: now,
   });
   return { added: true };
 }
