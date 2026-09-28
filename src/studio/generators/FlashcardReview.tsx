@@ -252,7 +252,7 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
         </span>
       </div>
       <div className="fc-progress" aria-hidden="true">
-        <span style={{ width: `${(answered / Math.max(1, answered + remaining)) * 100}%` }} />
+        <span style={{ ["--done" as string]: answered / Math.max(1, answered + remaining) }} />
       </div>
 
       <div key={card.id} className="fc-stage">

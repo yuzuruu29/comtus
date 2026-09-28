@@ -51,7 +51,9 @@
   height: 100%;
   border-radius: inherit;
   background: var(--brass);
-  transition: width var(--dur-med) var(--ease-out);
+  transform: scaleX(var(--done, 0));
+  transform-origin: left center;
+  transition: transform var(--dur-med) var(--ease-out);
 }
 
 .fc-stage {
