@@ -1,27 +1,24 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { mathRemarkPlugins, mathRehypePlugins } from "../../lib/markdownMath";
 import { externalMarkdownComponents } from "../ExternalLink";
-import { motion } from "motion/react";
 
 import type {
   DocPayload,
   FlashcardsPayload,
-  Flashcard,
   Generation,
   GenerationKind,
   PresentationPayload,
 } from "../../lib/types";
-import { db } from "../../lib/db";
 import { generateJSON, generateMarkdown, friendlyError } from "../../lib/llm";
-import { useCallSettings, useSettings } from "../../lib/settings";
+import { useCallSettings } from "../../lib/settings";
 import { saveGeneration } from "../../lib/db";
-import { SPRING } from "../fx";
-import { playSfx } from "../companion/sfx";
 import { GENERATOR_SYSTEM, buildSourceBlock, sanitizeCards } from "./common";
-import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote, Modal } from "../ui";
-import { ArrowCounterClockwise, ArrowsIn, ArrowsOut, CaretLeft, CaretRight, Check, Copy, Crown, Plus, Presentation, Stack } from "@phosphor-icons/react";
+import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote } from "../ui";
+import { ArrowsIn, ArrowsOut, CaretLeft, CaretRight, Check, Copy, Crown, Presentation, Stack } from "@phosphor-icons/react";
+
+export { FlashcardsView } from "./FlashcardReview";
 
 /* ── Document aids: study guide, brief, FAQ, timeline ─────── */
 
@@ -282,279 +279,6 @@ JSON shape: {"cards":[{"front":"...","back":"...","topic":"..."}]}`,
           {busy ? "Distilling…" : `Make ${count} cards`}
         </button>
       </div>
-    </div>
-  );
-}
-
-export function FlashcardsView({
-  gen,
-  notebookId,
-}: {
-  gen: Generation;
-  notebookId: string;
-}) {
-  const sfxOn = useSettings((s) => s.companionSfx !== false);
-  const payload = gen.payload as FlashcardsPayload;
-  const [cards, setCards] = useState<Flashcard[]>(payload.cards);
-  const [pos, setPos] = useState(0);
-  const [flipped, setFlipped] = useState(false);
-  const [ratings, setRatings] = useState(0);
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [customFront, setCustomFront] = useState("");
-  const [customBack, setCustomBack] = useState("");
-  const [customTopic, setCustomTopic] = useState("");
-
-  const genKey = gen.id;
-  const done = pos >= cards.length;
-  const card = cards[pos];
-
-  useEffect(() => {
-    void db.cardProgress.where("generationId").equals(genKey).count().then(setRatings);
-  }, [genKey]);
-
-  useEffect(() => {
-    if (done) {
-      playSfx("unlock", sfxOn);
-    }
-  }, [done, sfxOn]);
-
-  const addCustomCard = async () => {
-    if (!customFront.trim() || !customBack.trim()) return;
-    const newCard: Flashcard = {
-      id: `custom-${Date.now()}`,
-      front: customFront.trim(),
-      back: customBack.trim(),
-      topic: customTopic.trim() || "Custom Card",
-    };
-    const updated = [...cards, newCard];
-    setCards(updated);
-    // Persist to DB
-    const updatedGen: Generation = {
-      ...gen,
-      title: `Flashcards · ${updated.length}`,
-      payload: { cards: updated },
-    };
-    await db.generations.put(updatedGen);
-    setCustomFront("");
-    setCustomBack("");
-    setCustomTopic("");
-    setAddModalOpen(false);
-  };
-
-  const rate = useCallback(async (quality: "again" | "hard" | "good" | "easy") => {
-    if (!card) return;
-    const id = `${genKey}:${card.id}`;
-    const existing = await db.cardProgress.get(id);
-    const ease = existing?.ease ?? 2.5;
-    const interval = existing?.intervalDays ?? 0;
-    const reps = (existing?.reps ?? 0) + 1;
-    const nextEase = Math.max(1.3, ease + { again: -0.2, hard: -0.05, good: 0.02, easy: 0.12 }[quality]);
-    const nextInterval =
-      quality === "again"
-        ? 0
-        : reps === 1
-          ? { hard: 1, good: 1, easy: 2 }[quality]
-          : Math.max(1, Math.round(interval * nextEase * { hard: 0.8, good: 1, easy: 1.25 }[quality]));
-    await db.cardProgress.put({
-      id,
-      generationId: genKey,
-      notebookId,
-      ease: nextEase,
-      intervalDays: nextInterval,
-      dueAt: Date.now() + nextInterval * 86400_000,
-      reps,
-    });
-    setRatings((r) => r + 1);
-    setPos((p) => p + 1);
-    setFlipped(false);
-    playSfx(quality === "again" ? "wrong" : "lampClick", sfxOn);
-  }, [card, genKey, notebookId, sfxOn]);
-
-  const handleFlip = useCallback(() => {
-    setFlipped((f) => !f);
-    playSfx("cardFlip", sfxOn);
-  }, [sfxOn]);
-
-  // Keyboard shortcut support: Space to flip, 1-4 to rate
-  useEffect(() => {
-    if (done || addModalOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      if (t && t.closest("input, textarea, [contenteditable]")) return;
-      if (e.code === "Space") {
-        e.preventDefault();
-        handleFlip();
-      } else if (flipped) {
-        if (e.key === "1") {
-          e.preventDefault();
-          void rate("again");
-        } else if (e.key === "2") {
-          e.preventDefault();
-          void rate("hard");
-        } else if (e.key === "3") {
-          e.preventDefault();
-          void rate("good");
-        } else if (e.key === "4") {
-          e.preventDefault();
-          void rate("easy");
-        }
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [done, addModalOpen, flipped, card, handleFlip, rate]);
-
-  if (done) {
-    return (
-      <div className="space-y-5 text-center relative py-6">
-        <div className="font-display text-[2.2rem] font-[420] text-lamp">Deck cleared.</div>
-        <p className="text-[13.5px] text-muted max-w-md mx-auto leading-relaxed">
-          All {cards.length} cards reviewed and stored to your spaced-repetition scheduler.
-        </p>
-        <div className="flex justify-center gap-3 pt-2">
-          <button
-            className={btnGhost}
-            onClick={() => {
-              setPos(0);
-              setFlipped(false);
-            }}
-          >
-            <ArrowCounterClockwise size={13} className="mr-1.5 inline" /> Run again
-          </button>
-          <button className={btnLamp} onClick={() => setAddModalOpen(true)}>
-            <Plus size={13} className="mr-1.5 inline" /> Add card
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-        <span>
-          Card {pos + 1} / {cards.length}
-        </span>
-        <div className="flex items-center gap-2">
-          <span>{card?.topic}</span>
-          <button
-            onClick={() => setAddModalOpen(true)}
-            className="flex items-center gap-1 rounded border border-hairline bg-ink/5 px-2 py-0.5 text-[10px] text-muted hover:text-ink"
-          >
-            <Plus size={10} /> Add card
-          </button>
-        </div>
-      </div>
-
-      <div key={card?.id} className="h-[260px] w-full sm:h-[280px]" style={{ perspective: 1400 }}>
-        <motion.button
-          onClick={handleFlip}
-          aria-label={flipped ? "Hide answer" : "Reveal answer"}
-          initial={{ opacity: 0, scale: 0.94, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0, rotateY: flipped ? 180 : 0 }}
-          transition={{ ...SPRING, stiffness: 260, damping: 26 }}
-          className="relative block h-full w-full"
-          style={{ transformStyle: "preserve-3d" }}
-        >
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center rounded-[1.4rem] border border-hairline bg-surface/80 p-6 text-center transition-colors duration-300 hover:border-brass/30 sm:p-7"
-            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
-          >
-            <div className="my-auto max-h-full overflow-y-auto px-1 py-3">
-              <span className="font-display text-[1.25rem] font-[430] leading-snug text-ink sm:text-[1.35rem]">
-                {card?.front}
-              </span>
-            </div>
-            <span className="shrink-0 font-mono text-[9.5px] uppercase tracking-[0.2em] text-muted/60 flex items-center gap-1">
-              <span>tap to flip</span>
-              <kbd className="rounded border border-hairline px-1 py-0.2 text-[8.5px] text-muted">Space</kbd>
-            </span>
-          </div>
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center rounded-[1.4rem] border border-brass/25 bg-surface p-6 text-center shadow-[0_18px_50px_rgba(0,0,0,0.35)] sm:p-7"
-            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
-          >
-            <div className="my-auto max-h-full overflow-y-auto px-1 py-3">
-              <span className="text-[13.5px] leading-relaxed text-ink/90 sm:text-[14px]">{card?.back}</span>
-            </div>
-            <span className="shrink-0 font-mono text-[9.5px] uppercase tracking-[0.2em] text-muted/60 flex items-center gap-1">
-              <span>tap to flip</span>
-              <kbd className="rounded border border-hairline px-1 py-0.2 text-[8.5px] text-muted">Space</kbd>
-            </span>
-          </div>
-        </motion.button>
-      </div>
-
-      {flipped ? (
-        <div className="grid grid-cols-4 gap-2">
-          {(
-            [
-              ["again", "text-rust", "border-rust/40", "1"],
-              ["hard", "text-brasspale", "border-brass/40", "2"],
-              ["good", "text-sage", "border-sage/40", "3"],
-              ["easy", "text-sage", "border-sage/40", "4"],
-            ] as const
-          ).map(([q, textCls, borderCls, keyLabel]) => (
-            <button
-              key={q}
-              onClick={() => void rate(q)}
-              className={`flex min-h-[44px] flex-col items-center justify-center rounded-xl border ${borderCls} ${textCls} bg-ink/[0.02] py-2 font-mono text-[11px] uppercase tracking-[0.12em] transition-all hover:bg-ink/[0.06] active:scale-95`}
-            >
-              <span>{q}</span>
-              <span className="text-[8.5px] text-muted opacity-60">[{keyLabel}]</span>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center">
-          <button className={btnLamp} onClick={handleFlip}>
-            Reveal <span className="text-[10px] opacity-70 ml-1">[Space]</span>
-          </button>
-        </div>
-      )}
-
-      {ratings > 0 && (
-        <div className="text-center font-mono text-[9.5px] uppercase tracking-[0.18em] text-muted/60">
-          {ratings} ratings on this deck
-        </div>
-      )}
-
-      {/* Add Custom Card Modal */}
-      <Modal open={addModalOpen} onClose={() => setAddModalOpen(false)} title="Add Custom Flashcard">
-        <div className="space-y-4">
-          <Field label="Front (Question / Prompt / Term)">
-            <input
-              value={customFront}
-              onChange={(e) => setCustomFront(e.target.value)}
-              placeholder="e.g. Cranial Nerve VII function"
-              className={inputCls}
-            />
-          </Field>
-          <Field label="Back (Answer / Definition / Key Fact)">
-            <textarea
-              rows={3}
-              value={customBack}
-              onChange={(e) => setCustomBack(e.target.value)}
-              placeholder="e.g. Facial nerve: controls muscles of facial expression and taste on anterior 2/3 of tongue."
-              className={inputCls + " resize-none"}
-            />
-          </Field>
-          <Field label="Topic / Tag (Optional)">
-            <input
-              value={customTopic}
-              onChange={(e) => setCustomTopic(e.target.value)}
-              placeholder="e.g. Neuroanatomy"
-              className={inputCls}
-            />
-          </Field>
-          <div className="flex justify-end gap-3 pt-2">
-            <button className={btnGhost} onClick={() => setAddModalOpen(false)}>Cancel</button>
-            <button className={btnLamp} onClick={addCustomCard} disabled={!customFront.trim() || !customBack.trim()}>
-              Save Card
-            </button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

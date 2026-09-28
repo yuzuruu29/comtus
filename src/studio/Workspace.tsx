@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Books, CaretLeft, ChartBar, ChatCircle, DotsThree, DownloadSimple, GearSix, Notebook, SidebarSimple } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
@@ -52,6 +52,27 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   const [mobileChatTarget, setMobileChatTarget] = useState<HTMLElement | null>(null);
   const [chatFocusRequest, setChatFocusRequest] = useState(0);
   const focusChat = useCallback(() => { setMobilePane("chat"); setChatFocusRequest((request) => request + 1); }, []);
+
+  // `?work=<generationId>` opens a saved item (e.g. a deck due for review)
+  // in the studio pane. Only the visible StudioPane receives it: the hidden
+  // desktop tree stays mounted on mobile, and its dialogs would portal out.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pendingWork = searchParams.get("work");
+  useEffect(() => {
+    if (!pendingWork) return;
+    if (!desktop) setMobilePane("studio");
+    else if (!panes.studio) setLayout(panes.sources ? "standard" : "writing");
+  }, [desktop, panes.sources, panes.studio, pendingWork, setLayout]);
+  const clearPendingWork = useCallback(() => {
+    setSearchParams(
+      (params) => {
+        const next = new URLSearchParams(params);
+        next.delete("work");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
 
   const collapseSources = useCallback(
     () => setLayout(panes.studio ? "writing" : "focus"),
@@ -278,6 +299,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 <StudioPane
                   notebookId={notebookId}
                   onCollapse={() => desk.setLayout(panes.sources ? "reading" : "focus")}
+                  pendingGenerationId={desktop ? pendingWork : null}
+                  onPendingGenerationConsumed={clearPendingWork}
                 />
               </div>
             ) : (
@@ -327,7 +350,11 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             )}
             {mobilePane === "studio" && (
               <div key={mobilePane} className={paneWrapperClass}>
-                <StudioPane notebookId={notebookId} />
+                <StudioPane
+                  notebookId={notebookId}
+                  pendingGenerationId={desktop ? null : pendingWork}
+                  onPendingGenerationConsumed={clearPendingWork}
+                />
               </div>
             )}
           </div>

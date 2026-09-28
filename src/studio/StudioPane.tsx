@@ -27,6 +27,7 @@ import {
   deleteGeneration,
   restoreGeneration,
 } from "../lib/db";
+import { purgeDeckProgress } from "../lib/reviews";
 import type {
   Generation,
   GenerationKind,
@@ -113,6 +114,12 @@ const FLOW_TITLES: Record<string, string> = {
 };
 
 const UNDO_DELETE_MS = 5_000;
+
+/** Undo keeps a deleted deck's review schedule; once the deletion is final,
+ *  the schedule goes too. Best effort — orphaned rows are never counted. */
+function commitDeletion(generation: Generation | undefined) {
+  if (generation?.kind === "flashcards") void purgeDeckProgress(generation.id).catch(() => {});
+}
 
 export default function StudioPane({
   notebookId,
@@ -208,6 +215,8 @@ export default function StudioPane({
     try {
       const deleted = await deleteGeneration(generation.id);
       if (!deleted) return;
+      // A second delete replaces the open notice, which makes the first final.
+      commitDeletion(deleteNotice?.generation);
       setDeleteNotice({ generation: deleted, focusUndo });
       await refresh();
     } catch {
@@ -413,7 +422,10 @@ export default function StudioPane({
         key={deleteNotice?.generation.id ?? "none"}
         notice={deleteNotice}
         onUndo={() => void handleUndoDelete()}
-        onExpire={() => setDeleteNotice(null)}
+        onExpire={() => {
+          commitDeletion(deleteNotice?.generation);
+          setDeleteNotice(null);
+        }}
       />
 
       {/* Generator modals */}

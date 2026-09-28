@@ -21,6 +21,7 @@ import { SOFT, Spotlight, staggerDelay } from "../studio/fx";
 import { Modal, Field, inputCls, btnLamp, btnGhost, timeAgo } from "../studio/ui";
 import { AnimatePresence, motion } from "motion/react";
 import { useSettings } from "../lib/settings";
+import ReviewDueStrip from "../studio/ReviewDueStrip";
 
 type SortOption = "recent" | "az" | "oldest" | "sources";
 
@@ -31,6 +32,7 @@ interface NotebookWithCount extends Notebook {
 export default function DeskHome({
   hasKey: _hasKey,
   onOpenResume,
+  onOpenWork,
   onNew: _onNew,
   onSettings,
 }: {
@@ -371,6 +373,8 @@ export default function DeskHome({
             </button>
           </div>
         </div>
+
+        <ReviewDueStrip onReview={onOpenWork} />
 
         {/* Section Heading */}
         <div className="mt-8 mb-5 flex items-baseline justify-between">

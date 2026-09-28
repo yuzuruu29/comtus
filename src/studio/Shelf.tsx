@@ -9,6 +9,7 @@ import DeskShell from "./DeskShell";
 import SettingsModal, { type SettingsTab } from "./SettingsModal";
 import NotebookCard, { type NotebookCardData } from "./NotebookCard";
 import NewNotebookDialog from "./NewNotebookDialog";
+import ReviewDueStrip from "./ReviewDueStrip";
 import { timeAgo } from "./ui";
 import "./shelf.css";
 
@@ -16,9 +17,12 @@ type ViewMode = "grid" | "list";
 
 export default function Shelf({
   onOpen,
+  onReview,
   needsKey,
 }: {
   onOpen: (id: string) => void;
+  /** Opens a saved flashcard deck inside its notebook. */
+  onReview?: (notebookId: string, generationId: string) => void;
   needsKey: boolean;
 }) {
   const [notebooks, setNotebooks] = useState<NotebookCardData[]>([]);
@@ -214,6 +218,8 @@ export default function Shelf({
                     </Button>
                   </section>
                 )}
+
+                {onReview && <ReviewDueStrip onReview={onReview} />}
 
                 <section className="shelf-collection" aria-labelledby="shelf-collection-title">
                   <div className="shelf-toolbar">

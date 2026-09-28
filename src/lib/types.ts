@@ -269,6 +269,8 @@ export interface CardProgress {
   intervalDays: number;
   dueAt: number;
   reps: number;
+  /** Times a graduated card was forgotten ("again"); absent on older rows. */
+  lapses?: number;
 }
 
 /* ── Study aid payloads (markdown documents) ──────────────── */
