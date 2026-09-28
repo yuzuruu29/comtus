@@ -19,7 +19,10 @@ import { ComtusEmblem } from "../components/brand/ComtusLogo";
 import { loadFocus, pruneFocus, saveFocus, subscribeFocus } from "./focus";
 import { db, deleteSource } from "../lib/db";
 import type { Source } from "../lib/types";
-import { importFiles, extractUrl, chunkText } from "../lib/import";
+import { importFiles, extractUrl, chunkText, type Transcriber, type VisionRequest } from "../lib/import";
+import { modelLabelFor, transcribeImage } from "../lib/llm";
+import { useCallSettings, useSettings } from "../lib/settings";
+import VisionConsentDialog from "./VisionConsentDialog";
 import { estTokens } from "../lib/retrieval";
 import { uid } from "../lib/db";
 import { addSourceWithChunks } from "../lib/db";
@@ -122,6 +125,14 @@ export default function SourcesPane({
   );
   const [flushed, setFlushed] = useState(false);
   const [failed, setFailed] = useState<string[]>([]);
+  const [importNotes, setImportNotes] = useState<string[]>([]);
+  const cs = useCallSettings();
+  const hasKey = useSettings((s) => s.hasKey());
+  const [visionAsk, setVisionAsk] = useState<{
+    request: VisionRequest;
+    offerApplyToRest: boolean;
+    resolve: (read: boolean, applyToRest: boolean) => void;
+  } | null>(null);
   const [urlOpen, setUrlOpen] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [viewing, setViewing] = useState<{ source: Source; startChar?: number } | null>(null);
@@ -148,19 +159,50 @@ export default function SourcesPane({
       if (!files || files.length === 0) return;
       const selected = Array.from(files);
       setFailed([]);
+      setImportNotes([]);
       setFlushed(false);
       setImporting({ done: 0, total: selected.length, current: selected[0].name });
-      const outcome = await importFiles(selected, notebookId, (done, total, current) => {
-        setImporting({ done, total, current });
-        if (done >= total) setFlushed(true);
-      });
+      // Photos and scanned pages are read by the model only with consent,
+      // asked per file unless the student answers for the whole import.
+      let standing: boolean | null = null;
+      const transcriber: Transcriber | undefined = hasKey
+        ? {
+            confirm: (request) =>
+              standing !== null
+                ? Promise.resolve(standing)
+                : new Promise<boolean>((resolve) =>
+                    setVisionAsk({
+                      request,
+                      offerApplyToRest: selected.length > 1,
+                      resolve: (read, applyToRest) => {
+                        if (applyToRest) standing = read;
+                        setVisionAsk(null);
+                        resolve(read);
+                      },
+                    }),
+                  ),
+            transcribe: (image, label) => transcribeImage({ ...cs, image, label }),
+          }
+        : undefined;
+      const outcome = await importFiles(
+        selected,
+        notebookId,
+        (done, total, current) => {
+          setImporting({ done, total, current });
+          if (done >= total) setFlushed(true);
+        },
+        transcriber,
+      );
       if (outcome.failed.length) {
         setFailed(outcome.failed.map((failure) => `${failure.name}: ${failure.reason}`));
+      }
+      if (outcome.notes.length) {
+        setImportNotes(outcome.notes.map((note) => `${note.name} was ${note.reason}`));
       }
       onChanged();
       void refresh();
     },
-    [notebookId, onChanged, refresh],
+    [cs, hasKey, notebookId, onChanged, refresh],
   );
 
   const handleFilesRef = useRef(handleFiles);
@@ -340,6 +382,15 @@ export default function SourcesPane({
             ))}
           </div>
         )}
+        {importNotes.length > 0 && (
+          <div role="status" className="mt-3 space-y-1.5">
+            {importNotes.map((note) => (
+              <p key={note} className="rounded-xl border border-hairline bg-surface px-3.5 py-2.5 text-label leading-relaxed text-muted">
+                {note}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
 
       {sources.length > 0 && (
@@ -485,6 +536,12 @@ export default function SourcesPane({
           onChanged();
           void refresh();
         }}
+      />
+      <VisionConsentDialog
+        request={visionAsk?.request ?? null}
+        modelLabel={modelLabelFor(cs.provider, cs.model)}
+        offerApplyToRest={visionAsk?.offerApplyToRest ?? false}
+        onAnswer={(read, applyToRest) => visionAsk?.resolve(read, applyToRest)}
       />
       {viewing && (
         <SourceReader
