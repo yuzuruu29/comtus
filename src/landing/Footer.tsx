@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 import "./landing.css";
 
-export default function Footer() {
+export default function Footer({ lamplight = false }: { lamplight?: boolean }) {
   return (
-    <footer className="landing-footer">
+    <footer className={lamplight ? "landing-footer theme-lamplight" : "landing-footer"}>
       <div className="landing-container landing-footer-inner">
         <div className="landing-footer-brand">
           <Link to="/" className="landing-wordmark" aria-label="Comtus home">comtus<span aria-hidden="true">.</span></Link>

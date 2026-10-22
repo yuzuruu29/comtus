@@ -315,7 +315,211 @@ html[data-motion="full"] .landing-nav-toggle[aria-expanded="true"] .landing-nav-
   animation: landing-mark-flash 1400ms var(--ease-out) 300ms both;
 }
 
-/* ── 6 · Paper keeps its content ──────────────────────────────────────── */
+/* ── 6 · Scroll scenes ────────────────────────────────────────────────
+   Each section has one idea, and the scroll plays it. Every keyframe below
+   writes only its "from" frame, so the resting style is the finished scene.
+   Full budget only: at Minimal nothing travels and nothing is drawn.
+
+     hero        the headline lags and fades as the page is lifted past it
+     sample      the notebook is laid down flat onto the desk
+     subjects    two lines of subjects drift past in opposite directions
+     method      a brass thread joins the steps; each numeral is inked in
+                 and its paper prop arrives as the step is read
+     field guide the spare cards fan out behind the sample card
+     nightfall   one lamp comes up behind the last line
+     navigation  the bar turns to frosted paper once the page moves */
+
+@keyframes landing-hero-drift {
+  55% {
+    opacity: 0;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(var(--landing-drift, 6vh));
+  }
+}
+@keyframes landing-lay-down {
+  from {
+    transform: rotateX(14deg) translateY(40px);
+    box-shadow: 0 70px 90px -40px color-mix(in srgb, var(--ink) 28%, transparent);
+  }
+}
+@keyframes landing-drift-left {
+  from {
+    transform: translateX(0);
+  }
+}
+@keyframes landing-drift-right {
+  from {
+    transform: translateX(-14%);
+  }
+}
+@keyframes landing-thread {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes landing-ink-fill {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+}
+@keyframes landing-slip-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) rotate(0deg);
+  }
+}
+@keyframes landing-mark-in {
+  from {
+    background-color: transparent;
+  }
+}
+@keyframes landing-tick {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes landing-square-up {
+  from {
+    transform: none;
+  }
+}
+@keyframes landing-deal {
+  from {
+    transform: translateY(48px) rotate(-4deg);
+  }
+}
+@keyframes landing-lamp-up {
+  from {
+    opacity: 0.1;
+    transform: scale(0.5);
+  }
+}
+@keyframes landing-nav-settle {
+  from {
+    background-color: var(--ground);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  /* Hero: the headline lags further behind than the copy beside it, so the two read as layers. */
+  .landing-home[data-motion="full"] .landing-hero {
+    view-timeline: --landing-hero block;
+  }
+  .landing-home[data-motion="full"] :is(.landing-hero h1, .landing-hero-copy) {
+    animation: landing-hero-drift linear both;
+    animation-timeline: --landing-hero;
+    animation-range: exit 0% exit 100%;
+  }
+  .landing-home[data-motion="full"] .landing-hero h1 {
+    --landing-drift: 9vh;
+  }
+  .landing-home[data-motion="full"] .landing-hero-copy {
+    --landing-drift: 4vh;
+  }
+
+  /* The sample arrives tilted away like a page held up to read, then settles flat by the time
+     its middle reaches the eye. It is fully usable at every step: nothing is hidden. */
+  .landing-home[data-motion="full"] .landing-preview-stage {
+    perspective: 1800px;
+    perspective-origin: 50% 100%;
+  }
+  .landing-home[data-motion="full"] .landing-preview {
+    transform-origin: 50% 100%;
+    animation: landing-lay-down linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 40%;
+  }
+
+  .landing-home[data-motion="full"] .landing-ribbon {
+    view-timeline: --landing-ribbon block;
+  }
+  .landing-home[data-motion="full"] .landing-ribbon-row:first-child .landing-ribbon-track {
+    animation: landing-drift-left linear both;
+    animation-timeline: --landing-ribbon;
+    animation-range: cover 0% cover 100%;
+  }
+  .landing-home[data-motion="full"] .landing-ribbon-row:last-child .landing-ribbon-track {
+    animation: landing-drift-right linear both;
+    animation-timeline: --landing-ribbon;
+    animation-range: cover 0% cover 100%;
+  }
+
+  /* The thread is drawn down the margin as the list passes the middle of the window. */
+  .landing-home[data-motion="full"] .landing-workflow::after {
+    animation: landing-thread linear both;
+    animation-timeline: --landing-thread;
+    animation-range: entry 40% cover 70%;
+  }
+  .landing-home[data-motion="full"] .landing-workflow > li {
+    view-timeline: --landing-step block;
+  }
+  .landing-home[data-motion="full"] .landing-step-number::after {
+    animation: landing-ink-fill linear both;
+    animation-timeline: --landing-step;
+    animation-range: cover 22% cover 44%;
+  }
+  .landing-home[data-motion="full"] .landing-artifact-sources > span {
+    animation: landing-slip-in linear both;
+    animation-timeline: --landing-step;
+    animation-range: cover 14% cover 34%;
+  }
+  .landing-home[data-motion="full"] .landing-artifact-sources > span:nth-child(2) {
+    animation-range: cover 19% cover 39%;
+  }
+  .landing-home[data-motion="full"] .landing-artifact-sources > span:nth-child(3) {
+    animation-range: cover 24% cover 44%;
+  }
+  .landing-home[data-motion="full"] .landing-artifact-passage {
+    animation: landing-slip-in linear both;
+    animation-timeline: --landing-step;
+    animation-range: cover 16% cover 34%;
+  }
+  .landing-home[data-motion="full"] .landing-artifact-passage mark {
+    animation: landing-mark-in linear both;
+    animation-timeline: --landing-step;
+    animation-range: cover 32% cover 48%;
+  }
+  .landing-home[data-motion="full"] .landing-artifact-ticks > span {
+    animation: landing-tick linear both;
+    animation-timeline: --landing-step;
+    animation-range: cover calc(16% + var(--i, 0) * 2.4%) cover calc(26% + var(--i, 0) * 2.4%);
+  }
+
+  .landing-home[data-motion="full"] .field-guide-figure {
+    view-timeline: --landing-deck block;
+  }
+  .landing-home[data-motion="full"] .field-guide-deck {
+    animation: landing-deal linear both;
+    animation-timeline: --landing-deck;
+    animation-range: entry 10% cover 45%;
+  }
+  .landing-home[data-motion="full"] .field-guide-deck::before,
+  .landing-home[data-motion="full"] .field-guide-deck::after {
+    animation: landing-square-up linear both;
+    animation-timeline: --landing-deck;
+    animation-range: cover 25% cover 55%;
+  }
+
+  .landing-home[data-motion="full"] .landing-nightfall {
+    view-timeline: --landing-night block;
+  }
+  .landing-home[data-motion="full"] .landing-nightfall::after {
+    animation: landing-lamp-up linear both;
+    animation-timeline: --landing-night;
+    animation-range: entry 15% entry 100%;
+  }
+
+  html[data-motion="full"] .landing-nav {
+    animation: landing-nav-settle linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0px 140px;
+  }
+}
+
+/* ── 7 · Paper keeps its content ──────────────────────────────────────── */
 
 @media print {
   .landing-site *,

@@ -16,7 +16,12 @@
    src/styles/contrast.test.ts asserts every one of these pairs.
    ========================================================================== */
 
-:root {
+/* .theme-daylight lends Daylight to one small piece of a Lamplight page (the
+   theme previews in Settings), the mirror of .theme-lamplight below. Keep it
+   to small, self-contained previews: it resets every token here, reading
+   size included, for whatever sits inside it. */
+:root,
+.theme-daylight {
   /* ── Safe areas and desk metrics ─────────────────────────────────────── */
   --sat: env(safe-area-inset-top, 0px);
   --sar: env(safe-area-inset-right, 0px);
@@ -90,6 +95,7 @@
      The faces themselves are declared in index.css @theme, which emits them
      to :root and generates the font-read / font-ui utilities in one step. */
   --text-read: 1.0625rem;
+  --leading-read: 1.75;
 
   /* ── Daylight palette (spec 4) ───────────────────────────────────────── */
   --ground: #f5f1e8;
@@ -121,7 +127,10 @@
 }
 
 /* ── Lamplight palette (spec 4) ───────────────────────────────────────── */
-html[data-theme="dark"] {
+/* .theme-lamplight lends the same palette to one band of a Daylight page (the
+   landing ends at night). It sets the tokens only; the band paints itself. */
+html[data-theme="dark"],
+.theme-lamplight {
   --ground: #0b0f1a;
   --surface: #121828;
   --raised: #1a2136;

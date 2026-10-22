@@ -16,3 +16,17 @@ html[data-reading="comfortable"] {
 html[data-reading="large"] {
   --text-read: 1.1875rem;
 }
+
+/* Line spacing — html[data-leading], set beside data-reading. Standard is the
+   1.75 the reader and answers were drawn at. */
+html[data-leading="snug"] {
+  --leading-read: 1.55;
+}
+
+html[data-leading="standard"] {
+  --leading-read: 1.75;
+}
+
+html[data-leading="airy"] {
+  --leading-read: 2;
+}

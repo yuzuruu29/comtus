@@ -1,5 +1,146 @@
+/* ==========================================================================
+   Settings: the studio preferences panel (SettingsPreferences.tsx).
+
+   A short index on the left, sections on the right, and every visual choice
+   drawn as a preview of itself: a miniature desk in each light, the title
+   lettering, the keys that send, a page arriving under the motion budget.
+   On a phone the index becomes a strip pinned to the top of the sheet.
+   ========================================================================== */
+
 .settings-preferences {
   font-family: var(--font-ui);
+}
+
+.prefs {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 2rem;
+}
+
+/* ── Index ──────────────────────────────────────────────────────────── */
+
+.prefs-index {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  gap: 2px;
+}
+
+.prefs-index button {
+  position: relative;
+  min-height: 36px;
+  padding: 0.375rem 0.75rem;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+}
+
+.prefs-index button:hover {
+  color: var(--ink);
+}
+
+.prefs-index button:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.prefs-index button[aria-current="true"] {
+  background: var(--raised);
+  color: var(--ink);
+  font-weight: 550;
+}
+
+/* The brass tab marks the section in view, the way a ribbon marks a page. */
+.prefs-index button::before {
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: 0;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--brass);
+  content: "";
+  transform: scaleY(0);
+  transition: transform var(--dur-med) var(--ease-out);
+}
+
+.prefs-index button[aria-current="true"]::before {
+  transform: scaleY(1);
+}
+
+/* ── Sections ───────────────────────────────────────────────────────── */
+
+.prefs-sections {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.prefs-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+  scroll-margin-top: 0.5rem;
+}
+
+.prefs-section + .prefs-section {
+  padding-top: 2rem;
+  border-top: 1px solid var(--hairline);
+}
+
+.prefs-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.prefs-section-number {
+  color: var(--brass);
+  font-family: var(--font-read);
+  font-size: 0.9375rem;
+  font-style: italic;
+  font-variant-numeric: lining-nums;
+}
+
+.prefs-section-head h3 {
+  color: var(--ink);
+  font-family: var(--font-read);
+  font-size: 1.3125rem;
+  font-weight: 450;
+  line-height: 1.25;
+}
+
+.prefs-section-head p {
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.prefs-field .field-label {
+  font-size: 0.8125rem;
+}
+
+.prefs-field-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.prefs-field-stack {
+  display: grid;
+  gap: 1rem;
 }
 
 .settings-preferences .segmented {
@@ -10,40 +151,603 @@
 .settings-preferences .segmented-option {
   flex: 1;
   justify-content: center;
-  font-size: 0.875rem;
-}
-
-.settings-preferences .segmented-option,
-.settings-preferences .btn,
-.settings-preferences input[type="range"] {
   min-height: 44px;
+  font-size: 0.8125rem;
 }
 
-/* Five segmented rows stack in this panel, so the brass fill the primitive
-   uses for "selected" would shout five times over. The quiet raised fill is
-   deliberate — but it needs an edge to read as chosen rather than merely
-   tinted, and `border-color` alone never drew one: .segmented-option sets
-   `border: none` (ui.css), which leaves the colour inert. An inset ring
-   draws the edge without the layout shift a real border would cause against
-   siblings that have none. */
+/* Several choice rows stack here, so the brass fill the primitive uses for
+   "selected" would shout over and over. The quiet raised fill is deliberate;
+   the inset ring gives it an edge without the layout shift of a border. */
 .settings-preferences .segmented-option-selected,
-.settings-preferences .reading-option-selected,
-.settings-preferences .btn[aria-pressed="true"] {
+.settings-preferences .segmented-option-selected:hover {
   background: var(--raised);
   box-shadow: inset 0 0 0 1px var(--hairline-strong);
   color: var(--ink);
   font-weight: 550;
 }
 
-/* Reading size cannot use Segmented — each option previews its own type size
-   — but it must not invent a second "selected" language inside one panel. */
-.settings-preferences .reading-option {
-  transition:
-    background-color var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
+/* ── Choice cards ───────────────────────────────────────────────────── */
+
+.settings-preferences .prefs-cards {
+  display: grid;
+  gap: 0.625rem;
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
-.settings-preferences .reading-option:hover:not(.reading-option-selected) {
-  background: color-mix(in srgb, var(--raised) 55%, transparent);
+.settings-preferences .prefs-cards-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settings-preferences .prefs-cards-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.settings-preferences .prefs-cards-stack {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+.settings-preferences .prefs-cards .segmented-option {
+  position: relative;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0.1875rem;
+  padding: 0.625rem 0.625rem 0.75rem;
+  border-radius: var(--radius-field);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  color: var(--muted);
+  font-weight: 400;
+  text-align: left;
+  transition:
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-med) var(--ease-out);
+}
+
+.settings-preferences .prefs-cards-stack .segmented-option {
+  padding: 0.75rem 2.25rem 0.75rem 0.875rem;
+}
+
+.settings-preferences .prefs-cards .segmented-option:hover {
+  box-shadow:
+    inset 0 0 0 1px var(--hairline-strong),
+    var(--elev-card);
+}
+
+html[data-motion="full"] .settings-preferences .prefs-cards .segmented-option:hover {
+  transform: translateY(-1px);
+}
+
+.settings-preferences .prefs-cards .segmented-option:active {
+  transform: none;
+  transition-duration: var(--dur-fast);
+}
+
+.settings-preferences .prefs-cards .segmented-option-selected,
+.settings-preferences .prefs-cards .segmented-option-selected:hover {
+  background: var(--surface);
+  box-shadow:
+    inset 0 0 0 1.5px var(--brass),
+    var(--elev-card);
+  font-weight: 400;
+}
+
+/* A brass seal on the chosen card: colour alone should not carry "chosen". */
+.settings-preferences .prefs-cards .segmented-option::after {
+  position: absolute;
+  right: 0.875rem;
+  bottom: 1.0625rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brass);
+  box-shadow: 0 0 0 3px var(--surface);
+  content: "";
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-med) var(--ease-out);
+}
+
+.settings-preferences .prefs-cards-stack .segmented-option::after {
+  top: 50%;
+  bottom: auto;
+  margin-top: -4px;
+}
+
+.settings-preferences .prefs-cards .segmented-option-selected::after {
+  opacity: 1;
+  transform: none;
+}
+
+.prefs-card-name {
+  margin-top: 0.4375rem;
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 560;
+}
+
+.prefs-cards-stack .prefs-card-name {
+  margin-top: 0;
+}
+
+.prefs-card-note {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+/* ── Previews ───────────────────────────────────────────────────────── */
+
+/* A miniature desk, painted from whichever palette its class lends it. */
+.prefs-swatch {
+  position: relative;
+  display: block;
+  height: 4rem;
+  overflow: hidden;
+  border-radius: calc(var(--radius-field) - 3px);
+  background: var(--ground);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+.prefs-swatch.theme-lamplight::after {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 88% 0%, color-mix(in oklab, var(--brass-pale) 32%, transparent), transparent 62%);
+  content: "";
+}
+
+.prefs-swatch-page {
+  position: absolute;
+  top: 0.75rem;
+  right: 1.375rem;
+  bottom: -0.5rem;
+  left: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0.625rem 0.625rem 0;
+  border-radius: 4px 4px 0 0;
+  background: var(--surface);
+  box-shadow: var(--elev-card);
+}
+
+.prefs-swatch-page i {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--ink) 72%, transparent);
+}
+
+.prefs-swatch-page i:first-child {
+  width: 42%;
+  background: var(--brass);
+}
+
+.prefs-swatch-page i:last-child {
+  width: 70%;
+  background: color-mix(in oklab, var(--muted) 60%, transparent);
+}
+
+.prefs-swatch-split {
+  position: relative;
+  display: block;
+  height: 4rem;
+}
+
+.prefs-swatch-split .prefs-swatch {
+  position: absolute;
+  inset: 0;
+}
+
+.prefs-swatch-split .prefs-swatch + .prefs-swatch {
+  clip-path: polygon(64% 0, 100% 0, 100% 100%, 36% 100%);
+}
+
+.prefs-lettering {
+  display: flex;
+  align-items: center;
+  height: 4rem;
+  padding: 0 0.875rem;
+  border-radius: calc(var(--radius-field) - 3px);
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-read);
+  font-size: 1.375rem;
+  font-weight: 450;
+  letter-spacing: -0.01em;
+}
+
+.prefs-lettering-pixel {
+  font-family: var(--font-pixel);
+  font-size: 1.25rem;
+  letter-spacing: 0.02em;
+}
+
+.prefs-keys {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 4rem;
+  padding: 0 0.875rem;
+  border-radius: calc(var(--radius-field) - 3px);
+  background: var(--ground);
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.prefs-keys kbd {
+  min-width: 2.25rem;
+  padding: 0.3125rem 0.5rem;
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow:
+    inset 0 0 0 1px var(--hairline-strong),
+    0 2px 0 var(--hairline-strong);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* Three lines whose gap is the spacing they choose. */
+.prefs-leading-glyph {
+  display: inline-flex;
+  width: 14px;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.prefs-leading-glyph[data-leading="standard"] {
+  gap: 3px;
+}
+
+.prefs-leading-glyph[data-leading="airy"] {
+  gap: 4px;
+}
+
+.prefs-leading-glyph i {
+  display: block;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.prefs-leading-glyph i:last-child {
+  width: 70%;
+}
+
+.prefs-sample {
+  max-width: 60ch;
+  padding: 0.875rem 1rem;
+  border-left: 2px solid var(--brass);
+  border-radius: 0 var(--radius-field) var(--radius-field) 0;
+  background: var(--ground);
+  color: color-mix(in oklab, var(--ink) 86%, transparent);
+  font-family: var(--font-read);
+  font-size: var(--text-read);
+  line-height: var(--leading-read);
+  transition: font-size var(--dur-med) var(--ease-out);
+}
+
+.prefs-sample-cite {
+  display: block;
+  margin-top: 0.375rem;
+  color: var(--brass);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+}
+
+/* ── Motion ─────────────────────────────────────────────────────────── */
+
+.prefs-motion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 11.5rem;
+  gap: 0.75rem;
+}
+
+.prefs-demo-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.prefs-demo {
+  display: flex;
+  min-height: 8.5rem;
+  flex: 1;
+  flex-direction: column;
+  padding: 1rem;
+  border-radius: var(--radius-field);
+  background: var(--ground);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+.prefs-demo-rule {
+  width: 38%;
+  height: 2px;
+  background: var(--brass);
+  transform-origin: 0 50%;
+}
+
+.prefs-demo-title {
+  width: 70%;
+  height: 0.6875rem;
+  margin-top: 0.875rem;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--ink) 82%, transparent);
+}
+
+.prefs-demo-line {
+  height: 5px;
+  margin-top: 0.625rem;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--muted) 45%, transparent);
+}
+
+.prefs-demo-line:nth-of-type(odd) {
+  width: 86%;
+}
+
+.prefs-demo-cite {
+  width: 2.75rem;
+  height: 0.875rem;
+  margin-top: auto;
+  border-radius: var(--radius-pill);
+  background: color-mix(in oklab, var(--brass) 22%, transparent);
+}
+
+/* The desk's own arrival, scaled down (desk-motion.css owns the keyframes). */
+html[data-motion="full"] .prefs-demo-rule {
+  animation: desk-rule 620ms var(--ease-out) 120ms backwards;
+}
+
+html[data-motion="full"] .prefs-demo-title {
+  animation: desk-typeset 760ms var(--ease-out) 220ms backwards;
+}
+
+html[data-motion="full"] .prefs-demo-line {
+  animation: desk-rise var(--dur-glow) var(--ease-out) backwards;
+  animation-delay: calc(420ms + var(--n, 0) * 70ms);
+}
+
+html[data-motion="full"] .prefs-demo-cite {
+  animation: desk-rise var(--dur-glow) var(--ease-out) 760ms backwards;
+}
+
+html[data-motion="minimal"] :is(.prefs-demo-rule, .prefs-demo-title, .prefs-demo-line, .prefs-demo-cite) {
+  animation: desk-fade var(--dur-slow) var(--ease-out) backwards;
+}
+
+.prefs-demo-frame figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.prefs-replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 32px;
+  padding: 0 0.5rem;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--ink);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.prefs-replay:hover {
+  background: var(--raised);
+}
+
+.prefs-replay:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.prefs-replay svg {
+  transition: transform var(--dur-med) var(--ease-out);
+}
+
+html[data-motion="full"] .prefs-replay:hover svg {
+  transform: rotate(-60deg);
+}
+
+.prefs-notice {
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-field);
+  background: color-mix(in oklab, var(--brass) 9%, transparent);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+/* ── Switches and sliders ──────────────────────────────────────────── */
+
+.prefs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.prefs-row-label {
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 560;
+}
+
+.prefs-row-note {
+  margin-top: 0.125rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.prefs-switch {
+  position: relative;
+  width: 2.75rem;
+  height: 1.625rem;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--hairline-strong);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-med) var(--ease-out),
+    box-shadow var(--dur-med) var(--ease-out);
+}
+
+/* The visible switch is 26px; the hit area is the 44px a thumb needs. */
+.prefs-switch::before {
+  position: absolute;
+  inset: -9px -2px;
+  content: "";
+}
+
+.prefs-switch:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+.prefs-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--elev-card);
+  transition:
+    transform var(--dur-med) var(--ease-out),
+    background-color var(--dur-med) var(--ease-out);
+}
+
+.prefs-switch[aria-checked="true"] {
+  background: var(--brass);
+  box-shadow: none;
+}
+
+.prefs-switch[aria-checked="true"] .prefs-switch-thumb {
+  background: var(--ground);
+  transform: translateX(1.125rem);
+}
+
+.prefs-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.prefs-slider span {
+  display: flex;
+  justify-content: space-between;
+}
+
+.prefs-slider b {
+  color: var(--ink);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.prefs-slider input {
+  width: 100%;
+  min-height: 44px;
+  accent-color: var(--brass);
+  cursor: pointer;
+}
+
+.settings-preferences .btn {
+  align-self: flex-start;
+  min-height: 44px;
+}
+
+/* ── Narrow screens: the index pins to the top of the sheet ─────────── */
+
+@media (max-width: 639px) {
+  .prefs {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+
+  .prefs-index {
+    top: -1.25rem;
+    flex-direction: row;
+    margin: -1.25rem -1.5rem 0;
+    padding: 0.5rem 1.5rem;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--surface);
+    scrollbar-width: none;
+  }
+
+  .prefs-index button {
+    flex: none;
+  }
+
+  .prefs-index button::before {
+    top: auto;
+    right: 12px;
+    bottom: 2px;
+    left: 12px;
+    width: auto;
+    height: 2px;
+    transform: scaleX(0);
+  }
+
+  .prefs-index button[aria-current="true"]::before {
+    transform: scaleX(1);
+  }
+
+  .prefs-section {
+    scroll-margin-top: 3.5rem;
+  }
+
+  .prefs-field-pair,
+  .prefs-motion,
+  .settings-preferences .prefs-cards-explained {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Pictures carry the light and lettering choices, so on a phone they stay
+     side by side and drop to their names. */
+  .settings-preferences .prefs-cards-3 {
+    gap: 0.5rem;
+  }
+
+  .prefs-cards-3 .prefs-swatch,
+  .prefs-cards-3 .prefs-swatch-split,
+  .prefs-cards-2:not(.prefs-cards-explained) .prefs-lettering {
+    height: 3rem;
+  }
+
+  .prefs-cards-2:not(.prefs-cards-explained) .prefs-lettering {
+    font-size: 1.125rem;
+  }
+
+  .prefs-cards-3 .prefs-card-note,
+  .prefs-cards-2:not(.prefs-cards-explained) .prefs-card-note {
+    display: none;
+  }
+
+  .settings-preferences .prefs-cards-3 .segmented-option::after,
+  .settings-preferences .prefs-cards-2:not(.prefs-cards-explained) .segmented-option::after {
+    bottom: 0.9375rem;
+  }
 }

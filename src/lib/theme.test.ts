@@ -37,4 +37,11 @@ describe("applyReading", () => {
     applyReading(undefined);
     expect(document.documentElement.dataset.reading).toBeUndefined();
   });
+
+  it("sets line spacing beside the size and clears both together", () => {
+    applyReading("compact", "airy");
+    expect(document.documentElement.dataset.leading).toBe("airy");
+    applyReading(undefined);
+    expect(document.documentElement.dataset.leading).toBeUndefined();
+  });
 });

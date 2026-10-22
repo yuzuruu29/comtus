@@ -117,9 +117,14 @@
 /* Markdown rendering inside chat & documents */
 .md {
   font-size: 15px;
-  line-height: 1.75;
+  line-height: var(--leading-read);
   color: color-mix(in srgb, var(--ink) 94%, transparent);
   overflow-wrap: break-word;
+}
+/* An answer follows the reading size, a step under the source it cites:
+   Comfortable lands on the 14.5px answers were drawn at. */
+.md-answer {
+  font-size: calc(var(--text-read) * 0.853);
 }
 .md > * + * {
   margin-top: 1.35em; /* Clean 24px baseline rhythm between paragraphs */

@@ -1,4 +1,17 @@
 import type { Platform } from "../lib/desktop";
+import type { SendKey } from "../lib/settings";
+
+/** Whether a keypress in a draft sends it. With "enter", Shift+Enter breaks the
+ *  line; with "mod-enter", plain Enter does and ⌘/Ctrl+Enter sends. The Enter
+ *  that confirms an IME composition never sends. */
+export function isSendKey(
+  e: Pick<KeyboardEvent, "key" | "shiftKey" | "metaKey" | "ctrlKey" | "isComposing">,
+  platform: Platform,
+  sendKey: SendKey,
+): boolean {
+  if (e.key !== "Enter" || e.isComposing) return false;
+  return sendKey === "mod-enter" ? modKey(e, platform) : !e.shiftKey;
+}
 
 /** True when the platform modifier is held: Meta on Mac, Control elsewhere. */
 export function modKey(e: Pick<KeyboardEvent, "metaKey" | "ctrlKey">, platform: Platform): boolean {

@@ -3,6 +3,9 @@ import { ArrowUp, Stop } from "@phosphor-icons/react";
 import type { ChatMessage, Notebook, WebSearchMeta } from "../lib/types";
 import AssistantMessage from "./AssistantMessage";
 import { ICON } from "../ui/iconScale";
+import { detectPlatform } from "../lib/desktop";
+import { useSettings } from "../lib/settings";
+import { isSendKey } from "./shortcuts";
 
 export default function CompadChat({
   notebook, modelLabel, sourceCount, messages, activeSessionId, input, onInputChange,
@@ -32,6 +35,7 @@ export default function CompadChat({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const stickBottom = useRef(true);
+  const sendKey = useSettings((s) => s.sendKey ?? "enter");
 
   useEffect(() => { inputRef.current?.focus({ preventScroll: true }); }, []);
   useEffect(() => {
@@ -69,7 +73,7 @@ export default function CompadChat({
         <textarea ref={inputRef} id="compad-message" rows={2} value={input} readOnly={preparing} onChange={(event) => onInputChange(event.target.value)}
           placeholder={ready ? "Ask about your notebook…" : "Opening your conversation…"}
           onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+            if (isSendKey(event.nativeEvent, detectPlatform(), sendKey)) {
               event.preventDefault();
               if (!streaming && !preparing && hasModel && ready && input.trim()) { stickBottom.current = true; onSend(); }
             }

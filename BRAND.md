@@ -194,11 +194,16 @@ The OS preference is the backstop under the budget above.
 
 ### Landing scroll motion
 
-The public pages move with native scroll timelines (`animation-timeline`), not a
-JavaScript scroller. A visitor can scrub every reveal, and a heading can never
-be left half-written: its italic words follow the heading's own view timeline,
-so they finish once the heading is fully on screen. The rules this depends on
-live in `src/styles/landing-motion.test.ts`.
+The public pages animate with native scroll timelines (`animation-timeline`). A
+visitor can scrub every reveal, and a heading can never be left half-written:
+its italic words follow the heading's own view timeline, so they finish once
+the heading is fully on screen. The rules this depends on live in
+`src/styles/landing-motion.test.ts`.
+
+On the home page at the Full budget, and only with a mouse or trackpad, Lenis
+weights the wheel (`src/landing/useSmoothScroll.ts`). It moves the real scroll
+position, so the timelines still drive every scene; it never animates anything
+itself. Touch screens keep their own scrolling.
 
 - The headline is typeset in. Each line rises into its own window, then a pen
   stroke is drawn under the phrase the sentence leans on.
@@ -206,7 +211,14 @@ live in `src/styles/landing-motion.test.ts`.
   are read. A list staggers by itself, because each row has its own timeline,
   and the hairline under it is drawn by the same progress.
 - A brass ribbon along the foot of the navigation bar shows how far down the
-  page the reader is. The link for the section being read is underlined.
+  page the reader is. The link for the section being read is underlined, and
+  the bar settles into frosted paper over the first 140px.
+- Scenes, one idea each: the hero drifts up and away as you leave it; the desk
+  preview lays down onto the page; two rows of exam subjects slide past each
+  other; in the method, a brass thread runs down the steps, each numeral fills
+  with ink, and each step's paper artifact (source chips, a cited passage, a
+  score card) arrives as you read it; the field guide card is dealt off a
+  stack; the page ends at night, in a Lamplight band where a lamp comes up.
 - With the motion budget at Minimal every entrance fades in place and nothing
   is drawn. At None, and under the operating system's reduced-motion setting,
   the page is the finished static page from the first frame.

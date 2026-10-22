@@ -16,31 +16,12 @@ import {
   Plus,
   Sliders,
   Sparkle,
-  SpeakerHigh,
-  SpeakerSimpleSlash,
   Trash,
   Warning,
 } from "@phosphor-icons/react";
 import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, LampPulse } from "./ui";
-import { Button, Segmented } from "../ui";
 import { BorderBeam } from "./fx";
 import { useSettings } from "../lib/settings";
-import { DEFAULT_READING, READING_OPTIONS } from "../lib/fontPresets";
-import {
-  startAmbient,
-  stopAmbient,
-  setAmbientVolume,
-  getAmbientVolume,
-  setSfxVolume,
-  getSfxVolume,
-  setMuted,
-  isMuted,
-  getActiveAmbient,
-  playSfx as playEngineSfx,
-  subscribeAudioEngine,
-  type AmbientSoundType,
-  type SfxType,
-} from "../lib/soundEngine";
 import {
   EFFORTS,
   COMPAT_PRESETS,
@@ -52,11 +33,10 @@ import {
 import type { ProviderId, StoredKey } from "../lib/types";
 import { STUDY_PLANS, decodePassInfo, passSummary, planTierForPass, type StudyPlan } from "../lib/paypal";
 import PayPalCheckout from "./PayPalCheckout";
-import DataTrustPanel from "./DataTrustPanel";
 import { isTauri } from "../lib/desktop";
 import { requestUpdateCheck } from "./useUpdater";
 import { startOpenRouterOAuth } from "../lib/openrouterAuth";
-import "./settings-preferences.css";
+import SettingsPreferences from "./SettingsPreferences";
 import { ICON } from "../ui/iconScale";
 
 /* Curated, verified working free study models for the Starter / Basic view */
@@ -169,28 +149,6 @@ export default function SettingsModal({
   const [newKeyModel, setNewKeyModel] = useState("dots-studio/dots-3-note-preview:free");
   const [quickSaveName, setQuickSaveName] = useState("");
   const closeAddKeyModal = useCallback(() => setShowAddKeyModal(false), []);
-
-  const theme = useSettings((st) => st.theme) ?? "light";
-  const motionMode = useSettings((st) => st.motionMode) ?? "full";
-  const companionOn = useSettings((st) => st.companion !== false);
-  const sfxOn = useSettings((st) => st.companionSfx !== false);
-  const pixelOn = useSettings((st) => st.pixelDesk !== false);
-  const reading = useSettings((st) => st.reading);
-
-  // Procedural Sound Engine state
-  const [audioMuted, setAudioMuted] = useState(() => isMuted());
-  const [ambientType, setAmbientType] = useState<AmbientSoundType | null>(() => getActiveAmbient());
-  const [ambientVol, setAmbientVol] = useState(() => getAmbientVolume());
-  const [sfxVol, setSfxVol] = useState(() => getSfxVolume());
-
-  useEffect(() => {
-    return subscribeAudioEngine((state) => {
-      setAudioMuted(state.muted);
-      setAmbientType(state.activeAmbient);
-      setAmbientVol(state.ambientVolume);
-      setSfxVol(state.sfxVolume);
-    });
-  }, []);
 
   // Live model sync for advanced mode
   useEffect(() => {
@@ -417,274 +375,7 @@ export default function SettingsModal({
     <>
       {/* Panel 1: studio preferences — gear icon, Ctrl+, CommandPalette */}
       <Modal open={open && tab === "settings"} onClose={onClose} title="Settings" wide>
-        <div className="settings-preferences space-y-6">
-          <div>
-            <div className="field-label">Appearance</div>
-            <Segmented
-              aria-label="Appearance"
-              value={theme}
-              onChange={(value) => useSettings.getState().update({ theme: value })}
-              options={[
-                { value: "system", label: "System" },
-                { value: "dark", label: "Dark" },
-                { value: "light", label: "Daylight" },
-              ]}
-            />
-          </div>
-
-          <div>
-            <div className="field-label">Reading size</div>
-            <p className="mb-3 text-[12.5px] leading-relaxed text-muted">
-              Sets how large source text and answers are set. Everything else keeps its size.
-            </p>
-            <div
-              role="radiogroup"
-              aria-label="Reading size"
-              className="grid grid-cols-3 gap-1 rounded-[var(--radius-dialog)] border border-hairline bg-ground/60 p-1"
-            >
-              {READING_OPTIONS.map((option) => {
-                const active = (reading ?? DEFAULT_READING) === option.id;
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    onClick={() => useSettings.getState().update({ reading: option.id })}
-                    className={`reading-option flex min-h-[44px] items-center justify-center rounded-[var(--radius-field)] px-3 py-2 active:scale-[0.97] ${
-                      active ? "reading-option-selected" : "text-ink"
-                    }`}
-                  >
-                    <span style={{ fontFamily: "var(--font-read)", fontSize: option.size }}>
-                      {option.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <p
-              className="mt-3 rounded-[var(--radius-field)] border border-hairline bg-ground/40 px-3 py-2 text-muted"
-              style={{ fontFamily: "var(--font-read)", fontSize: "var(--text-read)", maxWidth: "68ch" }}
-            >
-              The lamp is lit, the sources are open, and every answer cites the page it came from.
-            </p>
-          </div>
-
-          <div>
-            <div className="field-label">Desk style</div>
-            <p className="mb-3 text-sm leading-relaxed text-muted">
-              Choose classic paper surfaces or pixel accents for your desk.
-            </p>
-            <div className="segmented" role="group" aria-label="Desk style">
-              <button
-                type="button"
-                onClick={() => useSettings.getState().update({ pixelDesk: true })}
-                aria-pressed={pixelOn}
-                className={`segmented-option ${pixelOn ? "segmented-option-selected" : ""}`}
-              >
-                Pixel accents
-              </button>
-              <button
-                type="button"
-                onClick={() => useSettings.getState().update({ pixelDesk: false })}
-                aria-pressed={!pixelOn}
-                className={`segmented-option ${!pixelOn ? "segmented-option-selected" : ""}`}
-              >
-                Classic paper
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <div className="field-label">Motion</div>
-            <p className="mb-3 text-sm leading-relaxed text-muted">
-              Choose how much movement you see while studying.
-            </p>
-            <Segmented
-              aria-label="Motion"
-              value={motionMode}
-              onChange={(value) => useSettings.getState().update({ motionMode: value })}
-              options={[
-                { value: "none", label: "None" },
-                { value: "minimal", label: "Minimal" },
-                { value: "full", label: "Full" },
-              ]}
-            />
-          </div>
-
-          <div>
-            <div className="field-label">Desk companion</div>
-            <p className="mb-3 text-sm leading-relaxed text-muted">
-              Keep Compad on your desk. Drag to move, resize from its corner, or tap to chat.
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => useSettings.getState().update({ companion: !companionOn })}
-                aria-pressed={companionOn}
-              >
-                Companion {companionOn ? "on" : "off"}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => useSettings.getState().update({ companionSfx: !sfxOn })}
-                aria-pressed={sfxOn}
-              >
-                Chimes {sfxOn ? "on" : "off"}
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-4 border-t border-hairline pt-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted" aria-hidden="true">
-                    {audioMuted ? <SpeakerSimpleSlash size={ICON.xl} /> : <SpeakerHigh size={ICON.xl} />}
-                  </span>
-                  <span className="font-ui text-sm font-semibold text-ink">
-                    Sound
-                  </span>
-                </div>
-                <p className="mt-1 text-sm leading-relaxed text-muted">
-                  Background audio and short sounds for desk actions.
-                </p>
-              </div>
-
-              <Button
-                variant="secondary"
-                aria-pressed={!audioMuted}
-                onClick={() => {
-                  const next = !audioMuted;
-                  setMuted(next);
-                  if (!next) {
-                    playEngineSfx("lampChime");
-                  }
-                }}
-              >
-                {audioMuted ? <SpeakerSimpleSlash size={ICON.lg} aria-hidden="true" /> : <SpeakerHigh size={ICON.lg} aria-hidden="true" />}
-                <span>Sound {audioMuted ? "off" : "on"}</span>
-              </Button>
-            </div>
-
-            <div>
-              <div className="field-label flex items-center justify-between gap-3">
-                <span>Background sound</span>
-                {ambientType && (
-                  <span className="text-xs font-normal text-muted">
-                    {audioMuted ? "Muted" : "Playing"}
-                  </span>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-5" role="group" aria-label="Background sound">
-                {(
-                  [
-                    [null, "Off"],
-                    ["rain", "Rain"],
-                    ["fireplace", "Fireplace"],
-                    ["lofi", "Lo-fi"],
-                    ["all", "All sounds"],
-                  ] as const
-                ).map(([type, label]) => {
-                  const active = ambientType === type;
-                  return (
-                    <Button
-                      key={label}
-                      variant="secondary"
-                      aria-pressed={active}
-                      onClick={() => {
-                        if (type === null) {
-                          stopAmbient();
-                        } else {
-                          startAmbient(type as AmbientSoundType);
-                        }
-                      }}
-                      className="px-2 text-sm"
-                    >
-                      {label}
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div>
-                <div className="mb-1 flex items-center justify-between text-sm">
-                  <span className="text-muted">Background volume</span>
-                  <span className="tabular-nums text-ink">{Math.round(ambientVol * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={ambientVol}
-                  aria-label="Background volume"
-                  aria-valuetext={`${Math.round(ambientVol * 100)}%`}
-                  onChange={(e) => setAmbientVolume(parseFloat(e.target.value))}
-                  className="w-full accent-brass cursor-pointer"
-                />
-              </div>
-
-              <div>
-                <div className="mb-1 flex items-center justify-between text-sm">
-                  <span className="text-muted">Effects volume</span>
-                  <span className="tabular-nums text-ink">{Math.round(sfxVol * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={sfxVol}
-                  aria-label="Effects volume"
-                  aria-valuetext={`${Math.round(sfxVol * 100)}%`}
-                  onChange={(e) => setSfxVolume(parseFloat(e.target.value))}
-                  className="w-full accent-brass cursor-pointer"
-                />
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-hairline/60">
-              <div className="field-label">Preview sounds</div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {(
-                  [
-                    ["inkPress", "Ink tap"],
-                    ["pageTurn", "Page turn"],
-                    ["quillScratch", "Quill"],
-                    ["lampChime", "Lamp bell"],
-                    ["sparkPop", "Spark pop"],
-                    ["celebration", "Arpeggio"],
-                  ] as const
-                ).map(([sfxId, label]) => (
-                  <Button
-                    key={sfxId}
-                    variant="secondary"
-                    onClick={() => {
-                      if (audioMuted) setMuted(false);
-                      playEngineSfx(sfxId as SfxType);
-                    }}
-                    className="text-sm"
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <DataTrustPanel open={open} />
-
-          {versionRow}
-
-          <div className="flex justify-end gap-3 pt-1">
-            <button className={btnGhost} onClick={onClose}>
-              Done
-            </button>
-          </div>
-        </div>
+        <SettingsPreferences footer={versionRow} onDone={onClose} />
       </Modal>
 
       {/* Panel 2: AI model connections — composer model picker, notebook

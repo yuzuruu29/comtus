@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDown, BookOpen, CaretDown, Check, FileText, Lamp } from "@phosphor-icons/react";
+import { ArrowDown, BookOpen, CaretDown, Check, FilePdf, FileText, Lamp, LinkSimple, NotePencil } from "@phosphor-icons/react";
 import { Button, Segmented } from "../ui";
 import { startOpenRouterOAuth } from "../lib/openrouterAuth";
 import { useMotionMode } from "../studio/fx";
@@ -9,6 +9,7 @@ import Footer from "./Footer";
 import OnboardingModal from "./OnboardingModal";
 import StudyFieldGuide from "./StudyFieldGuide";
 import { usePublicPageEntry } from "./usePublicPageEntry";
+import { useSmoothScroll } from "./useSmoothScroll";
 import "./landing.css";
 import "./landing-motion.css";
 import { ICON } from "../ui/iconScale";
@@ -31,6 +32,67 @@ const PRACTICE_OPTIONS = [
   "Close your notes and explain the idea",
   "Highlight an important sentence",
 ] as const;
+
+/** Two rows of the subjects people sit board exams in. They drift in opposite
+ *  directions as the page is read; the caption carries the meaning. */
+const SUBJECT_ROWS = [
+  ["Pharmacology", "Statics", "Auditing", "Child development", "Thermodynamics", "Anatomy & physiology", "Taxation", "Philippine history"],
+  ["Obligations & contracts", "Hydraulics", "Microbiology", "Assessment of learning", "Financial reporting", "Calculus", "Maternal care", "Organic chemistry"],
+] as const;
+
+/** The three missed answers in the sample score, by position. */
+const MISSED = new Set([3, 6, 8]);
+
+function SubjectRibbon() {
+  return (
+    <div className="landing-ribbon">
+      <p className="landing-container landing-ribbon-caption">For whatever you are reviewing.</p>
+      <div className="landing-ribbon-rows" aria-hidden="true">
+        {SUBJECT_ROWS.map((row, rowIndex) => (
+          <div key={rowIndex} className="landing-ribbon-row">
+            {/* Written twice so the drift never shows the end of the line. */}
+            <div className="landing-ribbon-track">
+              {[...row, ...row].map((subject, index) => <span key={index}>{subject}</span>)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Small paper props beside each step. Illustration only: the step's own
+ *  heading and paragraph say everything, so these stay out of the reading order. */
+function StepSources() {
+  return (
+    <div className="landing-artifact landing-artifact-sources" aria-hidden="true">
+      <span><FilePdf size={ICON.md} />Chapter 4, Membranes.pdf</span>
+      <span><NotePencil size={ICON.md} />Lecture 6 notes</span>
+      <span><LinkSimple size={ICON.md} />Osmosis, explained</span>
+    </div>
+  );
+}
+
+function StepCitation() {
+  return (
+    <div className="landing-artifact landing-artifact-cite" aria-hidden="true">
+      <p className="landing-artifact-answer">Water moves toward the side with more dissolved solute.<span>2</span></p>
+      <p className="landing-artifact-passage"><span>Lecture 6, p. 3</span>Osmosis is the movement of water across a membrane <mark>toward the higher solute concentration</mark>.</p>
+    </div>
+  );
+}
+
+function StepScore() {
+  return (
+    <div className="landing-artifact landing-artifact-score" aria-hidden="true">
+      <div className="landing-artifact-score-head"><strong>7</strong><span>of 10 remembered</span></div>
+      <div className="landing-artifact-ticks">
+        {Array.from({ length: 10 }, (_, index) => <span key={index} data-missed={MISSED.has(index)} style={{ "--i": index } as CSSProperties} />)}
+      </div>
+      <p>Revisit <em>tonicity</em> and <em>active transport</em> tomorrow.</p>
+    </div>
+  );
+}
 
 /** A pen stroke under the one phrase the headline leans on. Decorative: the
  *  words carry the meaning, so it stays out of the accessibility tree. The
@@ -144,6 +206,7 @@ export default function LandingPage() {
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState("");
+  useSmoothScroll(motionMode === "full");
 
   const connectOpenRouter = async () => {
     setConnecting(true);
@@ -185,20 +248,34 @@ export default function LandingPage() {
         <section className="landing-demo-section" id="try-the-desk" aria-labelledby="landing-demo-title">
           <div className="landing-container">
             <div className="landing-demo-heading"><h2 id="landing-demo-title">A little studying, right here.</h2><p>Ask. Check the source. Try remembering.</p></div>
-            <DeskPreview />
+            <div className="landing-preview-stage"><DeskPreview /></div>
             <div className="landing-demo-afterword"><p>Rough thought, polished.</p><button className="landing-text-button" type="button" onClick={() => setOnboardingOpen(true)}>Set up with a guide</button></div>
           </div>
         </section>
 
+        <SubjectRibbon />
+
         <section id="how-it-works" className="landing-section landing-container landing-method" aria-labelledby="landing-method-title">
-          <div className="landing-section-heading" data-landing-reveal>
+          <div className="landing-section-heading landing-method-heading" data-landing-reveal>
             <h2 id="landing-method-title">Keep the thread<br />of your <em>thinking.</em></h2>
             <p>From the sentence that stops you to the answer you can explain. Give the whole study session one place to live.</p>
           </div>
           <ol className="landing-workflow">
-            <li data-landing-reveal><div><h3>Bring the chapter.</h3><p>PDFs, documents, links, and your own notes. Collect the material for a subject in one notebook.</p></div></li>
-            <li data-landing-reveal><div><h3>Stay with the question.</h3><p>Work through a difficult idea. Follow an answer’s citations back to the passage that supports it.</p></div></li>
-            <li data-landing-reveal><div><h3>Find out what stayed.</h3><p>Turn your material into practice. Use the questions you miss to choose what to revisit.</p></div></li>
+            <li data-landing-reveal>
+              <span className="landing-step-number" data-n="01" aria-hidden="true">01</span>
+              <div className="landing-step-copy"><h3>Bring the chapter.</h3><p>PDFs, documents, links, and your own notes. Collect the material for a subject in one notebook.</p></div>
+              <StepSources />
+            </li>
+            <li data-landing-reveal>
+              <span className="landing-step-number" data-n="02" aria-hidden="true">02</span>
+              <div className="landing-step-copy"><h3>Stay with the question.</h3><p>Work through a difficult idea. Follow an answer’s citations back to the passage that supports it.</p></div>
+              <StepCitation />
+            </li>
+            <li data-landing-reveal>
+              <span className="landing-step-number" data-n="03" aria-hidden="true">03</span>
+              <div className="landing-step-copy"><h3>Find out what stayed.</h3><p>Turn your material into practice. Use the questions you miss to choose what to revisit.</p></div>
+              <StepScore />
+            </li>
           </ol>
         </section>
 
@@ -227,9 +304,13 @@ export default function LandingPage() {
             <details data-landing-reveal><summary>Will my notebooks appear on another device?<CaretDown size={ICON.lg} aria-hidden="true" /></summary><p>Notebooks are stored on the device and browser where you create them. Export a backup to keep a separate copy. Clearing browser storage can remove your local study data.</p></details>
           </div>
         </section>
-        <div className="landing-closing" data-landing-reveal><div className="landing-container landing-closing-inner"><p>One chapter.<br /><em>A good place to start.</em></p><div><Link to="/studio" className="btn btn-primary btn-md landing-open-desk">Open the desk</Link><span>Make room for what comes next.</span></div></div></div>
+        {/* The page ends at night: the closing and the footer take the Lamplight
+            palette, and one lamp comes up behind the last line as it is read. */}
+        <div className="theme-lamplight landing-nightfall">
+          <div className="landing-closing" data-landing-reveal><div className="landing-container landing-closing-inner"><p>One chapter.<br /><em>A good place to start.</em></p><div><Link to="/studio" className="btn btn-primary btn-md landing-open-desk">Open the desk</Link><span>Make room for what comes next.</span></div></div></div>
+        </div>
       </main>
-      <Footer />
+      <Footer lamplight />
       <OnboardingModal isOpen={onboardingOpen} onClose={() => setOnboardingOpen(false)} />
     </div>
   );

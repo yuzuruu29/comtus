@@ -3,7 +3,8 @@ import type { KeyboardEvent, ReactNode } from "react";
 
 export interface SegmentedOption<T extends string> {
   value: T;
-  label: string;
+  /** Usually a word; a preview (a swatch, a sample size) when the choice is visual. */
+  label: ReactNode;
   icon?: ReactNode;
 }
 
@@ -15,11 +16,14 @@ export function Segmented<T extends string>({
   value,
   onChange,
   options,
+  className,
   "aria-label": ariaLabel,
 }: {
   value: T;
   onChange: (v: T) => void;
   options: SegmentedOption<T>[];
+  /** Added to the group, e.g. to lay the options out as cards. */
+  className?: string;
   "aria-label": string;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -41,7 +45,7 @@ export function Segmented<T extends string>({
   };
 
   return (
-    <div ref={rootRef} role="radiogroup" aria-label={ariaLabel} className="segmented">
+    <div ref={rootRef} role="radiogroup" aria-label={ariaLabel} className={className ? `segmented ${className}` : "segmented"}>
       {options.map((option, index) => {
         const selected = option.value === value;
         return (

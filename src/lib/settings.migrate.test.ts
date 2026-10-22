@@ -38,4 +38,12 @@ describe("migrateSettings", () => {
     expect(next.provider).toBe("anthropic");
     expect(next.anthropicKey).toBe("sk-ant-mine");
   });
+
+  it("gives older settings the default send key and spacing, and drops junk", () => {
+    expect(migrateSettings({}, 14)).toMatchObject({ sendKey: "enter", leading: "standard" });
+    const kept = migrateSettings({ sendKey: "mod-enter", leading: "airy" }, 14);
+    expect(kept).toMatchObject({ sendKey: "mod-enter", leading: "airy" });
+    const junk = migrateSettings({ sendKey: "space", leading: 3 }, 14);
+    expect(junk).toMatchObject({ sendKey: "enter", leading: "standard" });
+  });
 });

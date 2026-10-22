@@ -27,3 +27,21 @@ export const READING_OPTIONS: ReadingOption[] = [
 export function isReadingSize(value: unknown): value is ReadingSize {
   return typeof value === "string" && (READING_SIZES as readonly string[]).includes(value);
 }
+
+/** Line spacing, the other half of a comfortable page. Snug fits more of a
+ *  long source on screen; airy gives tired eyes and dyslexic readers room. */
+export const READING_LEADINGS = ["snug", "standard", "airy"] as const;
+
+export type ReadingLeading = (typeof READING_LEADINGS)[number];
+
+export const DEFAULT_LEADING: ReadingLeading = "standard";
+
+export const LEADING_OPTIONS: { id: ReadingLeading; label: string }[] = [
+  { id: "snug", label: "Snug" },
+  { id: "standard", label: "Standard" },
+  { id: "airy", label: "Airy" },
+];
+
+export function isReadingLeading(value: unknown): value is ReadingLeading {
+  return typeof value === "string" && (READING_LEADINGS as readonly string[]).includes(value);
+}

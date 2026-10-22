@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { DEFAULT_READING } from "./fontPresets";
+import { DEFAULT_LEADING, DEFAULT_READING } from "./fontPresets";
 import { useSettings } from "./settings";
 
 export type ThemePref = "system" | "dark" | "light";
@@ -30,21 +30,26 @@ export function applyChrome(on: boolean): void {
   else delete document.documentElement.dataset.chrome;
 }
 
-/** Reading size lives on html[data-reading]; styles/font-presets.css maps each
- *  size to --text-read. Undefined clears back to the token default. The faces
+/** Reading size lives on html[data-reading] and line spacing on
+ *  html[data-leading]; styles/font-presets.css maps them to --text-read and
+ *  --leading-read. Undefined clears back to the token default. The faces
  *  themselves are fixed in tokens.css and are not a user choice (spec 5.1). */
-export function applyReading(size: string | undefined): void {
-  if (size) document.documentElement.dataset.reading = size;
-  else delete document.documentElement.dataset.reading;
+export function applyReading(size: string | undefined, leading?: string): void {
+  const root = document.documentElement.dataset;
+  if (size) root.reading = size;
+  else delete root.reading;
+  if (leading) root.leading = leading;
+  else delete root.leading;
 }
 
-/** Reading size (see fontPresets.ts). Studio-only; the landing sets its own measure. */
+/** Reading size and spacing (see fontPresets.ts). Studio-only; the landing sets its own measure. */
 export function useReadingEffect() {
   const reading = useSettings((s) => s.reading ?? DEFAULT_READING);
+  const leading = useSettings((s) => s.leading ?? DEFAULT_LEADING);
   useEffect(() => {
-    applyReading(reading);
+    applyReading(reading, leading);
     return () => applyReading(undefined);
-  }, [reading]);
+  }, [reading, leading]);
 }
 
 /** Pixel accent lettering while the desk is mounted. Off unless asked for. */

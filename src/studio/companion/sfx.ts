@@ -1,3 +1,5 @@
+import { getSfxVolume, isMuted } from "../../lib/soundEngine";
+
 export type SfxKind =
   | "nudge"
   | "cheer"
@@ -36,14 +38,18 @@ function tone(
   type: OscillatorType,
   peak: number,
 ): void {
-  if (!ctx) return;
+  // Every chime and click passes through here, so this is where the desk's one
+  // Sound switch and its effects volume reach the companion too.
+  if (!ctx || isMuted()) return;
+  const level = peak * getSfxVolume();
+  if (level < 0.001) return;
   const t0 = ctx.currentTime + start;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = type;
   osc.frequency.setValueAtTime(frequency, t0);
   gain.gain.setValueAtTime(0.0001, t0);
-  gain.gain.exponentialRampToValueAtTime(peak, t0 + 0.018);
+  gain.gain.exponentialRampToValueAtTime(level, t0 + 0.018);
   gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
   osc.connect(gain);
   gain.connect(ctx.destination);

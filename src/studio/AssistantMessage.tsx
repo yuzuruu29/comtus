@@ -175,7 +175,7 @@ const AssistantMessage = memo(function AssistantMessage({
 
       {/* Formatted Markdown Content */}
       {msg.content ? (
-        <div className="md text-[14.5px] leading-relaxed text-ink">
+        <div className="md md-answer text-ink">
           <ReactMarkdown
             remarkPlugins={[remarkGfm, ...mathRemarkPlugins]}
             rehypePlugins={[...mathRehypePlugins]}

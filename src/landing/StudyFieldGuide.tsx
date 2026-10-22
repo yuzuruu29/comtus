@@ -22,24 +22,26 @@ export default function StudyFieldGuide() {
             <div data-landing-reveal><dt>Rehearse the harder parts.</dt><dd><span>Mock exams & essay feedback</span>Practise under a time limit, or take another pass at your argument and the evidence behind it.</dd></div>
           </dl>
           <figure className="field-guide-figure" data-landing-reveal>
-            <article className="field-guide-card" data-turned={answerOpen} aria-label="Sample recall card">
-              <div className="field-guide-card-index"><span>Learning & memory</span><span>01 / 01</span></div>
-              <div className="field-guide-card-turn" data-turned={answerOpen}>
-                <div className="field-guide-card-face field-guide-card-question" aria-hidden={answerOpen}>
-                  <span className="field-guide-card-kicker">A question to keep</span>
-                  <h3>Close the page.{" "}<br /><em>What stayed?</em></h3>
-                  <p>How is recognising an idea different from recalling it?</p>
+            <div className="field-guide-deck">
+              <article className="field-guide-card" data-turned={answerOpen} aria-label="Sample recall card">
+                <div className="field-guide-card-index"><span>Learning & memory</span><span>01 / 01</span></div>
+                <div className="field-guide-card-turn" data-turned={answerOpen}>
+                  <div className="field-guide-card-face field-guide-card-question" aria-hidden={answerOpen}>
+                    <span className="field-guide-card-kicker">A question to keep</span>
+                    <h3>Close the page.{" "}<br /><em>What stayed?</em></h3>
+                    <p>How is recognising an idea different from recalling it?</p>
+                  </div>
+                  <div className="field-guide-card-face field-guide-card-answer" aria-hidden={!answerOpen}>
+                    <span className="field-guide-card-kicker">One way to explain it</span>
+                    <h3>Familiar isn’t{" "}<br /><em>remembered.</em></h3>
+                    <p>Recognition uses a clue in front of you. Recall brings the idea to mind without that clue.</p>
+                  </div>
                 </div>
-                <div className="field-guide-card-face field-guide-card-answer" aria-hidden={!answerOpen}>
-                  <span className="field-guide-card-kicker">One way to explain it</span>
-                  <h3>Familiar isn’t{" "}<br /><em>remembered.</em></h3>
-                  <p>Recognition uses a clue in front of you. Recall brings the idea to mind without that clue.</p>
-                </div>
-              </div>
-              <button type="button" aria-pressed={answerOpen} onClick={() => setAnswerOpen((current) => !current)}>
-                Turn the card<ArrowsClockwise size={ICON.lg} aria-hidden="true" />
-              </button>
-            </article>
+                <button type="button" aria-pressed={answerOpen} onClick={() => setAnswerOpen((current) => !current)}>
+                  Turn the card<ArrowsClockwise size={ICON.lg} aria-hidden="true" />
+                </button>
+              </article>
+            </div>
             <figcaption>A sample flashcard. Give it a turn.</figcaption>
           </figure>
         </div>

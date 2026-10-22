@@ -2,10 +2,21 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import type { AnthropicModelId, Effort, ProviderId, StoredKey } from "./types";
-import { DEFAULT_READING, isReadingSize, type ReadingSize } from "./fontPresets";
+import {
+  DEFAULT_LEADING,
+  DEFAULT_READING,
+  isReadingLeading,
+  isReadingSize,
+  type ReadingLeading,
+  type ReadingSize,
+} from "./fontPresets";
 import type { CallSettings } from "./llm";
 
 export type PlanTier = "free" | "sprint" | "scholar" | "mastery";
+
+/** Which key sends a draft: Enter (Shift+Enter breaks the line), or
+ *  Ctrl/⌘+Enter for students who write their questions in paragraphs. */
+export type SendKey = "enter" | "mod-enter";
 
 interface SettingsState {
   provider: ProviderId;
@@ -37,6 +48,9 @@ interface SettingsState {
   pixelDesk: boolean;
   /** Reading measure. The faces themselves are fixed (spec 5.1). */
   reading: ReadingSize;
+  /** Line spacing for sources and answers (html[data-leading]). */
+  leading: ReadingLeading;
+  sendKey: SendKey;
   lastBackupAt: number;
   setProvider: (p: ProviderId) => void;
   update: (patch: Partial<SettingsState>) => void;
@@ -93,6 +107,8 @@ export function migrateSettings(persisted: unknown, version: number): Partial<Se
     companionSfx: old.companionSfx ?? true,
     pixelDesk: old.pixelDesk ?? true,
     reading: isReadingSize(old.reading) ? old.reading : DEFAULT_READING,
+    leading: isReadingLeading(old.leading) ? old.leading : DEFAULT_LEADING,
+    sendKey: old.sendKey === "mod-enter" ? "mod-enter" : "enter",
     lastBackupAt: old.lastBackupAt ?? 0,
   };
   if (version < 2) {
@@ -136,6 +152,8 @@ export const useSettings = create<SettingsState>()(
       // users keep their choice through migrate().
       pixelDesk: false,
       reading: DEFAULT_READING,
+      leading: DEFAULT_LEADING,
+      sendKey: "enter",
       lastBackupAt: 0,
       setProvider: (provider) => set({ provider }),
       update: (patch) => set(patch),

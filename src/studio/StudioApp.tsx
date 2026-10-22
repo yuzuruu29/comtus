@@ -7,6 +7,7 @@ import { isDeskShell } from "../lib/desktop";
 import { useSettings } from "../lib/settings";
 import { studioNotebookIdFromPath } from "./studioPath";
 import "./studio.css";
+import "./desk-motion.css";
 
 export default function StudioApp() {
   const { pathname } = useLocation();

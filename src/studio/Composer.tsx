@@ -23,6 +23,9 @@ import ComposerSideRailDock from "./ComposerSideRail";
 import { DUR, ENTER, EXIT, HOUSE, POPOVER, RISE_1, RISE_2, SOFT } from "./fx";
 import type { useVoiceInput } from "./useVoiceInput";
 import { ICON } from "../ui/iconScale";
+import { detectPlatform } from "../lib/desktop";
+import { useSettings } from "../lib/settings";
+import { isSendKey, modLabel } from "./shortcuts";
 
 const FOLLOW_UPS = [
   {
@@ -98,6 +101,9 @@ export default function Composer({
   const taRef = useRef<HTMLTextAreaElement>(null);
   const hasText = !!input.trim() && !preparing;
   const thinkingCapable = capabilities?.thinking !== false;
+  const sendKey = useSettings((s) => s.sendKey ?? "enter");
+  const platform = detectPlatform();
+  const sendShortcut = sendKey === "mod-enter" ? `${modLabel(platform)}+Enter` : "Enter";
 
   useEffect(() => {
     const el = taRef.current;
@@ -186,8 +192,9 @@ export default function Composer({
                 onChange={(e) => onInputChange(e.target.value)}
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
+                aria-keyshortcuts={sendKey === "mod-enter" ? `${platform === "mac" ? "Meta" : "Control"}+Enter` : "Enter"}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
+                  if (isSendKey(e.nativeEvent, platform, sendKey)) {
                     e.preventDefault();
                     if (!preparing) onSend();
                   }
@@ -347,6 +354,7 @@ export default function Composer({
                     transition={SOFT}
                     onClick={() => onSend()}
                     aria-label="Send message"
+                    title={`Send (${sendShortcut})`}
                     disabled={!hasText}
                     className="composer-send"
                   >

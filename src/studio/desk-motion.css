@@ -1,0 +1,145 @@
+/* ==========================================================================
+   Desk motion: how the shelf, a fresh chat page and the study tools arrive.
+
+   Same contract as the landing (landing-motion.css): the resting style is the
+   finished page and every rule reads the motion budget on html[data-motion].
+   Fill is "backwards" only: the first frame holds through the delay, and once
+   an arrival ends nothing of it stays on the element (a lingering transform
+   would trap the fixed-position menus inside saved work). At Minimal the same
+   pieces fade in place; at None, and under the OS reduced-motion setting, the
+   global tiers in index.css stop all of it.
+
+   The house order: a rule is drawn, the title is set into its line, then the
+   things you can act on arrive one after another, 40ms apart. Nothing waits on
+   this: every control is in place and clickable from the first frame.
+   ========================================================================== */
+
+@keyframes desk-typeset {
+  from {
+    clip-path: inset(-0.2em -0.1em 100% -0.1em);
+    transform: translateY(0.45em);
+  }
+  to {
+    clip-path: inset(-0.2em -0.1em -0.35em -0.1em);
+  }
+}
+@keyframes desk-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes desk-rule {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes desk-settle {
+  from {
+    opacity: 0;
+    transform: translateY(18px) rotate(-1.2deg);
+  }
+}
+@keyframes desk-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ── The shelf ──────────────────────────────────────────────────────── */
+
+html[data-motion="full"] .shelf-intro h1,
+html[data-motion="full"] .shelf-start-copy h2 {
+  animation: desk-typeset 760ms var(--ease-out) 60ms backwards;
+}
+html[data-motion="full"] :is(.shelf-intro .shelf-kicker, .shelf-intro p, .shelf-intro-actions, .shelf-start-copy > :not(h2)) {
+  animation: desk-rise var(--dur-glow) var(--ease-out) 180ms backwards;
+}
+html[data-motion="full"] .shelf-start-page {
+  transform-origin: 50% 100%;
+  animation: desk-settle 820ms var(--ease-out) 160ms backwards;
+}
+html[data-motion="full"] .shelf-start-steps > li {
+  animation: desk-rise var(--dur-glow) var(--ease-out) backwards;
+  animation-delay: calc(360ms + var(--n, 0) * 70ms);
+}
+.shelf-start-steps > li:nth-child(2) { --n: 1; }
+.shelf-start-steps > li:nth-child(3) { --n: 2; }
+
+/* ── A fresh chat page ──────────────────────────────────────────────── */
+
+html[data-motion="full"] .chat-welcome-rule {
+  transform-origin: 0 50%;
+  animation: desk-rule 620ms var(--ease-out) 40ms backwards;
+}
+html[data-motion="full"] .chat-welcome h1 {
+  animation: desk-typeset 760ms var(--ease-out) 90ms backwards;
+}
+html[data-motion="full"] :is(.chat-welcome-copy, .chat-welcome > .btn, .chat-welcome-hint) {
+  animation: desk-rise var(--dur-glow) var(--ease-out) 240ms backwards;
+}
+html[data-motion="full"] .chat-starters button {
+  animation: desk-rise var(--dur-glow) var(--ease-out) backwards;
+  animation-delay: calc(280ms + var(--n, 0) * 40ms);
+}
+.chat-starters button:nth-child(2) { --n: 1; }
+.chat-starters button:nth-child(3) { --n: 2; }
+.chat-starters button:nth-child(4) { --n: 3; }
+
+/* The starter's index slides a step toward the question it opens. */
+.chat-starter-index {
+  transition: transform var(--dur-med) var(--ease-out), color var(--dur-fast);
+}
+.chat-starters button:is(:hover, :focus-visible) .chat-starter-index {
+  color: var(--brass);
+  transform: translateX(4px);
+}
+
+/* ── Study tools ────────────────────────────────────────────────────── */
+
+html[data-motion="full"] .study-tools-intro h3 {
+  animation: desk-typeset 700ms var(--ease-out) 40ms backwards;
+}
+html[data-motion="full"] .practice-tool {
+  animation: desk-rise var(--dur-glow) var(--ease-out) backwards;
+  animation-delay: calc(140ms + var(--n, 0) * 40ms);
+}
+.practice-tool:nth-child(2) { --n: 1; }
+.practice-tool:nth-child(3) { --n: 2; }
+html[data-motion="full"] :is(.study-tools-more, .study-saved) {
+  animation: desk-rise var(--dur-glow) var(--ease-out) 280ms backwards;
+}
+
+/* The tool's glyph is picked up as the pointer arrives: a small lift and a
+   tilt, like lifting a card off the stack. Pressing sets it back down. */
+.practice-tool-icon svg {
+  transition: transform var(--dur-med) var(--ease-out);
+}
+html[data-motion="full"] .practice-tool.btn:is(:hover, :focus-visible) .practice-tool-icon svg {
+  transform: translateY(-2px) rotate(-8deg);
+}
+html[data-motion="full"] .practice-tool.btn:active .practice-tool-icon svg {
+  transform: translateY(0) rotate(0deg);
+  transition-duration: var(--dur-fast);
+}
+.practice-tool-copy strong {
+  transition: transform var(--dur-med) var(--ease-out);
+}
+html[data-motion="full"] .practice-tool.btn:is(:hover, :focus-visible) .practice-tool-copy strong {
+  transform: translateX(3px);
+}
+
+/* ── Minimal: the same arrivals, faded in place ────────────────────── */
+
+html[data-motion="minimal"] :is(
+    .shelf-intro h1,
+    .shelf-start-copy h2,
+    .shelf-start-page,
+    .chat-welcome h1,
+    .chat-welcome-copy,
+    .chat-starters button,
+    .study-tools-intro h3,
+    .practice-tool
+  ) {
+  animation: desk-fade var(--dur-slow) var(--ease-out) backwards;
+}
