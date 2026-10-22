@@ -45,6 +45,7 @@ function corsHeaders(origin: string | null): Record<string, string> {
         "access-control-allow-origin": origin,
         "access-control-allow-headers": "content-type,authorization,x-title",
         "access-control-allow-methods": "GET,POST,OPTIONS",
+        vary: "origin",
       }
     : {};
 }
@@ -85,6 +86,14 @@ export default async function handler(req: Request): Promise<Response> {
     subPath = rest.replace(/^[^/]+/, "") || "/";
     if (!subPath.startsWith("/")) subPath = `/${subPath}`;
   }
+  // Only expose the API operations used by Comtus. Arbitrary provider paths
+  // can reach redirectors or unrelated authenticated account operations.
+  const allowedPaths = provider === "zen"
+    ? new Set(["/zen/v1/models", "/zen/v1/chat/completions", "/zen/v1/audio/transcriptions", "/v1/models", "/v1/chat/completions", "/v1/audio/transcriptions"])
+    : new Set(["/v1/models", "/v1/chat/completions", "/v1/audio/transcriptions"]);
+  if (!allowedPaths.has(subPath) || (req.method === "GET") !== subPath.endsWith("/models")) {
+    return json(404, { error: "Relay operation not supported." }, origin);
+  }
   // Forward caller query params, but never the control params.
   const forwarded = new URLSearchParams(incoming.searchParams);
   forwarded.delete("p");
@@ -98,22 +107,23 @@ export default async function handler(req: Request): Promise<Response> {
   if (contentType) headers["content-type"] = contentType;
   if (authorization) headers["authorization"] = authorization;
 
-  let body: string | undefined;
+  let body: string | ArrayBuffer | undefined;
   if (req.method === "POST") {
     if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) {
       return json(413, { error: "Request too large." }, origin);
     }
-    body = await req.text();
-    if (body.length > MAX_BODY_BYTES) return json(413, { error: "Request too large." }, origin);
+    body = contentType?.startsWith("multipart/form-data") ? await req.arrayBuffer() : await req.text();
+    const bytes = typeof body === "string" ? new TextEncoder().encode(body).byteLength : body.byteLength;
+    if (bytes > MAX_BODY_BYTES) return json(413, { error: "Request too large." }, origin);
   }
 
   let res: Response;
   try {
-    res = await fetch(upstream, { method: req.method, headers, ...(body !== undefined ? { body } : {}) });
-  } catch (err) {
+    res = await fetch(upstream, { method: req.method, headers, redirect: "error", ...(body !== undefined ? { body } : {}) });
+  } catch {
     return json(
       502,
-      { error: `The ${provider} relay couldn't reach the provider: ${err instanceof Error ? err.message : "unknown"}` },
+      { error: `The ${provider} relay couldn't reach the provider. Please try again.` },
       origin,
     );
   }

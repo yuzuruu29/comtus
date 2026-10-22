@@ -119,4 +119,27 @@ describe("compat relay", () => {
     expect(res.status).toBe(413);
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("refuses non-API and path-normalization bypasses without forwarding credentials", async () => {
+    const spy = vi.fn();
+    vi.stubGlobal("fetch", spy);
+    for (const path of ["redirect", "v1/%2e%2e/account", "v1/models%3Fnext=https://evil.example", "v1/chat/completions/../../account"]) {
+      const response = await handler(req(`/api/compat?p=zen&path=${encodeURIComponent(path)}`, { headers: { authorization: "Bearer private-key" } }));
+      expect(response.status).toBe(404);
+    }
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("disallows upstream redirects and preserves multipart audio bytes", async () => {
+    const spy = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(async () => new Response("{}"));
+    vi.stubGlobal("fetch", spy);
+    const bytes = new Uint8Array([0, 255, 128, 13, 10]);
+    const response = await handler(req("/api/compat/mistral/v1/audio/transcriptions", {
+      method: "POST", headers: { "content-type": "multipart/form-data; boundary=test" }, body: bytes,
+    }));
+    expect(response.status).toBe(200);
+    const init = spy.mock.calls[0]?.[1] as RequestInit | undefined;
+    expect(init?.redirect).toBe("error");
+    expect(new Uint8Array(init?.body as ArrayBuffer)).toEqual(bytes);
+  });
 });

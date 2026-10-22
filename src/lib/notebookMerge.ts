@@ -3,7 +3,7 @@ import { db } from "./db";
 import { notifyDeskActivity } from "./activity";
 import { chunkText } from "./chunking";
 import { estTokens } from "./retrieval";
-import type { BackupPayload } from "./backup";
+import { assertBackupOwnership, validateBackupPayload, type BackupPayload } from "./backup";
 import type { CardProgress, Chunk, Flashcard, FlashcardsPayload, Generation, Source } from "./types";
 
 /**
@@ -92,6 +92,7 @@ function rowsOf(payload: BackupPayload, table: Table | "chunks"): Row[] {
 }
 
 export async function mergeNotebookPayload(payload: BackupPayload): Promise<MergeResult> {
+  validateBackupPayload(payload);
   const notebook = rowsOf(payload, "notebooks")[0];
   if (!notebook) throw new Error("That isn't a Comtus notebook.");
   const notebookId = notebook.id;
@@ -102,6 +103,11 @@ export async function mergeNotebookPayload(payload: BackupPayload): Promise<Merg
 
   const tables = [...TABLES.map((t) => db[t]), db.chunks];
   await db.transaction("rw", tables, async () => {
+    const scopedData = Object.fromEntries([...TABLES, "chunks" as const].map((table) => [
+      table,
+      rowsOf(payload, table).filter((row) => table === "notebooks" ? row.id === notebookId : row.notebookId === notebookId),
+    ]));
+    await assertBackupOwnership({ ...payload, data: scopedData }, true);
     for (const table of TABLES) {
       const store = db[table] as unknown as DexieTable<Row, string>;
       // Only this notebook's rows, whatever else the file holds.
@@ -137,7 +143,9 @@ export async function mergeNotebookPayload(payload: BackupPayload): Promise<Merg
             text,
             tokens: estTokens(text),
           }));
-      await db.chunks.bulkPut(chunks);
+      // A transferred source is new. Existing chunk keys must never be
+      // overwritten, including keys belonging to a different notebook.
+      await db.chunks.bulkAdd(chunks);
     }
   });
 

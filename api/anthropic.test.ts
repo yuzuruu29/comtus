@@ -30,9 +30,11 @@ function proxyReq(body: object | string, pass?: string): Request {
   });
 }
 
-function creditFetch(opts: { incrByResult?: number; upstream?: Response; denied?: boolean } = {}) {
+function creditFetch(opts: { incrByResult?: number; upstream?: Response; denied?: boolean; inputTokens?: number } = {}) {
   return vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
     const url = String(input instanceof Request ? input.url : input);
+    if (url.endsWith("/count_tokens")) return new Response(JSON.stringify({ input_tokens: opts.inputTokens ?? 10 }));
+    if (url.includes("/incr/ipthrottle:")) return new Response(JSON.stringify({ result: 1 }));
     if (url.includes("/get/passdeny:")) {
       return new Response(JSON.stringify({ result: opts.denied ? "1" : null }), { status: 200 });
     }
@@ -56,7 +58,9 @@ function mockFetch(opts: { incrResult?: number; upstream?: Response } = {}) {
   return vi.fn(async (input: string | URL | Request, _init?: RequestInit) => {
     void _init;
     const url = String(input instanceof Request ? input.url : input);
+    if (url.includes("/get/passdeny:")) return new Response(JSON.stringify({ result: null }));
     if (url.includes("/incr/")) {
+      if (url.includes("ipthrottle:")) return new Response(JSON.stringify({ result: 1 }));
       return new Response(JSON.stringify({ result: opts.incrResult ?? 1 }), { status: 200 });
     }
     if (url.startsWith("https://api.anthropic.com")) {
@@ -150,6 +154,7 @@ describe("hosted Anthropic proxy", () => {
 
   it("proxies only /v1/messages", async () => {
     withProxyEnv();
+    vi.stubGlobal("fetch", mockFetch());
     const pass = signPass({ j: "pathcheck" });
     const req = new Request("http://localhost:3000/api/anthropic/v1/models", {
       method: "POST",
@@ -204,6 +209,7 @@ describe("hosted Anthropic proxy", () => {
 
   it("returns 413 for oversized bodies and 400 for invalid JSON", async () => {
     withProxyEnv();
+    vi.stubGlobal("fetch", mockFetch());
     const pass = signPass({ j: "sizecheck" });
 
     const big = JSON.stringify({ model: "claude-opus-5", max_tokens: 16, pad: "x".repeat(8 * 1024 * 1024 + 64) });
@@ -271,7 +277,7 @@ describe("hosted Anthropic proxy", () => {
       ),
     );
     expect(res.status).toBe(200);
-    const upstreamCall = fetchMock.mock.calls.find((call) => String(call[0]).startsWith("https://api.anthropic.com"));
+    const upstreamCall = fetchMock.mock.calls.find((call) => String(call[0]) === "https://api.anthropic.com/v1/messages");
     const forwarded = JSON.parse((upstreamCall?.[1] as RequestInit).body as string);
     expect(forwarded.tools).toBeUndefined();
     expect(forwarded.max_tokens).toBe(16000);
@@ -280,7 +286,7 @@ describe("hosted Anthropic proxy", () => {
 
   it("rejects a credit pass whose notebook exceeds the input cap", async () => {
     withProxyEnv();
-    vi.stubGlobal("fetch", creditFetch());
+    vi.stubGlobal("fetch", creditFetch({ inputTokens: 100_001 }));
     const pass = signPass({ j: "big01", v: 2, c: 5_000_000_000 });
     const res = await handler(
       proxyReq(
@@ -330,7 +336,7 @@ describe("hosted Anthropic proxy", () => {
       proxyReq({ model: "claude-opus-5", max_tokens: 100, messages: [{ role: "user", content: "hi" }] }, signPass({ j: "poor01", v: 2, c: 1000 })),
     );
     expect(res.status).toBe(402);
-    expect(fetchMock.mock.calls.some((call) => String(call[0]).startsWith("https://api.anthropic.com"))).toBe(false);
+    expect(fetchMock.mock.calls.some((call) => String(call[0]) === "https://api.anthropic.com/v1/messages")).toBe(false);
   });
 
   it("rejects a revoked pass", async () => {
@@ -349,5 +355,79 @@ describe("hosted Anthropic proxy", () => {
     await handler(proxyReq({ model: "claude-opus-5", max_tokens: 100 }, signPass({ j: "ttl01", e })));
     const urls = fetchMock.mock.calls.map((c) => String(c[0]));
     expect(urls).toContain(`${UPSTASH}/expireat/pass:ttl01/${e + 30 * 86400}`);
+  });
+
+  it("reserves provider-counted multilingual/image input at the highest cache-write rate", async () => {
+    withProxyEnv();
+    const fetchMock = creditFetch({ inputTokens: 50_000 });
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await handler(proxyReq({ model: "claude-sonnet-5", max_tokens: 100,
+      messages: [{ role: "user", content: [{ type: "text", text: "漢".repeat(1000), cache_control: { type: "ephemeral", ttl: "1h" } }] }],
+    }, signPass({ j: "counted", v: 2, c: 5_000_000_000 })));
+    expect(response.status).toBe(200);
+    expect(reservedFrom(fetchMock)).toBe((55_000 + 1024) * 4000 + 100 * 10000);
+    const count = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/count_tokens"));
+    expect(count?.[1]).toMatchObject({ method: "POST", redirect: "error" });
+  });
+
+  it("retains the reservation when a stream is canceled after partial usage", async () => {
+    withProxyEnv();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: {"type":"message_start","message":{"usage":{"input_tokens":10,"output_tokens":1}}}\n\n'));
+      },
+    });
+    const fetchMock = creditFetch({ upstream: new Response(stream, { headers: { "content-type": "text/event-stream" } }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await handler(proxyReq({ model: "claude-sonnet-5", max_tokens: 100, stream: true }, signPass({ j: "cancel", v: 2, c: 5_000_000_000 })));
+    const reader = response.body!.getReader();
+    await reader.read();
+    await reader.cancel();
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/decrby/"))).toBe(false);
+  });
+
+  it("settles only a complete SSE message, including chunked final events", async () => {
+    withProxyEnv();
+    const stream = new ReadableStream<Uint8Array>({ start(controller) {
+      for (const chunk of ['data: {"type":"message_start","message":{"usage":{"input_tokens":10,"output_tokens":1}}}\n\n',
+        'data: {"type":"message_delta","usage":{"output_tokens":20}}\n\ndata: {"type":"message_', 'stop"}\n\n']) {
+        controller.enqueue(new TextEncoder().encode(chunk));
+      }
+      controller.close();
+    } });
+    const fetchMock = creditFetch({ upstream: new Response(stream, { headers: { "content-type": "text/event-stream" } }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await handler(proxyReq({ model: "claude-sonnet-5", max_tokens: 100, stream: true }, signPass({ j: "complete", v: 2, c: 5_000_000_000 })));
+    await response.text();
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith(`/decrby/credit:complete/${reservedFrom(fetchMock) - 220000}`))).toBe(true);
+  });
+
+  it("does not spend when revocation Redis returns an error envelope", async () => {
+    withProxyEnv();
+    const base = mockFetch();
+    const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) =>
+      String(input).includes("/get/passdeny:") ? new Response(JSON.stringify({ error: "WRONGTYPE" })) : base(input, init));
+    vi.stubGlobal("fetch", fetchMock);
+    expect((await handler(proxyReq({ model: "claude-sonnet-5" }, signPass({ j: "rediserror" })))).status).toBe(503);
+    expect(fetchMock.mock.calls.some(([url]) => String(url).startsWith("https://api.anthropic.com"))).toBe(false);
+  });
+
+  it("never infers when the input count is unavailable", async () => {
+    withProxyEnv();
+    const base = creditFetch();
+    const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) =>
+      String(input).endsWith("/count_tokens") ? new Response('{"error":"unavailable"}', { status: 503 }) : base(input, init));
+    vi.stubGlobal("fetch", fetchMock);
+    expect((await handler(proxyReq({ model: "claude-sonnet-5" }, signPass({ j: "nocount", v: 2, c: 5_000_000_000 })))).status).toBe(503);
+    expect(fetchMock.mock.calls.some(([url]) => String(url) === "https://api.anthropic.com/v1/messages")).toBe(false);
+  });
+
+  it("keeps the reservation when a response omits final output usage", async () => {
+    withProxyEnv();
+    const fetchMock = creditFetch({ upstream: new Response('{"usage":{"input_tokens":10}}', { headers: { "content-type": "application/json" } }) });
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await handler(proxyReq({ model: "claude-sonnet-5" }, signPass({ j: "partial", v: 2, c: 5_000_000_000 })));
+    expect(response.status).toBe(200);
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/decrby/"))).toBe(false);
   });
 });

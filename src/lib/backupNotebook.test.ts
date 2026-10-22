@@ -75,6 +75,52 @@ describe("notebook export", () => {
 describe("opening a notebook file", () => {
   beforeEach(seed);
 
+  it("rejects notebook files containing another notebook's rows without changing storage", async () => {
+    const payload = await buildNotebookPayload("keep");
+    payload.data!.sources!.push(await db.sources.get("other-src"));
+    await expect(openNotebookText(JSON.stringify(payload))).rejects.toThrow(/notebook/i);
+    expect(await db.notebooks.count()).toBe(2);
+    expect((await db.sources.get("other-src"))?.notebookId).toBe("other");
+  });
+
+  it("rolls back a restore that reuses an unrelated notebook's row id", async () => {
+    const payload = await buildNotebookPayload("keep");
+    payload.data!.notebooks = [{ id: "new", name: "New", createdAt: NOW, updatedAt: NOW }];
+    payload.data!.sources = [{ ...(await db.sources.get("other-src"))!, notebookId: "new" }];
+    for (const table of ["chunks", "messages", "chatSessions", "generations", "cardProgress", "attempts", "highlights"] as const) payload.data![table] = [];
+    await expect(importBackupText(JSON.stringify(payload))).rejects.toThrow(/another notebook/i);
+    expect(await db.notebooks.get("new")).toBeUndefined();
+    expect((await db.sources.get("other-src"))?.notebookId).toBe("other");
+  });
+
+  it("rejects links to records in another notebook", async () => {
+    const payload = await buildNotebookPayload("keep");
+    payload.data!.highlights = [{ ...(await db.highlights.get("keep-mark"))!, sourceId: "other-src" }];
+    await expect(importBackupText(JSON.stringify(payload))).rejects.toThrow(/another notebook/i);
+    expect((await db.highlights.get("keep-mark"))?.sourceId).toBe("keep-src");
+  });
+
+  it("does not copy a partial file with links back to the original notebook", async () => {
+    const payload = await buildNotebookPayload("keep");
+    delete payload.data!.sources;
+    delete payload.data!.chunks;
+    await expect(openNotebookText(JSON.stringify(payload))).rejects.toThrow(/another notebook/i);
+    expect(await db.notebooks.count()).toBe(2);
+    expect((await db.highlights.get("keep-mark"))?.sourceId).toBe("keep-src");
+  });
+
+  it("keeps review progress linked to renamed missed-question cards in a copy", async () => {
+    const cardId = "m-keep-quiz-q1";
+    await db.generations.add({ id: "keep-quiz", notebookId: "keep", kind: "quiz", title: "Quiz", payload: { questions: [] }, createdAt: NOW });
+    await db.generations.add({ id: "misses-keep", notebookId: "keep", kind: "flashcards", title: "Misses", payload: { cards: [{ id: cardId, front: "Q", back: "A" }] }, createdAt: NOW });
+    await db.cardProgress.add({ id: `misses-keep:${cardId}`, generationId: "misses-keep", notebookId: "keep", ease: 2.5, intervalDays: 3, dueAt: NOW, reps: 4 });
+    const result = await openNotebookText(JSON.stringify(await buildNotebookPayload("keep")));
+    if (result.kind !== "notebook") throw new Error("Expected notebook");
+    const misses = await db.generations.get(`misses-${result.notebookId}`);
+    const cards = (misses!.payload as { cards: { id: string }[] }).cards;
+    expect(await db.cardProgress.get(`${misses!.id}:${cards[0].id}`)).toMatchObject({ reps: 4, generationId: misses!.id });
+  });
+
   it("brings a notebook that isn't here in as it was", async () => {
     const json = JSON.stringify(await buildNotebookPayload("keep"));
     await db.transaction("rw", [db.notebooks, db.sources, db.chunks, db.messages, db.chatSessions, db.generations, db.cardProgress, db.attempts, db.highlights], async () => {
@@ -84,6 +130,13 @@ describe("opening a notebook file", () => {
     });
     expect(await openNotebookText(json)).toEqual({ kind: "notebook", notebookId: "keep", name: "Notebook keep", copied: false });
     expect(await db.cardProgress.get("keep-deck:c0")).toBeDefined();
+  });
+
+  it("serializes simultaneous opens so the second file becomes a separate copy", async () => {
+    const json = JSON.stringify({ app: "comtus", schema: 2, scope: "notebook", data: { notebooks: [{ id: "new", name: "New", createdAt: NOW, updatedAt: NOW }] } });
+    const opened = await Promise.all([openNotebookText(json), openNotebookText(json)]);
+    expect(opened.map((result) => result.kind === "notebook" && result.copied).sort()).toEqual([false, true]);
+    expect(await db.notebooks.count()).toBe(4);
   });
 
   it("opens a notebook that is already here as a linked copy", async () => {

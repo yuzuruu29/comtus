@@ -156,6 +156,34 @@ describe("sending a notebook to another device", () => {
     expect((await db.sources.get("theirs"))?.title).toBe("Keep me");
     expect(await db.sources.get("stray")).toBeUndefined();
   });
+
+  it("rejects imported chunk keys that could overwrite another notebook's retrieval text", async () => {
+    await seedNotebook();
+    await expect(mergeNotebookPayload({
+      app: "comtus",
+      data: {
+        notebooks: [{ id: "new", name: "New", createdAt: 1, updatedAt: 1 }],
+        sources: [{ id: "new-src", notebookId: "new", title: "New", kind: "txt", content: "x", chars: 1, tokens: 1, addedAt: 1 }],
+        chunks: [{ id: "src:0", sourceId: "new-src", notebookId: "new", idx: 0, text: "poisoned", tokens: 1 }],
+      },
+    })).rejects.toThrow(/backup row/i);
+    expect((await db.chunks.get("src:0"))?.text).not.toBe("poisoned");
+    expect(await db.notebooks.get("new")).toBeUndefined();
+  });
+
+  it("rejects links to another notebook even when a conflicting source row was skipped", async () => {
+    await seedNotebook();
+    await expect(mergeNotebookPayload({
+      app: "comtus",
+      data: {
+        notebooks: [{ id: "new", name: "New", createdAt: 1, updatedAt: 1 }],
+        sources: [{ id: "src", notebookId: "new", title: "New", kind: "txt", content: "x", chars: 1, tokens: 1, addedAt: 1 }],
+        highlights: [{ id: "new-h", notebookId: "new", sourceId: "src", start: 0, end: 1, quote: "x", note: "", createdAt: 1, updatedAt: 1 }],
+      },
+    })).rejects.toThrow(/another notebook/i);
+    expect(await db.notebooks.get("new")).toBeUndefined();
+    expect(await db.highlights.get("new-h")).toBeUndefined();
+  });
 });
 
 describe("choosing between two copies", () => {

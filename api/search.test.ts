@@ -12,6 +12,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   delete process.env.UPSTASH_REDIS_REST_URL;
   delete process.env.UPSTASH_REDIS_REST_TOKEN;
+  delete process.env.FIRECRAWL_API_KEY;
 });
 
 describe("search relay", () => {
@@ -35,6 +36,18 @@ describe("search relay", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ result: 61 }), { status: 200 })));
     const res = await handler(new Request("http://localhost/api/search?q=krebs", { headers: { "x-real-ip": "203.0.113.8" } }));
     expect(res.status).toBe(429);
+    expect(runSearch).not.toHaveBeenCalled();
+  });
+
+  it("never reaches a paid search provider without an available budget", async () => {
+    process.env.FIRECRAWL_API_KEY = "test-only-key";
+    expect((await handler(new Request("http://localhost/api/search?q=test"))).status).toBe(503);
+    process.env.UPSTASH_REDIS_REST_URL = "https://redis.example";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "token";
+    for (const response of [new Response('{"error":"backend failed"}'), new Response('{"result":1}', { status: 500 })]) {
+      vi.stubGlobal("fetch", vi.fn(async () => response));
+      expect((await handler(new Request("http://localhost/api/search?q=test"))).status).toBe(503);
+    }
     expect(runSearch).not.toHaveBeenCalled();
   });
 });

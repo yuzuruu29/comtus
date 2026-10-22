@@ -162,12 +162,9 @@ for this image.
     ];
   }
   if (ext === "docx") {
-    const mammoth = await loadChunk(() => import("mammoth/mammoth.browser"));
-    const result = await (
-      mammoth as unknown as {
-        extractRawText: (o: { arrayBuffer: ArrayBuffer }) => Promise<{ value: string }>;
-      }
-    ).extractRawText({ arrayBuffer: await file.arrayBuffer() });
+    // Resolve source modules so patched XML dependencies reach the browser build.
+    const { default: mammoth } = await loadChunk(() => import("mammoth"));
+    const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
     return [{ title: name, kind: "docx", text: result.value }];
   }
   if (ext === "json") {

@@ -37,6 +37,8 @@ export const PART_CHARS = 700_000;
 export const MAX_PARTS = 32;
 const CREATES_PER_HOUR = 20;
 const READS_PER_HOUR = 600;
+/** Twenty notebooks, each at the part cap. Uploads were otherwise unlimited. */
+const UPLOADS_PER_HOUR = CREATES_PER_HOUR * MAX_PARTS;
 
 /** Crockford base32, the first 8 characters of a transfer code. */
 const ID = /^[0-9A-HJKMNP-TV-Z]{8}$/;
@@ -87,6 +89,7 @@ async function withinBudget(req: Request, kind: string, limit: number): Promise<
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`relay:${kind}:${ip}:${bucket}`));
   const key = `relaybudget:${[...new Uint8Array(digest)].slice(0, 12).map((b) => b.toString(16).padStart(2, "0")).join("")}`;
   const count = Number(await redis(["INCR", key]));
+  if (!Number.isSafeInteger(count) || count < 1) throw new Error("relay budget unreadable");
   if (count === 1) await redis(["EXPIRE", key, 3600]);
   return count <= limit;
 }
@@ -135,6 +138,12 @@ export default async function handler(req: Request): Promise<Response> {
         const meta = await readMeta(id);
         if (!meta) return reply(404, { error: "This transfer has expired." }, origin);
         if (!(part >= 0 && part < meta.parts)) return reply(400, { error: "No such part." }, origin);
+        if (Number(req.headers.get("content-length") ?? 0) > PART_CHARS) {
+          return reply(413, { error: "That part is too large." }, origin);
+        }
+        if (!(await withinBudget(req, "upload", UPLOADS_PER_HOUR))) {
+          return reply(429, { error: "Too many uploads from this network. Try again within the hour." }, origin);
+        }
         const text = await req.text();
         if (text.length > PART_CHARS) return reply(413, { error: "That part is too large." }, origin);
         if (!BASE64URL.test(text)) return reply(400, { error: "Parts are sealed text." }, origin);

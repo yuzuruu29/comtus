@@ -55,8 +55,14 @@ afterEach(() => {
   delete process.env.UPSTASH_REDIS_REST_TOKEN;
 });
 
-const call = (method: string, query: string, body?: string, origin = "https://comtus-ai.vercel.app") =>
-  handler(new Request(`https://comtus-ai.vercel.app/api/relay?${query}`, { method, body, headers: { origin } }));
+const call = (
+  method: string,
+  query: string,
+  body?: string,
+  origin = "https://comtus-ai.vercel.app",
+  headers: Record<string, string> = {},
+) =>
+  handler(new Request(`https://comtus-ai.vercel.app/api/relay?${query}`, { method, body, headers: { origin, ...headers } }));
 
 describe("relay", () => {
   it("carries sealed parts from one device to another, then forgets them", async () => {
@@ -105,6 +111,22 @@ describe("relay", () => {
     expect((await call("POST", "id=7K3FQXZZ&parts=1&size=5")).status).toBe(429);
     // The network's address is only ever stored hashed.
     expect([...redis.store.keys()].some((k) => k.includes("unknown") || k.includes("127.0.0.1"))).toBe(false);
+  });
+
+  it("does not store a part when usage tracking or the size limit fails", async () => {
+    await call("POST", "id=7K3FQX9P&parts=1&size=5");
+    const oversized = await call("PUT", "id=7K3FQX9P&part=0", "abc", "https://comtus-ai.vercel.app", { "content-length": String(PART_CHARS + 1) });
+    expect(oversized.status).toBe(413);
+    expect(redis.store.has("relay:7K3FQX9P:0")).toBe(false);
+
+    const original = redis.fetchMock.getMockImplementation();
+    redis.fetchMock.mockImplementation(async (url: string, init: RequestInit) => {
+      const [cmd] = JSON.parse(String(init.body)) as string[];
+      if (cmd === "INCR") return new Response(JSON.stringify({ result: null }), { status: 200 });
+      return original?.(url, init) ?? new Response(JSON.stringify({ result: null }), { status: 200 });
+    });
+    expect((await call("PUT", "id=7K3FQX9P&part=0", "abc")).status).toBe(502);
+    expect(redis.store.has("relay:7K3FQX9P:0")).toBe(false);
   });
 
   it("says plainly when it isn't configured or can't reach Redis", async () => {

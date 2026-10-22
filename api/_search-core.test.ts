@@ -47,6 +47,7 @@ describe("decodeEntities", () => {
 
   it("leaves unknown entities untouched", () => {
     expect(decodeEntities("&frobnicate;")).toBe("&frobnicate;");
+    expect(decodeEntities("&#x110000; &#999999999999;")).toBe("&#x110000; &#999999999999;");
   });
 });
 

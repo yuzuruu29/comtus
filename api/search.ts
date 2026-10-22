@@ -16,11 +16,14 @@ function error(status: number, message: string, extra: Record<string, string> = 
   });
 }
 
-/** 60 searches per IP per hour when Upstash is configured. Missing Redis allows the request. */
+/** Paid search must never run without a working budget counter. */
 async function withinSearchBudget(req: Request): Promise<boolean> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return true;
+  if (!url || !token) {
+    if (process.env.FIRECRAWL_API_KEY) throw new Error("search budget unavailable");
+    return true;
+  }
   const ip =
     req.headers.get("x-real-ip") ||
     (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
@@ -30,14 +33,16 @@ async function withinSearchBudget(req: Request): Promise<boolean> {
   const key = `searchbudget:${[...new Uint8Array(digest)].slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("")}`;
   try {
     const res = await fetch(`${url}/incr/${key}`, { headers: { Authorization: `Bearer ${token}` } });
-    const { result } = (await res.json()) as { result?: number };
-    if (typeof result !== "number") return true;
+    const { result, error } = (await res.json()) as { result?: number; error?: unknown };
+    if (!res.ok || error || typeof result !== "number" || !Number.isSafeInteger(result) || result < 1) {
+      throw new Error("search budget unreadable");
+    }
     if (result === 1) {
       await fetch(`${url}/expire/${key}/3600`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => undefined);
     }
     return result <= 60;
   } catch {
-    return true;
+    throw new Error("search budget unavailable");
   }
 }
 
@@ -54,7 +59,11 @@ export default async function handler(req: Request): Promise<Response> {
   const query = (incoming.searchParams.get("q") ?? "").trim().replace(/\s+/g, " ");
   if (!query) return error(400, "Missing search query parameter 'q'");
   if (query.length > MAX_QUERY_CHARS) return error(414, "Search query is too long");
-  if (!(await withinSearchBudget(req))) return error(429, "Too many searches from this network. Try again later.");
+  try {
+    if (!(await withinSearchBudget(req))) return error(429, "Too many searches from this network. Try again later.");
+  } catch {
+    return error(503, "Search usage tracking is unavailable. Try again later.");
+  }
 
   try {
     const { results, provider } = await runSearch(query);

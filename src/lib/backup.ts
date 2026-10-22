@@ -100,16 +100,109 @@ export async function exportNotebook(notebook: Pick<Notebook, "id" | "name">): P
   return saveJson(JSON.stringify(await buildNotebookPayload(notebook.id)), notebookFilename(notebook.name));
 }
 
+type BackupRow = Record<string, unknown> & { id: string; notebookId?: string };
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** Validate imported rows before any database writes or typed payload access. */
+export function validateBackupPayload(payload: unknown): asserts payload is BackupPayload {
+  if (!isRecord(payload) || payload.app !== "comtus" || !isRecord(payload.data)) {
+    throw new Error("That isn't a Comtus backup file.");
+  }
+  if (payload.schema !== undefined && payload.schema !== 1 && payload.schema !== 2) {
+    throw new Error("This backup uses an unsupported format. Update Comtus before opening it.");
+  }
+  if (payload.scope !== undefined && payload.scope !== "notebook") throw new Error("Invalid backup scope.");
+  const fields: Record<TableName, [string[], string[]]> = {
+    notebooks: [["name"], ["createdAt", "updatedAt"]],
+    sources: [["title", "kind", "content"], ["chars", "tokens", "addedAt"]],
+    chunks: [["sourceId", "text"], ["idx", "tokens"]],
+    messages: [["role", "content"], ["createdAt"]],
+    chatSessions: [["title"], ["createdAt", "updatedAt"]],
+    generations: [["kind", "title"], ["createdAt"]],
+    cardProgress: [["generationId"], ["ease", "intervalDays", "dueAt", "reps"]],
+    attempts: [["generationId", "kind", "scope"], ["score", "total", "finishedAt"]],
+    highlights: [["sourceId", "quote", "note"], ["start", "end", "createdAt", "updatedAt"]],
+  };
+  for (const table of TABLES) {
+    const rows = payload.data[table];
+    if (rows === undefined) continue;
+    if (!Array.isArray(rows)) throw new Error(`Invalid backup table: ${table}.`);
+    const ids = new Set<string>();
+    for (const row of rows) {
+      const invalid = () => new Error(`Invalid backup row in ${table}.`);
+      if (!isRecord(row) || typeof row.id !== "string" || !row.id || ids.has(row.id)) throw invalid();
+      ids.add(row.id);
+      if (table !== "notebooks" && (typeof row.notebookId !== "string" || !row.notebookId)) throw invalid();
+      const [strings, numbers] = fields[table];
+      if (strings.some((key) => typeof row[key] !== "string") || numbers.some((key) => typeof row[key] !== "number" || !Number.isFinite(row[key]))) throw invalid();
+      if (row.updatedAt !== undefined && (typeof row.updatedAt !== "number" || !Number.isFinite(row.updatedAt))) throw invalid();
+      if (table === "sources" && !["pdf", "docx", "txt", "md", "json", "url", "paste", "img"].includes(String(row.kind))) throw invalid();
+      if (table === "chunks" && (!Number.isInteger(row.idx) || Number(row.idx) < 0 || row.id !== `${row.sourceId}:${row.idx}`)) throw invalid();
+      if (table === "cardProgress" && !row.id.startsWith(`${row.generationId}:`)) throw invalid();
+      if (table === "messages") {
+        if (row.role !== "user" && row.role !== "assistant") throw invalid();
+        if (row.sessionId !== undefined && typeof row.sessionId !== "string") throw invalid();
+        if (row.citations !== undefined && (!Array.isArray(row.citations) || row.citations.some((c) => !isRecord(c) || typeof c.documentIndex !== "number" || typeof c.sourceTitle !== "string" || typeof c.citedText !== "string" || (c.sourceId !== undefined && typeof c.sourceId !== "string")))) throw invalid();
+      }
+      if (table === "generations") {
+        if (!["quiz", "exam", "essay-review", "study-guide", "brief", "faq", "timeline", "flashcards", "presentation", "slideshow", "note", "audio-overview"].includes(String(row.kind)) || !isRecord(row.payload)) throw invalid();
+        if (row.kind === "flashcards" && (!Array.isArray(row.payload.cards) || row.payload.cards.some((c) => !isRecord(c) || typeof c.id !== "string" || typeof c.front !== "string" || typeof c.back !== "string"))) throw invalid();
+      }
+      if (table === "attempts" && (!Array.isArray(row.items) || row.items.some((item) => !isRecord(item) || typeof item.questionId !== "string" || typeof item.topic !== "string" || typeof item.credit !== "number" || typeof item.answered !== "boolean"))) throw invalid();
+    }
+  }
+  if (payload.scope === "notebook") {
+    const notebooks = payload.data.notebooks;
+    if (!Array.isArray(notebooks) || notebooks.length !== 1 || !isRecord(notebooks[0])) throw new Error("A notebook file must contain exactly one notebook.");
+    const notebookId = notebooks[0].id;
+    for (const table of TABLES) {
+      if (table === "notebooks") continue;
+      const rows = payload.data[table];
+      if (Array.isArray(rows) && rows.some((row) => !isRecord(row) || row.notebookId !== notebookId)) throw new Error("A notebook file contains rows from another notebook.");
+    }
+  }
+}
+
+/** Must run inside the same write transaction as the import. Historical
+ * references may be absent after deletion, but may never cross notebooks. */
+export async function assertBackupOwnership(payload: BackupPayload, allowCollidingRows = false): Promise<void> {
+  const incoming = new Map(TABLES.map((table) => [table, new Map((payload.data?.[table] ?? []).map((row) => {
+    const record = row as BackupRow;
+    return [record.id, record] as const;
+  }))]));
+  for (const table of TABLES) {
+    if (table === "notebooks") continue;
+    for (const row of incoming.get(table)!.values()) {
+      const existing = await db[table].get(row.id);
+      if (existing && existing.notebookId !== row.notebookId && !allowCollidingRows) {
+        throw new Error("This backup would overwrite a row belonging to another notebook.");
+      }
+      const refs: Array<[TableName, unknown]> = [["notebooks", row.notebookId]];
+      if (table === "chunks" || table === "highlights") refs.push(["sources", row.sourceId]);
+      if (table === "messages") {
+        refs.push(["chatSessions", row.sessionId]);
+        for (const citation of (row.citations ?? []) as Array<{ sourceId?: string }>) refs.push(["sources", citation.sourceId]);
+      }
+      if (table === "cardProgress" || table === "attempts") refs.push(["generations", row.generationId]);
+      for (const [target, id] of refs) {
+        if (typeof id !== "string") continue;
+        const references = [incoming.get(target)?.get(id), await db[target].get(id)];
+        if (references.some((referenced) => referenced && (target === "notebooks" ? referenced.id : (referenced as BackupRow).notebookId) !== row.notebookId)) throw new Error("This backup links records belonging to another notebook.");
+      }
+    }
+  }
+}
+
 export function parseBackupPayload(text: string): BackupPayload {
-  let payload: BackupPayload;
+  let payload: unknown;
   try {
     payload = JSON.parse(text);
   } catch {
     throw new Error("That file isn't valid JSON.");
   }
-  if (payload?.app !== "comtus" || !payload.data) {
-    throw new Error("That isn't a Comtus backup file.");
-  }
+  validateBackupPayload(payload);
   return payload;
 }
 
@@ -120,6 +213,7 @@ export async function importBackupText(text: string): Promise<number> {
   );
   let count = 0;
   await db.transaction("rw", tables, async () => {
+    await assertBackupOwnership(payload);
     for (let i = 0; i < TABLES.length; i++) {
       const rows = payload.data?.[TABLES[i]];
       if (Array.isArray(rows) && rows.length) {
@@ -190,6 +284,15 @@ export function copyNotebookPayload(payload: BackupPayload, newId = uid, now = D
   );
   const source = (id: string) => sourceIds.get(id) ?? id;
   const gen = (id: string) => genIds.get(id) ?? id;
+  const card = (generationId: string, cardId: string) => {
+    const generation = rowsOf(payload, "generations").find((g) => g.id === generationId);
+    if (generation?.kind === "flashcards" && generationId.startsWith("misses-")) {
+      for (const [from, to] of genIds) {
+        if (cardId.startsWith(`m-${from}-`)) return `m-${to}-${cardId.slice(from.length + 3)}`;
+      }
+    }
+    return cardId;
+  };
 
   return {
     notebooks: [{ ...notebook, id: notebookId, name: `${notebook.name} (copy)`, updatedAt: now }],
@@ -211,18 +314,13 @@ export function copyNotebookPayload(payload: BackupPayload, newId = uid, now = D
       if (g.kind === "flashcards" && g.id.startsWith("misses-")) {
         const cards = (g.payload as FlashcardsPayload | undefined)?.cards ?? [];
         copy.payload = {
-          cards: cards.map((c) => {
-            for (const [from, to] of genIds) {
-              if (c.id.startsWith(`m-${from}-`)) return { ...c, id: `m-${to}-${c.id.slice(from.length + 3)}` };
-            }
-            return c;
-          }),
+          cards: cards.map((c) => ({ ...c, id: card(g.id, c.id) })),
         } satisfies FlashcardsPayload;
       }
       return copy;
     }),
     cardProgress: rowsOf(payload, "cardProgress").map((p) => {
-      const cardId = p.id.slice(p.generationId.length + 1);
+      const cardId = card(p.generationId, p.id.slice(p.generationId.length + 1));
       return { ...p, id: `${gen(p.generationId)}:${cardId}`, generationId: gen(p.generationId), notebookId };
     }),
     attempts: rowsOf(payload, "attempts").map((a) => ({ ...a, id: newId(), generationId: gen(a.generationId), notebookId })),
@@ -247,21 +345,23 @@ export async function openNotebookText(text: string): Promise<OpenedFile> {
     notifyDeskActivity();
     return { kind: "backup", count };
   }
-  if (!(await db.notebooks.get(notebook.id))) {
-    await importBackupText(text);
-    notifyDeskActivity();
-    return { kind: "notebook", notebookId: notebook.id, name: notebook.name, copied: false };
-  }
-  const copy = copyNotebookPayload(payload);
   const tables = TABLES.map((t) => db[t] as unknown as Table<Record<string, unknown>, string>);
-  await db.transaction("rw", tables, async () => {
+  const opened = await db.transaction("rw", tables, async () => {
+    const copied = !!(await db.notebooks.get(notebook.id));
+    await assertBackupOwnership(payload, copied);
+    const data = copied ? copyNotebookPayload(payload) : payload.data!;
+    // References omitted from a partial file may have survived in the original
+    // notebook. A copy must not retain links back into that notebook.
+    if (copied) await assertBackupOwnership({ ...payload, data });
     for (let i = 0; i < TABLES.length; i++) {
-      const rows = copy[TABLES[i]] as unknown as Record<string, unknown>[];
+      const rows = (data[TABLES[i]] ?? []) as unknown as Record<string, unknown>[];
       if (rows.length) await tables[i].bulkAdd(rows);
     }
+    const openedNotebook = (data.notebooks as Notebook[])[0];
+    return { kind: "notebook", notebookId: openedNotebook.id, name: openedNotebook.name, copied } as const;
   });
   notifyDeskActivity();
-  return { kind: "notebook", notebookId: copy.notebooks[0].id, name: copy.notebooks[0].name, copied: true };
+  return opened;
 }
 
 /** The native open dialog on desktop; null when cancelled. */

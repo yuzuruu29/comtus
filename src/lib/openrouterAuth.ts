@@ -50,8 +50,27 @@ export async function startOpenRouterOAuth(): Promise<void> {
 /**
  * Exchanges the authorization code received from OpenRouter for an API key.
  */
+const exchanges = new Map<string, Promise<string>>();
+
 export async function exchangeOpenRouterCode(code: string): Promise<string> {
-  const verifier = sessionStorage.getItem("comtus_or_verifier") || "";
+  const pending = exchanges.get(code);
+  if (pending) return pending;
+
+  const request = performExchange(code);
+  exchanges.set(code, request);
+  try {
+    return await request;
+  } finally {
+    exchanges.delete(code);
+  }
+}
+
+async function performExchange(code: string): Promise<string> {
+  const verifier = sessionStorage.getItem("comtus_or_verifier");
+  if (!code || !verifier || !/^[A-Za-z0-9._~-]{43,128}$/.test(verifier)) {
+    throw new Error("Please start OpenRouter sign-in again from Comtus.");
+  }
+  // Callback effects may be replayed; exchange a one-use code only once.
   sessionStorage.removeItem("comtus_or_verifier");
 
   const res = await fetch("https://openrouter.ai/api/v1/auth/keys", {
@@ -65,12 +84,11 @@ export async function exchangeOpenRouterCode(code: string): Promise<string> {
   });
 
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`OpenRouter key exchange failed (${res.status}): ${text.slice(0, 150)}`);
+    throw new Error(`OpenRouter key exchange failed (${res.status})`);
   }
 
-  const data = (await res.json()) as { key?: string };
-  if (!data?.key) {
+  const data: unknown = await res.json();
+  if (!data || typeof data !== "object" || !("key" in data) || typeof data.key !== "string" || !data.key.trim()) {
     throw new Error("No API key returned from OpenRouter authorization.");
   }
 

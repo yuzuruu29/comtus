@@ -57,11 +57,11 @@ async function hmacHex(input: string, secret: string): Promise<string> {
   return hex.slice(0, 24);
 }
 
-/** Best-effort per-IP hourly throttle backed by Upstash (no-op if unconfigured). */
+/** Refuse hosted spending when the network throttle cannot be checked. */
 async function withinIpThrottle(req: Request, secret: string, limitPerHour: number): Promise<boolean> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token || !secret) return true;
+  if (!url || !token || !secret) throw new Error("throttle backend not configured");
   const ip =
     req.headers.get("x-real-ip") ||
     (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
@@ -71,13 +71,13 @@ async function withinIpThrottle(req: Request, secret: string, limitPerHour: numb
   try {
     const res = await fetch(`${url}/incr/${key}`, { headers: { Authorization: `Bearer ${token}` } });
     const { result } = (await res.json()) as { result?: number };
-    if (typeof result !== "number") return true;
+    if (!res.ok || typeof result !== "number" || !Number.isSafeInteger(result) || result < 1) throw new Error("throttle counter unreadable");
     if (result === 1) {
       await fetch(`${url}/expire/${key}/3600`, { headers: { Authorization: `Bearer ${token}` } });
     }
     return result <= limitPerHour;
   } catch {
-    return true;
+    throw new Error("throttle backend unavailable");
   }
 }
 
@@ -194,12 +194,13 @@ async function verifyPass(token: string): Promise<PassPayload | null> {
 
   try {
     const payload = JSON.parse(b64urlDecode(payloadB64)) as PassPayload;
-    if (!payload?.j || typeof payload.e !== "number" || payload.e * 1000 < Date.now()) return null;
+    if (!payload || typeof payload.j !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(payload.j) ||
+        !Number.isSafeInteger(payload.e) || payload.e * 1000 <= Date.now()) return null;
     if (payload.v === 2) {
-      if (typeof payload.c !== "number" || payload.c <= 0) return null;
+      if (!Number.isSafeInteger(payload.c) || payload.c! <= 0) return null;
       return payload;
     }
-    if (typeof payload.q !== "number" || payload.q <= 0) return null;
+    if (!Number.isSafeInteger(payload.q) || payload.q! <= 0) return null;
     return payload;
   } catch {
     return null;
@@ -218,7 +219,7 @@ async function withinQuota(pass: PassPayload): Promise<boolean> {
   const auth = { headers: { Authorization: `Bearer ${token}` } };
   const res = await fetch(`${url}/incr/pass:${pass.j}`, auth);
   const { result } = (await res.json()) as { result?: number };
-  if (typeof result !== "number") throw new Error("quota counter unreadable");
+  if (!res.ok || typeof result !== "number" || !Number.isSafeInteger(result) || result < 1) throw new Error("quota counter unreadable");
   if (result === 1) {
     // First use: let the counter expire after the pass does.
     await fetch(`${url}/expireat/pass:${pass.j}/${pass.e + COUNTER_GRACE_S}`, auth).catch(() => undefined);
@@ -245,18 +246,20 @@ async function redisResult(path: string): Promise<unknown> {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) throw new Error("quota backend not configured");
   const res = await fetch(`${url}${path}`, { headers: { Authorization: `Bearer ${token}` } });
-  const data = (await res.json()) as { result?: unknown };
+  const data = (await res.json()) as { result?: unknown; error?: unknown };
+  if (!res.ok || data.error || !("result" in data)) throw new Error("quota backend unreadable");
   return data.result;
 }
 
 async function isDenied(jti: string): Promise<boolean> {
   const result = await redisResult(`/get/passdeny:${jti}`);
+  if (result !== null && result !== "1" && result !== 1) throw new Error("revocation status unreadable");
   return result === "1" || result === 1;
 }
 
 async function incrBy(key: string, amount: number, expireAt?: number): Promise<number> {
   const result = await redisResult(`/incrby/${key}/${amount}`);
-  if (typeof result !== "number") throw new Error("quota counter unreadable");
+  if (typeof result !== "number" || !Number.isSafeInteger(result) || result < amount) throw new Error("quota counter unreadable");
   if (result === amount && expireAt) {
     await redisResult(`/expireat/${key}/${expireAt}`).catch(() => undefined);
   }
@@ -288,11 +291,20 @@ function pickBody(raw: Record<string, unknown>): Record<string, unknown> {
   return out;
 }
 
-function inputChars(body: Record<string, unknown>): number {
-  const messages = body.messages == null ? "" : JSON.stringify(body.messages);
-  const system =
-    body.system == null ? "" : typeof body.system === "string" ? body.system : JSON.stringify(body.system);
-  return messages.length + system.length;
+/** Count images, documents and multilingual text with the provider's tokenizer. */
+async function countInputTokens(body: Record<string, unknown>, key: string): Promise<number> {
+  const counted = await fetch(`${ANTHROPIC_ORIGIN}/v1/messages/count_tokens`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model: body.model, system: body.system, messages: body.messages, thinking: body.thinking }),
+    signal: AbortSignal.timeout(15_000),
+    redirect: "error",
+  });
+  const data = await counted.json() as { input_tokens?: unknown };
+  if (!counted.ok || typeof data.input_tokens !== "number" || !Number.isSafeInteger(data.input_tokens) || data.input_tokens < 0) {
+    throw new Error("input token count unavailable");
+  }
+  return data.input_tokens;
 }
 
 function absorbUsage(usage: TokenUsage, event: { type?: string; message?: { usage?: TokenUsage }; usage?: TokenUsage }): TokenUsage {
@@ -321,11 +333,8 @@ function usageFromSse(text: string): TokenUsage {
 }
 
 function usageKnown(usage: TokenUsage): boolean {
-  return (
-    usage.input_tokens != null ||
-    usage.output_tokens != null ||
-    usage.cache_creation_input_tokens != null ||
-    usage.cache_read_input_tokens != null
+  return [usage.input_tokens, usage.output_tokens].every(
+    (value) => typeof value === "number" && Number.isSafeInteger(value) && value >= 0,
   );
 }
 
@@ -369,8 +378,12 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
     );
   }
 
-  if (!(await withinIpThrottle(req, secret, IP_REQUESTS_PER_HOUR))) {
-    return json(429, { error: "Too many requests from this network. Try again later." }, origin);
+  try {
+    if (!(await withinIpThrottle(req, secret, IP_REQUESTS_PER_HOUR))) {
+      return json(429, { error: "Too many requests from this network. Try again later." }, origin);
+    }
+  } catch {
+    return json(503, { error: "Usage tracking is briefly unavailable — please retry in a moment." }, origin);
   }
 
   const incoming = new URL(req.url);
@@ -383,7 +396,7 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
 
   const bodyText = await req.text();
   if (
-    bodyText.length > MAX_BODY_BYTES ||
+    new TextEncoder().encode(bodyText).byteLength > MAX_BODY_BYTES ||
     Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES
   ) {
     return json(413, { error: "Request too large." }, origin);
@@ -406,7 +419,7 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
   }
   const ceiling = credit ? CREDIT_MAX_TOKENS : REQUEST_MAX_TOKENS;
   body.max_tokens =
-    typeof body.max_tokens === "number" && body.max_tokens > 0
+    typeof body.max_tokens === "number" && Number.isFinite(body.max_tokens) && body.max_tokens >= 1
       ? Math.min(Math.floor(body.max_tokens), ceiling)
       : ceiling;
 
@@ -417,15 +430,18 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
       return json(401, { error: "This pass has been revoked." }, origin);
     }
     if (credit) {
-      const chars = inputChars(body);
-      if (Math.ceil(chars / 4) > INPUT_TOKEN_CAP) {
+      const tokens = await countInputTokens(body, key);
+      if (tokens > INPUT_TOKEN_CAP) {
         return json(
           413,
           { error: "This notebook is too large for a hosted pass. Use your own key for a larger notebook." },
           origin,
         );
       }
-      reserved = reserveNano(chars, body.max_tokens as number, body.model);
+      // Token counts are estimates. Include headroom and the highest cache-write rate;
+      // assuming English chars/4 or a cache discount lets parallel calls overspend.
+      const paddedTokens = Math.ceil(tokens * 110 / 100) + 1024;
+      reserved = costNano({ cache_creation: { ephemeral_1h_input_tokens: paddedTokens }, output_tokens: body.max_tokens as number }, body.model);
       const used = await incrBy(creditKey, reserved, pass.e + COUNTER_GRACE_S);
       if (used > (pass.c ?? 0)) {
         await decrBy(creditKey, reserved);
@@ -461,6 +477,7 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify(body),
+      redirect: "error",
     });
   } catch (e) {
     console.error("anthropic upstream unreachable:", e instanceof Error ? e.message : e);
@@ -545,11 +562,20 @@ function meterStream(
   let buffer = "";
   let usage: TokenUsage = {};
   let finished = false;
+  let complete = false;
+  const absorb = (text: string) => {
+    usage = { ...usage, ...usageFromSse(text) };
+    if (text.split("\n").some((line) => {
+      if (!line.startsWith("data:")) return false;
+      try { return JSON.parse(line.slice(5)).type === "message_stop"; } catch { return false; }
+    })) complete = true;
+  };
   const finish = async () => {
     if (finished) return;
     finished = true;
-    if (buffer) usage = { ...usage, ...usageFromSse(buffer) };
-    await onDone(usage);
+    if (buffer) absorb(buffer);
+    // Cancellation or a truncated stream is not final usage; keep its reserve.
+    if (complete) await onDone(usage);
   };
   return new ReadableStream({
     async pull(controller) {
@@ -564,7 +590,7 @@ function meterStream(
       buffer += decoder.decode(value, { stream: true });
       const splitAt = buffer.lastIndexOf("\n\n");
       if (splitAt >= 0) {
-        usage = { ...usage, ...usageFromSse(buffer.slice(0, splitAt + 2)) };
+        absorb(buffer.slice(0, splitAt + 2));
         buffer = buffer.slice(splitAt + 2);
       }
     },

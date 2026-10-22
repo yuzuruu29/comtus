@@ -42,17 +42,22 @@ function corsHeaders(origin?: string | string[] | null): Array<[string, string]>
 function sendJson(res: ServerResponse, status: number, body: Json, origin?: string | string[] | null): void {
   res.statusCode = status;
   res.setHeader("content-type", "application/json");
+  res.setHeader("cache-control", "no-store");
+  res.setHeader("vary", "Origin");
   for (const [k, v] of corsHeaders(origin)) res.setHeader(k, v);
   res.end(status === 204 ? undefined : JSON.stringify(body));
 }
 
 /** Vercel's Node body parser pre-parses JSON into req.body; fall back to "" */
-function readBody<T>(req: IncomingMessage): T | null {
+function isObject(value: unknown): value is Json {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readBody(req: IncomingMessage): Json | null {
   const raw = (req as unknown as { body?: unknown }).body;
-  if (raw == null) return null;
-  if (typeof raw === "object") return raw as T;
   try {
-    return JSON.parse(String(raw)) as T;
+    const parsed: unknown = typeof raw === "string" ? JSON.parse(raw) : raw;
+    return isObject(parsed) ? parsed : null;
   } catch {
     return null;
   }
@@ -83,24 +88,44 @@ function requestIp(req: IncomingMessage): string {
   );
 }
 
-/** Best-effort per-IP hourly throttle backed by Upstash (no-op if unconfigured). */
+/** Refuse checkout when the network throttle cannot be checked. */
 async function withinIpThrottle(req: IncomingMessage, secret: string, limitPerHour: number): Promise<boolean> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token || !secret) return true;
+  if (!url || !token || !secret) throw new Error("throttle backend not configured");
   const bucket = Math.floor(Date.now() / 3600_000);
   const key = `ipthrottle:${await hmacHex(`${requestIp(req)}:${bucket}`, secret)}`;
   try {
     const res = await fetch(`${url}/incr/${key}`, { headers: { Authorization: `Bearer ${token}` } });
-    const { result } = (await res.json()) as { result?: number };
-    if (typeof result !== "number") return true;
-    if (result === 1) {
+    const data = (await res.json()) as { result?: number; error?: unknown };
+    if (!res.ok || data.error || typeof data.result !== "number" || !Number.isSafeInteger(data.result) || data.result < 1) {
+      throw new Error("throttle counter unreadable");
+    }
+    if (data.result === 1) {
       await fetch(`${url}/expire/${key}/3600`, { headers: { Authorization: `Bearer ${token}` } });
     }
-    return result <= limitPerHour;
-  } catch {
-    return true;
+    return data.result <= limitPerHour;
+  } catch (err) {
+    if (err instanceof Error && err.message === "throttle counter unreadable") throw err;
+    throw new Error("throttle backend unavailable");
   }
+}
+
+async function throttleResponse(
+  req: IncomingMessage,
+  res: ServerResponse,
+  origin: string | string[] | undefined,
+  limit: number,
+  limited: string,
+  unavailable: string,
+): Promise<boolean> {
+  try {
+    if (await withinIpThrottle(req, process.env.PASS_SIGNING_SECRET ?? "", limit)) return false;
+    sendJson(res, 429, { error: limited }, origin);
+  } catch {
+    sendJson(res, 503, { error: unavailable }, origin);
+  }
+  return true;
 }
 
 /* ── Pass minting ───────────────────────────────────────── */
@@ -120,6 +145,14 @@ const SERVER_PLANS: Record<string, ServerPlan> = {
   scholar: { id: "scholar", name: "Scholar Pass", price: "6.99", currency: "USD", budgetNano: 3_495_000_000, days: 120 },
   mastery: { id: "mastery", name: "Mastery Pass", price: "14.99", currency: "USD", budgetNano: 7_495_000_000, days: 180 },
 };
+
+function planById(id: unknown): ServerPlan | undefined {
+  return Object.values(SERVER_PLANS).find((plan) => plan.id === id);
+}
+
+function storageConfigured(): boolean {
+  return !!process.env.UPSTASH_REDIS_REST_URL && !!process.env.UPSTASH_REDIS_REST_TOKEN;
+}
 
 interface PassPayload {
   v: 2;
@@ -151,40 +184,37 @@ async function deterministicJti(orderId: string, secret: string): Promise<string
   return (await hmacHex(`jti:${orderId}`, secret)).slice(0, 12);
 }
 
-/** Mint the buyer's pass token for a verified PayPal order. Idempotent:
- *  the jti derives from the order and the expiry from the capture time, so
- *  re-submitting an old order returns the same pass instead of restarting
- *  its clock. */
 async function redisCommand(command: unknown[]): Promise<unknown> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null;
+  if (!url || !token) throw new Error("Pass storage is not configured");
   const res = await fetch(url, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" },
     body: JSON.stringify(command),
   });
-  const data = (await res.json()) as { result?: unknown };
+  const data: unknown = await res.json();
+  if (!res.ok || !isObject(data) || data.error || !("result" in data)) {
+    throw new Error("Pass storage command failed");
+  }
   return data.result;
 }
 
 async function readStoredPass(orderId: string): Promise<string | null> {
-  try {
-    const result = await redisCommand(["GET", `passpayload:${orderId}`]);
-    return typeof result === "string" && result.startsWith("comtus-pass-") ? result : null;
-  } catch {
-    return null;
-  }
+  const result = await redisCommand(["GET", `passpayload:${orderId}`]);
+  if (result === null) return null;
+  if (typeof result !== "string" || !result.startsWith("comtus-pass-v1.")) throw new Error("Invalid stored pass");
+  return result;
 }
 
-async function storePass(orderId: string, pass: string, ttlSec: number): Promise<void> {
-  try {
-    await redisCommand(["SET", `passpayload:${orderId}`, pass, "EX", ttlSec]);
-  } catch {
-    /* the token is still returned; a later capture mints the same payload */
-  }
+async function passDenied(orderId: string): Promise<boolean> {
+  const j = await deterministicJti(orderId, process.env.PASS_SIGNING_SECRET ?? "");
+  const result = await redisCommand(["GET", `passdeny:${j}`]);
+  if (result !== null && result !== "1") throw new Error("Invalid pass revocation state");
+  return result === "1";
 }
 
+/** The order and capture time fix both the usage identity and expiry across retries. */
 async function issuePassForOrder(plan: ServerPlan, orderId: string, paidAtMs: number): Promise<string> {
   const secret = process.env.PASS_SIGNING_SECRET ?? "";
   if (!secret) throw new Error("PASS_SIGNING_SECRET is not configured");
@@ -201,8 +231,12 @@ async function issuePassForOrder(plan: ServerPlan, orderId: string, paidAtMs: nu
   const payloadB64 = b64url(JSON.stringify(payload));
   const sig = await signPayload(payloadB64, secret);
   const token = `comtus-pass-v1.${payloadB64}.${sig}`;
-  await storePass(orderId, token, plan.days * 86400 + 30 * 86400);
-  return token;
+  const saved = await redisCommand(["SET", `passpayload:${orderId}`, token, "EX", plan.days * 86400 + 30 * 86400, "NX"]);
+  if (saved === "OK") return token;
+  if (saved !== null) throw new Error("Pass persistence failed");
+  const winner = await readStoredPass(orderId);
+  if (!winner) throw new Error("Pass persistence failed");
+  return winner;
 }
 
 /* ── PayPal client ──────────────────────────────────────── */
@@ -258,18 +292,16 @@ async function paypal(
 async function handleCreateOrder(req: IncomingMessage, res: ServerResponse, origin?: string | string[]): Promise<void> {
   const clientId = process.env.PAYPAL_CLIENT_ID || PAYPAL_CLIENT_ID_FALLBACK;
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-  if (!clientSecret) {
+  if (!clientSecret || !process.env.PASS_SIGNING_SECRET || !storageConfigured()) {
     return sendJson(res, 503, { error: "Checkout is temporarily unavailable. Please try again later." }, origin);
   }
 
-  if (!(await withinIpThrottle(req, process.env.PASS_SIGNING_SECRET ?? "", 30))) {
-    return sendJson(res, 429, { error: "Too many checkout attempts. Try again later." }, origin);
-  }
+  if (await throttleResponse(req, res, origin, 30, "Too many checkout attempts. Try again later.", "Checkout is temporarily unavailable. Please try again later.")) return;
 
-  const body = readBody<{ planId?: string }>(req);
+  const body = readBody(req);
   if (!body) return sendJson(res, 400, { error: "Invalid JSON body." }, origin);
 
-  const plan = body.planId ? SERVER_PLANS[body.planId] : undefined;
+  const plan = planById(body.planId);
   if (!plan) return sendJson(res, 400, { error: "Unknown plan." }, origin);
 
   try {
@@ -286,6 +318,7 @@ async function handleCreateOrder(req: IncomingMessage, res: ServerResponse, orig
         purchase_units: [
           {
             description: `Comtus ${plan.name} — hosted model usage`,
+            custom_id: `comtus:${plan.id}`,
             amount: { currency_code: plan.currency, value: plan.price },
           },
         ],
@@ -312,44 +345,54 @@ async function handleCreateOrder(req: IncomingMessage, res: ServerResponse, orig
 
 interface OrderShape {
   status?: string;
-  create_time?: string;
-  update_time?: string;
   purchase_units?: Array<{
+    custom_id?: string;
+    description?: string;
     amount?: { value?: string; currency_code?: string };
-    payments?: { captures?: Array<{ status?: string; create_time?: string }> };
+    payments?: { captures?: Array<{ status?: string; create_time?: string; amount?: { value?: string; currency_code?: string } }> };
   }>;
 }
 
-/** When the buyer paid: the capture's timestamp, else the order's. Never
- *  later than now, so a skewed clock can't extend a pass. */
-function paidAt(order: OrderShape): number {
-  const stamp =
-    order.purchase_units?.[0]?.payments?.captures?.[0]?.create_time ?? order.update_time ?? order.create_time;
-  const ms = stamp ? Date.parse(stamp) : NaN;
-  return Number.isFinite(ms) ? Math.min(ms, Date.now()) : Date.now();
+function orderMatchesPlan(order: OrderShape, plan: ServerPlan): boolean {
+  if (!Array.isArray(order.purchase_units) || order.purchase_units.length !== 1) return false;
+  const unit = order.purchase_units[0];
+  return unit?.amount?.value === plan.price && unit?.amount?.currency_code === plan.currency &&
+    (unit.custom_id === `comtus:${plan.id}` ||
+      (unit.custom_id === undefined && unit.description === `Comtus ${plan.name} — hosted model usage`));
+}
+
+/** An order's COMPLETED status alone does not prove a full, settled capture. */
+function verifiedPaidAt(order: OrderShape, plan: ServerPlan): number | null {
+  if (order.status !== "COMPLETED" || !orderMatchesPlan(order, plan)) return null;
+  const captures = order.purchase_units?.[0]?.payments?.captures;
+  if (!Array.isArray(captures) || captures.length !== 1) return null;
+  const capture = captures[0];
+  if (capture?.status !== "COMPLETED" || capture.amount?.value !== plan.price || capture.amount.currency_code !== plan.currency) return null;
+  const ms = typeof capture.create_time === "string" ? Date.parse(capture.create_time) : NaN;
+  // Keep the original timestamp (including minor provider clock skew) stable on retries.
+  return Number.isFinite(ms) && ms > 0 && ms <= Date.now() + 300_000 ? ms : null;
 }
 
 async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, origin?: string | string[]): Promise<void> {
   const clientId = process.env.PAYPAL_CLIENT_ID || PAYPAL_CLIENT_ID_FALLBACK;
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-  if (!clientSecret || !process.env.PASS_SIGNING_SECRET) {
+  if (!clientSecret || !process.env.PASS_SIGNING_SECRET || !storageConfigured()) {
     return sendJson(res, 503, { error: "Fulfillment is temporarily unavailable. Payment was not captured." }, origin);
   }
 
-  if (!(await withinIpThrottle(req, process.env.PASS_SIGNING_SECRET, 60))) {
-    return sendJson(res, 429, { error: "Too many requests. Try again later." }, origin);
-  }
+  if (await throttleResponse(req, res, origin, 60, "Too many requests. Try again later.", "Fulfillment is temporarily unavailable. Payment was not captured.")) return;
 
-  const body = readBody<{ orderId?: string; planId?: string }>(req);
+  const body = readBody(req);
   if (!body) return sendJson(res, 400, { error: "Invalid JSON body." }, origin);
 
-  const { orderId } = body;
-  const plan = body.planId ? SERVER_PLANS[body.planId] : undefined;
-  if (!orderId || !/^[A-Z0-9]{5,32}$/i.test(orderId) || !plan) {
+  const orderId = orderIdIn(body.orderId);
+  const plan = planById(body.planId);
+  if (!orderId || !plan) {
     return sendJson(res, 400, { error: "Missing or invalid order reference." }, origin);
   }
 
   try {
+    if (await passDenied(orderId)) return sendJson(res, 401, { error: "This pass has been revoked." }, origin);
     const token = await paypalOauthToken(clientId, clientSecret);
 
     const initial = await paypal(`/v2/checkout/orders/${orderId}`, "GET", token);
@@ -359,13 +402,11 @@ async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, ori
     }
     let order = initial.data as OrderShape;
 
-    const unit = order.purchase_units?.[0];
-    const amountOk = unit?.amount?.value === plan.price && unit?.amount?.currency_code === plan.currency;
-    if (!amountOk) {
+    if (!orderMatchesPlan(order, plan)) {
       console.error(`capture-order amount mismatch: order ${orderId} vs plan ${plan.id}`);
       return sendJson(res, 400, { error: "This order does not match the selected plan." }, origin);
     }
-    if (!["APPROVED", "COMPLETED"].includes((order.status as string) ?? "")) {
+    if (order.status !== "APPROVED" && order.status !== "COMPLETED") {
       return sendJson(res, 409, { error: "The order is not approved for capture yet." }, origin);
     }
 
@@ -375,7 +416,7 @@ async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, ori
       });
       const alreadyCaptured =
         cap.status === 422 && (cap.data.details as Array<{ issue?: string }> | undefined)?.some((d) => d.issue === "ORDER_ALREADY_CAPTURED");
-      if (cap.status !== 201 && !alreadyCaptured) {
+      if (cap.status !== 201 && cap.status !== 200 && !alreadyCaptured) {
         console.error("PayPal capture failed:", cap.status, JSON.stringify(cap.data).slice(0, 300));
         return sendJson(res, 502, { error: "Payment capture failed. If you were charged, contact support." }, origin);
       }
@@ -386,12 +427,13 @@ async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, ori
       order = recheck.data as OrderShape;
     }
 
-    const captureStatus = order.purchase_units?.[0]?.payments?.captures?.[0]?.status;
-    if (order.status !== "COMPLETED" || (captureStatus && captureStatus !== "COMPLETED")) {
+    const paidAtMs = verifiedPaidAt(order, plan);
+    if (paidAtMs === null) {
       return sendJson(res, 409, { error: "The payment has not completed yet." }, origin);
     }
 
-    const passToken = await issuePassForOrder(plan, orderId, paidAt(order));
+    if (await passDenied(orderId)) return sendJson(res, 401, { error: "This pass has been revoked." }, origin);
+    const passToken = await issuePassForOrder(plan, orderId, paidAtMs);
 
     return sendJson(
       res,
@@ -410,25 +452,32 @@ function orderIdIn(value: unknown): string | null {
 }
 
 function relatedOrderId(resource: Json | undefined): string | null {
-  const related = (resource?.supplementary_data as Json | undefined)?.related_ids as Json | undefined;
+  const related = relatedIds(resource);
   return orderIdIn(related?.order_id);
+}
+
+function relatedIds(resource: Json | undefined): Json | null {
+  const supplementary = resource?.supplementary_data;
+  const related = isObject(supplementary) ? supplementary.related_ids : undefined;
+  return isObject(related) ? related : null;
 }
 
 async function denyPass(orderId: string): Promise<void> {
   const secret = process.env.PASS_SIGNING_SECRET ?? "";
-  if (!secret) return;
+  if (!secret) throw new Error("PASS_SIGNING_SECRET is not configured");
   const j = await deterministicJti(orderId, secret);
-  await redisCommand(["SET", `passdeny:${j}`, "1", "EX", 400 * 86400]);
+  const saved = await redisCommand(["SET", `passdeny:${j}`, "1", "EX", 400 * 86400]);
+  if (saved !== "OK") throw new Error("Pass revocation failed");
 }
 
 async function handleWebhook(req: IncomingMessage, res: ServerResponse, origin?: string | string[]): Promise<void> {
   const webhookId = process.env.PAYPAL_WEBHOOK_ID;
   const clientId = process.env.PAYPAL_CLIENT_ID || PAYPAL_CLIENT_ID_FALLBACK;
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-  if (!webhookId || !clientSecret) {
+  if (!webhookId || !clientSecret || !process.env.PASS_SIGNING_SECRET || !storageConfigured()) {
     return sendJson(res, 503, { error: "Webhook is not configured." }, origin);
   }
-  const event = readBody<Json>(req);
+  const event = readBody(req);
   if (!event) return sendJson(res, 400, { error: "Invalid JSON body." }, origin);
 
   const headers = req.headers;
@@ -463,20 +512,25 @@ async function handleWebhook(req: IncomingMessage, res: ServerResponse, origin?:
     const watched = new Set(["PAYMENT.CAPTURE.REFUNDED", "PAYMENT.CAPTURE.REVERSED", "CUSTOMER.DISPUTE.CREATED"]);
     if (!watched.has(type)) return sendJson(res, 200, { ok: true }, origin);
 
-    const resource = event.resource as Json | undefined;
-    let orderId = relatedOrderId(resource);
-    if (!orderId && type.startsWith("CUSTOMER.DISPUTE")) {
-      const captureId = (resource?.disputed_transactions as Json[] | undefined)?.[0]?.seller_transaction_id;
-      if (typeof captureId === "string" && captureId) {
-        const capture = await paypal(`/v2/payments/captures/${captureId}`, "GET", token);
-        orderId = relatedOrderId(capture.data);
-      }
+    const resource = isObject(event.resource) ? event.resource : undefined;
+    const orderIds = new Set<string>();
+    const directOrderId = relatedOrderId(resource);
+    if (directOrderId) orderIds.add(directOrderId);
+    const transactions = resource?.disputed_transactions;
+    const captureIds = type === "CUSTOMER.DISPUTE.CREATED" && Array.isArray(transactions)
+      ? transactions.map((transaction: unknown) => isObject(transaction) ? orderIdIn(transaction.seller_transaction_id) : null)
+      : directOrderId
+        ? []
+        : [orderIdIn(relatedIds(resource)?.capture_id) ?? (type === "PAYMENT.CAPTURE.REVERSED" ? orderIdIn(resource?.id) : null)];
+    if (!directOrderId && (!captureIds.length || captureIds.some((id) => !id))) throw new Error("Webhook has no capture reference");
+    if (captureIds.some((id) => !id)) throw new Error("Webhook has an unreadable disputed transaction");
+    for (const captureId of captureIds) {
+      const capture = await paypal(`/v2/payments/captures/${captureId}`, "GET", token);
+      const orderId = capture.status === 200 ? relatedOrderId(capture.data) : null;
+      if (!orderId) throw new Error("Could not resolve webhook capture");
+      orderIds.add(orderId);
     }
-    if (!orderId) {
-      console.error("paypal webhook missing order id:", event.id);
-      return sendJson(res, 200, { ok: true }, origin);
-    }
-    await denyPass(orderId);
+    for (const orderId of orderIds) await denyPass(orderId);
     return sendJson(res, 200, { ok: true }, origin);
   } catch (e) {
     console.error("webhook error:", e instanceof Error ? e.message : e);
@@ -484,27 +538,16 @@ async function handleWebhook(req: IncomingMessage, res: ServerResponse, origin?:
   }
 }
 
-async function planForCompletedOrder(order: OrderShape): Promise<ServerPlan | null> {
-  const unit = order.purchase_units?.[0];
-  const price = unit?.amount?.value;
-  const currency = unit?.amount?.currency_code;
-  return (
-    Object.values(SERVER_PLANS).find((plan) => plan.price === price && plan.currency === currency) ?? null
-  );
-}
-
 async function handleRecover(req: IncomingMessage, res: ServerResponse, origin?: string | string[]): Promise<void> {
   const clientId = process.env.PAYPAL_CLIENT_ID || PAYPAL_CLIENT_ID_FALLBACK;
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-  if (!clientSecret || !process.env.PASS_SIGNING_SECRET) {
+  if (!clientSecret || !process.env.PASS_SIGNING_SECRET || !storageConfigured()) {
     return sendJson(res, 503, { error: "Restore is temporarily unavailable." }, origin);
   }
-  if (!(await withinIpThrottle(req, process.env.PASS_SIGNING_SECRET, 60))) {
-    return sendJson(res, 429, { error: "Too many requests. Try again later." }, origin);
-  }
-  const body = readBody<{ orderId?: string }>(req);
-  const orderId = body?.orderId ?? "";
-  if (!/^[A-Z0-9]{5,32}$/i.test(orderId)) {
+  if (await throttleResponse(req, res, origin, 60, "Too many requests. Try again later.", "Restore is temporarily unavailable.")) return;
+  const body = readBody(req);
+  const orderId = orderIdIn(body?.orderId);
+  if (!orderId) {
     return sendJson(res, 400, { error: "Enter the PayPal order id from your receipt." }, origin);
   }
   try {
@@ -513,18 +556,13 @@ async function handleRecover(req: IncomingMessage, res: ServerResponse, origin?:
     if (loaded.status === 404) return sendJson(res, 404, { error: "Order not found." }, origin);
     if (loaded.status !== 200) return sendJson(res, 502, { error: "Could not verify the order with PayPal." }, origin);
     const order = loaded.data as OrderShape;
-    const plan = await planForCompletedOrder(order);
-    if (!plan || order.status !== "COMPLETED") {
+    const plan = Object.values(SERVER_PLANS).find((candidate) => orderMatchesPlan(order, candidate));
+    const paidAtMs = plan ? verifiedPaidAt(order, plan) : null;
+    if (!plan || paidAtMs === null) {
       return sendJson(res, 409, { error: "That order is not a completed Comtus pass." }, origin);
     }
-    const captureStatus = order.purchase_units?.[0]?.payments?.captures?.[0]?.status;
-    if (captureStatus && captureStatus !== "COMPLETED") {
-      return sendJson(res, 409, { error: "That payment has not completed." }, origin);
-    }
-    const j = await deterministicJti(orderId, process.env.PASS_SIGNING_SECRET);
-    const denied = await redisCommand(["GET", `passdeny:${j}`]);
-    if (denied === "1") return sendJson(res, 401, { error: "This pass has been revoked." }, origin);
-    const passToken = await issuePassForOrder(plan, orderId, paidAt(order));
+    if (await passDenied(orderId)) return sendJson(res, 401, { error: "This pass has been revoked." }, origin);
+    const passToken = await issuePassForOrder(plan, orderId, paidAtMs);
     return sendJson(res, 200, { passToken, orderId, budgetNano: plan.budgetNano }, origin);
   } catch (e) {
     console.error("recover error:", e instanceof Error ? e.message : e);
@@ -537,6 +575,10 @@ async function handleRecover(req: IncomingMessage, res: ServerResponse, origin?:
 export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const origin = req.headers.origin;
   if (req.method === "OPTIONS") return sendJson(res, 204, {}, origin);
+  if (req.method !== "POST") {
+    res.setHeader("allow", "POST, OPTIONS");
+    return sendJson(res, 405, { error: "Method not allowed." }, origin);
+  }
 
   const rawUrl = req.url ?? "";
   const query = rawUrl.includes("?") ? new URLSearchParams(rawUrl.slice(rawUrl.indexOf("?") + 1)) : undefined;

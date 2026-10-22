@@ -47,7 +47,7 @@ export function decodeEntities(text: string): string {
       const code = body[1] === "x" || body[1] === "X"
         ? parseInt(body.slice(2), 16)
         : parseInt(body.slice(1), 10);
-      return Number.isFinite(code) && code > 0 ? String.fromCodePoint(code) : raw;
+      return Number.isInteger(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : raw;
     }
     return NAMED_ENTITIES[body.toLowerCase()] ?? raw;
   });
