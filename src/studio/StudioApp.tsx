@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Shelf from "./Shelf";
 import Workspace from "./Workspace";
 import DeskApp from "../desk/DeskApp";
-import { MotionPrefs } from "./fx";
 import { isDeskShell } from "../lib/desktop";
 import { useSettings } from "../lib/settings";
 import { studioNotebookIdFromPath } from "./studioPath";
@@ -34,20 +33,12 @@ export default function StudioApp() {
   // The desktop app is its own product surface: library rail + desk home,
   // not the web studio tree. The browser keeps the shelf + workspace.
   if (isDeskShell()) {
-    return (
-      <MotionPrefs>
-        <DeskApp />
-      </MotionPrefs>
-    );
+    return <DeskApp />;
   }
 
-  return (
-    <MotionPrefs>
-      {!notebookId ? (
-        <Shelf onOpen={openNotebook} onReview={openWork} needsKey={!hasKey} />
-      ) : (
-        <Workspace key={notebookId} notebookId={notebookId} />
-      )}
-    </MotionPrefs>
+  return !notebookId ? (
+    <Shelf onOpen={openNotebook} onReview={openWork} needsKey={!hasKey} />
+  ) : (
+    <Workspace key={notebookId} notebookId={notebookId} />
   );
 }

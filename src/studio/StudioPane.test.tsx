@@ -137,6 +137,14 @@ describe("StudioPane", () => {
     await screen.findByRole("button", { name: "Delete note Keyboard note" });
   }, 15000);
 
+  it("keeps section labels unique when desktop and mobile panes are both mounted", () => {
+    const { container } = render(<><StudioPane notebookId="notebook-1" /><StudioPane notebookId="notebook-1" /></>);
+    const sections = [...container.querySelectorAll("section[aria-labelledby]")];
+    const labels = sections.map((section) => section.getAttribute("aria-labelledby"));
+    expect(new Set(labels).size).toBe(labels.length);
+    for (const label of labels) expect(document.getElementById(label!)).toBeInTheDocument();
+  });
+
   it("expires a pointer-triggered Undo notice after five seconds", async () => {
     render(<StudioPane notebookId="notebook-1" />);
     const deleteButton = await screen.findByRole("button", {

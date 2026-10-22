@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Target } from "@phosphor-icons/react";
 import { notebookStanding, type TopicStanding } from "../lib/attempts";
 import { Button } from "../ui";
 import { fmtScore } from "./generators/common";
+import { ICON } from "../ui/iconScale";
 
 const SHOWN = 4;
 const STEADY = 0.8;
@@ -23,6 +24,7 @@ export default function StudyStanding({
   onPractice: (topic: string) => void;
 }) {
   const [standing, setStanding] = useState<TopicStanding[] | null>(null);
+  const titleId = useId();
 
   useEffect(() => {
     let current = true;
@@ -43,10 +45,10 @@ export default function StudyStanding({
   const needsWork = standing.filter((t) => t.earned / t.total < STEADY).slice(0, SHOWN);
 
   return (
-    <section className="study-standing" aria-labelledby="study-standing-title">
+    <section className="study-standing" aria-labelledby={titleId}>
       <div className="study-standing-heading">
-        <Target size={17} aria-hidden="true" />
-        <h3 id="study-standing-title">Where you stand</h3>
+        <Target size={ICON.lg} aria-hidden="true" />
+        <h3 id={titleId}>Where you stand</h3>
       </div>
       {needsWork.length === 0 ? (
         <p className="study-standing-note">

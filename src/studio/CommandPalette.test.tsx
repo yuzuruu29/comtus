@@ -60,7 +60,7 @@ describe("CommandPalette library search", () => {
       </MemoryRouter>,
     );
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "zzzzqqq" } });
-    expect(await screen.findByText("Nothing in your library matches.")).toBeInTheDocument();
+    expect(await screen.findByText("Nothing in your notebooks matches.")).toBeInTheDocument();
   });
 });
 

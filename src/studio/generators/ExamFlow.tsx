@@ -16,7 +16,7 @@ import { useCallSettings } from "../../lib/settings";
 import { scoreItems } from "../../lib/attempts";
 import AttemptFollowUp from "./AttemptFollowUp";
 import { saveGeneration } from "../../lib/db";
-import { SOFT, SPRING, useCountUp } from "../fx";
+import { DUR, DRIFT_X, ENTER, EXIT, SOFT, SPRING, useCountUp } from "../fx";
 import {
   GENERATOR_SYSTEM,
   ASSESSMENT_FORMAT_RULES,
@@ -32,6 +32,7 @@ import {
 } from "./SolutionBin";
 import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote } from "../ui";
 import { ArrowCounterClockwise, Check, GraduationCap, Minus, PencilSimpleLine, Timer, X } from "@phosphor-icons/react";
+import { ICON } from "../../ui/iconScale";
 
 /* ── PH PRC presets ───────────────────────────────────────── */
 
@@ -219,7 +220,7 @@ Constraints: MCQ items have exactly 4 options with answerIndex pointing at the k
               key={p.id}
               onClick={() => pickPreset(p.id)}
               aria-pressed={presetId === p.id}
-              className={`rounded-xl border px-3.5 py-3 text-left transition-colors ${
+              className={`rounded-[var(--radius-dialog)] border px-3.5 py-3 text-left transition-colors ${
                 presetId === p.id
                   ? "border-brass/50 bg-brass/[0.08]"
                   : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
@@ -284,10 +285,10 @@ Constraints: MCQ items have exactly 4 options with answerIndex pointing at the k
               />
               <button
                 onClick={() => setBlueprint((b) => ({ ...b, sections: b.sections.filter((_, xi) => xi !== i) }))}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:text-rust active:scale-95"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-field)] text-muted transition-colors hover:text-rust active:scale-95"
                 aria-label="Remove section"
               >
-                <X size={16} />
+                <X size={ICON.md} />
               </button>
             </div>
           ))}
@@ -295,7 +296,7 @@ Constraints: MCQ items have exactly 4 options with answerIndex pointing at the k
             onClick={() =>
               setBlueprint((b) => ({ ...b, sections: [...b.sections, { topic: "New topic", items: 10 }] }))
             }
-            className="flex min-h-[40px] items-center text-[12.5px] font-medium text-muted transition-colors hover:text-brasspale active:scale-95"
+            className="flex min-h-[40px] items-center text-[12.5px] font-medium text-muted transition-colors hover:text-brass active:scale-95"
           >
             + Add section
           </button>
@@ -307,25 +308,25 @@ Constraints: MCQ items have exactly 4 options with answerIndex pointing at the k
           onClick={() => setWithSolutions((v) => !v)}
           role="switch"
           aria-checked={withSolutions}
-          className={`flex w-full items-center justify-between gap-4 rounded-xl border px-4 py-3.5 text-left transition-colors ${
+          className={`flex w-full items-center justify-between gap-4 rounded-[var(--radius-dialog)] border px-4 py-3.5 text-left transition-colors ${
             withSolutions ? "border-brass/40 bg-brass/[0.05]" : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
           }`}
         >
           <span className="min-w-0">
             <span className="block text-[13px] font-medium text-ink">
-              Handwritten solutions{withSolutions && <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.12em] text-brasspale">{solCount} items</span>}
+              Handwritten solutions{withSolutions && <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.12em] text-brass">{solCount} items</span>}
             </span>
             <span className="mt-0.5 block text-[11.5px] leading-snug text-muted">
               A fifth of the exam becomes computation problems you solve on paper — submit a photo of your working and AI grades it.
             </span>
           </span>
           <span
-            className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${
+            className={`relative h-6 w-10 shrink-0 rounded-[var(--radius-pill)] transition-colors ${
               withSolutions ? "bg-brass/70" : "bg-ink/15"
             }`}
           >
             <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface shadow transition-all ${
+              className={`absolute top-0.5 h-5 w-5 rounded-[var(--radius-pill)] bg-surface shadow transition-all ${
                 withSolutions ? "left-[18px]" : "left-0.5"
               }`}
             />
@@ -338,7 +339,7 @@ Constraints: MCQ items have exactly 4 options with answerIndex pointing at the k
       <div className="flex justify-end gap-3">
         <button className={btnGhost} onClick={onCancel}>Cancel</button>
         <button className={btnLamp} onClick={generate} disabled={busy}>
-          <GraduationCap size={14} className="mr-1.5 inline" />
+          <GraduationCap size={ICON.sm} className="mr-1.5 inline" />
           {busy ? "Setting the papers…" : `Generate ${total}-item exam`}
         </button>
       </div>
@@ -482,7 +483,7 @@ function ExamSitting({
   if (!mode) {
     return (
       <div className="space-y-6">
-        <div className="rounded-2xl border border-hairline bg-ink/[0.02] p-6 text-center">
+        <div className="rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] p-6 text-center">
           <div className="font-display text-[1.5rem] font-[430] text-ink">{payload.blueprint.title}</div>
           <div className="mt-2 font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
             {payload.blueprint.totalItems} items · {payload.blueprint.minutes} minutes · shaded scoring
@@ -491,9 +492,9 @@ function ExamSitting({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <button
             onClick={() => setMode("simulated")}
-            className="rounded-2xl border border-hairline bg-ink/[0.02] p-5 text-left transition-colors hover:border-brass/40 hover:bg-brass/[0.04]"
+            className="rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] p-5 text-left transition-colors hover:border-brass/40 hover:bg-brass/[0.04]"
           >
-            <Timer size={17} className="text-brasspale" />
+            <Timer size={ICON.lg} className="text-brass" />
             <div className="mt-3 font-display text-[1.1rem] font-[440] text-ink">Simulated</div>
             <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
               Clock runs, answers stay hidden until you submit — the dress rehearsal.
@@ -501,9 +502,9 @@ function ExamSitting({
           </button>
           <button
             onClick={() => setMode("drill")}
-            className="rounded-2xl border border-hairline bg-ink/[0.02] p-5 text-left transition-colors hover:border-brass/40 hover:bg-brass/[0.04]"
+            className="rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] p-5 text-left transition-colors hover:border-brass/40 hover:bg-brass/[0.04]"
           >
-            <PencilSimpleLine size={17} className="text-brasspale" />
+            <PencilSimpleLine size={ICON.lg} className="text-brass" />
             <div className="mt-3 font-display text-[1.1rem] font-[440] text-ink">Drill</div>
             <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
               Every answer explained the moment you commit — for learning, not timing.
@@ -549,12 +550,12 @@ function ExamSitting({
           {isSolution && " · problem solving"}
         </div>
         {mode === "simulated" ? (
-          <div className="font-mono text-[11.5px] tabular-nums text-brasspale">
+          <div className="font-mono text-[11.5px] tabular-nums text-brass">
             {String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:
             {String(secondsLeft % 60).padStart(2, "0")}
           </div>
         ) : (
-          <div className="font-mono text-[11px] text-brasspale">{answeredCount} answered</div>
+          <div className="font-mono text-[11px] text-brass">{answeredCount} answered</div>
         )}
       </div>
       <div className="h-1 overflow-hidden rounded bg-ink/[0.06]">
@@ -569,9 +570,9 @@ function ExamSitting({
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={idx}
-          initial={{ opacity: 0, x: 26 }}
+          initial={{ opacity: 0, x: DRIFT_X }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -26, transition: { duration: 0.16 } }}
+          exit={{ opacity: 0, x: -DRIFT_X, transition: EXIT }}
           transition={SOFT}
           className="space-y-5"
         >
@@ -619,7 +620,7 @@ function ExamSitting({
                   aria-label={assessmentOptionLabel(opt, oi)}
                   onClick={() => setAnswers((a) => a.map((v, i) => (i === idx ? oi : v)))}
                   whileTap={{ scale: 0.985 }}
-                  className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-[13.5px] transition-colors duration-200 ${
+                  className={`flex w-full items-center gap-3 rounded-[var(--radius-dialog)] border px-4 py-3 text-left text-[13.5px] transition-colors duration-med ${
                     state === "picked"
                       ? "border-brass/50 bg-brass/[0.08]"
                       : state === "answer"
@@ -629,7 +630,7 @@ function ExamSitting({
                           : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
                   }`}
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-hairline-strong font-mono text-[10.5px] text-muted">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--radius-pill)] border border-hairline-strong font-mono text-[10.5px] text-muted">
                     {String.fromCharCode(65 + oi)}
                   </span>
                   <AssessmentContent inline className="min-w-0 flex-1 text-ink/90">{opt}</AssessmentContent>
@@ -642,7 +643,7 @@ function ExamSitting({
                         transition={SPRING}
                         className="shrink-0"
                       >
-                        <Check size={15} className="text-sage" />
+                        <Check size={ICON.md} className="text-sage" />
                       </motion.span>
                     )}
                     {state === "wrong" && (
@@ -653,7 +654,7 @@ function ExamSitting({
                         transition={SPRING}
                         className="shrink-0"
                       >
-                        <X size={15} className="text-rust" />
+                        <X size={ICON.md} className="text-rust" />
                       </motion.span>
                     )}
                   </AnimatePresence>
@@ -666,11 +667,11 @@ function ExamSitting({
           <AnimatePresence>
             {showRationale && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={ENTER.initial}
+                animate={ENTER.animate}
                 exit={{ opacity: 0 }}
                 transition={SOFT}
-                className="rounded-xl border border-moon/15 bg-moon/[0.05] px-4 py-3.5"
+                className="rounded-[var(--radius-dialog)] border border-moon/15 bg-moon/[0.05] px-4 py-3.5"
               >
                 <div className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-moon/80">Why</div>
                 <AssessmentContent className="mt-1.5 text-[13px] leading-relaxed text-ink/85">{q.rationale}</AssessmentContent>
@@ -723,15 +724,15 @@ function ExamSitting({
               key={i}
               onClick={() => setIdx(i)}
               title={`Item ${i + 1}${qq.format === "solution" ? " · photo submission" : ""}`}
-              className={`flex h-8 w-8 items-center justify-center rounded-lg font-mono text-[10.5px] transition-all active:scale-90 sm:h-7 sm:w-7 sm:text-[9.5px] ${
+              className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-field)] font-mono text-[10.5px] transition-all active:scale-90 sm:h-7 sm:w-7 sm:text-[9.5px] ${
                 i === idx
-                  ? "bg-brass/25 text-brasspale ring-1 ring-brass/40"
+                  ? "bg-brass/25 text-brass ring-1 ring-brass/40"
                   : isWorked(i)
                     ? "bg-white/[0.09] text-ink/80"
-                    : "bg-ink/[0.03] text-muted/60"
+                    : "bg-ink/[0.03] text-muted"
               }`}
             >
-              {qq.format === "solution" ? <PencilSimpleLine size={11} /> : i + 1}
+              {qq.format === "solution" ? <PencilSimpleLine size={ICON.xs} /> : i + 1}
             </button>
           ))}
         </div>
@@ -834,7 +835,7 @@ function ExamResults({
   );
   const earned = items.reduce((n, it) => n + it.credit, 0);
   const pct = Math.round((earned / questions.length) * 100);
-  const shownPct = useCountUp(pct, 1100);
+  const shownPct = useCountUp(pct, DUR.settle);
   const byTopic = new Map<string, { c: number; t: number }>();
   items.forEach((it) => {
     const t = byTopic.get(it.topic) ?? { c: 0, t: 0 };
@@ -847,18 +848,18 @@ function ExamResults({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={ENTER.initial}
+      animate={ENTER.animate}
       transition={SOFT}
       className="space-y-6"
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.94 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ ...SPRING, delay: 0.08 }}
-        className="rounded-2xl border border-hairline bg-ink/[0.02] p-7 text-center"
+        initial={ENTER.initial}
+        animate={ENTER.animate}
+        transition={{ ...SOFT, delay: 0.08 }}
+        className="rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] p-7 text-center"
       >
-        <div className="label-mono">{title} — {scope === "misses" ? "Retake of missed items" : "Result"}</div>
+        <div className="field-label">{title} — {scope === "misses" ? "Retake of missed items" : "Result"}</div>
         <div className={`mt-3 font-display text-[2.8rem] font-[420] leading-none sm:text-[3.4rem] ${pct >= 75 ? "text-sage" : "text-lamp"}`}>
           {shownPct}%
         </div>
@@ -870,7 +871,7 @@ function ExamResults({
       </motion.div>
       {(grading || progress) && <LampPulse label={progress || "Checking your solutions…"} />}
       <div>
-        <div className="label-mono mb-3">By section</div>
+        <div className="field-label mb-3">By section</div>
         <div className="space-y-2.5">
           {[...byTopic.entries()].map(([topic, { c, t }], i) => (
             <div key={topic} className="flex items-center gap-3">
@@ -890,30 +891,30 @@ function ExamResults({
         </div>
       </div>
       <div>
-        <div className="label-mono mb-3">Review — every item, with its rationale</div>
+        <div className="field-label mb-3">Review — every item, with its rationale</div>
         <div className="space-y-3">
           {questions.map((q, i) => {
             const isSol = q.format === "solution";
             const chk = isSol ? checks[i] : null;
             const credit = items[i].credit;
             return (
-              <div key={i} className="rounded-xl border border-hairline bg-ink/[0.02] p-4">
+              <div key={i} className="rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] p-4">
                 <div className="flex items-start gap-3">
                   <span
-                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-[var(--radius-pill)] ${
                       credit >= 1
                         ? "bg-sage/15 text-sage"
                         : credit > 0
-                          ? "bg-brass/15 text-brasspale"
+                          ? "bg-brass/15 text-brass"
                           : "bg-rust/15 text-rust"
                     }`}
                   >
                     {credit >= 1 ? (
-                      <Check size={11} />
+                      <Check size={ICON.xs} />
                     ) : credit > 0 ? (
-                      <Minus size={11} />
+                      <Minus size={ICON.xs} />
                     ) : (
-                      <X size={11} />
+                      <X size={ICON.xs} />
                     )}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -965,7 +966,7 @@ function ExamResults({
       <div className="flex justify-end gap-3">
         {onExit && <button className={btnGhost} onClick={onExit}>Done</button>}
         <button className={btnLamp} onClick={onRetake}>
-          <ArrowCounterClockwise size={13} className="mr-1.5 inline" />
+          <ArrowCounterClockwise size={ICON.sm} className="mr-1.5 inline" />
           {scope === "misses" ? "Retake the whole exam" : "Retake"}
         </button>
       </div>

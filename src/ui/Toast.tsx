@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { RISE_3, SOFT } from "../studio/fx";
+import { EXIT, RISE_1, RISE_3, SOFT } from "../studio/fx";
 
 const FUSE_TICK_MS = 200;
 
@@ -57,9 +57,9 @@ export function Toast({
     <AnimatePresence>
       {open && (
         <motion.div
-          initial={{ opacity: 0, y: RISE_3, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 10, transition: { duration: 0.18 } }}
+          initial={{ opacity: 0, y: RISE_3 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -RISE_1, transition: EXIT }}
           transition={SOFT}
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}

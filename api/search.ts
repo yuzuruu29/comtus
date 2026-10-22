@@ -16,6 +16,31 @@ function error(status: number, message: string, extra: Record<string, string> = 
   });
 }
 
+/** 60 searches per IP per hour when Upstash is configured. Missing Redis allows the request. */
+async function withinSearchBudget(req: Request): Promise<boolean> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return true;
+  const ip =
+    req.headers.get("x-real-ip") ||
+    (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
+    "unknown";
+  const bucket = Math.floor(Date.now() / 3_600_000);
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${ip}:${bucket}`));
+  const key = `searchbudget:${[...new Uint8Array(digest)].slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("")}`;
+  try {
+    const res = await fetch(`${url}/incr/${key}`, { headers: { Authorization: `Bearer ${token}` } });
+    const { result } = (await res.json()) as { result?: number };
+    if (typeof result !== "number") return true;
+    if (result === 1) {
+      await fetch(`${url}/expire/${key}/3600`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => undefined);
+    }
+    return result <= 60;
+  } catch {
+    return true;
+  }
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -29,6 +54,7 @@ export default async function handler(req: Request): Promise<Response> {
   const query = (incoming.searchParams.get("q") ?? "").trim().replace(/\s+/g, " ");
   if (!query) return error(400, "Missing search query parameter 'q'");
   if (query.length > MAX_QUERY_CHARS) return error(414, "Search query is too long");
+  if (!(await withinSearchBudget(req))) return error(429, "Too many searches from this network. Try again later.");
 
   try {
     const { results, provider } = await runSearch(query);

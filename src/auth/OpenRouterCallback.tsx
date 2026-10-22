@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Sparkle, CheckCircle, Warning, ArrowRight } from "@phosphor-icons/react";
+import { Sparkle, CheckCircle, Warning } from "@phosphor-icons/react";
 import { exchangeOpenRouterCode } from "../lib/openrouterAuth";
+import { ICON } from "../ui/iconScale";
 
 export default function OpenRouterCallback() {
   const [searchParams] = useSearchParams();
@@ -47,11 +48,11 @@ export default function OpenRouterCallback() {
 
   return (
     <div className="flex min-h-[100svh] flex-col items-center justify-center bg-night px-6 text-parchment">
-      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-brass/40 bg-ground/80 p-8 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-xl text-center">
+      <div className="w-full max-w-md overflow-hidden rounded-[var(--radius-dialog)] border border-brass/40 bg-ground/80 p-8 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-xl text-center">
         {status === "connecting" && (
           <div className="space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-brass/40 bg-brass/10 shadow-[0_0_24px_rgba(227,176,75,0.2)]">
-              <Sparkle size={32} className="text-brass animate-spin" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[var(--radius-dialog)] border border-brass/40 bg-brass/10 shadow-[0_0_24px_rgba(227,176,75,0.2)]">
+              <Sparkle size={ICON.xxxl} className="text-brass animate-spin" />
             </div>
             <h2 className="font-display text-[1.6rem] font-[450] text-parchment">
               Connecting Free AI Models…
@@ -64,8 +65,8 @@ export default function OpenRouterCallback() {
 
         {status === "success" && (
           <div className="space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-sage/40 bg-sage/15 shadow-[0_0_24px_rgba(16,185,129,0.2)]">
-              <CheckCircle size={32} className="text-sage" weight="fill" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[var(--radius-dialog)] border border-sage/40 bg-sage/15 shadow-[0_0_24px_rgba(16,185,129,0.2)]">
+              <CheckCircle size={ICON.xxxl} className="text-sage" weight="fill" />
             </div>
             <h2 className="font-display text-[1.6rem] font-[450] text-sage">
               Connected Successfully!
@@ -78,8 +79,8 @@ export default function OpenRouterCallback() {
 
         {status === "error" && (
           <div className="space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-rust/40 bg-rust/15 shadow-[0_0_24px_rgba(239,68,68,0.2)]">
-              <Warning size={32} className="text-rust" weight="fill" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[var(--radius-dialog)] border border-rust/40 bg-rust/15 shadow-[0_0_24px_rgba(239,68,68,0.2)]">
+              <Warning size={ICON.xxxl} className="text-rust" weight="fill" />
             </div>
             <h2 className="font-display text-[1.6rem] font-[450] text-rust">
               Connection Failed
@@ -91,10 +92,9 @@ export default function OpenRouterCallback() {
               <button
                 type="button"
                 onClick={() => navigate("/studio")}
-                className="inline-flex items-center gap-2 rounded-xl bg-brass px-5 py-2.5 font-mono text-[12px] font-semibold text-night hover:bg-brasspale transition-colors"
+                className="inline-flex items-center gap-2 rounded-[var(--radius-dialog)] bg-brass px-5 py-2.5 font-mono text-[12px] font-semibold text-ground hover:bg-brass-deep transition-colors"
               >
                 <span>Continue to Studio</span>
-                <ArrowRight size={14} />
               </button>
             </div>
           </div>

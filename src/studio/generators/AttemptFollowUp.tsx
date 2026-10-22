@@ -4,6 +4,7 @@ import { addMissesToDeck, missedQuestions, recordAttempt, type RecordedAttempt }
 import type { AttemptItem, Generation, QuizQuestion } from "../../lib/types";
 import { Button } from "../../ui";
 import "./attempt-follow-up.css";
+import { ICON } from "../../ui/iconScale";
 
 const percent = (score: number, total: number) => Math.round((score / Math.max(1, total)) * 100);
 
@@ -99,7 +100,7 @@ export default function AttemptFollowUp({
           <div className="attempt-actions">
             <Button
               variant="secondary"
-              icon={<ArrowCounterClockwise size={15} aria-hidden="true" />}
+              icon={<ArrowCounterClockwise size={ICON.md} aria-hidden="true" />}
               onClick={() => onRetakeMisses(missed)}
             >
               Retake the {missed.length} I missed
@@ -108,7 +109,7 @@ export default function AttemptFollowUp({
               <Button
                 variant="ghost"
                 loading={adding}
-                icon={<Stack size={15} aria-hidden="true" />}
+                icon={<Stack size={ICON.md} aria-hidden="true" />}
                 onClick={() => void addToDeck()}
               >
                 Make {missed.length === 1 ? "a flashcard" : "flashcards"} from them

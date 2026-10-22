@@ -3,6 +3,7 @@ import { IconButton, Menu } from "../ui";
 import type { Notebook } from "../lib/types";
 import { timeAgo } from "./ui";
 import { examCountdown } from "../lib/exam";
+import { ICON } from "../ui/iconScale";
 
 export interface NotebookCardData extends Notebook {
   sourceCount: number;
@@ -10,6 +11,7 @@ export interface NotebookCardData extends Notebook {
 
 export default function NotebookCard({
   notebook,
+  number,
   onOpen,
   onRename,
   onExport,
@@ -17,6 +19,7 @@ export default function NotebookCard({
   onDelete,
 }: {
   notebook: NotebookCardData;
+  number?: number;
   onOpen: (id: string) => void;
   onRename: (notebook: Notebook) => void;
   onExport: (notebook: Notebook) => void;
@@ -26,17 +29,18 @@ export default function NotebookCard({
 }) {
   const countdown = examCountdown(notebook);
   return (
-    <div className="notebook-card">
+    <div className="notebook-card card-paper-curl card-book-press">
       <button
         type="button"
         onClick={() => onOpen(notebook.id)}
         aria-label={`Open ${notebook.name}`}
         className="notebook-card-open"
       >
-        <NotebookIcon className="notebook-card-glyph" size={30} weight="light" aria-hidden="true" />
+        <span className="notebook-card-index" aria-hidden="true"><NotebookIcon size={ICON.lg} weight="light" /> {number ? String(number).padStart(2, "0") : "Notebook"}</span>
         <span className="notebook-card-title">
           {notebook.name}
         </span>
+        <span className="notebook-card-open-hint">Open notebook</span>
         <span className="notebook-card-meta">
           <span>
             {notebook.sourceCount} {notebook.sourceCount === 1 ? "source" : "sources"}
@@ -54,20 +58,20 @@ export default function NotebookCard({
           align="end"
           trigger={
             <IconButton aria-label={`Notebook options for ${notebook.name}`}>
-              <DotsThree size={22} weight="bold" aria-hidden="true" />
+              <DotsThree size={ICON.xxl} weight="bold" aria-hidden="true" />
             </IconButton>
           }
           items={[
             {
               key: "rename",
               label: "Rename",
-              icon: <PencilSimple size={18} aria-hidden="true" />,
+              icon: <PencilSimple size={ICON.lg} aria-hidden="true" />,
               onSelect: () => onRename(notebook),
             },
             {
               key: "export",
               label: "Export",
-              icon: <DownloadSimple size={18} aria-hidden="true" />,
+              icon: <DownloadSimple size={ICON.lg} aria-hidden="true" />,
               onSelect: () => onExport(notebook),
             },
             ...(onSend
@@ -75,7 +79,7 @@ export default function NotebookCard({
                   {
                     key: "send",
                     label: "Send to another device",
-                    icon: <DeviceMobile size={18} aria-hidden="true" />,
+                    icon: <DeviceMobile size={ICON.lg} aria-hidden="true" />,
                     onSelect: () => onSend(notebook),
                   },
                 ]
@@ -83,7 +87,7 @@ export default function NotebookCard({
             {
               key: "delete",
               label: "Delete",
-              icon: <Trash size={18} aria-hidden="true" />,
+              icon: <Trash size={ICON.lg} aria-hidden="true" />,
               onSelect: () => onDelete(notebook.id),
             },
           ]}

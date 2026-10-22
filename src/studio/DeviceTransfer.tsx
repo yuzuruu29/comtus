@@ -16,6 +16,7 @@ import {
 } from "../lib/transfer";
 import type { MergeResult } from "../lib/notebookMerge";
 import "./device-transfer.css";
+import { ICON } from "../ui/iconScale";
 
 const reason = (err: unknown) =>
   err instanceof TransferError || err instanceof Error ? err.message : "Something went wrong. Try again.";
@@ -45,7 +46,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
     <Button
       variant="ghost"
       size="sm"
-      icon={copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
+      icon={copied ? <Check size={ICON.sm} aria-hidden="true" /> : <Copy size={ICON.sm} aria-hidden="true" />}
       onClick={() => {
         void navigator.clipboard?.writeText(text).then(() => {
           setCopied(true);
@@ -139,7 +140,7 @@ export function SendToDeviceDialog({
               Works once, for the next {minutes} minutes. If that device already has this notebook, the two are merged.
             </p>
             <p className="transfer-note transfer-private">
-              <LockKey size={15} aria-hidden="true" />
+              <LockKey size={ICON.md} aria-hidden="true" />
               Sealed on this device. The code is the key and never reaches our server, so the relay can't read your
               notebook.
             </p>
@@ -198,7 +199,7 @@ export function ReceiveFromDeviceDialog({
         }}
       >
         <p className="flex gap-3 text-body leading-relaxed text-muted">
-          <DeviceMobile size={20} className="mt-0.5 shrink-0 text-brass" aria-hidden="true" />
+          <DeviceMobile size={ICON.xl} className="mt-0.5 shrink-0 text-brass" aria-hidden="true" />
           <span>
             On the other device, open the notebook's menu and choose <strong className="text-ink">Send to another device</strong>
             . Then enter the code it shows.
@@ -206,7 +207,7 @@ export function ReceiveFromDeviceDialog({
         </p>
         <Field label="Transfer code">
           <Input
-            autoFocus
+            data-autofocus
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"

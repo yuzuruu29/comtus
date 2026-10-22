@@ -13,6 +13,11 @@ import { Dialog } from "../Dialog";
 import { Skeleton } from "../Skeleton";
 import { Empty } from "../Empty";
 import { applyResolvedTheme } from "../../lib/theme";
+import { ICON } from "../iconScale";
+// The components are imported directly rather than through the barrel, so the
+// kit stylesheet has to be asked for by name. Without this the preview
+// renders unstyled.
+import "../ui.css";
 
 /** Dev-only screenshot surface for the src/ui primitive kit — every
  *  component, every state, in both themes. Mounted at /studio/kit only
@@ -51,17 +56,17 @@ export default function KitPreview() {
             <Button variant="primary" size="sm">Primary sm</Button>
             <Button variant="primary" loading>Loading</Button>
             <Button variant="primary" disabled>Disabled</Button>
-            <Button variant="primary" icon={<Sparkle size={16} weight="fill" />}>With icon</Button>
+            <Button variant="primary" icon={<Sparkle size={ICON.md} weight="fill" />}>With icon</Button>
           </Row>
         </Section>
 
         <Section title="IconButton">
           <Row>
-            <IconButton aria-label="Settings"><GearSix size={18} /></IconButton>
-            <IconButton aria-label="Favorite" variant="secondary"><Star size={18} /></IconButton>
-            <IconButton aria-label="Delete" variant="danger"><Trash size={18} /></IconButton>
-            <IconButton aria-label="Loading" loading><GearSix size={18} /></IconButton>
-            <IconButton aria-label="Disabled" disabled><GearSix size={18} /></IconButton>
+            <IconButton aria-label="Settings"><GearSix size={ICON.lg} /></IconButton>
+            <IconButton aria-label="Favorite" variant="secondary"><Star size={ICON.lg} /></IconButton>
+            <IconButton aria-label="Delete" variant="danger"><Trash size={ICON.lg} /></IconButton>
+            <IconButton aria-label="Loading" loading><GearSix size={ICON.lg} /></IconButton>
+            <IconButton aria-label="Disabled" disabled><GearSix size={ICON.lg} /></IconButton>
           </Row>
         </Section>
 

@@ -3,11 +3,11 @@ import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Books, CaretLeft, ChartBar, ChatCircle, DeviceMobile, DotsThree, DownloadSimple, GearSix, Notebook, SidebarSimple } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
-import { useCallSettings } from "../lib/settings";
+import { useCallSettings, useSettings } from "../lib/settings";
 import { modelLabelFor } from "../lib/llm";
 import { detectPlatform, isTauri } from "../lib/desktop";
 import { IconButton, Menu } from "../ui";
-import { SPRING, SOFT, deskPane, useCountUp } from "./fx";
+import { ENTER, EXIT, SPRING, SOFT, deskPane, useCountUp } from "./fx";
 import SourcesPane from "./SourcesPane";
 import ChatPane from "./ChatPane";
 import StudioPane from "./StudioPane";
@@ -24,6 +24,7 @@ import { LampPulse, Modal, btnGhost } from "./ui";
 import { useDesk } from "./DeskContext";
 import ConsoleShell from "./ConsoleShell";
 import { SendToDeviceDialog } from "./DeviceTransfer";
+import { ICON } from "../ui/iconScale";
 
 type MobilePane = "sources" | "chat" | "studio";
 
@@ -147,7 +148,12 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   }, [mobilePane]);
   const paneDelta = MOBILE_PANE_ORDER[mobilePane] - MOBILE_PANE_ORDER[lastPaneRef.current];
   const paneSlideClass = paneDelta > 0 ? "anim-slide-r" : paneDelta < 0 ? "anim-slide-l" : undefined;
-  const paneWrapperClass = `flex min-h-0 flex-1 flex-col${paneSlideClass ? ` ${paneSlideClass}` : ""}`;
+  const paneWrapperClass = `workspace-mobile-pane flex min-h-0 flex-1 flex-col${paneSlideClass ? ` ${paneSlideClass}` : ""}`;
+
+  // Compad needs a lane of its own. The workspace reserves the strip at the
+  // bottom of the panes so the companion never has to sit on the work, and
+  // the panes read the reservation from this one variable.
+  const companionOn = useSettings((s) => s.companion !== false);
 
   const toggleSources = useCallback(() => {
     setLayout(panes.sources ? (panes.studio ? "writing" : "focus") : (panes.studio ? "standard" : "reading"));
@@ -186,7 +192,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
         notebookName={desk.notebook?.name || "Course Notebook"}
       >
         <div
-          className="relative flex h-full flex-col overflow-hidden bg-ground text-ink"
+          className="bg-paper-parchment workspace-companion-root relative flex h-full flex-col overflow-hidden text-ink"
+          style={{ ["--companion-on"]: companionOn ? "1" : "0" } as CSSProperties}
           onDragEnter={(e) => {
             e.preventDefault();
             desk.setDropping((n) => n + 1);
@@ -203,7 +210,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           {desk.loadState === "loading" && (
             <motion.div
               key="workspace-loading"
-              exit={{ opacity: 0, transition: { duration: 0.2 } }}
+              exit={{ opacity: 0, transition: EXIT }}
               className="absolute inset-0 z-[70] flex items-center justify-center bg-ground/90"
             >
               <LampPulse label="Opening notebook…" />
@@ -218,7 +225,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               <div className="mt-5 flex justify-center gap-2">
                 <button
                   onClick={desk.retryLoad}
-                  className="rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 text-[12px] text-brasspale"
+                  className="rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 text-[12px] text-brass"
                 >
                   Retry
                 </button>
@@ -265,7 +272,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               [PANE_WIDTH_VAR]: `${panes.sources ? sourcesResize.width : RAIL_W}px`,
               width: `var(${PANE_WIDTH_VAR})`,
             } as CSSProperties}
-            className="relative shrink-0 overflow-visible border-r desk-split transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] data-[resizing=true]:transition-none motion-reduce:transition-none will-change-[width] [backface-visibility:hidden]"
+            className="relative shrink-0 overflow-visible border-r desk-split transition-[width] duration-slow ease-[var(--ease-out)] data-[resizing=true]:transition-none motion-reduce:transition-none will-change-[width] [backface-visibility:hidden]"
           >
             {panes.sources ? (
               <div id="workspace-sources-content" className={`${deskPane} flex flex-col anim-fade anim-fade--fast`}>
@@ -296,16 +303,16 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 title="Drag to resize · Arrow keys adjust · Double-click resets"
                 className="group absolute right-0 top-0 bottom-0 z-30 -mr-1.5 flex w-3 cursor-col-resize select-none items-center justify-center transition-colors hover:opacity-100 focus-visible:bg-brass/[0.06] focus-visible:outline-none"
               >
-                <div className="h-8 w-1 rounded-full bg-hairline/80 shadow-sm transition-all duration-200 group-hover:h-14 group-hover:w-1.5 group-hover:bg-brass group-active:h-20 group-active:bg-brass group-focus-visible:h-14 group-focus-visible:w-1.5 group-focus-visible:bg-brass group-focus-visible:shadow-[0_0_14px_rgba(227,176,75,0.42)] group-data-[collapse-ready=true]:h-20 group-data-[collapse-ready=true]:w-1.5 group-data-[collapse-ready=true]:bg-brass" />
-                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-brass/30 bg-raised px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.12em] text-brasspale opacity-0 shadow-modal transition-opacity group-data-[collapse-ready=true]:opacity-100">
+                <div className="h-8 w-1 rounded-[var(--radius-pill)] bg-hairline/80 shadow-sm transition-all duration-med group-hover:h-14 group-hover:w-1.5 group-hover:bg-brass group-active:h-20 group-active:bg-brass group-focus-visible:h-14 group-focus-visible:w-1.5 group-focus-visible:bg-brass group-focus-visible:shadow-[0_0_14px_rgba(227,176,75,0.42)] group-data-[collapse-ready=true]:h-20 group-data-[collapse-ready=true]:w-1.5 group-data-[collapse-ready=true]:bg-brass" />
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-pill)] border border-brass/30 bg-raised px-2.5 py-1 font-mono text-[10px] tracking-normal text-brass opacity-0 shadow-modal transition-opacity group-data-[collapse-ready=true]:opacity-100">
                   Release to collapse
                 </span>
               </div>
             )}
           </aside>
 
-          <main className="min-w-0 flex-1">
-            <motion.div ref={setDesktopChatTarget} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={SOFT} className={`${deskPane} overflow-hidden`} />
+          <main id="workspace-chat-pane" className="min-w-0 flex-1">
+            <motion.div ref={setDesktopChatTarget} initial={ENTER.initial} animate={ENTER.animate} transition={SOFT} className={`${deskPane} overflow-hidden`} />
           </main>
 
           {/* Right Sidebar: Studio (Retractable & Resizable) */}
@@ -317,7 +324,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               [PANE_WIDTH_VAR]: `${panes.studio ? studioResize.width : RAIL_W}px`,
               width: `var(${PANE_WIDTH_VAR})`,
             } as CSSProperties}
-            className="relative shrink-0 overflow-visible border-l desk-split transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] data-[resizing=true]:transition-none motion-reduce:transition-none will-change-[width] [backface-visibility:hidden]"
+            className="relative shrink-0 overflow-visible border-l desk-split transition-[width] duration-slow ease-[var(--ease-out)] data-[resizing=true]:transition-none motion-reduce:transition-none will-change-[width] [backface-visibility:hidden]"
           >
             {panes.studio ? (
               <div id="workspace-studio-content" className={`${deskPane} flex flex-col anim-fade anim-fade--fast`}>
@@ -341,8 +348,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 title="Drag to resize · Arrow keys adjust · Double-click resets"
                 className="group absolute left-0 top-0 bottom-0 z-30 -ml-1.5 flex w-3 cursor-col-resize select-none items-center justify-center transition-colors hover:opacity-100 focus-visible:bg-brass/[0.06] focus-visible:outline-none"
               >
-                <div className="h-8 w-1 rounded-full bg-hairline/80 shadow-sm transition-all duration-200 group-hover:h-14 group-hover:w-1.5 group-hover:bg-brass group-active:h-20 group-active:bg-brass group-focus-visible:h-14 group-focus-visible:w-1.5 group-focus-visible:bg-brass group-focus-visible:shadow-[0_0_14px_rgba(227,176,75,0.42)] group-data-[collapse-ready=true]:h-20 group-data-[collapse-ready=true]:w-1.5 group-data-[collapse-ready=true]:bg-brass" />
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-brass/30 bg-raised px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.12em] text-brasspale opacity-0 shadow-modal transition-opacity group-data-[collapse-ready=true]:opacity-100">
+                <div className="h-8 w-1 rounded-[var(--radius-pill)] bg-hairline/80 shadow-sm transition-all duration-med group-hover:h-14 group-hover:w-1.5 group-hover:bg-brass group-active:h-20 group-active:bg-brass group-focus-visible:h-14 group-focus-visible:w-1.5 group-focus-visible:bg-brass group-focus-visible:shadow-[0_0_14px_rgba(227,176,75,0.42)] group-data-[collapse-ready=true]:h-20 group-data-[collapse-ready=true]:w-1.5 group-data-[collapse-ready=true]:bg-brass" />
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-pill)] border border-brass/30 bg-raised px-2.5 py-1 font-mono text-[10px] tracking-normal text-brass opacity-0 shadow-modal transition-opacity group-data-[collapse-ready=true]:opacity-100">
                   Release to collapse
                 </span>
               </div>
@@ -372,7 +379,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               </div>
             )}
             {mobilePane === "chat" && (
-              <div key={mobilePane} ref={setMobileChatTarget} className={paneWrapperClass} />
+              <div key={mobilePane} id="workspace-chat-pane-mobile" ref={setMobileChatTarget} className={paneWrapperClass} />
             )}
             {mobilePane === "studio" && (
               <div key={mobilePane} className={paneWrapperClass}>
@@ -386,7 +393,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           </div>
           <nav
             id="mobile-bottom-nav"
-            className="flex h-[calc(4.25rem+var(--sab))] shrink-0 items-center justify-around border-t border-hairline bg-ground/95 px-3 pb-[var(--sab)] pt-1"
+            aria-label="Notebook panes"
+            className="workspace-mobile-nav"
           >
             {(
               [
@@ -399,18 +407,16 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 key={id}
                 onClick={() => setMobilePane(id)}
                 aria-pressed={mobilePane === id}
-                className={`relative flex min-h-[48px] flex-1 flex-col items-center justify-center gap-1 rounded-[var(--radius-control)] px-3 py-1.5 text-[10.5px] font-medium tracking-[0.08em] transition-colors duration-200 active:scale-95 ${
-                  mobilePane === id ? "text-brass" : "text-muted"
-                }`}
+                className="workspace-mobile-tab"
               >
                 {mobilePane === id && (
                   <motion.span
                     layoutId="mobile-tab-pill"
                     transition={SPRING}
-                    className="absolute inset-0 rounded-[var(--radius-control)] bg-brass/[0.08]"
+                    className="workspace-mobile-indicator"
                   />
                 )}
-                <Icon size={20} weight={mobilePane === id ? "fill" : "light"} className="relative z-10" />
+                <Icon size={ICON.xl} weight={mobilePane === id ? "fill" : "light"} className="relative z-10" />
                 <span className="relative z-10">{label}</span>
               </button>
             ))}
@@ -472,42 +478,45 @@ function WorkspaceHeader({
           className="no-drag workspace-back"
           aria-label="All notebooks"
         >
-          <CaretLeft size={18} aria-hidden="true" />
-          <span>Library</span>
+          <CaretLeft size={ICON.lg} aria-hidden="true" />
+          <span>Notebooks</span>
         </Link>
 
-        <IconButton
-          onClick={onToggleSources}
-          title={panes.sources ? "Retract Sources Sidebar" : "Expand Sources Sidebar"}
-          aria-label="Toggle sources sidebar"
-          aria-pressed={panes.sources}
-          className={`no-drag workspace-pane-toggle ${
-            panes.sources
-              ? "text-brass bg-brass/10 hover:bg-brass/20"
-              : "text-muted hover:bg-ink/5 hover:text-ink"
-          }`}
-        >
-          <SidebarSimple size={16} weight={panes.sources ? "fill" : "light"} />
-        </IconButton>
+        <div className="workspace-heading">
+          <span className="workspace-location">Comtus / Study notebook</span>
+          <input
+            defaultValue={notebook?.name}
+            key={notebook?.name}
+            onBlur={(e) => onRename(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+            className="no-drag workspace-title"
+            aria-label="Notebook name"
+          />
+        </div>
 
-        <span className="workspace-bookmark" aria-hidden="true"><Books size={19} /></span>
-        <input
-          defaultValue={notebook?.name}
-          key={notebook?.name}
-          onBlur={(e) => onRename(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-          className="no-drag workspace-title"
-          aria-label="Notebook name"
-        />
-        <div className="no-drag ml-auto flex items-center gap-1.5">
+        <div className="no-drag workspace-actions">
+          <IconButton
+            onClick={onToggleSources}
+            title={panes.sources ? "Retract Sources Sidebar" : "Expand Sources Sidebar"}
+            aria-label="Toggle sources sidebar"
+            aria-pressed={panes.sources}
+            className={`no-drag workspace-pane-toggle ${
+              panes.sources
+                ? "text-brass bg-brass/10 hover:bg-brass/20"
+                : "text-muted hover:bg-ink/5 hover:text-ink"
+            }`}
+          >
+            <SidebarSimple size={ICON.md} weight={panes.sources ? "fill" : "light"} />
+          </IconButton>
+
           <Menu
             align="end"
             aria-label="Notebook actions"
-            trigger={<IconButton aria-label="Notebook actions"><DotsThree size={22} aria-hidden="true" /></IconButton>}
+            trigger={<IconButton aria-label="Notebook actions"><DotsThree size={ICON.xxl} aria-hidden="true" /></IconButton>}
             items={[
-              { key: "analytics", label: "Notebook details", icon: <ChartBar size={16} aria-hidden="true" />, disabled: !notebook, onSelect: () => void openAnalytics() },
-              { key: "export", label: "Export notebook", icon: <DownloadSimple size={16} aria-hidden="true" />, disabled: !notebook, onSelect: () => void handleExport() },
-              { key: "send", label: "Send to another device", icon: <DeviceMobile size={16} aria-hidden="true" />, disabled: !notebook, onSelect: () => setSendOpen(true) },
+              { key: "analytics", label: "Notebook details", icon: <ChartBar size={ICON.md} aria-hidden="true" />, disabled: !notebook, onSelect: () => void openAnalytics() },
+              { key: "export", label: "Export notebook", icon: <DownloadSimple size={ICON.md} aria-hidden="true" />, disabled: !notebook, onSelect: () => void handleExport() },
+              { key: "send", label: "Send to another device", icon: <DeviceMobile size={ICON.md} aria-hidden="true" />, disabled: !notebook, onSelect: () => setSendOpen(true) },
               { key: "models", label: "AI models", onSelect: () => onSettings("models") },
               { key: "milestones", label: "Study milestones", onSelect: actions.openMilestones },
               { key: "commands", label: "Search and commands", onSelect: actions.openPalette },
@@ -517,7 +526,7 @@ function WorkspaceHeader({
             onClick={() => onSettings()}
             aria-label="Settings"
           >
-            <GearSix size={19} aria-hidden="true" />
+            <GearSix size={ICON.xl} aria-hidden="true" />
           </IconButton>
           <IconButton
             onClick={onToggleStudio}
@@ -530,7 +539,7 @@ function WorkspaceHeader({
                 : "text-muted hover:bg-ink/5 hover:text-ink"
             }`}
           >
-            <SidebarSimple size={16} weight={panes.studio ? "fill" : "light"} className="scale-x-[-1]" />
+            <SidebarSimple size={ICON.md} weight={panes.studio ? "fill" : "light"} className="scale-x-[-1]" />
           </IconButton>
         </div>
         <CaptionButtons />
@@ -540,21 +549,21 @@ function WorkspaceHeader({
 
       {/* Analytics Modal */}
       {notebook && (
-        <Modal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} title="Notebook Analytics">
+        <Modal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} title="Notebook details">
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3 text-center">
               <AnalyticsTile index={0} label="Sources" target={stats?.sources ?? 0} format={(v) => `${v}`} />
               <AnalyticsTile
                 index={1}
-                label="Tokens Grounded"
+                label="Source tokens"
                 target={stats?.tokens ?? 0}
                 format={(v) => `${(v / 1000).toFixed(1)}k`}
               />
-              <AnalyticsTile index={2} label="Saved Artifacts" target={stats?.gens ?? 0} format={(v) => `${v}`} />
+              <AnalyticsTile index={2} label="Saved work" target={stats?.gens ?? 0} format={(v) => `${v}`} />
             </div>
 
-            <div className="rounded-xl border border-hairline/80 bg-ink/[0.02] p-3 text-[12.5px] leading-relaxed text-muted">
-              🔒 <strong>Local-First Storage:</strong> All documents, question history, and generated notes for <em>{notebook.name}</em> live exclusively in IndexedDB on this device.
+            <div className="rounded-[var(--radius-dialog)] border border-hairline/80 bg-ink/[0.02] p-3 text-[12.5px] leading-relaxed text-muted">
+              Your sources, conversations, and saved work are stored on this device. Export this notebook to keep a backup you control.
             </div>
 
             <div className="flex justify-end pt-2">
@@ -584,10 +593,10 @@ function RailButton({
     <div className="group relative">
       <button
         onClick={onClick}
-        className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-brasspale"
+        className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-brass"
         aria-label={`Show ${label}`}
       >
-        <Icon size={16} weight="light" />
+        <Icon size={ICON.md} weight="light" />
       </button>
       <span
         className={`pointer-events-none absolute top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-control)] border border-hairline bg-surface px-2 py-1 text-[11px] text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 ${
@@ -614,11 +623,11 @@ function AnalyticsTile({
   const counted = useCountUp(target);
   return (
     <div
-      className="anim-rise rounded-xl border border-hairline bg-surface/70 p-3"
+      className="anim-rise rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-3"
       style={{ ["--d"]: `${Math.min(index, 10) * 30}ms` } as CSSProperties}
     >
-      <div className="font-mono text-[18px] font-semibold text-brasspale">{format(counted)}</div>
-      <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted mt-1">{label}</div>
+      <div className="font-mono text-[18px] font-semibold text-brass">{format(counted)}</div>
+      <div className="mt-1 text-label text-muted">{label}</div>
     </div>
   );
 }

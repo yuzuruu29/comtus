@@ -48,7 +48,7 @@ export default function NewNotebookDialog({
         </p>
         <Field label="Notebook name" hint="A course, an exam, or a topic. You can rename it later.">
           <Input
-            autoFocus
+            data-autofocus
             aria-label="Notebook name"
             value={name}
             onChange={(e) => setName(e.target.value)}

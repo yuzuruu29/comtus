@@ -1,0 +1,14 @@
+Already up to date
+Done in 910ms using pnpm v11.1.2
+$ vitest run "--maxWorkers=2"
+
+ RUN  v4.1.11 C:/Comtus AI
+
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+Not implemented: HTMLCanvasElement's getContext() method: without installing the canvas npm package
+
+ Test Files  101 passed (101)
+      Tests  604 passed (604)
+   Start at  00:50:57
+   Duration  687.96s (transform 16.88s, setup 70.20s, import 881.89s, tests 58.68s, environment 293.95s)
+

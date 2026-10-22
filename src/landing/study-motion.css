@@ -190,7 +190,7 @@
 .study-motion-practice-face p { margin: 2.6cqi 0 2.2cqi; font-family: var(--font-read); font-size: 3.8cqi; font-weight: 400; letter-spacing: -.04em; line-height: 1.15; }
 .study-motion-practice-foot { font-size: 1.55cqi; }
 .study-motion-practice-back em { color: var(--brass); }
-.study-motion-practice-back .study-motion-paper-meta { color: var(--sage); }
+.study-motion-practice-back .study-motion-paper-meta { color: var(--muted); }
 
 .study-motion-pencil {
   position: absolute;

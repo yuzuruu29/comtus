@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { CalendarBlank, PencilSimple } from "@phosphor-icons/react";
 import { notebookStanding } from "../lib/attempts";
 import { reviewCards } from "../lib/cloze";
@@ -9,6 +9,7 @@ import { buildPlan, type PlanItem, type StudyPlan } from "../lib/studyPlan";
 import type { FlashcardsPayload, Generation, Notebook } from "../lib/types";
 import { Button, Dialog, Field, Input } from "../ui";
 import { ErrorNote } from "./ui";
+import { ICON } from "../ui/iconScale";
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
@@ -36,6 +37,7 @@ export default function ExamPlan({
   const [decks, setDecks] = useState<Map<string, Generation>>(new Map());
   const [editing, setEditing] = useState(false);
   const [reload, setReload] = useState(0);
+  const titleId = useId();
 
   useEffect(() => {
     let current = true;
@@ -95,7 +97,7 @@ export default function ExamPlan({
   if (!notebook.examAt) {
     return (
       <section className="exam-plan exam-plan-quiet" aria-label="Exam date">
-        <CalendarBlank size={17} aria-hidden="true" />
+        <CalendarBlank size={ICON.lg} aria-hidden="true" />
         <p>
           <strong>Exam coming up?</strong> Add the date and each day gets a short plan.
         </p>
@@ -113,7 +115,7 @@ export default function ExamPlan({
   if (daysLeft < 0) {
     return (
       <section className="exam-plan exam-plan-quiet" aria-label="Exam date">
-        <CalendarBlank size={17} aria-hidden="true" />
+        <CalendarBlank size={ICON.lg} aria-hidden="true" />
         <p>
           Your {what} was on {examDateLabel(notebook.examAt)}. Reviews are back on their usual schedule.
         </p>
@@ -126,10 +128,10 @@ export default function ExamPlan({
   }
 
   return (
-    <section className="exam-plan" aria-labelledby="exam-plan-title">
+    <section className="exam-plan" aria-labelledby={titleId}>
       <div className="exam-plan-head">
         <div>
-          <h3 id="exam-plan-title">{examCountdown(notebook)}</h3>
+          <h3 id={titleId}>{examCountdown(notebook)}</h3>
           <p>{examDateLabel(notebook.examAt)}</p>
         </div>
         <Button
@@ -140,7 +142,7 @@ export default function ExamPlan({
           title="Change the exam date"
           onClick={() => setEditing(true)}
         >
-          <PencilSimple size={15} aria-hidden="true" />
+          <PencilSimple size={ICON.md} aria-hidden="true" />
         </Button>
       </div>
 

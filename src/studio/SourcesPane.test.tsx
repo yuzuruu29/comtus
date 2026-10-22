@@ -4,6 +4,7 @@ import "@testing-library/jest-dom/vitest";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { db } from "../lib/db";
+import { loadFocus } from "./focus";
 import SourcesPane from "./SourcesPane";
 
 // SourcesPane reaches pdfjs through lib/import, and pdfjs touches DOMMatrix at
@@ -17,6 +18,7 @@ vi.mock("motion/react", async (importOriginal) => {
 
 afterEach(async () => {
   cleanup();
+  localStorage.clear();
   await db.sources.clear();
   await db.chunks.clear();
 });
@@ -45,7 +47,7 @@ describe("SourcesPane", () => {
     renderPane();
     expect(
       await screen.findByText(
-        "Add a chapter, your notes, or a link. Every answer will cite the page it came from.",
+        "Add a chapter, your notes, or a link. Keep the material behind your questions within reach.",
       ),
     ).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Add source" })).toHaveLength(1);
@@ -66,5 +68,22 @@ describe("SourcesPane", () => {
     fireEvent.click(screen.getByRole("button", { name: /^My Notes/ }));
 
     await waitFor(() => expect(screen.getByRole("dialog", { name: "My Notes" })).toBeInTheDocument());
+  });
+
+  it("filters the index without changing the conversation's source selection", async () => {
+    renderPane();
+    await addPastedSource("Ecology notes");
+    await addPastedSource("Biology chapter");
+    fireEvent.click(screen.getByRole("button", { name: "Toggle inclusion of Ecology notes" }));
+    expect(screen.getByRole("button", { name: "Toggle inclusion of Ecology notes" })).toHaveAttribute("aria-pressed", "false");
+    const selected = loadFocus("nb1");
+    fireEvent.change(screen.getByRole("searchbox", { name: "Find a source" }), { target: { value: "  BIOLOGY " } });
+    expect(screen.queryByRole("button", { name: /^Ecology notes/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Biology chapter/ })).toBeInTheDocument();
+    expect(loadFocus("nb1")).toEqual(selected);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Find a source" }), { target: { value: "unknown" } });
+    expect(screen.getByRole("status")).toHaveTextContent("No sources match");
+    fireEvent.change(screen.getByRole("searchbox", { name: "Find a source" }), { target: { value: "" } });
+    expect(screen.getByRole("button", { name: "Toggle inclusion of Ecology notes" })).toHaveAttribute("aria-pressed", "false");
   });
 });

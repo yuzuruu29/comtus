@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { CaretDown, PencilSimple, Plus, SlidersHorizontal, Trash } from "@phosphor-icons/react";
+import { CaretDown, PencilSimple, Plus, Trash } from "@phosphor-icons/react";
 import { IconButton, Input } from "../ui";
 import type { ChatSession } from "../lib/types";
-import { SOFT } from "./fx";
+import { EXIT, POPOVER, SOFT } from "./fx";
 import { timeAgo } from "./ui";
+import { ICON } from "../ui/iconScale";
 
-/** Top chat bar: active-session trigger, new/settings icon buttons, and the
+/** Top chat bar: active-session trigger, new conversation action, and the
  *  sessions dropdown (rename-in-place, delete, "New chat"). Fully
  *  self-contained — ChatPane only supplies data + mutation callbacks. */
 export default function SessionMenu({
@@ -62,32 +63,25 @@ export default function SessionMenu({
   return (
     <div
       ref={menuRef}
-      className="relative z-30 flex h-11 shrink-0 items-center justify-between border-b border-hairline bg-ground px-4"
+      className="pane-head chat-session-head relative z-30"
     >
-      <div className="flex items-center gap-2">
-        <h2 className="font-display text-heading font-[450] text-ink">Chat</h2>
+      <div className="pane-head-title">
+        <span className="pane-index" aria-hidden="true">02</span>
+        <h2>Chat</h2>
+      </div>
+      <div className="pane-head-actions chat-session-actions">
         <button
           onClick={() => setMenuOpen((v) => !v)}
-          aria-haspopup="listbox"
+          aria-label="Switch conversation"
+          aria-haspopup="dialog"
           aria-expanded={menuOpen}
-          className="flex items-center gap-1.5 rounded-full border border-hairline bg-surface/60 px-2.5 py-0.5 text-label text-muted hover:border-hairline-strong hover:text-ink transition-colors"
+          className="chat-session-trigger"
         >
-          <span className="truncate max-w-[14rem]">{activeSession?.title || "New chat"}</span>
-          <CaretDown size={11} className={`transition-transform ${menuOpen ? "rotate-180" : ""}`} />
+          <span>{activeSession?.title || "New conversation"}</span>
+          <CaretDown size={ICON.xs} className={`transition-transform ${menuOpen ? "rotate-180" : ""}`} />
         </button>
-      </div>
-
-      <div className="flex items-center gap-1">
         <IconButton size="sm" aria-label="New chat thread" title="New chat" onClick={onNew}>
-          <Plus size={14} weight="light" />
-        </IconButton>
-        <IconButton
-          size="sm"
-          aria-label="Chat settings & sessions"
-          title="Chat settings & sessions"
-          onClick={() => setMenuOpen((v) => !v)}
-        >
-          <SlidersHorizontal size={14} weight="light" />
+          <Plus size={ICON.lg} weight="light" />
         </IconButton>
       </div>
 
@@ -95,13 +89,15 @@ export default function SessionMenu({
       <AnimatePresence>
         {menuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98, transition: { duration: 0.12 } }}
+            initial={POPOVER.initial}
+            animate={POPOVER.animate}
+            exit={{ ...POPOVER.exit, transition: EXIT }}
             transition={SOFT}
-            role="listbox"
-            className="absolute left-4 top-[calc(100%+6px)] z-50 w-72 overflow-hidden rounded-[var(--radius-dialog)] border border-hairline bg-surface p-1 shadow-modal"
+            role="dialog"
+            aria-label="Conversations"
+            className="chat-session-menu"
           >
+            <p className="chat-session-menu-label">Conversations in this notebook</p>
             <div className="max-h-60 overflow-y-auto py-1">
               {sessions.map((session) => {
                 const isActive = session.id === activeId;
@@ -113,6 +109,7 @@ export default function SessionMenu({
                       <Input
                         autoFocus
                         value={renameDraft}
+                        aria-label="Conversation name"
                         onChange={(e) => setRenameDraft(e.target.value)}
                         onBlur={commitRename}
                         onKeyDown={(e) => {
@@ -130,7 +127,7 @@ export default function SessionMenu({
                     key={session.id}
                     className={`group relative flex w-full items-center justify-between gap-2 rounded-[var(--radius-control)] px-2.5 py-1 text-left text-[12.5px] transition-colors ${
                       isActive
-                        ? "bg-brass/10 text-brasspale font-medium"
+                        ? "bg-brass/10 text-brass font-medium"
                         : "text-muted hover:bg-ink/[0.04] hover:text-ink"
                     }`}
                   >
@@ -145,28 +142,22 @@ export default function SessionMenu({
                       {session.title || "New chat"}
                     </button>
 
-                    {/* Right-hand slot: timestamp at rest, swaps smoothly to edit/delete buttons on hover */}
-                    <div className="relative flex items-center justify-end shrink-0 pl-2">
-                      <span
-                        className={`font-mono text-[9px] text-muted/60 transition-all duration-200 ${
-                          "opacity-70 group-hover:opacity-0 group-hover:invisible group-hover:scale-95"
-                        }`}
-                      >
+                    <div className="chat-session-row-actions">
+                      <span className="chat-session-time">
                         {timeAgo(session.updatedAt)}
                       </span>
-
-                      <div className="absolute right-0 flex items-center gap-0.5 opacity-0 translate-x-1 pointer-events-none transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-hover:pointer-events-auto">
+                      <div className="chat-session-edit-actions">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             startRename(session);
                           }}
-                          className="flex h-5 w-5 items-center justify-center rounded text-muted/70 hover:bg-ink/[0.08] hover:text-ink transition-colors"
+                          className="chat-session-edit"
                           title="Rename"
-                          aria-label="Rename"
+                          aria-label={`Rename ${session.title || "New chat"}`}
                         >
-                          <PencilSimple size={12} weight="bold" />
+                          <PencilSimple size={ICON.xs} weight="bold" />
                         </button>
                         <button
                           type="button"
@@ -174,11 +165,11 @@ export default function SessionMenu({
                             e.stopPropagation();
                             onDelete(session.id);
                           }}
-                          className="flex h-5 w-5 items-center justify-center rounded text-muted/70 hover:bg-rust/15 hover:text-rust transition-colors"
+                          className="chat-session-edit chat-session-delete"
                           title="Delete"
-                          aria-label="Delete"
+                          aria-label={`Delete ${session.title || "New chat"}`}
                         >
-                          <Trash size={12} weight="bold" />
+                          <Trash size={ICON.xs} weight="bold" />
                         </button>
                       </div>
                     </div>
@@ -191,9 +182,9 @@ export default function SessionMenu({
                 setMenuOpen(false);
                 onNew();
               }}
-              className="flex w-full items-center gap-2 border-t border-hairline px-3 py-2 text-[12px] font-medium text-brasspale hover:bg-brass/[0.06] transition-colors"
+              className="flex w-full items-center gap-2 border-t border-hairline px-3 py-2 text-[12px] font-medium text-brass hover:bg-brass/[0.06] transition-colors"
             >
-              <Plus size={13} />
+              <Plus size={ICON.sm} />
               New chat
             </button>
           </motion.div>

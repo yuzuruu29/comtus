@@ -2,7 +2,7 @@
 
 > The essential brand kit. Every design decision in the product defers to this file.
 > A scholar's desk: warm paper, clear ink, restrained brass, and room to think.
-> Landing and Studio share the same visual language. The composer is the desk's lamp.
+> Landing and desk share the same visual language. The composer is the desk's lamp.
 > The optional pixel companion starts clear of the work. Users control its placement and size.
 >
 > Current direction: `docs/superpowers/specs/2026-09-04-frontier-study-desk-design.md`.
@@ -40,45 +40,71 @@ Three images carry the whole identity:
 
 ---
 
-## 3 · Palette — 16-Color Cozy Pixel Bookshop Master Palette
+## 3 · Palette — Daylight & Lamplight
 
-The master palette is a curated 16-color system calibrated for high readability on warm paper, tactile bookshop depth, and seamless dark Lamplight compatibility.
+One master palette, defined once in `src/styles/tokens.css`. Hex literals are
+legal there and nowhere else under `src/`. Everything else reads `var(--token)`
+or derives with `color-mix()`. `src/styles/tokens.test.ts` and
+`src/styles/contrast.test.ts` enforce both halves of that rule.
 
-### Master Palette (16 Colors)
+Daylight lives on `:root`; Lamplight overrides only what changes.
 
-| Token | Hex Code | Role & Usage |
-|---|---|---|
-| `--px-paper-ground` | `#F5F1E8` | Primary aged parchment ground (Daylight default) |
-| `--px-paper-surface`| `#FCFAF4` | Raised parchment card surface, modal canvas |
-| `--px-paper-raised` | `#EAE4D6` | Hover states, active parchment tiles |
-| `--px-paper-border` | `#D3C9B4` | Warm parchment bevel border, subtle dividers |
-| `--px-paper-ink`    | `#1B2334` | High-contrast scholar ink text |
-| `--px-paper-muted`  | `#5A6274` | Muted labels, secondary captions, metadata |
-| `--px-paper-sepia`  | `#5C3D1E` | Deep sepia accent, rubber-stamp shadows |
-| `--px-leather`      | `#4A2E1B` | Book-spine brown, leather binding trim |
-| `--px-brass`        | `#A5731C` | Warm brass accent (calibrated for paper) |
-| `--px-brass-light`  | `#E3B04B` | Golden highlight, active badge rim |
-| `--px-void`         | `#080B12` | Deepest shadow (Lamplight dark ground) |
-| `--px-surface-dark` | `#171F32` | Raised dark surface (Lamplight cards) |
-| `--px-moon`         | `#3D6E9E` | Scholar blue secondary accent |
-| `--px-sage`         | `#4F8A5A` | Success indicators, verified marks |
-| `--px-rust`         | `#B2554A` | Error, warnings, critical alerts |
-| `--px-candle`       | `#D97724` | Amber hearth spark, milestone flares |
+| Token | Daylight | Lamplight | Role |
+|---|---|---|---|
+| `--ground` | `#F5F1E8` | `#0B0F1A` | page ground — aged paper / midnight |
+| `--surface` | `#FCFAF4` | `#121828` | cards, panes, composer |
+| `--raised` | `#EAE4D6` | `#1A2136` | hover, active rows, chips |
+| `--ink` | `#0B132B` | `#F2EDE3` | primary text |
+| `--muted` | `#5A6274` | `#8E96AB` | secondary text, labels |
+| `--hairline` | `rgba(27,35,52,.12)` | `rgba(242,237,227,.09)` | dividers |
+| `--hairline-strong` | `rgba(27,35,52,.22)` | `rgba(242,237,227,.18)` | borders on controls |
+| `--brass` | `#845C16` | `#E3B04B` | **the lamp** — action, selection, citation |
+| `--brass-deep` | `#5B3F0F` | `#C99236` | pressed fill |
+| `--brass-pale` | `#E3B04B` | `#F0CE8C` | glow only; decorative, carries no meaning |
+| `--leather` | `#4A2E1B` | `#4A2E1B` | spines, deep shadow, text on a candle fill |
+| `--sage` | `#3F6E48` | `#8FBF98` | correct, verified, due |
+| `--rust` | `#A04D43` | `#D57064` | incorrect, error |
+| `--candle` | `#EF8328` | `#FF9E43` | milestone flare, due-today fill |
+| `--moon` | `#6B6052` | `#C4B8A5` | reasoning — the thinking drawer, effort chip |
 
-### App Semantic Layer
+Rules the values depend on:
 
-The illustration palette above describes pixel assets. Product surfaces use the
-theme-aware `ground`, `surface`, `raised`, `ink`, `muted`, `hairline`, `brass`,
-`moon`, `sage`, and `rust` tokens from `src/styles/tokens.css`.
-Use `brass` for readable accent text. `brass-pale` is decorative light only.
-Primary buttons use `ground` text on `brass`. Avoid new local palette overrides.
+1. **Brass is the only accent for action.** Sage, rust and candle carry *state*.
+   Moon carries *reasoning* and nothing else.
+2. **Text on a `--brass` or `--brass-deep` fill is always `--ground`**, in both
+   themes. `--brass-deep` is the pressed fill, never a text colour. Text on a
+   `--candle` fill is `--leather`.
+3. `--brass-pale` is decorative glow only: never state, never an active rim,
+   never under text. Active rims use `--brass`.
+4. `--candle` is a fill only, never a text or icon colour. `--sage`, `--rust`,
+   `--moon` and `--brass` are sized to work as text and icons.
+5. Elevation is declared once: paper cards take `--elev-card` (shadow with an
+   offset, thrown down-right because the desk light comes from the upper left),
+   controls take a 1px hairline. Never both on one element.
 
 ### Texture & Dither Backdrops (CSS-Only)
 
-- `.bg-paper-parchment`: SVG data-URI fiber and grain texture on aged parchment.
-- `.bg-dither-sepia-fine`: 2x2 fine checkerboard pixel dither pattern in warm sepia.
-- `.bg-dither-sepia-coarse`: 4x4 coarse checkerboard pixel dither pattern in warm sepia.
-- `.bg-wood-grain`: 16-bit wood grain pattern blending `--px-leather` and paper surface.
+The material layer lives in `src/styles/paper.css`. It reads tokens, carries no
+hex, and never animates — paper does not move.
+
+- `.bg-paper-parchment`: two-layer paper. A fine isotropic tooth over a slow
+  anisotropic mottle, multiplied on Daylight and screened on Lamplight so one
+  asset serves both themes. Use on page and pane grounds.
+- **Not built**, and deliberately so — an unused class is a promise the next
+  person has to keep. Build each when a surface calls for it:
+  `.bg-dither-sepia-fine` / `.bg-dither-sepia-coarse` (they belong to the pixel
+  illustration layer, Compad, not to document surfaces — a checkerboard behind
+  reading copy costs legibility for decoration) and `.bg-wood-grain` (no
+  surface has needed it). `.bg-paper-surface` was cut: the card already spends
+  its `::before` on the book spine, and two backdrops on one pseudo-element
+  collide.
+
+### Pixel Artwork
+
+The 16-bit illustration layer — Compad, the sprites in
+`src/components/pixel/` — is the one place raw hex is allowed outside
+`tokens.css`, because for a sprite the colour *is* the asset. It is gated to
+that role by an explicit allow-list in `src/styles/palette.test.ts`.
 
 ---
 
@@ -89,9 +115,15 @@ All families are self-hosted via `@fontsource`. No Google Fonts CDN.
 Literata Variable (`--font-read`) carries long reading and editorial headings.
 Instrument Sans Variable (`--font-ui`) carries navigation, forms, actions, and interface copy.
 JetBrains Mono is reserved for measurements and code. Pixelify is an optional accent.
-The landing uses the same families and tokens as Studio. Reading size adjusts source text
+The landing uses the same families and tokens as the desk. Reading size adjusts source text
 and answers while interface controls keep their size. Never set a whole workspace to the
 display family or use uppercase mono as the default form voice.
+
+Icons are one family (Phosphor) on one scale: `--icon-xs` 12px through `--icon-3xl`
+32px, exported as `ICON` from `src/ui/iconScale.ts`. The smallest step is for a
+micro-badge only; a functional icon starts at 14px, and a button icon at 16px.
+The pixel sprites in `src/components/pixel/` are artwork, not interface icons, and
+keep their own sizes.
 
 Landing scale: hero `clamp(2.8rem, 7.5vw, 6.8rem)` · section titles `clamp(2.1rem, 4.6vw, 3.8rem)` · statement `clamp(2.4rem, 6vw, 5.2rem)` · body 16px.
 These live as `--text-landing-hero` / `--text-landing-section` / `--text-landing-statement` in
@@ -103,23 +135,81 @@ These live as `--text-landing-hero` / `--text-landing-section` / `--text-landing
 
 Movement in Comtus is physical, warm, and intentional. Interactions follow the physics of a hand-bound book, rubber-stamp printing, and organic pen craft.
 
-- **Rubber-Stamp Ink-Press Interaction (`.btn-ink-press`)**:
-  - Rest: 1px top highlight, 2px solid bottom shadow in warm sepia (`--px-paper-sepia` at 65%).
-  - Hover: −1px elevation, `--px-paper-raised` background, warmed brass border.
+- **Rubber-Stamp Ink-Press Interaction (`.btn`, `.icon-btn`)**:
+  - Rest: 1px top highlight, 2px solid bottom shadow in warm sepia (`--leather` at 65%).
+  - Hover: −1px elevation, `--raised` background, warmed brass border.
   - Active Press: +1px physical depression, 0px bottom shadow, inset depth shadow into parchment.
-- **Paper-Curl Card Lift (`.card-paper-curl` / `.card-book-press`)**:
-  - Warm parchment bevel borders, subtle asymmetric bottom-right shadow, and −1.5px physical lift on hover simulating paper peeling off the desk.
-- **Organic & Stepped Animations**:
-  - `@keyframes ink-bleed`: smooth opacity and subtle blur expansion simulating ink soaking into parchment fibers.
-  - `@keyframes quill-draw`: smooth SVG path dash-offset animation simulating pen-nib line drawing.
-  - `@keyframes px-breathe`: 4-step ambient pulse for hearth and bookshop calm.
-  - `@keyframes px-flicker`: 6-step warm candle/lamp filament micro-flicker.
+  - The press reads through the shadow, not through the label. Text never changes colour on press.
+  - `.card-book-press` (in `src/styles/paper.css`) is the same physics for cards; the button kit rhymes with it.
+- **Paper-Curl Card Lift (`.card-paper-curl` / `.card-book-press`)** — `src/styles/paper.css`:
+  - A quiet hairline frame, a warm top highlight catching the lamp, a subtle
+    asymmetric bottom-right shadow, and a −1.5px physical lift on hover
+    simulating paper peeling off the desk.
+  - The frame is neutral (`--hairline-strong`), never brass-tinted. A row of
+    brass-framed cards reads as decoration rather than as a library.
+  - The shadow is thrown down and to the right because desk light comes from the upper left. Keep it asymmetric.
+  - `.card-book-press` adds the press: +1px depression and an inset depth shadow.
+- **Brass Bookmark (`.rule-bookmark`)** — `src/styles/paper.css`:
+  - A 2px brass stroke on a row's leading edge, absent at rest and drawn top-down on hover or focus. It marks your place in a list the way a ribbon marks a page, and it is the reason study-tool rows need no coloured icon tiles.
+- **Organic & Stepped Animations** — the vocabulary that actually ships:
+  - `@keyframes breathe` / `effort-breathe`: ambient pulse, the lamp at rest and the effort chip while the model thinks.
+  - `@keyframes pixel-flicker` / `torch-flicker`: warm filament micro-flicker for the pixel chrome.
+  - `@keyframes citation-spotlight` / `cite-bloom`: a citation settling onto its passage, decaying over `--dur-settle`.
+  - `@keyframes rise-in` / `fade-in` / `pop-in`: entrances. A short rise with a fade, never a scale — a panel that grows from 96% is a generated-UI tell.
+
+### Motion Budgets — Full, Minimal, None
+
+The student picks a budget in Settings. It is a real setting, not a label.
+
+| Budget | Ambient loops | Entrances | Direct feedback |
+|---|---|---|---|
+| **Full** | run | rise and fade | kept |
+| **Minimal** | rest in their calm state | fade in place, no travel | kept |
+| **None** | rest | none | instant |
+
+A press still reads as a press at Minimal: removing feedback makes the desk
+feel broken, and only decoration is worth removing. At None every state change
+lands in one frame, and the change still shows through colour, border and
+position. The budget lives on the document root as `html[data-motion]`, and the
+OS "reduce motion" preference collapses the budget to None.
+
+Informational loops — the button spinner, the skeleton shimmer, the toast
+fuse, progress bars — keep running at every budget. They carry information,
+not decoration.
 
 ### Reduced-Motion Standards (Three Tiers)
 
-1. **Tier 1 (Ambient loops)**: Ambient loops (`.anim-px-breathe`, `.anim-px-flicker`, grain) stop immediately and rest visibly in their calm state.
-2. **Tier 2 (Entrances & Shifts)**: Entrances keep a quiet opacity fade without translation, scale, or parallax. Ink-press and paper-curl transitions collapse to zero delay.
-3. **Tier 3 (Backstop)**: Any missed continuous animation resolves in a single frame. State changes remain visible via instantaneous color and border adjustments.
+The OS preference is the backstop under the budget above.
+
+1. **Tier 1 (Ambient loops)**: Ambient loops (`breathe`, `phase-dot`, `send-halo`,
+   `bar-sheen`, `think-gloss`, the dust motes, the pixel equaliser, the typing
+   beacon, the effort meter, the thinking shimmer) stop immediately and rest
+   visibly in their calm state.
+2. **Tier 2 (Entrances & Shifts)**: Entrances keep a quiet opacity fade without
+   translation, scale, or parallax. Ink-press and paper-curl transitions collapse
+   to zero delay.
+3. **Tier 3 (Backstop)**: Any missed continuous animation resolves in a single
+   frame. State changes remain visible via instantaneous color and border
+   adjustments.
+
+### Landing scroll motion
+
+The public pages move with native scroll timelines (`animation-timeline`), not a
+JavaScript scroller. A visitor can scrub every reveal, and a heading can never
+be left half-written: its italic words follow the heading's own view timeline,
+so they finish once the heading is fully on screen. The rules this depends on
+live in `src/styles/landing-motion.test.ts`.
+
+- The headline is typeset in. Each line rises into its own window, then a pen
+  stroke is drawn under the phrase the sentence leans on.
+- Rows, headings and notes marked `data-landing-reveal` rise and fade as they
+  are read. A list staggers by itself, because each row has its own timeline,
+  and the hairline under it is drawn by the same progress.
+- A brass ribbon along the foot of the navigation bar shows how far down the
+  page the reader is. The link for the section being read is underlined.
+- With the motion budget at Minimal every entrance fades in place and nothing
+  is drawn. At None, and under the operating system's reduced-motion setting,
+  the page is the finished static page from the first frame.
 
 ### Forbidden Motion (never ship)
 
@@ -136,37 +226,42 @@ Movement in Comtus is physical, warm, and intentional. Interactions follow the p
 
 A warm scholar, not a hype startup. Second person. Plain, precise words. No exclamation marks in product UI. Never "revolutionary", "supercharge", "unleash".
 
-- Buttons are verbs: "Open the studio", "Add sources", "Grade my essay".
-- Empty states teach: "Every answer traces back to a source you added."
+- Buttons are verbs: "Open the desk", "Add sources", "Grade my essay".
+- Empty states teach: "Add a source, then ask a question about it."
 - Errors are honest and calm: "The ink ran dry — check your API key and try again."
 
 ---
 
 ## 7 · Product Principles
 
-1. **Grounded or silent** — answers cite sources; no sources, no confident answers.
+1. **Keep evidence in reach** — make sources and citations easy to inspect. Encourage checking important answers; never promise that a model cannot make mistakes.
 2. **Thinking is visible** — reasoning is a first-class UI surface, not a loading spinner.
-3. **Local first** — notebooks, sources, and history live on the user's device (IndexedDB); the API key never leaves it.
+3. **Local first** — notebooks, sources, and history live on the user's device (IndexedDB). AI requests send relevant material and authentication to the chosen provider, directly or through the configured relay.
 4. **Craft is the feature** — the tool should feel like a well-bound book: quiet, precise, warm under the hand.
 
 ---
 
 ## 8 · Desk Life & Landing Specifications
 
-- **Landing page**: Immediate access, an editorial thesis, and an interactive sample
-  notebook. Clearly label sample content. Show source citations and practice feedback.
+- **Landing page**: Lead with the reading-to-recall journey and put the interactive
+  sample notebook in the opening composition. Use numbered chapters, ruled margins,
+  and a working recall card. Clearly label sample content, citations, and practice feedback.
   Explain local storage and provider access accurately. Setup is optional.
-- **Studio**: A readable notebook library, one workspace header, and sources, chat,
-  and study tools in clear panes. Mobile uses one pane at a time with persistent tabs.
-  Keep primary practice tools visible and additional formats in a native disclosure.
+- **Desk**: The shelf is a numbered catalogue with a real recent-work entry.
+  One notebook header leads into numbered Sources, Chat, and Study tools panes.
+  Keep source search separate from inclusion; welcome copy reflects available sources.
+  Mobile uses one pane at a time with persistent tabs. Keep primary practice tools
+  visible, saved work above optional exam setup, and additional formats in a native disclosure.
   Preserve saved-work Undo and keyboard pane resizing.
 - **Shared controls**: Reuse `src/ui`, native labels, visible focus, and generous touch
   targets. Avoid duplicate controls, inactive feature teasers, and decorative telemetry.
 - **Companion**: Compad is a sage notebook character with cream page edges, a brass
   bookmark, and an ink face. Optional in active notebook workspaces, including mobile
-  Sources and Studio. Start clear of the controls, then preserve the user's chosen
-  placement and size within the viewport. Offer direct dragging, resizing, keyboard
-  controls, and a position reset. Its compact chat shares the notebook conversation,
-  draft, model, and sources. Keep the library free of the companion.
+  Sources and the desk. It rests in a lane the workspace reserves for it, clear of
+  the conversation and the composer; on a phone the lane is a strip above the pane
+  tabs. Then preserve the user's chosen placement and size within the viewport.
+  Offer direct dragging, resizing, keyboard controls, and a position reset. Its
+  compact chat shares the notebook conversation, draft, model, and sources. Keep the
+  library free of the companion.
 - **Themes and motion**: Preserve Daylight, dark Lamplight, reading size, and reduced
   motion. Motion helps track a change and always leaves content immediately usable.

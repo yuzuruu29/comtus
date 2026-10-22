@@ -9,6 +9,9 @@ import { runSearch } from "./_search-core";
 
 afterEach(() => {
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
+  delete process.env.UPSTASH_REDIS_REST_URL;
+  delete process.env.UPSTASH_REDIS_REST_TOKEN;
 });
 
 describe("search relay", () => {
@@ -23,6 +26,15 @@ describe("search relay", () => {
     expect((await handler(new Request("http://localhost/api/search?q=%20"))).status).toBe(400);
     expect((await handler(new Request(`http://localhost/api/search?q=${"a".repeat(401)}`))).status).toBe(414);
     expect((await handler(new Request("http://localhost/api/search?q=x", { method: "POST" }))).status).toBe(405);
+    expect(runSearch).not.toHaveBeenCalled();
+  });
+
+  it("returns 429 after 60 searches from one network", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://redis.example";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "token";
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ result: 61 }), { status: 200 })));
+    const res = await handler(new Request("http://localhost/api/search?q=krebs", { headers: { "x-real-ip": "203.0.113.8" } }));
+    expect(res.status).toBe(429);
     expect(runSearch).not.toHaveBeenCalled();
   });
 });

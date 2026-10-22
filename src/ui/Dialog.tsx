@@ -2,10 +2,13 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { X } from "@phosphor-icons/react";
-import { SOFT } from "../studio/fx";
+import { ENTER, EXIT, SOFT } from "../studio/fx";
+import { ICON } from "./iconScale";
 
 /** Moved from src/studio/ui.tsx's Modal (Task 2.1) — same API, renamed.
- *  src/studio/ui.tsx re-exports this as `Modal` for old callers. */
+ *  src/studio/ui.tsx re-exports this as `Modal` for old callers.
+ *  Use data-autofocus on a child for initial focus; native autoFocus runs
+ *  before the dialog can capture its opener for focus restoration. */
 
 const dialogStack: symbol[] = [];
 
@@ -46,12 +49,12 @@ export function Dialog({
 
     const focusTimer = window.setTimeout(() => {
       if (!panelRef.current) return;
-      // If focus is already inside the panel (e.g. React autofocus on input, or user already typed), do not steal it
+      // Do not steal focus if the user already started interacting with the panel.
       if (document.activeElement && panelRef.current.contains(document.activeElement)) {
         return;
       }
-      // Prioritize autofocus element, then text inputs / textareas, then non-close buttons, then any focusable
-      const auto = panelRef.current.querySelector<HTMLElement>('[autofocus]:not([disabled])');
+      // Resolve initial focus only after capturing the opener above.
+      const auto = panelRef.current.querySelector<HTMLElement>('[data-autofocus]:not([disabled])');
       if (auto) {
         auto.focus({ preventScroll: true });
         return;
@@ -121,8 +124,8 @@ export function Dialog({
             key="overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.2 } }}
-            transition={{ duration: 0.22 }}
+            exit={{ opacity: 0, transition: EXIT }}
+            transition={SOFT}
             className="pointer-events-auto absolute inset-0"
           >
             <button
@@ -140,9 +143,9 @@ export function Dialog({
           <motion.div
             ref={panelRef}
             key="panel"
-            initial={{ opacity: 0, y: 28, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.97, transition: { duration: 0.18 } }}
+            initial={ENTER.initial}
+            animate={ENTER.animate}
+            exit={{ ...ENTER.exit, transition: EXIT }}
             transition={SOFT}
             className={`pointer-events-auto relative z-[90] flex max-h-[92svh] w-full flex-col overflow-hidden rounded-t-[var(--radius-dialog)] border border-hairline bg-surface pb-[calc(1.25rem+var(--sab))] shadow-modal sm:rounded-[var(--radius-dialog)] sm:pb-0 ${
               wide ? "sm:max-w-3xl" : "sm:max-w-xl"
@@ -156,10 +159,10 @@ export function Dialog({
               <h2 id={titleId} className="font-display text-heading font-[450] text-ink">{title}</h2>
               <button
                 onClick={onClose}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-muted transition-all duration-med hover:rotate-90 hover:bg-ink/5 hover:text-ink active:scale-95"
+                className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-pill)] text-muted transition-all duration-med hover:rotate-90 hover:bg-ink/5 hover:text-ink active:scale-95"
                 aria-label="Close"
               >
-                <X size={18} weight="light" />
+                <X size={ICON.lg} weight="light" />
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>

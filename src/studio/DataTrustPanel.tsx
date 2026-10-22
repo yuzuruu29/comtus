@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Trash } from "@phosphor-icons/react";
-import { deleteNotebook } from "../lib/db";
+import { db, deleteNotebook } from "../lib/db";
 import { exportBackup, importBackup, importBackupNative } from "../lib/backup";
 import { isTauri } from "../lib/desktop";
 import { useSettings } from "../lib/settings";
 import { formatBytes, getStorageStats, type StorageStats } from "../lib/storageStats";
 import { ComtusEmblem } from "../components/brand/ComtusLogo";
 import { btnGhost, Modal, timeAgo } from "./ui";
+import { ICON } from "../ui/iconScale";
 
 function formatBackupAt(ts: number): string {
   if (!ts) return "No backup on this device yet";
@@ -21,10 +22,24 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState(false);
   const [deletingNb, setDeletingNb] = useState<StorageStats["notebooks"][number] | null>(null);
+  const [kept, setKept] = useState<boolean | null>(null);
+  const [needsBackup, setNeedsBackup] = useState(false);
 
   const refresh = () => {
     void getStorageStats().then(setStats);
   };
+
+  useEffect(() => {
+    void navigator.storage?.persisted?.().then(setKept).catch(() => setKept(null));
+  }, []);
+
+  useEffect(() => {
+    if (lastBackupAt > 0) {
+      setNeedsBackup(false);
+      return;
+    }
+    void db.sources.count().then((n) => setNeedsBackup(n > 0)).catch(() => setNeedsBackup(false));
+  }, [lastBackupAt]);
 
   useEffect(() => {
     if (!open) return;
@@ -93,7 +108,7 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
         : null;
 
   return (
-    <div className="rounded-xl border border-hairline bg-ink/[0.02] px-4 py-3.5">
+    <div className="rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] px-4 py-3.5">
       <div className="flex items-center gap-2 text-body text-ink/85">
         <ComtusEmblem size={16} />
         Your data
@@ -114,7 +129,7 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
           {stats.notebooks.map((nb) => (
             <li
               key={nb.id}
-              className="flex items-center gap-2 rounded-lg px-1 py-1.5 hover:bg-ink/[0.03]"
+              className="flex items-center gap-2 rounded-[var(--radius-field)] px-1 py-1.5 hover:bg-ink/[0.03]"
             >
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-body text-ink/90">{nb.name}</span>
@@ -125,10 +140,10 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
               <button
                 type="button"
                 onClick={() => setDeletingNb(nb)}
-                className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted/60 hover:bg-rust/10 hover:text-rust transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-rust/10 hover:text-rust transition-colors"
                 aria-label={`Delete ${nb.name}`}
               >
-                <Trash size={13} weight="light" />
+                <Trash size={ICON.sm} weight="light" />
               </button>
             </li>
           ))}
@@ -219,6 +234,12 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
         )}
       </div>
       <p className="mt-2 font-mono text-[10.5px] text-muted">{formatBackupAt(lastBackupAt)}</p>
+      <p className="mt-1 font-mono text-[10.5px] text-muted">
+        {kept === true ? "Kept on this device" : kept === false ? "This browser may clear this site" : "Storage persistence is not available"}
+      </p>
+      {needsBackup && (
+        <p className="mt-1 text-[12px] text-ink">Export a backup. This browser can remove site data.</p>
+      )}
     </div>
   );
 }

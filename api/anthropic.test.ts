@@ -30,6 +30,28 @@ function proxyReq(body: object | string, pass?: string): Request {
   });
 }
 
+function creditFetch(opts: { incrByResult?: number; upstream?: Response; denied?: boolean } = {}) {
+  return vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.includes("/get/passdeny:")) {
+      return new Response(JSON.stringify({ result: opts.denied ? "1" : null }), { status: 200 });
+    }
+    const incr = url.match(/\/incrby\/[^/]+\/(\d+)$/);
+    if (incr) return new Response(JSON.stringify({ result: opts.incrByResult ?? Number(incr[1]) }), { status: 200 });
+    if (url.includes("/decrby/") || url.includes("/expireat/")) return new Response(JSON.stringify({ result: 1 }), { status: 200 });
+    if (url.startsWith("https://api.anthropic.com")) {
+      return opts.upstream ?? new Response(JSON.stringify({ usage: { input_tokens: 1, output_tokens: 1 } }), { status: 200, headers: { "content-type": "application/json" } });
+    }
+    void init;
+    return new Response("{}", { status: 200 });
+  });
+}
+
+function reservedFrom(fetchMock: ReturnType<typeof creditFetch>): number {
+  const hit = fetchMock.mock.calls.map((call) => String(call[0])).find((url) => url.includes("/incrby/"));
+  return Number(hit?.split("/").pop());
+}
+
 function mockFetch(opts: { incrResult?: number; upstream?: Response } = {}) {
   return vi.fn(async (input: string | URL | Request, _init?: RequestInit) => {
     void _init;
@@ -230,6 +252,93 @@ describe("hosted Anthropic proxy", () => {
     expect(res.status).toBe(502);
     expect(res.headers.get("access-control-allow-origin")).toBe("http://127.0.0.1:5199");
     expect(fetchMock.mock.calls.some((c) => String(c[0]).endsWith("/decr/pass:down01"))).toBe(true);
+  });
+
+  it("strips tools and clamps a credit pass to 16000 output tokens", async () => {
+    withProxyEnv();
+    const fetchMock = creditFetch();
+    vi.stubGlobal("fetch", fetchMock);
+    const pass = signPass({ j: "credit01", v: 2, c: 5_000_000_000 });
+    const res = await handler(
+      proxyReq(
+        {
+          model: "claude-sonnet-5",
+          max_tokens: 999999,
+          tools: [{ name: "shell" }],
+          messages: [{ role: "user", content: "hi" }],
+        },
+        pass,
+      ),
+    );
+    expect(res.status).toBe(200);
+    const upstreamCall = fetchMock.mock.calls.find((call) => String(call[0]).startsWith("https://api.anthropic.com"));
+    const forwarded = JSON.parse((upstreamCall?.[1] as RequestInit).body as string);
+    expect(forwarded.tools).toBeUndefined();
+    expect(forwarded.max_tokens).toBe(16000);
+    expect(fetchMock.mock.calls.some((call) => String(call[0]).includes("/decrby/credit:credit01/"))).toBe(true);
+  });
+
+  it("rejects a credit pass whose notebook exceeds the input cap", async () => {
+    withProxyEnv();
+    vi.stubGlobal("fetch", creditFetch());
+    const pass = signPass({ j: "big01", v: 2, c: 5_000_000_000 });
+    const res = await handler(
+      proxyReq(
+        { model: "claude-sonnet-5", max_tokens: 100, messages: [{ role: "user", content: "x".repeat(400_001) }] },
+        pass,
+      ),
+    );
+    expect(res.status).toBe(413);
+  });
+
+  it("refunds the credit reserve when Anthropic refuses the request", async () => {
+    withProxyEnv();
+    const fetchMock = creditFetch({
+      upstream: new Response("{}", { status: 529, headers: { "content-type": "application/json" } }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const res = await handler(
+      proxyReq({ model: "claude-sonnet-5", max_tokens: 100, messages: [{ role: "user", content: "hi" }] }, signPass({ j: "crefund", v: 2, c: 5_000_000_000 })),
+    );
+    expect(res.status).toBe(529);
+    const reserved = reservedFrom(fetchMock);
+    expect(fetchMock.mock.calls.some((call) => String(call[0]).endsWith(`/decrby/credit:crefund/${reserved}`))).toBe(true);
+  });
+
+  it("settles a credit pass at the reported usage", async () => {
+    withProxyEnv();
+    const fetchMock = creditFetch({
+      upstream: new Response(
+        JSON.stringify({ usage: { input_tokens: 4, output_tokens: 1 } }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await handler(
+      proxyReq({ model: "claude-sonnet-5", max_tokens: 100, messages: [{ role: "user", content: "hi" }] }, signPass({ j: "settle1", v: 2, c: 5_000_000_000 })),
+    );
+    const reserved = reservedFrom(fetchMock);
+    const actual = 4 * 2000 + 1 * 10000;
+    expect(fetchMock.mock.calls.some((call) => String(call[0]).endsWith(`/decrby/credit:settle1/${reserved - actual}`))).toBe(true);
+  });
+
+  it("returns 402 when the credit reserve exceeds the included budget", async () => {
+    withProxyEnv();
+    const fetchMock = creditFetch({ incrByResult: 9_000_000_000 });
+    vi.stubGlobal("fetch", fetchMock);
+    const res = await handler(
+      proxyReq({ model: "claude-opus-5", max_tokens: 100, messages: [{ role: "user", content: "hi" }] }, signPass({ j: "poor01", v: 2, c: 1000 })),
+    );
+    expect(res.status).toBe(402);
+    expect(fetchMock.mock.calls.some((call) => String(call[0]).startsWith("https://api.anthropic.com"))).toBe(false);
+  });
+
+  it("rejects a revoked pass", async () => {
+    withProxyEnv();
+    vi.stubGlobal("fetch", creditFetch({ denied: true }));
+    const res = await handler(proxyReq({ model: "claude-sonnet-5", max_tokens: 100 }, signPass({ j: "denied1", v: 2, c: 5_000_000_000 })));
+    expect(res.status).toBe(401);
+    expect(await res.json()).toMatchObject({ error: "This pass has been revoked." });
   });
 
   it("lets a pass counter expire a month after the pass", async () => {

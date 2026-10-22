@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { STUDY_PLANS } from "../lib/paypal";
 import PayPalCheckout from "../studio/PayPalCheckout";
 import { Check, Copy, ShieldCheck } from "@phosphor-icons/react";
+import { ICON } from "../ui/iconScale";
 
 export default function HostedCheckout() {
   const [params] = useSearchParams();
@@ -11,6 +12,7 @@ export default function HostedCheckout() {
   const [planId, setPlanId] = useState(requested?.id ?? "scholar");
   const plan = STUDY_PLANS.find((candidate) => candidate.id === planId) ?? STUDY_PLANS[1];
   const [passToken, setPassToken] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   async function copyPass(): Promise<void> {
@@ -29,15 +31,15 @@ export default function HostedCheckout() {
       <div className="mx-auto max-w-xl">
         <Link
           to="/"
-          className="label-mono inline-flex rounded-[var(--radius-control)] py-2 text-brasspale hover:text-ink"
+          className="field-label inline-flex rounded-[var(--radius-control)] py-2 text-brass hover:text-ink"
         >
           COMTUS · SECURE CHECKOUT
         </Link>
 
         <section className="mt-8 rounded-[var(--radius-dialog)] border border-hairline bg-surface p-6 shadow-modal sm:p-8">
           <div className="flex items-start gap-3">
-            <span className="mt-1 rounded-full bg-sage/10 p-2 text-sage">
-              <ShieldCheck size={20} />
+            <span className="mt-1 rounded-[var(--radius-pill)] bg-sage/10 p-2 text-sage">
+              <ShieldCheck size={ICON.xl} />
             </span>
             <div>
               <h1 className="font-display text-[clamp(1.8rem,5vw,2.6rem)] font-[450] leading-tight">
@@ -72,15 +74,16 @@ export default function HostedCheckout() {
           <div className="my-6 border-y border-hairline py-4">
             <div className="flex items-baseline justify-between gap-4">
               <span className="font-display text-title">{plan.name}</span>
-              <span className="font-mono text-title text-brasspale">${plan.price}</span>
+              <span className="font-mono text-title text-brass">${plan.price}</span>
             </div>
-            <p className="mt-1 text-[12px] text-muted">{plan.requests} hosted requests · {plan.days} days · {plan.desc}</p>
+            <p className="mt-1 text-[12px] text-muted">{plan.desc} · {plan.days} days</p>
           </div>
 
           <PayPalCheckout
             plan={plan}
-            onSuccess={(token) => {
+            onSuccess={(token, paidOrderId) => {
               setPassToken(token);
+              setOrderId(paidOrderId);
               setCopied(false);
             }}
           />
@@ -93,7 +96,7 @@ export default function HostedCheckout() {
               </p>
               <div className="flex items-stretch gap-2">
                 <code
-                  className="min-w-0 flex-1 select-all overflow-x-auto whitespace-nowrap rounded-md border border-hairline bg-ink/[0.03] px-2.5 py-2 font-mono text-[11px] text-ink"
+                  className="min-w-0 flex-1 select-all overflow-x-auto whitespace-nowrap rounded-[var(--radius-control)] border border-hairline bg-ink/[0.03] px-2.5 py-2 font-mono text-[11px] text-ink"
                   title={passToken}
                 >
                   {passToken}
@@ -101,14 +104,17 @@ export default function HostedCheckout() {
                 <button
                   type="button"
                   onClick={() => void copyPass()}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-control)] border border-brass/40 px-3 py-2 text-[12px] font-medium text-brasspale transition-colors hover:bg-brass/10"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-control)] border border-brass/40 px-3 py-2 text-[12px] font-medium text-brass transition-colors hover:bg-brass/10"
                 >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                  {copied ? <Check size={ICON.sm} /> : <Copy size={ICON.sm} />}
                   {copied ? "Copied" : "Copy pass"}
                 </button>
               </div>
+              {orderId && (
+                <p className="font-mono text-[12px] text-ink">PayPal order id: {orderId}</p>
+              )}
               <p className="text-[11px] text-faint">
-                This pass is shown only here — copy it before closing the tab.
+                This pass is shown only here. Keep the order id — it restores the pass if you lose the token.
               </p>
             </div>
           )}

@@ -10,7 +10,7 @@ export default function Footer() {
           <p>A quiet place for the work<br />of understanding.</p>
         </div>
         <nav className="landing-footer-links" aria-label="Footer navigation">
-          <div><span>At your desk</span><Link to="/studio">Open Studio</Link><Link to="/study-companion">Study guide</Link><Link to="/about">About Comtus</Link></div>
+          <div><span>At your desk</span><Link to="/studio">Open the desk</Link><Link to="/study-companion">Study guide</Link><Link to="/about">About Comtus</Link></div>
           <div><span>Good to know</span><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link><Link to="/responsible-ai">Responsible AI</Link><Link to="/contact">Contact</Link></div>
         </nav>
       </div>

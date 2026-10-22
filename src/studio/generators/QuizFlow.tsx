@@ -7,7 +7,7 @@ import AttemptFollowUp from "./AttemptFollowUp";
 import { generateJSON, checkSolution, friendlyError } from "../../lib/llm";
 import { useCallSettings, useSettings } from "../../lib/settings";
 import { saveGeneration } from "../../lib/db";
-import { SOFT, SPRING, useCountUp } from "../fx";
+import { DUR, DRIFT_X, ENTER, EXIT, SOFT, SPRING, useCountUp } from "../fx";
 import { playSfx } from "../companion/sfx";
 import { GENERATOR_SYSTEM, ASSESSMENT_FORMAT_RULES, buildSourceBlock, sanitizeQuestions, solutionCredit, fmtScore } from "./common";
 import { AssessmentContent, AssessmentGraph } from "../../components/AssessmentContent";
@@ -20,6 +20,7 @@ import {
 } from "./SolutionBin";
 import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote } from "../ui";
 import { ArrowCounterClockwise, Check, Sparkle, Trophy, X } from "@phosphor-icons/react";
+import { ICON } from "../../ui/iconScale";
 
 /* ── Configuration ────────────────────────────────────────── */
 
@@ -162,7 +163,7 @@ Constraints: MCQ always has exactly 4 options; truefalse has options ["True","Fa
       <div className="flex justify-end gap-3">
         <button className={btnGhost} onClick={onCancel}>Cancel</button>
         <button className={btnLamp} onClick={generate} disabled={busy || formats.length === 0}>
-          <Sparkle size={13} className="mr-1.5 inline" />
+          <Sparkle size={ICON.sm} className="mr-1.5 inline" />
           {busy ? "Writing…" : "Write my quiz"}
         </button>
       </div>
@@ -361,7 +362,7 @@ function QuizResults({
   );
   const score = items.reduce((s, it) => s + it.credit, 0);
   const pct = Math.round((score / payload.questions.length) * 100);
-  const shownPct = useCountUp(pct, 1000);
+  const shownPct = useCountUp(pct, DUR.settle);
   const isMaster = pct >= 80;
   const byTopic = new Map<string, { c: number; t: number }>();
   items.forEach((it) => {
@@ -373,32 +374,32 @@ function QuizResults({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={ENTER.initial}
+      animate={ENTER.animate}
       transition={SOFT}
       className="space-y-6"
     >
       {isMaster && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={SPRING}
-          className="flex items-center justify-center gap-2 rounded-2xl border border-brass/50 bg-gradient-to-r from-brass/[0.15] via-brass/[0.25] to-brass/[0.15] py-3 px-4 text-center shadow-[0_0_24px_rgba(227,176,75,0.2)]"
+          initial={ENTER.initial}
+          animate={ENTER.animate}
+          transition={SOFT}
+          className="flex items-center justify-center gap-2 rounded-[var(--radius-dialog)] border border-brass/50 bg-gradient-to-r from-brass/[0.15] via-brass/[0.25] to-brass/[0.15] py-3 px-4 text-center shadow-[0_0_24px_rgba(227,176,75,0.2)]"
         >
-          <Trophy size={18} className="text-brass" />
-          <span className="font-display text-[15px] font-semibold text-brasspale">
+          <Trophy size={ICON.lg} className="text-brass" />
+          <span className="font-display text-[15px] font-semibold text-brass">
             Strong pass — the lamp stays lit.
           </span>
         </motion.div>
       )}
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.94 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ ...SPRING, delay: 0.08 }}
-        className="rounded-2xl border border-hairline bg-ink/[0.02] p-7 text-center"
+        initial={ENTER.initial}
+        animate={ENTER.animate}
+        transition={{ ...SOFT, delay: 0.08 }}
+        className="rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] p-7 text-center"
       >
-        <div className="label-mono">{scope === "misses" ? "Retake of missed items" : "Result"}</div>
+        <div className="field-label">{scope === "misses" ? "Retake of missed items" : "Result"}</div>
         <div className="mt-3 font-display text-[3.2rem] font-[420] leading-none text-lamp">
           {shownPct}%
         </div>
@@ -408,7 +409,7 @@ function QuizResults({
         </div>
       </motion.div>
       <div>
-        <div className="label-mono mb-3">By topic</div>
+        <div className="field-label mb-3">By topic</div>
         <div className="space-y-2.5">
           {[...byTopic.entries()].map(([topic, { c, t }], i) => (
             <div key={topic} className="flex items-center gap-3">
@@ -438,7 +439,7 @@ function QuizResults({
       />
       <div className="flex flex-wrap justify-end gap-3">
         <button className={btnGhost} onClick={onRetake}>
-          <ArrowCounterClockwise size={13} className="mr-1.5 inline" />
+          <ArrowCounterClockwise size={ICON.sm} className="mr-1.5 inline" />
           {scope === "misses" ? "Retake the whole quiz" : "Retake"}
         </button>
         {onRegenerate && (
@@ -505,7 +506,7 @@ function QuizQuestionView({
             Item {idx + 1} / {payload.questions.length} · {q.topic}
           </div>
         </div>
-        <div className="whitespace-nowrap font-mono text-[11px] text-brasspale">{fmtScore(score)} correct</div>
+        <div className="whitespace-nowrap font-mono text-[11px] text-brass">{fmtScore(score)} correct</div>
       </div>
       <div className="h-1 overflow-hidden rounded bg-ink/[0.06]">
         <motion.div
@@ -519,9 +520,9 @@ function QuizQuestionView({
       <AnimatePresence initial={false}>
         <motion.div
           key={idx}
-          initial={{ opacity: 0, x: 26 }}
+          initial={{ opacity: 0, x: DRIFT_X }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -26, transition: { duration: 0.16 } }}
+          exit={{ opacity: 0, x: -DRIFT_X, transition: EXIT }}
           transition={SOFT}
           className="space-y-5"
         >
@@ -551,7 +552,7 @@ function QuizQuestionView({
                     <motion.div
                       className="h-full w-1/3 grad-lamp"
                       animate={{ x: ["-100%", "300%"] }}
-                      transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut" }}
+                      transition={{ repeat: Infinity, duration: 1.4, ease: "linear" }}
                     />
                   </div>
                 </div>
@@ -574,11 +575,11 @@ function QuizQuestionView({
               <AnimatePresence>
                 {isChecked && (
                   <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={ENTER.initial}
+                    animate={ENTER.animate}
                     exit={{ opacity: 0 }}
                     transition={SOFT}
-                    className={`rounded-xl border px-4 py-3 text-[13.5px] ${correct ? "border-sage/30 bg-sage/[0.06]" : "border-rust/30 bg-rust/[0.06]"}`}
+                    className={`rounded-[var(--radius-dialog)] border px-4 py-3 text-[13.5px] ${correct ? "border-sage/30 bg-sage/[0.06]" : "border-rust/30 bg-rust/[0.06]"}`}
                   >
                     <span className={correct ? "text-sage" : "text-rust"}>
                       {correct ? "Correct — " : "The answer: "}
@@ -609,7 +610,7 @@ function QuizQuestionView({
                     disabled={isChecked}
                     onClick={() => setPicked((p) => p.map((v, i) => (i === idx ? oi : v)))}
                     whileTap={{ scale: 0.985 }}
-                    className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-[13.5px] transition-colors duration-200 ${
+                    className={`flex w-full items-center gap-3 rounded-[var(--radius-dialog)] border px-4 py-3 text-left text-[13.5px] transition-colors duration-med ${
                       state === "picked"
                         ? "border-brass/50 bg-brass/[0.08]"
                         : state === "answer"
@@ -619,7 +620,7 @@ function QuizQuestionView({
                             : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
                     }`}
                   >
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-hairline-strong font-mono text-[10.5px] text-muted">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--radius-pill)] border border-hairline-strong font-mono text-[10.5px] text-muted">
                       {String.fromCharCode(65 + oi)}
                     </span>
                     <AssessmentContent inline className="min-w-0 flex-1 text-ink/90">{opt}</AssessmentContent>
@@ -632,7 +633,7 @@ function QuizQuestionView({
                           transition={SPRING}
                           className="shrink-0"
                         >
-                          <Check size={15} className="text-sage" />
+                          <Check size={ICON.md} className="text-sage" />
                         </motion.span>
                       )}
                       {state === "wrong" && (
@@ -643,7 +644,7 @@ function QuizQuestionView({
                           transition={SPRING}
                           className="shrink-0"
                         >
-                          <X size={15} className="text-rust" />
+                          <X size={ICON.md} className="text-rust" />
                         </motion.span>
                       )}
                     </AnimatePresence>
@@ -656,11 +657,11 @@ function QuizQuestionView({
           <AnimatePresence>
             {isChecked && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={ENTER.initial}
+                animate={ENTER.animate}
                 exit={{ opacity: 0 }}
                 transition={SOFT}
-                className="rounded-xl border border-moon/15 bg-moon/[0.05] px-4 py-3.5"
+                className="rounded-[var(--radius-dialog)] border border-moon/15 bg-moon/[0.05] px-4 py-3.5"
               >
                 <div className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-moon/80">
                   Why{q.sourceHint ? ` · ${q.sourceHint}` : ""}

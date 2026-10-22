@@ -33,6 +33,22 @@
   --radius-dialog: 12px;
   --radius-pill: 999px;
 
+  /* ── Icon scale ──────────────────────────────────────────────────────── */
+  /* Interface icons only. The bands are the house guide: dense table 14-16,
+     input 16-20, button 16-20, sidebar 18-22, mobile navigation 22-24,
+     feature card 24-32. Twelve is the floor; below it a glyph is texture,
+     not an icon. The Pixelify sprites in src/components/pixel are artwork
+     and sit outside this scale.
+     src/ui/iconScale.ts mirrors these numbers for the Phosphor `size` prop,
+     which cannot read a CSS variable. */
+  --icon-xs: 12px; /* dense badge, inline hint */
+  --icon-sm: 14px; /* dense table row */
+  --icon-md: 16px; /* input, button */
+  --icon-lg: 18px; /* sidebar, panel header */
+  --icon-xl: 20px; /* button, mobile control */
+  --icon-2xl: 24px; /* mobile navigation, feature card */
+  --icon-3xl: 32px; /* feature card, empty state */
+
   /* ── Stacking ────────────────────────────────────────────────────────── */
   --z-titlebar: 40;
   --z-palette: 80;
@@ -92,10 +108,6 @@
   --sage: #3f6e48;
   --rust: #a04d43;
   --candle: #ef8328;
-
-  /* Deprecated spellings kept until Task 2.5 retires the last consumer. */
-  --brassdeep: var(--brass-deep);
-  --brasspale: var(--brass-pale);
 
   --glow-warm: rgba(132, 92, 22, 0.14);
   --glow-cool: rgba(107, 96, 82, 0.12);

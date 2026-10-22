@@ -1,10 +1,9 @@
 /**
- * PayPal Integration Configuration for Comtus Smarter Models Access.
- *
- * Passes are metered in hosted requests by the server proxy (each pass
- * carries its exact quota inside the signed token) — never advertise
- * token quantities, which we neither meter nor enforce.
+ * PayPal display config for Smarter Models.
+ * New passes carry an included usage budget. Passes already sold carry
+ * a request count. The proxy is the source of truth either way.
  */
+import { budgetNanoForPrice, formatUsdFromNano } from "./credits";
 
 export const PAYPAL_CLIENT_ID =
   (import.meta.env.VITE_PAYPAL_CLIENT_ID as string) ||
@@ -13,11 +12,9 @@ export const PAYPAL_CLIENT_ID =
 export interface StudyPlan {
   id: "sprint" | "scholar" | "mastery";
   name: string;
-  price: string; // e.g. "2.99"
-  /** Display-only crossed-out reference price; PayPal charges `amount`. */
-  compareAt: string;
+  price: string;
   amount: number;
-  requests: number;
+  budgetNano: number;
   days: number;
   badge?: string;
   popular?: boolean;
@@ -29,42 +26,38 @@ export const STUDY_PLANS: StudyPlan[] = [
     id: "sprint",
     name: "Sprint Pass",
     price: "2.99",
-    compareAt: "4.99",
     amount: 2.99,
-    requests: 60,
+    budgetNano: budgetNanoForPrice("2.99"),
     days: 60,
-    desc: "~25–35 full mock exams or deep study sessions.",
+    desc: "$1.50 of hosted model usage.",
   },
   {
     id: "scholar",
     name: "Scholar Pass",
     price: "6.99",
-    compareAt: "11.99",
     amount: 6.99,
-    requests: 200,
+    budgetNano: budgetNanoForPrice("6.99"),
     days: 120,
     badge: "Popular",
     popular: true,
-    desc: "~80–100 comprehensive exams with adaptive reasoning.",
+    desc: "$3.50 of hosted model usage.",
   },
   {
     id: "mastery",
     name: "Mastery Pass",
     price: "14.99",
-    compareAt: "24.99",
     amount: 14.99,
-    requests: 500,
+    budgetNano: budgetNanoForPrice("14.99"),
     days: 180,
-    desc: "Full Opus 5 deep synthesis & intensive semester review.",
+    desc: "$7.50 of hosted model usage.",
   },
 ];
 
-export interface DecodedPass {
-  requests: number;
-  expiresAtMs: number;
-}
+export type DecodedPass =
+  | { kind: "requests"; requests: number; expiresAtMs: number }
+  | { kind: "credits"; budgetNano: number; expiresAtMs: number };
 
-/** Read the quota/expiry baked into a comtus-pass-v1 token (no signature check — display only). */
+/** Read the quota baked into a comtus-pass-v1 token. Display only — no signature check. */
 export function decodePassInfo(token: string): DecodedPass | null {
   const t = token.trim();
   if (!t.startsWith("comtus-pass-v1.")) return null;
@@ -73,17 +66,30 @@ export function decodePassInfo(token: string): DecodedPass | null {
   if (dot <= 0) return null;
   try {
     const b64 = rest.slice(0, dot).replace(/-/g, "+").replace(/_/g, "/");
-    const payload = JSON.parse(atob(b64)) as { q?: unknown; e?: unknown };
-    if (typeof payload.q !== "number" || typeof payload.e !== "number") return null;
-    return { requests: payload.q, expiresAtMs: payload.e * 1000 };
+    const payload = JSON.parse(atob(b64)) as { v?: unknown; q?: unknown; c?: unknown; e?: unknown };
+    if (typeof payload.e !== "number") return null;
+    const expiresAtMs = payload.e * 1000;
+    if (payload.v === 2 && typeof payload.c === "number") return { kind: "credits", budgetNano: payload.c, expiresAtMs };
+    if (typeof payload.q === "number") return { kind: "requests", requests: payload.q, expiresAtMs };
+    return null;
   } catch {
     return null;
   }
 }
 
-/** Best-effort tier label for a decoded pass quota. */
-export function planTierForRequests(requests: number): StudyPlan["id"] {
-  if (requests >= 500) return "mastery";
-  if (requests >= 200) return "scholar";
+export function passSummary(info: DecodedPass): string {
+  if (info.kind === "credits") return `${formatUsdFromNano(info.budgetNano)} of hosted usage included`;
+  return `${info.requests} hosted requests`;
+}
+
+/** Best-effort tier label for a decoded pass. */
+export function planTierForPass(info: DecodedPass): StudyPlan["id"] {
+  if (info.kind === "requests") {
+    if (info.requests >= 500) return "mastery";
+    if (info.requests >= 200) return "scholar";
+    return "sprint";
+  }
+  if (info.budgetNano >= budgetNanoForPrice("14.99")) return "mastery";
+  if (info.budgetNano >= budgetNanoForPrice("6.99")) return "scholar";
   return "sprint";
 }

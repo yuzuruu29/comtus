@@ -1,5 +1,6 @@
 import { X } from "@phosphor-icons/react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { ICON } from "./iconScale";
 
 export type ChipTone = "neutral" | "brass" | "moon" | "sage" | "rust" | "candle";
 
@@ -38,7 +39,7 @@ export function Chip({
             onRemove();
           }}
         >
-          <X size={12} weight="bold" />
+          <X size={ICON.xs} weight="bold" />
         </button>
       )}
     </span>

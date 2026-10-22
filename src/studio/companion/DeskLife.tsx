@@ -165,6 +165,21 @@ export default function DeskLife({
     return () => window.removeEventListener("pointerdown", onDown);
   }, [companion]);
 
+  // Resting offset. On mobile the pane tabs own the bottom of the screen, so
+  // the companion clears them instead of sitting on the tab bar.
+  const [restingOffset, setRestingOffset] = useState({ right: 20, bottom: 20 });
+  useEffect(() => {
+    if (!companion) return;
+    const measure = () => {
+      const nav = document.querySelector<HTMLElement>("#mobile-bottom-nav");
+      const navHeight = nav && nav.offsetHeight > 0 ? nav.offsetHeight : 0;
+      setRestingOffset({ right: 20, bottom: navHeight > 0 ? navHeight + 14 : 20 });
+    };
+    measure();
+    window.addEventListener("resize", measure, { passive: true });
+    return () => window.removeEventListener("resize", measure);
+  }, [companion]);
+
   return (
     <div className="desk-life">
       {ignite && <div className="desk-ignite" aria-hidden />}
@@ -192,7 +207,8 @@ export default function DeskLife({
           resizable
           think={batteryThink}
           face={batteryFace}
-          avoidSelector="#study-focus-dock, .composer-shell, #mobile-bottom-nav, #workspace-sources-pane, #workspace-studio-pane, .workspace-header"
+          avoidSelector="#study-focus-dock, .composer-shell, #mobile-bottom-nav, #workspace-sources-pane, #workspace-chat-pane, #workspace-chat-pane-mobile, .workspace-header"
+          restingOffset={restingOffset}
           onMenu={() => setCopilotOpen((v) => !v)}
           menuOpen={copilotOpen}
           menu={(controls) => (
@@ -215,7 +231,7 @@ export default function DeskLife({
           className="relative overflow-hidden"
         >
           <div className="pr-2">
-            <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-brasspale">
+            <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-brass">
               Milestone
             </div>
             <div className="mt-0.5 font-display text-[15px] font-[450] text-ink">

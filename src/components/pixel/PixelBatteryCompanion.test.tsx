@@ -75,6 +75,36 @@ describe("PixelBatteryCompanion", () => {
     expect(sprite).toHaveAttribute("data-animation", "idle");
   });
 
+  it("stays compact by default so it reads as a companion, not a character sheet", () => {
+    mockBreakpointMedia("lg");
+    render(<PixelBatteryCompanion />);
+    const companion = screen.getByLabelText("Compad companion").parentElement!;
+    const width = parseFloat(companion.style.width);
+    expect(width).toBeGreaterThanOrEqual(88);
+    expect(width).toBeLessThanOrEqual(116);
+  });
+
+  it("rests clear of the chat column when the workspace reserves its lane", () => {
+    // The desk at 1440x900: sources on the left, the chat in the middle, the
+    // study tools on the right with a reserved lane at its foot.
+    const viewport = { width: 1440, height: 900 };
+    const dimensions = { width: 99, height: 105 };
+    const chat = { left: 270, top: 84, right: 1150, bottom: 900 };
+    const sources = { left: 0, top: 84, right: 270, bottom: 900 };
+    const resting = computeBottomRightRestingPos(dimensions, viewport, { right: 20, bottom: 20 });
+    const nudged = nudgeOutOfRects(resting, dimensions, [chat, sources], viewport);
+    const companion = {
+      left: nudged.left,
+      top: nudged.top,
+      right: nudged.left + dimensions.width,
+      bottom: nudged.top + dimensions.height,
+    };
+    const overlaps = (a: { left: number; top: number; right: number; bottom: number },
+      b: typeof chat) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+    expect(overlaps(companion, chat)).toBe(false);
+    expect(overlaps(companion, sources)).toBe(false);
+  });
+
   it("keeps every notebook mood inside the sprite frame with pages, binding and a ribbon", () => {
     expect(Object.keys(COZY_PIXEL_BATTERY_ANIMATIONS).sort()).toEqual(["celebrate", "cheer", "idle", "poke", "sleep", "think"]);
     expect(Object.keys(BATTERY_PALETTE).join(" ")).not.toMatch(/TERMINAL|SCREEN|CYAN/);
@@ -230,6 +260,70 @@ describe("PixelBatteryCompanion", () => {
     expect(saved).toEqual({ left: 150, top: 200 });
   });
 
+  it.each([false, true])("handles a desktop-mobile-desktop round trip with saved placement: %s", (savedPlacement) => {
+    const mediaUpdates = new Set<() => void>();
+    vi.stubGlobal("matchMedia", (query: string) => {
+      const minWidth = /min-width: (\d+)px/.exec(query);
+      return {
+        get matches() { return minWidth !== null && window.innerWidth >= Number(minWidth[1]); },
+        addEventListener: (_event: string, update: () => void) => { if (minWidth) mediaUpdates.add(update); },
+        removeEventListener: (_event: string, update: () => void) => mediaUpdates.delete(update),
+      };
+    });
+    let rects: BatteryAvoidRect[] = [];
+    // The desk at 1440: sources on the left, the chat in the middle, the
+    // study tools on the right. The chat and the sources are keep-outs; the
+    // study tools column is where the companion lives, so it is not one.
+    const desktopRects = (composerTop: number) => [
+      { left: 0, top: 0, right: 1440, bottom: 80 },
+      { left: 0, top: 80, right: 280, bottom: 900 },
+      { left: 280, top: 80, right: 1110, bottom: 900 },
+      { left: 300, top: composerTop, right: 1090, bottom: 864 },
+    ];
+    const resize = (width: number, height: number, nextRects: BatteryAvoidRect[]) => {
+      act(() => {
+        rects = nextRects;
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+        mediaUpdates.forEach((update) => update());
+        fireEvent(window, new Event("resize"));
+      });
+    };
+
+    resize(1440, 900, desktopRects(720));
+    if (savedPlacement) persistBatteryPos({ left: 940, top: 541 });
+    render(<PixelBatteryCompanion freePlacement avoidRects={() => rects} />);
+    const frame = screen.getByRole("button", { name: "Compad companion" }).parentElement!;
+    expect(frame).toHaveStyle({ width: "99px" });
+    if (savedPlacement) {
+      expect(frame).toHaveStyle({ left: "940px", top: "541px" });
+    } else {
+      // No saved placement: it rests in the study tools column, clear of the chat.
+      expect(parseFloat(frame.style.left)).toBeGreaterThanOrEqual(1110);
+    }
+
+    for (const width of [390, 320]) {
+      resize(width, 844, [
+        { left: 0, top: 0, right: width, bottom: 80 },
+        { left: 0, top: 660, right: width, bottom: 776 },
+        { left: 0, top: 776, right: width, bottom: 844 },
+      ]);
+      expect(frame.style.width).toBe("72px");
+      expect(parseFloat(frame.style.left) + 72).toBeLessThanOrEqual(width - 12);
+    }
+
+    resize(1440, 900, desktopRects(680));
+    expect(frame.style.width).toBe("99px");
+    if (savedPlacement) {
+      expect(frame).toHaveStyle({ left: "236px", top: "541px" });
+      expect(loadSavedBatteryPos()).toEqual({ left: 940, top: 541 });
+    } else {
+      expect(parseFloat(frame.style.left)).toBeGreaterThanOrEqual(1110);
+      expect(parseFloat(frame.style.top)).toBeGreaterThanOrEqual(700);
+      expect(loadSavedBatteryPos()).toBeNull();
+    }
+  });
+
   it("keeps free placement through dragging, layout changes, and remounts", async () => {
     const avoidRects = () => [{ left: 0, top: 0, right: 320, bottom: 768 }];
     persistBatteryPos({ left: 20, top: 100 });
@@ -264,20 +358,20 @@ describe("PixelBatteryCompanion", () => {
     pointerDown(handle, { pointerId: 2, clientX: 100, clientY: 100 });
     fireEvent.pointerMove(window, { pointerId: 2, clientX: 136, clientY: 138 });
     fireEvent.pointerUp(window, { pointerId: 2 });
-    expect(controls.width).toBe(198);
-    expect(localStorage.getItem(`${COMTUS_BATTERY_POS_KEY}:width`)).toBe("198");
+    expect(controls.width).toBe(135);
+    expect(localStorage.getItem(`${COMTUS_BATTERY_POS_KEY}:width`)).toBe("135");
     pointerDown(handle, { pointerId: 7, clientX: 100, clientY: 100 });
     fireEvent.pointerMove(window, { pointerId: 7, clientX: 172, clientY: 176 });
-    expect(controls.width).toBe(270);
+    expect(controls.width).toBe(207);
     fireEvent.pointerCancel(window, { pointerId: 7 });
-    expect(controls.width).toBe(198);
-    expect(localStorage.getItem(`${COMTUS_BATTERY_POS_KEY}:width`)).toBe("198");
+    expect(controls.width).toBe(135);
+    expect(localStorage.getItem(`${COMTUS_BATTERY_POS_KEY}:width`)).toBe("135");
     unmount();
 
     render(<PixelBatteryCompanion freePlacement resizable menuOpen menu={menu} />);
-    expect(controls.width).toBe(198);
+    expect(controls.width).toBe(135);
     act(() => { controls.setWidth(Infinity); });
-    expect(controls.width).toBe(198);
+    expect(controls.width).toBe(135);
     act(() => { controls.setWidth(500); });
     expect(controls.width).toBe(280);
     act(() => { controls.setWidth(10); });
@@ -381,13 +475,13 @@ describe("PixelBatteryCompanion", () => {
     mockBreakpointMedia("sm");
     const { unmount } = render(<PixelBatteryCompanion />);
     let companion = screen.getByLabelText("Compad companion").parentElement!;
-    expect(companion.style.width).toBe(`${36 * 2.25}px`);
+    expect(companion.style.width).toBe(`${36 * 2}px`);
     unmount();
 
     mockBreakpointMedia("lg");
     render(<PixelBatteryCompanion />);
     companion = screen.getByLabelText("Compad companion").parentElement!;
-    expect(companion.style.width).toBe(`${36 * 4.5}px`);
+    expect(companion.style.width).toBe(`${36 * 2.75}px`);
   });
 
   it("supports touch pointer drag without throwing", () => {

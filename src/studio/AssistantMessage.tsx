@@ -7,10 +7,11 @@ import { mathRemarkPlugins, mathRehypePlugins } from "../lib/markdownMath";
 import { externalMarkdownComponents } from "./ExternalLink";
 import type { ChatMessage, WebSearchMeta } from "../lib/types";
 import { deriveSessionTitle } from "../lib/sessionText";
-import { HOUSE, SOFT } from "./fx";
+import { ENTER, EXIT, RISE_1, SOFT } from "./fx";
 import { timeAgo } from "./ui";
 import ThinkingDrawer from "./ThinkingDrawer";
 import CitationList from "./CitationList";
+import { ICON } from "../ui/iconScale";
 
 function formatSearchMs(ms: number): string {
   return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.max(ms, 0)}ms`;
@@ -28,9 +29,9 @@ export function SearchStatusStrip({
       <div
         key="searching"
         role="status"
-        className="anim-rise flex items-center gap-2 rounded-xl border border-moon/25 bg-moon/[0.06] px-3.5 py-2 text-[12px] text-moon"
+        className="anim-rise flex items-center gap-2 rounded-[var(--radius-dialog)] border border-moon/25 bg-moon/[0.06] px-3.5 py-2 text-[12px] text-moon"
       >
-        <Globe size={15} weight="fill" className="shrink-0 text-moon" />
+        <Globe size={ICON.md} weight="fill" className="shrink-0 text-moon" />
         <span>Searching the web…</span>
       </div>
     );
@@ -42,9 +43,9 @@ export function SearchStatusStrip({
       <div
         key="error"
         role="status"
-        className="anim-rise anim-shake flex items-start gap-2 rounded-xl border border-rust/30 bg-rust/[0.07] px-3.5 py-2 text-[12px] text-rust"
+        className="anim-rise anim-shake flex items-start gap-2 rounded-[var(--radius-dialog)] border border-rust/30 bg-rust/[0.07] px-3.5 py-2 text-[12px] text-rust"
       >
-        <Flame size={15} className="mt-0.5 shrink-0" />
+        <Flame size={ICON.md} className="mt-0.5 shrink-0" />
         <div className="min-w-0 flex-1">
           <div>Web search failed — answering without live pages</div>
           {meta.error && (
@@ -61,9 +62,9 @@ export function SearchStatusStrip({
       <div
         key="empty"
         role="status"
-        className="anim-rise flex items-center gap-2 rounded-xl border border-hairline bg-ink/[0.03] px-3.5 py-2 text-[12px] text-muted"
+        className="anim-rise flex items-center gap-2 rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.03] px-3.5 py-2 text-[12px] text-muted"
       >
-        <Globe size={15} className="shrink-0" />
+        <Globe size={ICON.md} className="shrink-0" />
         <span className="min-w-0 flex-1 truncate">Searched the web · no results</span>
         {meta.query && (
           <span className="hidden max-w-[10rem] truncate font-mono text-[10.5px] sm:inline">
@@ -80,9 +81,9 @@ export function SearchStatusStrip({
     <div
       key="results"
       role="status"
-      className="anim-rise flex items-center gap-2 rounded-xl border border-moon/25 bg-moon/[0.06] px-3.5 py-2 text-[12px] text-moon"
+      className="anim-rise flex items-center gap-2 rounded-[var(--radius-dialog)] border border-moon/25 bg-moon/[0.06] px-3.5 py-2 text-[12px] text-moon"
     >
-      <Globe size={15} weight="fill" className="shrink-0 text-moon" />
+      <Globe size={ICON.md} weight="fill" className="shrink-0 text-moon" />
       <span className="min-w-0 flex-1">
         Fetched {meta.count} web {noun} just now
       </span>
@@ -148,13 +149,13 @@ const AssistantMessage = memo(function AssistantMessage({
     leave === "instant"
       ? { opacity: 0, transition: { duration: 0 } }
       : leave === "fade"
-        ? { opacity: 0, y: 6, transition: { duration: 0.15, ease: HOUSE } }
+        ? { opacity: 0, y: -RISE_1, transition: EXIT }
         : undefined;
 
   return (
     <motion.div
-      initial={settled ? false : { opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={settled ? false : ENTER.initial}
+      animate={ENTER.animate}
       exit={exit}
       transition={SOFT}
       className="space-y-3"
@@ -192,7 +193,7 @@ const AssistantMessage = memo(function AssistantMessage({
       ) : (
         streaming && (
           <div className="flex items-center gap-3 text-[13px] py-2.5 font-mono">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brass/10 border border-brass/30 shadow-sm">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-pill)] bg-brass/10 border border-brass/30 shadow-sm">
               <span className="typing-harmonic-dot" />
               <span className="typing-harmonic-dot" />
               <span className="typing-harmonic-dot" />
@@ -215,7 +216,7 @@ const AssistantMessage = memo(function AssistantMessage({
       {/* Action bar — always visible, with explicit success feedback */}
       {!streaming && msg.content && (
         <div aria-live="polite" className="flex items-center justify-between pt-1">
-          <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted opacity-60">
+          <span className="font-mono text-[10px] tabular-nums text-muted">
             {timeAgo(msg.createdAt)}
           </span>
           <div className="flex items-center gap-1.5">
@@ -227,26 +228,26 @@ const AssistantMessage = memo(function AssistantMessage({
                 setSaved(true);
                 setTimeout(() => setSaved(false), 2400);
               }}
-              className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] transition-colors ${
+              className={`flex items-center gap-1.5 rounded-[var(--radius-pill)] border px-3 py-1 text-[12px] transition-colors ${
                 saved
                   ? "border-sage/40 bg-sage/[0.12] text-sage"
-                  : "border-brass/35 bg-brass/[0.08] text-brasspale hover:bg-brass/[0.16]"
+                  : "border-brass/35 bg-brass/[0.08] text-brass hover:bg-brass/[0.16]"
               }`}
               title="Save this answer to Studio Notes"
             >
-              {saved ? <Check size={13} weight="bold" /> : <BookmarkSimple size={13} />}
+              {saved ? <Check size={ICON.sm} weight="bold" /> : <BookmarkSimple size={ICON.sm} />}
               <span>{saved ? "Saved ✓" : "Save to note"}</span>
             </button>
             <button
               onClick={copyText}
-              className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] transition-colors ${
+              className={`flex items-center gap-1.5 rounded-[var(--radius-pill)] border px-3 py-1 text-[12px] transition-colors ${
                 copied
                   ? "border-sage/40 bg-sage/[0.12] text-sage"
                   : "border-hairline text-muted hover:border-hairline-strong hover:text-ink"
               }`}
               title="Copy answer"
             >
-              {copied ? <Check size={13} weight="bold" /> : <Copy size={13} />}
+              {copied ? <Check size={ICON.sm} weight="bold" /> : <Copy size={ICON.sm} />}
               <span>{copied ? "Copied ✓" : "Copy"}</span>
             </button>
           </div>

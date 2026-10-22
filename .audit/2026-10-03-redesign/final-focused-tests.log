@@ -1,0 +1,11 @@
+Already up to date
+Done in 524ms using pnpm v11.1.2
+
+ RUN  v4.1.11 C:/Comtus AI
+
+
+ Test Files  6 passed (6)
+      Tests  46 passed (46)
+   Start at  01:57:15
+   Duration  118.10s (transform 1.22s, setup 8.45s, import 166.77s, tests 7.24s, environment 48.62s)
+

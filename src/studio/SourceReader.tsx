@@ -30,6 +30,7 @@ import { useMediaQuery } from "../lib/useMediaQuery";
 import ExternalLink from "./ExternalLink";
 import { popoverPosition, selectedRange } from "./readerSelection";
 import "./source-reader.css";
+import { ICON } from "../ui/iconScale";
 
 type View = "read" | "marks";
 
@@ -351,7 +352,7 @@ export default function SourceReader({
               onClick={() => openEditor(h.id, true)}
               aria-label={`Your note: ${h.note}. Edit`}
             >
-              <NotePencil size={13} aria-hidden="true" />
+              <NotePencil size={ICON.sm} aria-hidden="true" />
               <span>{h.note}</span>
             </button>
           ))}
@@ -431,20 +432,20 @@ export default function SourceReader({
               onMouseDown={(event) => event.preventDefault()}
             >
               <button type="button" onClick={() => void markSelection(false)}>
-                <Highlighter size={15} aria-hidden="true" />
+                <Highlighter size={ICON.md} aria-hidden="true" />
                 Highlight
               </button>
               <button type="button" onClick={() => void markSelection(true)}>
-                <NotePencil size={15} aria-hidden="true" />
+                <NotePencil size={ICON.md} aria-hidden="true" />
                 Note
               </button>
               <button type="button" onClick={() => void makeCard()} title="Make a fill-in-the-blank card from this sentence">
-                <Cards size={15} aria-hidden="true" />
+                <Cards size={ICON.md} aria-hidden="true" />
                 Card
               </button>
               {onAsk && (
                 <button type="button" onClick={() => askAbout(source.content.slice(selection.start, selection.end))}>
-                  <ChatCircleText size={15} aria-hidden="true" />
+                  <ChatCircleText size={ICON.md} aria-hidden="true" />
                   Ask
                 </button>
               )}
@@ -478,7 +479,7 @@ export default function SourceReader({
                 <Button
                   variant="ghost"
                   size="sm"
-                  icon={<Trash size={14} aria-hidden="true" />}
+                  icon={<Trash size={ICON.sm} aria-hidden="true" />}
                   onClick={async () => {
                     setEditing(null);
                     await removeHighlight(editingHighlight.id);
@@ -491,7 +492,7 @@ export default function SourceReader({
                   <Button
                     variant="ghost"
                     size="sm"
-                    icon={<ChatCircleText size={14} aria-hidden="true" />}
+                    icon={<ChatCircleText size={ICON.sm} aria-hidden="true" />}
                     onClick={() => askAbout(editingHighlight.quote)}
                   >
                     Ask
@@ -534,7 +535,7 @@ export default function SourceReader({
               </ol>
               <div className="reader-marks-foot">
                 <p role="status">{saved}</p>
-                <Button variant="secondary" size="sm" icon={<NotePencil size={14} />} onClick={() => void saveAsNote()}>
+                <Button variant="secondary" size="sm" icon={<NotePencil size={ICON.sm} />} onClick={() => void saveAsNote()}>
                   Save as a note
                 </Button>
               </div>
@@ -547,7 +548,7 @@ export default function SourceReader({
         <p role="status" className="reader-notice">
           {notice}
         </p>
-        <Button variant="ghost" onClick={onClose} icon={<X size={13} weight="light" />}>
+        <Button variant="ghost" onClick={onClose} icon={<X size={ICON.sm} weight="light" />}>
           Close
         </Button>
       </div>

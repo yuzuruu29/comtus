@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDown, ArrowUpRight, BookOpen, CaretDown, Check, FileText, Lamp } from "@phosphor-icons/react";
+import { ArrowDown, BookOpen, CaretDown, Check, FileText, Lamp } from "@phosphor-icons/react";
 import { Button, Segmented } from "../ui";
 import { startOpenRouterOAuth } from "../lib/openrouterAuth";
 import { useMotionMode } from "../studio/fx";
 import Nav from "./Nav";
 import Footer from "./Footer";
 import OnboardingModal from "./OnboardingModal";
-import StudyMotion from "./StudyMotion";
 import StudyFieldGuide from "./StudyFieldGuide";
+import { usePublicPageEntry } from "./usePublicPageEntry";
 import "./landing.css";
+import "./landing-motion.css";
+import { ICON } from "../ui/iconScale";
 
 const SAMPLE_QUESTIONS = [
   {
@@ -30,24 +32,38 @@ const PRACTICE_OPTIONS = [
   "Highlight an important sentence",
 ] as const;
 
+/** A pen stroke under the one phrase the headline leans on. Decorative: the
+ *  words carry the meaning, so it stays out of the accessibility tree. The
+ *  path is normalised (pathLength 1) so CSS can draw it with a dash offset. */
+function InkUnderline() {
+  return (
+    <svg className="landing-ink-underline" viewBox="0 0 300 18" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <path d="M3 11 C 54 4, 98 15, 152 9 S 246 5, 297 10" pathLength={1} />
+    </svg>
+  );
+}
+
 function DeskPreview() {
   const [mode, setMode] = useState<"understand" | "practice">("understand");
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answerIndex, setAnswerIndex] = useState<number | null>(null);
+  // The sample opens already written. Its answers only animate once the
+  // visitor has asked for a different one, so nothing waits on an introduction.
+  const [touched, setTouched] = useState(false);
   const sample = SAMPLE_QUESTIONS[questionIndex];
 
   return (
-    <div className="landing-preview" aria-label="Interactive sample notebook">
+    <div className="landing-preview" role="region" aria-label="Interactive sample notebook" data-touched={touched}>
       <div className="landing-preview-bar">
         <div className="landing-preview-title">
-          <BookOpen size={22} weight="duotone" aria-hidden="true" />
-          <span>Learning & memory</span>
+          <BookOpen size={ICON.xxl} weight="duotone" aria-hidden="true" />
+          <div><span className="landing-preview-overline">A sample notebook</span><span>Learning & memory</span></div>
         </div>
-        <span className="landing-preview-label">Interactive preview</span>
+        <span className="landing-preview-label">Try it here. No setup needed.</span>
       </div>
       <div className="landing-preview-desk">
         <aside className="landing-preview-sources" aria-label="Sample source">
-          <div className="landing-preview-pane-title"><FileText size={16} aria-hidden="true" /> Your source</div>
+          <div className="landing-preview-pane-title"><FileText size={ICON.md} aria-hidden="true" /> The reading<span>01 source</span></div>
           <article id="sample-source" className="landing-sample-page" tabIndex={-1}>
             <div className="landing-page-reference"><span>Study notes</span><span>p. 12</span></div>
             <h3>Learning by remembering</h3>
@@ -62,23 +78,23 @@ function DeskPreview() {
             <Segmented
               aria-label="Explore the sample notebook"
               value={mode}
-              onChange={setMode}
+              onChange={(next) => { setTouched(true); setMode(next); }}
               options={[{ value: "understand", label: "Understand" }, { value: "practice", label: "Practise" }]}
             />
-            <span className="landing-preview-grounded"><Lamp size={15} aria-hidden="true" /> From your source</span>
+            <span className="landing-preview-grounded"><Lamp size={ICON.md} aria-hidden="true" /> Source in sight</span>
           </div>
           {mode === "understand" ? (
             <div className="landing-preview-conversation">
               <div className="landing-sample-question"><span>You</span><p>{sample.question}</p></div>
-              <div className="landing-sample-answer" key={questionIndex}>
-                <div className="landing-answer-byline"><Lamp size={19} weight="duotone" aria-hidden="true" /><span>Comtus</span></div>
-                <p>{sample.answer} <a className="landing-citation" href="#sample-source" aria-label="View source, Study notes page 12">1</a></p>
-                <p className="landing-answer-takeaway">{sample.takeaway}</p>
+              <div className="landing-sample-answer" aria-live="polite" aria-atomic="true">
+                <div key={`byline-${questionIndex}`} className="landing-answer-byline"><Lamp size={ICON.xl} weight="duotone" aria-hidden="true" /><span>Comtus</span></div>
+                <p key={`answer-${questionIndex}`}>{sample.answer} <a className="landing-citation" href="#sample-source" aria-label="View source, Study notes page 12">1</a></p>
+                <p key={`takeaway-${questionIndex}`} className="landing-answer-takeaway">{sample.takeaway}</p>
               </div>
               <div className="landing-sample-prompts">
                 <span>Try a sample question</span>
                 {SAMPLE_QUESTIONS.map(({ question }, index) => (
-                  <button key={question} type="button" aria-pressed={questionIndex === index} onClick={() => setQuestionIndex(index)}>{question}</button>
+                  <button key={question} type="button" aria-pressed={questionIndex === index} onClick={() => { if (index === questionIndex) return; setTouched(true); setQuestionIndex(index); }}>{question}</button>
                 ))}
               </div>
             </div>
@@ -94,21 +110,23 @@ function DeskPreview() {
                       key={option}
                       aria-pressed={answerIndex === index}
                       className={answerIndex === index ? (index === 1 ? "is-correct" : "is-incorrect") : ""}
-                      onClick={() => setAnswerIndex(index)}
+                      onClick={() => { setTouched(true); setAnswerIndex(index); }}
                     >
                       <span className="landing-option-letter" aria-hidden="true">{String.fromCharCode(65 + index)}</span>
                       <span>{option}</span>
-                      {answerIndex === index && index === 1 && <Check size={18} aria-hidden="true" />}
+                      {answerIndex === index && index === 1 && <Check size={ICON.lg} aria-hidden="true" />}
                     </button>
                   ))}
                 </div>
               </fieldset>
               <p className="landing-practice-feedback" role="status">
-                {answerIndex === null
-                  ? "Choose an answer. There is room to get it wrong here."
-                  : answerIndex === 1
-                    ? "Exactly. You are bringing the idea to mind without looking. Check your notes afterwards to fill in any gaps."
-                    : "Try again. Retrieval means bringing the idea to mind without looking at your notes."}
+                <span key={answerIndex ?? "idle"}>
+                  {answerIndex === null
+                    ? "Choose an answer. There is room to get it wrong here."
+                    : answerIndex === 1
+                      ? "Exactly. You are bringing the idea to mind without looking. Check your notes afterwards to fill in any gaps."
+                      : "Try again. Retrieval means bringing the idea to mind without looking at your notes."}
+                </span>
               </p>
               <a href="#sample-source" className="landing-text-link">Revisit the source</a>
             </div>
@@ -121,6 +139,7 @@ function DeskPreview() {
 }
 
 export default function LandingPage() {
+  const titleRef = usePublicPageEntry();
   const motionMode = useMotionMode();
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
@@ -132,7 +151,7 @@ export default function LandingPage() {
     try {
       await startOpenRouterOAuth();
     } catch {
-      setConnectionError("The connection could not be opened. Try again, or add your key in Studio under AI Models.");
+      setConnectionError("The connection could not be opened. Try again, or add your key at the desk under AI Models.");
     } finally {
       setConnecting(false);
     }
@@ -142,49 +161,44 @@ export default function LandingPage() {
     <div className="landing-site landing-home" data-motion={motionMode}>
       <a className="landing-skip-link" href="#landing-main">Skip to content</a>
       <Nav onLanding />
-      <main id="landing-main">
-        <section className="landing-hero landing-container" id="hero" aria-labelledby="landing-title">
-          <div className="landing-hero-intro">
-            <div className="landing-hero-editorial">
-              <p className="landing-eyebrow"><span aria-hidden="true" /> A study companion for curious minds</p>
-              <h1 id="landing-title">
-                <span className="landing-title-rough">Rough thought,</span>{" "}
-                <em>polished.<svg viewBox="0 0 400 26" fill="none" aria-hidden="true"><path pathLength="1" d="M8 18C86 5 244 3 386 9M56 23C178 13 264 15 338 17" /></svg></em>
+      <main id="landing-main" tabIndex={-1}>
+        <section className="landing-hero" id="hero" aria-labelledby="landing-title">
+          <div className="landing-container landing-hero-editorial">
+            <p className="landing-hero-signature">A personal study workspace</p>
+            <div className="landing-hero-intro">
+              <h1 ref={titleRef} id="landing-title" tabIndex={-1}>
+                <span className="landing-line"><span className="landing-line-text">From reading it</span></span>{" "}
+                <span className="landing-line"><span className="landing-line-text">to <em className="landing-ink-word">knowing it.<InkUnderline /></em></span></span>
               </h1>
               <div className="landing-hero-copy">
-                <p className="landing-hero-lead">Make something of<br />everything you’re learning.</p>
-                <p>Bring your notes, readings, and questions. Find the connections, follow the sources, and practise what stays.</p>
+                <p className="landing-hero-lead">Your sources, clearer answers, and the practice that makes it stick. Together in a notebook of your own.</p>
                 <div className="landing-hero-actions">
-                  <Link to="/studio" className="btn btn-primary btn-md landing-open-desk">Open Studio<ArrowUpRight size={19} aria-hidden="true" /></Link>
-                  <button className="landing-text-button" type="button" onClick={() => setOnboardingOpen(true)}>Set up with a guide</button>
+                  <Link to="/studio" className="btn btn-primary btn-md landing-open-desk">Open the desk</Link>
+                  <a className="landing-text-link" href="#try-the-desk">Try the notebook<ArrowDown size={ICON.lg} aria-hidden="true" /></a>
                 </div>
-                <span className="landing-hero-note">Your materials. A desk of your own.</span>
+                <p className="landing-hero-note">Start with your material. Connect an AI model when you’re ready.</p>
               </div>
             </div>
-            <StudyMotion motionMode={motionMode} />
           </div>
-          <div className="landing-hero-bottom"><span>From a page full of notes to a head full of ideas.</span><a href="#try-the-desk">Try a little studying<ArrowDown size={16} aria-hidden="true" /></a></div>
         </section>
 
         <section className="landing-demo-section" id="try-the-desk" aria-labelledby="landing-demo-title">
           <div className="landing-container">
-            <div className="landing-demo-heading" data-landing-reveal><div><p className="landing-eyebrow">A moment at your desk</p><h2 id="landing-demo-title">See the connection.<br /><em>Then make it yours.</em></h2></div><p>A source on one side. A new way of seeing it on the other.<br />Try an answer or a practice question below.</p></div>
-            <div data-landing-reveal>
-              <DeskPreview />
-            </div>
+            <div className="landing-demo-heading"><h2 id="landing-demo-title">A little studying, right here.</h2><p>Ask. Check the source. Try remembering.</p></div>
+            <DeskPreview />
+            <div className="landing-demo-afterword"><p>Rough thought, polished.</p><button className="landing-text-button" type="button" onClick={() => setOnboardingOpen(true)}>Set up with a guide</button></div>
           </div>
         </section>
 
         <section id="how-it-works" className="landing-section landing-container landing-method" aria-labelledby="landing-method-title">
           <div className="landing-section-heading" data-landing-reveal>
-            <p className="landing-eyebrow">Follow your curiosity</p>
-            <h2 id="landing-method-title">Less scattered.<br /><em>More understood.</em></h2>
-            <p>A notebook holds the whole study session together, from your first question to your next practice round.</p>
+            <h2 id="landing-method-title">Keep the thread<br />of your <em>thinking.</em></h2>
+            <p>From the sentence that stops you to the answer you can explain. Give the whole study session one place to live.</p>
           </div>
           <ol className="landing-workflow">
-            <li data-landing-reveal><span aria-hidden="true">01</span><div><h3>Bring the chapter.</h3><p>Add a PDF, a document, a link, or a few notes. Keep the materials for a subject in one notebook.</p></div></li>
-            <li data-landing-reveal><span aria-hidden="true">02</span><div><h3>Follow the question.</h3><p>Ask about a difficult idea. Read the explanation beside your material and follow its citations back to the source.</p></div></li>
-            <li data-landing-reveal><span aria-hidden="true">03</span><div><h3>Find out what stayed.</h3><p>Make a quiz or a set of flashcards. Use what you miss to decide where to spend your next few minutes.</p></div></li>
+            <li data-landing-reveal><div><h3>Bring the chapter.</h3><p>PDFs, documents, links, and your own notes. Collect the material for a subject in one notebook.</p></div></li>
+            <li data-landing-reveal><div><h3>Stay with the question.</h3><p>Work through a difficult idea. Follow an answer’s citations back to the passage that supports it.</p></div></li>
+            <li data-landing-reveal><div><h3>Find out what stayed.</h3><p>Turn your material into practice. Use the questions you miss to choose what to revisit.</p></div></li>
           </ol>
         </section>
 
@@ -192,28 +206,28 @@ export default function LandingPage() {
 
         <section id="model-access" className="landing-section landing-container landing-access" aria-labelledby="landing-access-title">
           <div className="landing-section-heading" data-landing-reveal>
-            <h2 id="landing-access-title">Your desk.<br /><em>Your choice of AI.</em></h2>
-            <p>Explore Studio, then connect a model when you are ready to ask questions or generate study material.</p>
+            <h2 id="landing-access-title">A notebook here.<br /><em>AI on your terms.</em></h2>
+            <p>Explore the desk, then connect a model when you are ready to ask questions or generate study material.</p>
             <Button variant="secondary" loading={connecting} onClick={() => void connectOpenRouter()}>Connect OpenRouter</Button>
             {connectionError && <p className="landing-connection-error" role="alert">{connectionError}</p>}
           </div>
           <div className="landing-access-notes">
-            <div data-landing-reveal><h3>Choose how you connect.</h3><p>Connect your OpenRouter account, or add an existing provider key in Studio under <strong>AI Models</strong>. Free model availability and usage limits are set by the provider. Optional hosted access is also available there.</p></div>
+            <div data-landing-reveal><h3>Choose how you connect.</h3><p>Connect your OpenRouter account, or add an existing provider key at the desk under <strong>AI Models</strong>. Free model availability and usage limits are set by the provider. Optional hosted access is also available there.</p></div>
             <div data-landing-reveal><h3>Your notebook lives on your device.</h3><p>Comtus keeps your notebooks and imported material in local browser storage. When you use an AI feature, your question and relevant source text are sent to the model provider you choose.</p><Link to="/privacy" className="landing-text-link">Read how your data is handled</Link></div>
           </div>
         </section>
 
         <section id="faq" className="landing-section landing-container landing-faq" aria-labelledby="landing-faq-title">
-          <div className="landing-section-heading" data-landing-reveal><h2 id="landing-faq-title">A few things<br /><em>you might wonder.</em></h2><p>Need a hand getting started? <Link to="/study-companion" className="landing-text-link">Read the study guide</Link> or <button type="button" className="landing-text-button" onClick={() => setOnboardingOpen(true)}>set up your desk</button>.</p></div>
+          <div className="landing-section-heading" data-landing-reveal><h2 id="landing-faq-title">Good questions.<br /><em>Clear answers.</em></h2><p>Need a hand getting started? <Link to="/study-companion" className="landing-text-link">Read the study guide</Link> or <button type="button" className="landing-text-button" onClick={() => setOnboardingOpen(true)}>set up your desk</button>.</p></div>
           <div className="landing-faq-list">
-            <details data-landing-reveal><summary>What can I bring into a notebook?<CaretDown size={18} aria-hidden="true" /></summary><p>You can import PDFs, Word documents, plain text and Markdown, paste your notes, or add a web link. Keep related materials together so your questions and practice stay connected to the same subject.</p></details>
-            <details data-landing-reveal><summary>Do I need an AI account to get started?<CaretDown size={18} aria-hidden="true" /></summary><p>You can open Studio and organise a notebook before connecting a model. For answers and generated study material, connect an AI provider in AI Models. OpenRouter connection, your own provider key, and optional hosted access are available.</p></details>
-            <details data-landing-reveal><summary>How do I check an answer?<CaretDown size={18} aria-hidden="true" /></summary><p>Follow an answer’s citations to the supporting text in your sources. AI can still make mistakes, so check important claims against the original material. Your source is always part of the study process.</p></details>
-            <details data-landing-reveal><summary>Can I use it for exam preparation?<CaretDown size={18} aria-hidden="true" /></summary><p>Studio includes quizzes, mock exams, flashcards, and study guides. Build practice from your own review materials and use the answer explanations to revisit difficult topics.</p></details>
-            <details data-landing-reveal><summary>Will my notebooks appear on another device?<CaretDown size={18} aria-hidden="true" /></summary><p>Notebooks are stored on the device and browser where you create them. Export a backup to keep a separate copy. Clearing browser storage can remove your local study data.</p></details>
+            <details data-landing-reveal><summary>What can I bring into a notebook?<CaretDown size={ICON.lg} aria-hidden="true" /></summary><p>You can import PDFs, Word documents, plain text and Markdown, paste your notes, or add a web link. Keep related materials together so your questions and practice stay connected to the same subject.</p></details>
+            <details data-landing-reveal><summary>Do I need an AI account to get started?<CaretDown size={ICON.lg} aria-hidden="true" /></summary><p>You can open the desk and organise a notebook before connecting a model. For answers and generated study material, connect an AI provider in AI Models. OpenRouter connection, your own provider key, and optional hosted access are available.</p></details>
+            <details data-landing-reveal><summary>How do I check an answer?<CaretDown size={ICON.lg} aria-hidden="true" /></summary><p>Follow an answer’s citations to the supporting text in your sources. AI can still make mistakes, so check important claims against the original material. Your source is always part of the study process.</p></details>
+            <details data-landing-reveal><summary>Can I use it for exam preparation?<CaretDown size={ICON.lg} aria-hidden="true" /></summary><p>The desk includes quizzes, mock exams, flashcards, and study guides. Build practice from your own review materials and use the answer explanations to revisit difficult topics.</p></details>
+            <details data-landing-reveal><summary>Will my notebooks appear on another device?<CaretDown size={ICON.lg} aria-hidden="true" /></summary><p>Notebooks are stored on the device and browser where you create them. Export a backup to keep a separate copy. Clearing browser storage can remove your local study data.</p></details>
           </div>
         </section>
-        <div className="landing-closing landing-container" data-landing-reveal><p>Bring one chapter.<br /><em>Start there.</em></p><Link to="/studio" className="btn btn-primary btn-md landing-open-desk">Open Studio<ArrowUpRight size={19} aria-hidden="true" /></Link></div>
+        <div className="landing-closing" data-landing-reveal><div className="landing-container landing-closing-inner"><p>One chapter.<br /><em>A good place to start.</em></p><div><Link to="/studio" className="btn btn-primary btn-md landing-open-desk">Open the desk</Link><span>Make room for what comes next.</span></div></div></div>
       </main>
       <Footer />
       <OnboardingModal isOpen={onboardingOpen} onClose={() => setOnboardingOpen(false)} />

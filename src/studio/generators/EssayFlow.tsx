@@ -8,6 +8,7 @@ import { saveGeneration } from "../../lib/db";
 import { GENERATOR_SYSTEM, buildSourceBlock, sanitizeReview } from "./common";
 import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote } from "../ui";
 import { Feather, ListChecks, PencilSimpleLine } from "@phosphor-icons/react";
+import { ICON } from "../../ui/iconScale";
 
 interface PromptIdea {
   title: string;
@@ -126,16 +127,16 @@ JSON shape:
           <button
             onClick={thinkUp}
             disabled={busy}
-            className="flex w-full items-center gap-3 rounded-xl border border-brass/25 bg-brass/[0.05] px-4 py-3.5 text-left transition-colors hover:bg-brass/[0.09] disabled:opacity-50"
+            className="flex w-full items-center gap-3 rounded-[var(--radius-dialog)] border border-brass/25 bg-brass/[0.05] px-4 py-3.5 text-left transition-colors hover:bg-brass/[0.09] disabled:opacity-50"
           >
-            <Feather size={16} className="shrink-0 text-brasspale" />
+            <Feather size={ICON.md} className="shrink-0 text-brass" />
             <span className="text-[13.5px] text-ink/90">
               {busy ? status || "Thinking of prompts…" : "Set three prompts from my sources"}
             </span>
           </button>
           <div className="flex items-center gap-3">
             <span className="h-px flex-1 bg-white/[0.08]" />
-            <span className="label-mono !text-[9.5px]">or bring your own</span>
+            <span className="field-label">or bring your own</span>
             <span className="h-px flex-1 bg-white/[0.08]" />
           </div>
           <Field label="Your own prompt">
@@ -172,7 +173,7 @@ JSON shape:
             <button className={btnGhost} onClick={onCancel}>Cancel</button>
             {customPrompt.trim() && essay.trim().length > 80 && (
               <button className={btnLamp} onClick={grade} disabled={busy}>
-                <ListChecks size={14} className="mr-1.5 inline" />
+                <ListChecks size={ICON.sm} className="mr-1.5 inline" />
                 {busy ? "Grading…" : "Grade with reasoning"}
               </button>
             )}
@@ -182,12 +183,12 @@ JSON shape:
 
       {ideas && !chosen && (
         <div className="space-y-3">
-          <div className="label-mono">Choose a prompt</div>
+          <div className="field-label">Choose a prompt</div>
           {ideas.map((p) => (
             <button
               key={p.title}
               onClick={() => setChosen(p)}
-              className="w-full rounded-xl border border-hairline bg-ink/[0.02] p-4 text-left transition-colors hover:border-brass/40 active:scale-[0.99]"
+              className="w-full rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] p-4 text-left transition-colors hover:border-brass/40 active:scale-[0.99]"
             >
               <div className="font-display text-[1.05rem] font-[440] text-ink">{p.title}</div>
               <div className="mt-1.5 text-[13px] leading-relaxed text-ink/80">{p.prompt}</div>
@@ -202,7 +203,7 @@ JSON shape:
 
       {chosen && (
         <div className="space-y-5">
-          <div className="rounded-xl border border-brass/25 bg-brass/[0.05] px-4 py-3.5">
+          <div className="rounded-[var(--radius-dialog)] border border-brass/25 bg-brass/[0.05] px-4 py-3.5">
             <div className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-brass/80">
               {chosen.title}
             </div>
@@ -229,7 +230,7 @@ JSON shape:
           {error && <ErrorNote>{error}</ErrorNote>}
           <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-between sm:gap-3">
             <button className={btnGhost} onClick={() => setChosen(null)}>
-              <PencilSimpleLine size={13} className="mr-1.5 inline" /> Different prompt
+              <PencilSimpleLine size={ICON.sm} className="mr-1.5 inline" /> Different prompt
             </button>
             <button className={btnLamp} onClick={grade} disabled={busy || essay.trim().length < 80}>
               {busy ? "Grading…" : "Grade with reasoning"}
@@ -247,8 +248,8 @@ export function EssayFeedback({ payload }: { payload: EssayReviewPayload }) {
   const pct = Math.round((payload.overall / payload.overallMax) * 100);
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-hairline bg-ink/[0.02] p-6 text-center">
-        <div className="label-mono">{payload.rubricName}</div>
+      <div className="rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] p-6 text-center">
+        <div className="field-label">{payload.rubricName}</div>
         <div className="mt-3 font-display text-[2.5rem] font-[420] leading-none text-lamp sm:text-[3rem]">
           {payload.overall}
           <span className="text-[1.2rem] text-muted sm:text-[1.4rem]"> / {payload.overallMax}</span>
@@ -258,10 +259,10 @@ export function EssayFeedback({ payload }: { payload: EssayReviewPayload }) {
 
       <div className="space-y-3">
         {payload.criteria.map((c: RubricCriterion) => (
-          <div key={c.name} className="rounded-xl border border-hairline bg-ink/[0.02] p-4">
+          <div key={c.name} className="rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] p-4">
             <div className="flex items-center justify-between">
               <span className="text-[13.5px] font-medium text-ink/90">{c.name}</span>
-              <span className="font-mono text-[11.5px] text-brasspale">
+              <span className="font-mono text-[11.5px] text-brass">
                 {c.score} / {c.max}
               </span>
             </div>
@@ -273,7 +274,7 @@ export function EssayFeedback({ payload }: { payload: EssayReviewPayload }) {
         ))}
       </div>
 
-      <div className="rounded-xl border border-moon/15 bg-moon/[0.05] px-4 py-4">
+      <div className="rounded-[var(--radius-dialog)] border border-moon/15 bg-moon/[0.05] px-4 py-4">
         <div className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-moon/80">
           The grader's reasoning
         </div>
@@ -282,27 +283,27 @@ export function EssayFeedback({ payload }: { payload: EssayReviewPayload }) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <div className="label-mono mb-2.5 text-sage/80">Strengths</div>
+          <div className="field-label mb-2.5 text-sage/80">Strengths</div>
           <ul className="space-y-2">
             {payload.strengths.map((s, i) => (
-              <li key={i} className="rounded-lg border border-sage/20 bg-sage/[0.04] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-ink/85">
+              <li key={i} className="rounded-[var(--radius-field)] border border-sage/20 bg-sage/[0.04] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-ink/85">
                 {s}
               </li>
             ))}
           </ul>
         </div>
         <div>
-          <div className="label-mono mb-2.5 text-brass/80">Next draft</div>
+          <div className="field-label mb-2.5 text-brass/80">Next draft</div>
           <ul className="space-y-2">
             {payload.improvements.map((s, i) => (
-              <li key={i} className="rounded-lg border border-brass/20 bg-brass/[0.04] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-ink/85">
+              <li key={i} className="rounded-[var(--radius-field)] border border-brass/20 bg-brass/[0.04] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-ink/85">
                 {s}
               </li>
             ))}
           </ul>
         </div>
       </div>
-      <div className="text-center font-mono text-[10px] uppercase tracking-[0.18em] text-muted/60">
+      <div className="text-center font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
         {pct}% — rough thought, polished
       </div>
     </div>

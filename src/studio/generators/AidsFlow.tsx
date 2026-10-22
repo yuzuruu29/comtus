@@ -17,7 +17,8 @@ import { saveGeneration } from "../../lib/db";
 import { GENERATOR_SYSTEM, buildSourceBlock, sanitizeCards } from "./common";
 import DeckImport from "./DeckImport";
 import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote } from "../ui";
-import { ArrowsIn, ArrowsOut, CaretLeft, CaretRight, Check, Copy, Crown, Presentation, Stack } from "@phosphor-icons/react";
+import { ArrowsIn, ArrowsOut, CaretLeft, Check, Copy, Crown, Presentation, Stack } from "@phosphor-icons/react";
+import { ICON } from "../../ui/iconScale";
 
 export { FlashcardsView } from "./FlashcardReview";
 
@@ -115,7 +116,7 @@ Return ONLY the markdown document — no preamble.`,
             key={a.kind}
             onClick={() => setKind(a.kind)}
             disabled={busy}
-            className={`rounded-xl border p-4 text-left transition-colors disabled:opacity-60 ${
+            className={`rounded-[var(--radius-dialog)] border p-4 text-left transition-colors disabled:opacity-60 ${
               kind === a.kind
                 ? "border-brass/50 bg-brass/[0.08]"
                 : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
@@ -148,9 +149,9 @@ export function DocViewer({ payload }: { payload: DocPayload }) {
           setCopied(true);
           setTimeout(() => setCopied(false), 1600);
         }}
-        className="absolute right-0 top-0 z-10 flex items-center gap-1.5 rounded-full border border-hairline bg-ground/70 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted backdrop-blur transition-colors hover:text-ink"
+        className="absolute right-0 top-0 z-10 flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-hairline bg-ground/70 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted backdrop-blur transition-colors hover:text-ink"
       >
-        {copied ? <Check size={11} className="text-sage" /> : <Copy size={11} />}
+        {copied ? <Check size={ICON.xs} className="text-sage" /> : <Copy size={ICON.xs} />}
         {copied ? "copied" : "copy"}
       </button>
       <div className="md pt-10">
@@ -233,7 +234,7 @@ JSON shape: {"cards":[{"front":"...","back":"...","topic":"..."}]}`,
   return (
     <div className="space-y-5">
       <div>
-        <div className="label-mono !text-[10px] mb-2">Number of Cards</div>
+        <div className="field-label mb-2">Number of cards</div>
         <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
           {PRESETS.map((p) => (
             <button
@@ -276,7 +277,7 @@ JSON shape: {"cards":[{"front":"...","back":"...","topic":"..."}]}`,
       <div className="flex justify-end gap-3">
         <button className={btnGhost} onClick={onCancel}>Cancel</button>
         <button className={btnLamp} onClick={generate} disabled={busy}>
-          <Stack size={13} className="mr-1.5 inline" />
+          <Stack size={ICON.sm} className="mr-1.5 inline" />
           {busy ? "Distilling…" : `Make ${count} cards`}
         </button>
       </div>
@@ -307,7 +308,7 @@ export function PresentationConfigForm({
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
 
-  const isAnthropic = cs.provider === "anthropic" || cs.provider === "claude-oauth";
+  const isAnthropic = cs.provider === "anthropic";
 
   const STYLES = [
     { name: "Lecture Deck", desc: "Comprehensive slide-by-slide concepts & teaching notes" },
@@ -384,9 +385,9 @@ JSON shape:
   if (!isAnthropic) {
     return (
       <div className="space-y-4">
-        <div className="overflow-hidden rounded-2xl border border-brass/40 bg-gradient-to-b from-brass/[0.1] to-ground/90 p-5 sm:p-6 space-y-3">
+        <div className="overflow-hidden rounded-[var(--radius-dialog)] border border-brass/40 bg-gradient-to-b from-brass/[0.1] to-ground/90 p-5 sm:p-6 space-y-3">
           <div className="flex items-center gap-2">
-            <Crown size={18} className="text-brass" />
+            <Crown size={ICON.lg} className="text-brass" />
             <span className="font-display text-[1.2rem] font-[430] text-ink">
               Anthropic Exclusive Feature
             </span>
@@ -394,12 +395,12 @@ JSON shape:
           <p className="text-[13px] leading-relaxed text-muted">
             The <strong>PPT & Slideshow Maker</strong> requires the deep architectural synthesis and structured reasoning of <strong>Claude Opus 5 & Sonnet 5</strong> to produce production-grade slide decks and speaker scripts.
           </p>
-          <div className="rounded-xl border border-hairline bg-ground/70 p-3 text-[12px] text-brasspale flex items-center justify-between">
+          <div className="rounded-[var(--radius-dialog)] border border-hairline bg-ground/70 p-3 text-[12px] text-brass flex items-center justify-between">
             <span>Powered by our hosted Anthropic key · PayPal pass from $2.99</span>
             {onOpenSettings && (
               <button
                 onClick={onOpenSettings}
-                className="rounded-lg grad-lamp px-3 py-1 font-mono text-[11px] font-semibold text-night"
+                className="rounded-[var(--radius-field)] grad-lamp px-3 py-1 font-mono text-[11px] font-semibold text-ground"
               >
                 Open Settings
               </button>
@@ -415,20 +416,20 @@ JSON shape:
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-2 font-mono text-[11px] text-brasspale">
-        <Crown size={13} className="text-brass" />
+      <div className="flex items-center gap-2 font-mono text-[11px] text-brass">
+        <Crown size={ICON.sm} className="text-brass" />
         <span>Powered by Claude Opus 5 & Sonnet 5</span>
       </div>
 
       <div>
-        <div className="label-mono !text-[10px] mb-2">Presentation Style</div>
+        <div className="field-label mb-2">Presentation style</div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {STYLES.map((s) => (
             <button
               key={s.name}
               type="button"
               onClick={() => setStyle(s.name)}
-              className={`rounded-xl border p-3 text-left transition-colors ${
+              className={`rounded-[var(--radius-dialog)] border p-3 text-left transition-colors ${
                 style === s.name
                   ? "border-brass/50 bg-brass/[0.08]"
                   : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
@@ -474,7 +475,7 @@ JSON shape:
       <div className="flex justify-end gap-3">
         <button className={btnGhost} onClick={onCancel}>Cancel</button>
         <button className={btnLamp} onClick={generate} disabled={busy}>
-          <Presentation size={13} className="mr-1.5 inline" />
+          <Presentation size={ICON.sm} className="mr-1.5 inline" />
           {busy ? "Generating deck…" : `Build ${slideCount}-Slide Deck`}
         </button>
       </div>
@@ -542,38 +543,38 @@ export function SlideshowView({ gen }: { gen: Generation }) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowNotes((v) => !v)}
-            className={`rounded-lg border px-2.5 py-1 font-mono text-[11px] transition-colors ${
-              showNotes ? "border-brass/50 bg-brass/15 text-brasspale" : "border-hairline text-muted hover:text-ink"
+            className={`rounded-[var(--radius-field)] border px-2.5 py-1 font-mono text-[11px] transition-colors ${
+              showNotes ? "border-brass/50 bg-brass/15 text-brass" : "border-hairline text-muted hover:text-ink"
             }`}
           >
             Speaker Notes {showNotes ? "On" : "Off"}
           </button>
           <button
             onClick={exportMarkdown}
-            className="flex items-center gap-1 rounded-lg border border-hairline bg-ink/5 px-2.5 py-1 font-mono text-[11px] text-muted hover:text-ink"
+            className="flex items-center gap-1 rounded-[var(--radius-field)] border border-hairline bg-ink/5 px-2.5 py-1 font-mono text-[11px] text-muted hover:text-ink"
           >
-            {copied ? <Check size={12} className="text-sage" /> : <Copy size={12} />}
+            {copied ? <Check size={ICON.xs} className="text-sage" /> : <Copy size={ICON.xs} />}
             {copied ? "Copied" : "Copy Deck"}
           </button>
           <button
             onClick={() => setFullscreen((v) => !v)}
-            className="flex items-center gap-1 rounded-lg border border-hairline bg-ink/5 px-2.5 py-1 font-mono text-[11px] text-muted hover:text-ink"
+            className="flex items-center gap-1 rounded-[var(--radius-field)] border border-hairline bg-ink/5 px-2.5 py-1 font-mono text-[11px] text-muted hover:text-ink"
           >
-            {fullscreen ? <ArrowsIn size={12} /> : <ArrowsOut size={12} />}
+            {fullscreen ? <ArrowsIn size={ICON.xs} /> : <ArrowsOut size={ICON.xs} />}
             {fullscreen ? "Exit" : "Fullscreen"}
           </button>
         </div>
       </div>
 
       {/* Active Slide Card */}
-      <div className="relative min-h-[340px] sm:min-h-[380px] rounded-2xl border border-brass/30 bg-gradient-to-b from-surface/95 to-ground p-6 sm:p-8 flex flex-col justify-between shadow-[0_15px_40px_rgba(0,0,0,0.4)]">
+      <div className="relative min-h-[340px] sm:min-h-[380px] rounded-[var(--radius-dialog)] border border-brass/30 bg-gradient-to-b from-surface/95 to-ground p-6 sm:p-8 flex flex-col justify-between shadow-[0_15px_40px_rgba(0,0,0,0.4)]">
         <div>
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-brasspale bg-brass/10 border border-brass/25 px-2.5 py-0.5 rounded-full">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-brass bg-brass/10 border border-brass/25 px-2.5 py-0.5 rounded-[var(--radius-pill)]">
               Slide {activeIdx + 1} of {slides.length}
             </span>
             {slide.visualLayoutHint && (
-              <span className="font-mono text-[10px] text-muted/70 border border-hairline px-2 py-0.5 rounded">
+              <span className="font-mono text-[10px] text-muted border border-hairline px-2 py-0.5 rounded">
                 Layout: {slide.visualLayoutHint}
               </span>
             )}
@@ -590,7 +591,7 @@ export function SlideshowView({ gen }: { gen: Generation }) {
           <ul className="mt-6 space-y-2.5">
             {slide.bullets?.map((b, i) => (
               <li key={i} className="flex items-start gap-2.5 text-[14px] leading-relaxed text-ink/90">
-                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-brass shrink-0" />
+                <span className="mt-1.5 h-1.5 w-1.5 rounded-[var(--radius-pill)] bg-brass shrink-0" />
                 <span>{b}</span>
               </li>
             ))}
@@ -599,8 +600,8 @@ export function SlideshowView({ gen }: { gen: Generation }) {
 
         {/* Speaker Notes Drawer */}
         {showNotes && slide.notes && (
-          <div className="mt-6 pt-4 border-t border-hairline bg-ground/50 rounded-xl p-3.5 space-y-1">
-            <span className="font-mono text-[9.5px] uppercase tracking-wider text-brasspale font-medium">
+          <div className="mt-6 pt-4 border-t border-hairline bg-ground/50 rounded-[var(--radius-dialog)] p-3.5 space-y-1">
+            <span className="font-mono text-[9.5px] uppercase tracking-wider text-brass font-medium">
               🎙️ Presenter Script / Speaker Notes:
             </span>
             <p className="text-[12.5px] leading-relaxed text-muted">{slide.notes}</p>
@@ -615,7 +616,7 @@ export function SlideshowView({ gen }: { gen: Generation }) {
           disabled={activeIdx === 0}
           className={btnGhost + " disabled:opacity-30"}
         >
-          <CaretLeft size={14} className="mr-1 inline" /> Previous
+          <CaretLeft size={ICON.sm} className="mr-1 inline" /> Previous
         </button>
 
         {/* Slide indicator dots */}
@@ -624,7 +625,7 @@ export function SlideshowView({ gen }: { gen: Generation }) {
             <button
               key={idx}
               onClick={() => setActiveIdx(idx)}
-              className={`h-2 rounded-full transition-all ${
+              className={`h-2 rounded-[var(--radius-pill)] transition-all ${
                 activeIdx === idx ? "w-6 bg-brass" : "w-2 bg-white/20 hover:bg-white/40"
               }`}
               aria-label={`Go to slide ${idx + 1}`}
@@ -637,7 +638,7 @@ export function SlideshowView({ gen }: { gen: Generation }) {
           disabled={activeIdx === slides.length - 1}
           className={btnLamp + " disabled:opacity-30"}
         >
-          Next <CaretRight size={14} className="ml-1 inline" />
+          Next
         </button>
       </div>
     </div>

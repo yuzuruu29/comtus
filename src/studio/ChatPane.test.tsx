@@ -22,7 +22,7 @@ vi.mock("../lib/useSmoothText", () => ({ useSmoothText: (text: string) => ({ tex
 vi.mock("./useVoiceInput", () => ({ useVoiceInput: () => ({ state: "idle", active: false, interim: "", error: "", elapsed: 0, toggle: () => {} }) }));
 vi.mock("./focus", () => ({ loadFocus: () => ["source-1"] }));
 vi.mock("./Composer", () => ({ default: (props: ComponentProps<typeof Composer>) => <div><textarea aria-label="Main draft" value={props.input} readOnly={props.preparing} onChange={(event) => props.onInputChange(event.target.value)} /><button type="button" disabled={!!props.streaming || props.preparing} onClick={() => props.onSend()}>Main send</button></div> }));
-vi.mock("./MessageList", () => ({ default: (props: ComponentProps<typeof MessageList>) => <div aria-label="Main transcript">{props.messages.map((message) => <p key={message.id}>{message.content}</p>)}{props.streaming && <p>{props.smoothedText}</p>}{props.error && <p role="alert">{props.error}</p>}</div> }));
+vi.mock("./MessageList", () => ({ default: (props: ComponentProps<typeof MessageList>) => <div ref={props.scrollRef} aria-label="Main transcript">{props.messages.map((message) => <p key={message.id}>{message.content}</p>)}{props.streaming && <p>{props.smoothedText}</p>}{props.error && <p role="alert">{props.error}</p>}</div> }));
 vi.mock("./SessionMenu", () => ({ default: (props: ComponentProps<typeof SessionMenu>) => <div><button type="button" onClick={props.onNew}>New thread</button>{props.sessions.map((session) => <button key={session.id} type="button" onClick={() => props.onSelect(session.id)}>Open {session.id}</button>)}</div> }));
 
 const notebook: Notebook = { id: "notebook-1", name: "Learning notebook", createdAt: 0, updatedAt: 0 };
@@ -150,9 +150,18 @@ it("keeps an empty transcript at the top and transfers focus when the full porta
   scene.rerender(<SharedChat open={false} focusRequest={1} />);
   expect(screen.getByLabelText("Main draft")).toHaveFocus();
   expect(screen.getByLabelText("Main draft")).toHaveValue("Continue this draft");
+  expect(screen.getByLabelText("Main transcript").scrollTop).toBe(0);
   screen.getByRole("button", { name: "Main send" }).focus();
   scene.rerender(<SharedChat open={false} focusRequest={2} />);
   expect(screen.getByLabelText("Main draft")).toHaveFocus();
+});
+
+it("scrolls a loaded conversation to its latest message", async () => {
+  vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(900);
+  await database.db.messages.put({ id: "saved-message", notebookId: notebook.id, sessionId: "thread-1", role: "user", content: "Continue our reading", createdAt: 1 });
+  render(<SharedChat />);
+  await waitFor(() => expect(screen.getByLabelText("Main transcript")).toHaveTextContent("Continue our reading"));
+  expect(screen.getByLabelText("Main transcript").scrollTop).toBe(900);
 });
 
 it.each(["stop", "thread", "notebook"] as const)("rejects late callbacks and final answers after %s changes request ownership", async (change) => {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen,
+  ArrowRight,
   CaretDown,
   DeviceMobile,
   FileArrowUp,
@@ -12,13 +13,13 @@ import {
   Plug,
   Plus,
   SquaresFour,
+  HardDrives,
   X,
 } from "@phosphor-icons/react";
 import { Button, Dialog, Empty, Field, IconButton, Input, Menu, Segmented, Skeleton } from "../ui";
 import { db, createNotebook, deleteNotebook, touchNotebook } from "../lib/db";
 import { exportNotebook, openNotebookText, readNotebookFileNative } from "../lib/backup";
 import type { Notebook } from "../lib/types";
-import ComtusLogo from "../components/brand/ComtusLogo";
 import DeskShell from "./DeskShell";
 import SettingsModal, { type SettingsTab } from "./SettingsModal";
 import NotebookCard, { type NotebookCardData } from "./NotebookCard";
@@ -29,7 +30,9 @@ import { useDesk } from "./DeskContext";
 import { modLabel } from "./shortcuts";
 import { detectPlatform, isTauri } from "../lib/desktop";
 import { timeAgo } from "./ui";
+import { useMotionMode } from "./fx";
 import "./shelf.css";
+import { ICON } from "../ui/iconScale";
 
 type ViewMode = "grid" | "list";
 
@@ -43,6 +46,7 @@ export default function Shelf({
   onReview?: (notebookId: string, generationId: string) => void;
   needsKey: boolean;
 }) {
+  const motionMode = useMotionMode();
   const [notebooks, setNotebooks] = useState<NotebookCardData[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -51,6 +55,7 @@ export default function Shelf({
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("settings");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   const [renamingNotebook, setRenamingNotebook] = useState<Notebook | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
@@ -76,15 +81,21 @@ export default function Shelf({
   }, []);
 
   const refresh = useCallback(async () => {
-    const [allNotebooks, allSources] = await Promise.all([db.notebooks.toArray(), db.sources.toArray()]);
-    const sourceCountMap = new Map<string, number>();
-    for (const s of allSources) {
-      sourceCountMap.set(s.notebookId, (sourceCountMap.get(s.notebookId) ?? 0) + 1);
+    setLoadError("");
+    try {
+      const [allNotebooks, allSources] = await Promise.all([db.notebooks.toArray(), db.sources.toArray()]);
+      const sourceCountMap = new Map<string, number>();
+      for (const s of allSources) {
+        sourceCountMap.set(s.notebookId, (sourceCountMap.get(s.notebookId) ?? 0) + 1);
+      }
+      setNotebooks(
+        allNotebooks.map((nb) => ({ ...nb, sourceCount: sourceCountMap.get(nb.id) ?? 0 })),
+      );
+    } catch {
+      setLoadError("Your notebooks couldn’t be loaded. Try opening your notebooks again.");
+    } finally {
+      setLoaded(true);
     }
-    setNotebooks(
-      allNotebooks.map((nb) => ({ ...nb, sourceCount: sourceCountMap.get(nb.id) ?? 0 })),
-    );
-    setLoaded(true);
   }, []);
 
   // A kickstart handoff from onboarding mints its notebook here, before the
@@ -143,7 +154,12 @@ export default function Shelf({
   };
 
   const handleExport = async (nb: Notebook) => {
-    await exportNotebook(nb).catch(() => undefined);
+    setFileNotice(null);
+    try {
+      await exportNotebook(nb);
+    } catch {
+      setFileNotice({ tone: "error", text: "The notebook could not be exported. Your original is still on this device." });
+    }
   };
 
   /** A notebook someone exported (maybe you, on another device) opens
@@ -179,16 +195,16 @@ export default function Shelf({
       aria-label="Open a notebook"
       align="end"
       trigger={
-        <Button variant="secondary" icon={<FolderOpen size={18} aria-hidden="true" />} iconEnd={<CaretDown size={14} aria-hidden="true" />}>
+        <Button variant="secondary" icon={<FolderOpen size={ICON.lg} aria-hidden="true" />} iconEnd={<CaretDown size={ICON.md} weight="bold" className="shelf-open-caret" aria-hidden="true" />}>
           Open
         </Button>
       }
       items={[
-        { key: "file", label: "A notebook file", icon: <FileArrowUp size={18} aria-hidden="true" />, onSelect: pickFile },
+        { key: "file", label: "A notebook file", icon: <FileArrowUp size={ICON.lg} aria-hidden="true" />, onSelect: pickFile },
         {
           key: "device",
           label: "From another device",
-          icon: <DeviceMobile size={18} aria-hidden="true" />,
+          icon: <DeviceMobile size={ICON.lg} aria-hidden="true" />,
           onSelect: () => setReceiving({ code: "" }),
         },
       ]}
@@ -197,30 +213,36 @@ export default function Shelf({
 
   return (
     <DeskShell onSettings={openSettings} onNewNotebook={() => setCreating(true)}>
-      <div className="shelf-page">
+      <div className="shelf-page bg-paper-parchment" data-motion={motionMode}>
+        <a className="shelf-skip-link" href="#shelf-main">Skip to notebooks</a>
         <div className="shelf-content">
           <header className="shelf-header">
             <Link to="/" aria-label="Back to landing" className="shelf-brand">
-              <ComtusLogo variant="full" size="sm" />
+              comtus<span aria-hidden="true">.</span>
             </Link>
+            <nav className="shelf-nav" aria-label="Studio navigation">
+              <Link to="/studio" aria-current="page">Shelf</Link>
+              <Link to="/study-companion">Study guide</Link>
+            </nav>
             <div className="shelf-header-actions">
-              <span className="shelf-save-note">Saved on this device</span>
+              <span className="shelf-save-note"><HardDrives size={ICON.md} aria-hidden="true" /> Saved on this device</span>
               <IconButton aria-label="Settings" onClick={() => openSettings("settings")}>
-                <GearSix size={20} aria-hidden="true" />
+                <GearSix size={ICON.xl} aria-hidden="true" />
               </IconButton>
             </div>
           </header>
 
-          <main>
+          <main id="shelf-main" tabIndex={-1}>
             <div className="shelf-intro">
               <div>
-                <h1>Your notebooks</h1>
-                <p>Your sources, conversations, and study tools, kept together.</p>
+                <span className="shelf-kicker">Your notebooks</span>
+                <h1>Your study desk<span>.</span></h1>
+                <p>A home for your sources. Room for your thinking.</p>
               </div>
               {notebooks.length > 0 && (
                 <div className="shelf-intro-actions">
                   {openMenu}
-                  <Button className="shelf-new" icon={<Plus size={18} aria-hidden="true" />} onClick={() => setCreating(true)}>
+                  <Button className="shelf-new" icon={<Plus size={ICON.lg} aria-hidden="true" />} onClick={() => setCreating(true)}>
                     New notebook
                   </Button>
                 </div>
@@ -236,7 +258,7 @@ export default function Shelf({
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 event.target.value = "";
-                if (file) void file.text().then(openFileText);
+                if (file) void file.text().then(openFileText).catch(() => setFileNotice({ tone: "error", text: "That file could not be read. Try another copy." }));
               }}
             />
             {fileNotice && (
@@ -251,7 +273,13 @@ export default function Shelf({
               </p>
             )}
 
-            {!loaded ? (
+            {loadError ? (
+              <section className="shelf-load-error" role="alert">
+                <h2>Your notebooks couldn’t open.</h2>
+                <p>{loadError}</p>
+                <Button variant="secondary" onClick={() => { setLoaded(false); void refresh(); }}>Try again</Button>
+              </section>
+            ) : !loaded ? (
               <div className="shelf-grid" aria-label="Loading notebooks" aria-busy="true">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <Skeleton.Card key={i} />
@@ -260,25 +288,17 @@ export default function Shelf({
             ) : notebooks.length === 0 ? (
               <section className="shelf-start" aria-labelledby="shelf-start-title">
                 <div className="shelf-start-copy">
-                  <BookOpen size={36} weight="light" aria-hidden="true" />
-                  <h2 id="shelf-start-title">Start with what you’re learning.</h2>
-                  <p>Make a notebook for a course, an exam, or a question you want to work through.</p>
-                  <Button className="shelf-new" icon={<Plus size={18} aria-hidden="true" />} onClick={() => setCreating(true)}>
+                  <span className="shelf-kicker"><span aria-hidden="true">01 /</span> A notebook of your own</span>
+                  <h2 id="shelf-start-title">What are you<br /><em>working on?</em></h2>
+                  <p>A course. An exam. A question that won’t leave you alone. Give it a notebook and start making connections.</p>
+                  <Button className="shelf-new" icon={<Plus size={ICON.lg} aria-hidden="true" />} onClick={() => setCreating(true)}>
                     New notebook
                   </Button>
-                  <span className="shelf-start-note">Give it a name. Add your material when you’re ready.</span>
-                  <span className="shelf-start-open-row">
-                    Already have a notebook?{" "}
-                    <button type="button" className="shelf-start-open" onClick={pickFile}>
-                      Open its file
-                    </button>{" "}
-                    or{" "}
-                    <button type="button" className="shelf-start-open" onClick={() => setReceiving({ code: "" })}>
-                      receive it from another device
-                    </button>
-                  </span>
+                  <span className="shelf-start-note">Start with a name. Add the material as you go.</span>
                 </div>
-                <ol className="shelf-start-steps" aria-label="How a notebook works">
+                <div className="shelf-start-page">
+                  <div className="shelf-page-heading"><BookOpen size={ICON.xxl} weight="light" aria-hidden="true" /><span>Inside your notebook</span></div>
+                  <ol className="shelf-start-steps" aria-label="How a notebook works">
                   <li>
                     <div>
                       <h3>Add your sources</h3>
@@ -297,21 +317,31 @@ export default function Shelf({
                       <p>Turn your material into quizzes, flashcards, and study guides.</p>
                     </div>
                   </li>
-                </ol>
+                  </ol>
+                  <p className="shelf-page-foot">From a source to an idea you can explain.</p>
+                </div>
+                <div className="shelf-start-open-row">
+                  <FolderOpen size={ICON.xl} aria-hidden="true" />
+                  <span>Bringing a notebook with you?</span>
+                  <button type="button" className="shelf-start-open" onClick={pickFile}>Open its file</button>
+                  <span>or</span>
+                  <button type="button" className="shelf-start-open" onClick={() => setReceiving({ code: "" })}>receive it from another device</button>
+                </div>
               </section>
             ) : (
               <>
                 {latestNotebook && (
                   <section className="shelf-resume" aria-label="Continue studying">
-                    <BookOpen className="shelf-resume-icon" size={32} weight="light" aria-hidden="true" />
+                    <div className="shelf-resume-mark" aria-hidden="true"><BookOpen size={ICON.xl} weight="light" /></div>
                     <div className="shelf-resume-copy">
+                      <span className="shelf-kicker">Last opened</span>
                       <h2>{latestNotebook.name}</h2>
                       <p>
                         Updated {timeAgo(latestNotebook.updatedAt)}
                         <span>{latestNotebook.sourceCount} {latestNotebook.sourceCount === 1 ? "source" : "sources"}</span>
                       </p>
                     </div>
-                    <Button variant="secondary" onClick={() => onOpen(latestNotebook.id)}>
+                    <Button variant="secondary" iconEnd={<ArrowRight size={ICON.lg} aria-hidden="true" />} onClick={() => onOpen(latestNotebook.id)}>
                       Continue studying
                     </Button>
                   </section>
@@ -326,7 +356,7 @@ export default function Shelf({
                       <p>Most recently updated first</p>
                     </div>
                     <div className="shelf-search">
-                      <MagnifyingGlass size={18} aria-hidden="true" />
+                      <MagnifyingGlass size={ICON.lg} aria-hidden="true" />
                       <Input
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -335,18 +365,18 @@ export default function Shelf({
                       />
                       {searchQuery && (
                         <IconButton aria-label="Clear search" className="shelf-search-clear" onClick={() => setSearchQuery("")}>
-                          <X size={16} aria-hidden="true" />
+                          <X size={ICON.md} aria-hidden="true" />
                         </IconButton>
                       )}
                     </div>
-                    <SearchLibraryButton />
+                    <SearchNotebooksButton />
                     <Segmented
                       aria-label="View"
                       value={viewMode}
                       onChange={setViewMode}
                       options={[
-                        { value: "grid", label: "Grid", icon: <SquaresFour size={17} aria-hidden="true" /> },
-                        { value: "list", label: "List", icon: <ListDashes size={17} aria-hidden="true" /> },
+                        { value: "grid", label: "Grid", icon: <SquaresFour size={ICON.lg} aria-hidden="true" /> },
+                        { value: "list", label: "List", icon: <ListDashes size={ICON.lg} aria-hidden="true" /> },
                       ]}
                     />
                   </div>
@@ -365,10 +395,11 @@ export default function Shelf({
                     />
                   ) : (
                     <ul className="shelf-grid" data-view={viewMode} aria-label="Notebooks">
-                      {processedNotebooks.map((nb) => (
+                      {processedNotebooks.map((nb, index) => (
                         <li key={nb.id}>
                           <NotebookCard
                             notebook={nb}
+                            number={index + 1}
                             onOpen={onOpen}
                             onRename={(notebook) => {
                               setRenamingNotebook(notebook);
@@ -388,7 +419,7 @@ export default function Shelf({
 
             {needsKey && (
               <aside className="shelf-model-setup" aria-label="Model setup">
-                <Plug size={20} aria-hidden="true" />
+                <Plug size={ICON.xl} aria-hidden="true" />
                 <p>
                   <strong>Ready for questions and study tools?</strong>
                   <span>Connect a model when you need one. You can organize your sources first.</span>
@@ -398,6 +429,10 @@ export default function Shelf({
                 </Button>
               </aside>
             )}
+            <footer className="shelf-footer">
+              <span>Rough thought, polished.</span>
+              <p>Notebooks stay in this browser. <button type="button" onClick={() => openSettings("settings")}>Keep a backup</button></p>
+            </footer>
           </main>
         </div>
 
@@ -418,7 +453,7 @@ export default function Shelf({
           <div className="shelf-dialog space-y-5">
             <Field label="Notebook name">
               <Input
-                autoFocus
+                data-autofocus
                 aria-label="Notebook name"
                 value={renameDraft}
                 onChange={(e) => setRenameDraft(e.target.value)}
@@ -460,12 +495,13 @@ export default function Shelf({
 }
 
 /** The title filter only sees names; this opens full-text search across
- *  every source, chat and saved item. Rendered inside DeskShell so it
- *  reaches the palette through desk context. */
-function SearchLibraryButton() {
+ *  every source, chat and saved item. It reads as a button, not a second
+ *  field: the shelf filter is the only input on this row. Rendered inside
+ *  DeskShell so it reaches the palette through desk context. */
+function SearchNotebooksButton() {
   const desk = useDesk();
   return (
-    <Button variant="ghost" className="shelf-search-library" onClick={desk.openPalette}>
+    <Button variant="secondary" className="shelf-search-library" onClick={desk.openPalette}>
       Search inside notebooks
       <kbd aria-hidden="true">{modLabel(detectPlatform())} K</kbd>
     </Button>

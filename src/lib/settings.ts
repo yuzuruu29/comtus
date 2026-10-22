@@ -1,24 +1,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
-import type { AnthropicModelId, CodexModelInfo, CodexUsage, Effort, OAuthAccount, ProviderId, StoredKey } from "./types";
-import { normalizeStoredCodexUsage } from "./codexUsage";
+import type { AnthropicModelId, Effort, ProviderId, StoredKey } from "./types";
 import { DEFAULT_READING, isReadingSize, type ReadingSize } from "./fontPresets";
 import type { CallSettings } from "./llm";
 
 export type PlanTier = "free" | "sprint" | "scholar" | "mastery";
-
-/** Fallback Codex model roster until discovery (`GET /codex/models`)
- *  refreshes it with the account's actual list. gpt-5.6 family uses the
- *  Responses-Lite wire format (see llm.ts). */
-export const CODEX_FALLBACK_MODELS: CodexModelInfo[] = [
-  { id: "gpt-5.6-luna", label: "GPT-5.6 Luna", lite: true, ctx: "1M" },
-  { id: "gpt-5.6-sol", label: "GPT-5.6 Sol", lite: true, ctx: "1M" },
-  { id: "gpt-5.6-terra", label: "GPT-5.6 Terra", lite: true, ctx: "1M" },
-  { id: "gpt-5.5", label: "GPT-5.5", ctx: "272k" },
-  { id: "gpt-5.4-mini", label: "GPT-5.4 Mini", ctx: "272k" },
-  { id: "gpt-5.4", label: "GPT-5.4", ctx: "272k" },
-];
 
 interface SettingsState {
   provider: ProviderId;
@@ -31,13 +18,6 @@ interface SettingsState {
   compatBaseUrl: string; // full base URL, includes /v1
   compatModel: string; // free-text model id
   recentModels: string[];
-  /* Subscription sign-ins — Claude Pro/Max and ChatGPT (Codex). */
-  claudeOAuth: OAuthAccount | null;
-  codexOAuth: OAuthAccount | null;
-  claudeOauthModel: AnthropicModelId;
-  codexModel: string;
-  codexModels: CodexModelInfo[];
-  codexUsage: CodexUsage | null;
   /* Multiple BYOK Keys Vault */
   storedKeys: StoredKey[];
   /* Plan & Token Balance Management */
@@ -65,13 +45,64 @@ interface SettingsState {
   removeStoredKey: (id: string) => void;
   updateStoredKey: (id: string, patch: Partial<StoredKey>) => void;
   applyStoredKey: (id: string) => void;
-  activateProPass: (passCode: string, planTier?: PlanTier, tokenAmount?: number) => void;
+  activateProPass: (passCode: string, planTier?: PlanTier) => void;
   consumeTokens: (amount: number) => void;
-  setOAuthAccount: (account: OAuthAccount | null, which?: "claude-oauth" | "codex") => void;
-  setCodexModels: (models: CodexModelInfo[]) => void;
-  setCodexUsage: (usage: CodexUsage | null) => void;
   hasProPlan: () => boolean;
   hasKey: () => boolean;
+}
+
+const RETIRED_SIGN_IN = new Set(["claude-oauth", "codex"]);
+
+/** Persist migration. Version 15 drops Claude and ChatGPT subscription
+ *  sign-in; anyone still on those providers lands on OpenRouter-compatible. */
+export function migrateSettings(persisted: unknown, version: number): Partial<SettingsState> {
+  const source = { ...((persisted ?? {}) as Record<string, unknown>) };
+  const apiKey = typeof source.apiKey === "string" ? source.apiKey : "";
+  const model = typeof source.model === "string" ? source.model : "";
+  const rawProvider = typeof source.provider === "string" ? source.provider : "";
+  for (const key of [
+    "claudeOAuth",
+    "codexOAuth",
+    "claudeOauthModel",
+    "codexModel",
+    "codexModels",
+    "codexUsage",
+    "apiKey",
+    "model",
+  ]) {
+    delete source[key];
+  }
+  const old = source as Partial<SettingsState>;
+  const provider: ProviderId =
+    rawProvider === "anthropic" || rawProvider === "openai-compatible"
+      ? rawProvider
+      : "openai-compatible";
+  const base: Partial<SettingsState> = {
+    recentModels: ["openrouter/free", "dots-studio/dots-3-note-preview:free", "nvidia/nemotron-3.5-lightning:free"],
+    ...old,
+    provider: RETIRED_SIGN_IN.has(rawProvider) ? "openai-compatible" : provider,
+    storedKeys: old.storedKeys || [],
+    isPro: old.isPro ?? false,
+    planTier: old.planTier ?? "free",
+    tokenBalance: old.tokenBalance ?? 0,
+    tokensUsed: old.tokensUsed ?? 0,
+    activePassCode: old.activePassCode ?? "",
+    theme: old.theme && old.theme !== "system" ? old.theme : "light",
+    motionMode: old.motionMode ?? "full",
+    companion: old.companion ?? true,
+    companionSfx: old.companionSfx ?? true,
+    pixelDesk: old.pixelDesk ?? true,
+    reading: isReadingSize(old.reading) ? old.reading : DEFAULT_READING,
+    lastBackupAt: old.lastBackupAt ?? 0,
+  };
+  if (version < 2) {
+    return {
+      ...base,
+      anthropicKey: apiKey ?? "",
+      anthropicModel: model === "claude-sonnet-5" ? "claude-sonnet-5" : "claude-opus-5",
+    };
+  }
+  return base;
 }
 
 /** Settings live in localStorage — tiny, synchronous, and on-device. */
@@ -91,13 +122,7 @@ export const useSettings = create<SettingsState>()(
         "nvidia/nemotron-3.5-lightning:free",
       ],
       storedKeys: [],
-      claudeOAuth: null,
-      codexOAuth: null,
-      claudeOauthModel: "claude-opus-5",
-  codexModel: "gpt-5.6-luna",
-  codexModels: CODEX_FALLBACK_MODELS,
-  codexUsage: null,
-  isPro: false,
+      isPro: false,
       planTier: "free",
       tokenBalance: 0,
       tokensUsed: 0,
@@ -150,24 +175,14 @@ export const useSettings = create<SettingsState>()(
           compatModel: key.defaultModel || get().compatModel || "openrouter/free",
         });
       },
-      activateProPass: (passCode: string, planTier: PlanTier = "scholar", tokenAmount?: number) => {
-        // Balances are hosted-request quotas (matching the server proxy's
-        // per-pass counting), never tokens — tokens are not metered.
-        const defaultTokensByPlan: Record<PlanTier, number> = {
-          free: 0,
-          sprint: 60,
-          scholar: 200,
-          mastery: 500,
-        };
-        const tokensToAdd = tokenAmount ?? defaultTokensByPlan[planTier] ?? 200;
-        set((prev) => ({
+      activateProPass: (passCode: string, planTier: PlanTier = "scholar") => {
+        set({
           isPro: true,
           planTier,
-          tokenBalance: (prev.tokenBalance || 0) + tokensToAdd,
           activePassCode: passCode.trim(),
           provider: "anthropic",
           anthropicKey: passCode.trim(),
-        }));
+        });
       },
       consumeTokens: (amount: number) => {
         if (amount <= 0) return;
@@ -175,19 +190,6 @@ export const useSettings = create<SettingsState>()(
           tokensUsed: (prev.tokensUsed || 0) + amount,
         }));
       },
-      setOAuthAccount: (account, which) => {
-        const slot = which ?? account?.provider;
-        if (slot === "claude-oauth") {
-          set(account ? { claudeOAuth: account, provider: "claude-oauth" } : { claudeOAuth: null });
-        } else if (slot === "codex") {
-          set(account ? { codexOAuth: account, provider: "codex" } : { codexOAuth: null });
-        }
-      },
-      setCodexModels: (models) => {
-        if (!Array.isArray(models) || models.length === 0) return;
-        set({ codexModels: models });
-      },
-      setCodexUsage: (usage) => set(usage ? { codexUsage: usage } : { codexUsage: null }),
       hasProPlan: () => {
         const s = get();
         return Boolean(s.isPro && s.planTier && s.planTier !== "free");
@@ -195,68 +197,13 @@ export const useSettings = create<SettingsState>()(
       hasKey: () => {
         const s = get();
         if (s.provider === "anthropic") return s.anthropicKey.trim().length > 10;
-        if (s.provider === "claude-oauth") return Boolean(s.claudeOAuth?.accessToken);
-        if (s.provider === "codex") return Boolean(s.codexOAuth?.accessToken);
         return s.compatBaseUrl.trim().length > 8 && s.compatModel.trim().length > 0;
       },
     }),
     {
       name: "comtus-settings",
-      version: 14,
-      migrate: (persisted, version) => {
-        const old = persisted as Partial<SettingsState> & {
-          apiKey?: string;
-          model?: string;
-        };
-        const base: Partial<SettingsState> = {
-          recentModels: ["openrouter/free", "dots-studio/dots-3-note-preview:free", "nvidia/nemotron-3.5-lightning:free"],
-          ...old,
-          storedKeys: old.storedKeys || [],
-          claudeOAuth: old.claudeOAuth ?? null,
-          codexOAuth: old.codexOAuth ?? null,
-          claudeOauthModel: old.claudeOauthModel ?? "claude-opus-5",
-          codexModel: old.codexModel && !(old.codexModel === "gpt-5-codex" || old.codexModel === "gpt-5")
-            ? old.codexModel
-            : "gpt-5.6-luna",
-          codexModels: old.codexModels ?? CODEX_FALLBACK_MODELS,
-          codexUsage: normalizeStoredCodexUsage(old.codexUsage) ?? null,
-          isPro: old.isPro ?? false,
-          planTier: old.planTier ?? "free",
-          tokenBalance: old.tokenBalance ?? 0,
-          tokensUsed: old.tokensUsed ?? 0,
-          activePassCode: old.activePassCode ?? "",
-          theme: old.theme && old.theme !== "system" ? old.theme : "light",
-          motionMode: old.motionMode ?? "full",
-          companion: old.companion ?? true,
-          companionSfx: old.companionSfx ?? true,
-          pixelDesk: old.pixelDesk ?? true,
-          // The four font systems are gone (spec 5.1). Everyone lands on the
-          // default measure; nobody loses a face they cannot get back.
-          reading: isReadingSize(old.reading) ? old.reading : DEFAULT_READING,
-          lastBackupAt: old.lastBackupAt ?? 0,
-        };
-        if (version < 2) {
-          return {
-            ...base,
-            anthropicKey: old.apiKey ?? "",
-            anthropicModel:
-              old.model === "claude-sonnet-5" ? "claude-sonnet-5" : "claude-opus-5",
-          };
-        }
-        if (version < 6) {
-          return {
-            ...base,
-            isPro: old.isPro ?? false,
-            planTier: old.planTier ?? "free",
-            tokenBalance: old.tokenBalance ?? 0,
-            tokensUsed: old.tokensUsed ?? 0,
-            activePassCode: old.activePassCode ?? "",
-            theme: old.theme && old.theme !== "system" ? old.theme : "light",
-            lastBackupAt: old.lastBackupAt ?? 0,
-          };
-        }
-        return base;
-      },
+      version: 15,
+      migrate: migrateSettings,
     },
   ),
 );
@@ -274,24 +221,6 @@ export function useCallSettings(): CallSettings {
           apiKey: s.anthropicKey,
           baseUrl: s.anthropicBaseUrl,
           model: s.anthropicModel,
-          effort: s.effort,
-        };
-      }
-      if (s.provider === "claude-oauth") {
-        return {
-          provider: "claude-oauth" as const,
-          apiKey: s.claudeOAuth?.accessToken ?? "",
-          baseUrl: "",
-          model: s.claudeOauthModel,
-          effort: s.effort,
-        };
-      }
-      if (s.provider === "codex") {
-        return {
-          provider: "codex" as const,
-          apiKey: s.codexOAuth?.accessToken ?? "",
-          baseUrl: "",
-          model: s.codexModel,
           effort: s.effort,
         };
       }

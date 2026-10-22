@@ -4,6 +4,7 @@ import { BookOpen, FileText, GraduationCap, Target, TreeStructure } from "@phosp
 import { Button, Dialog, Input } from "../ui";
 import { createNotebook } from "../lib/db";
 import "./landing.css";
+import { ICON } from "../ui/iconScale";
 
 export interface OnboardingModalProps {
   isOpen: boolean;
@@ -49,7 +50,7 @@ export const PROMPT_SUGGESTIONS = ["Learning and memory", "Financial accounting"
 export function PixelDeskScene({ subject, goal }: { step: number; subject: SubjectOption; goal: GoalOption }) {
   return (
     <div className="landing-setup-legacy" aria-hidden="true">
-      <BookOpen size={22} />
+      <BookOpen size={ICON.xxl} />
       <span>{subject.shortLabel} notebook</span>
       <span>{goal.badge}</span>
     </div>
@@ -101,7 +102,7 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
           <ol>
             <li><span>Add your material</span><p>Import a PDF, add a link, or paste your notes.</p></li>
             <li><span>Follow a question</span><p>Connect an AI model and ask about your sources.</p></li>
-            <li><span>Make time to practise</span><p>Choose a quiz, flashcards, or a study guide in Studio.</p></li>
+            <li><span>Make time to practise</span><p>Choose a quiz, flashcards, or a study guide at the desk.</p></li>
           </ol>
         </div>
         {error && <p className="landing-setup-error" role="alert">{error}</p>}

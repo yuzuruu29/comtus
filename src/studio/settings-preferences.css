@@ -19,9 +19,31 @@
   min-height: 44px;
 }
 
+/* Five segmented rows stack in this panel, so the brass fill the primitive
+   uses for "selected" would shout five times over. The quiet raised fill is
+   deliberate — but it needs an edge to read as chosen rather than merely
+   tinted, and `border-color` alone never drew one: .segmented-option sets
+   `border: none` (ui.css), which leaves the colour inert. An inset ring
+   draws the edge without the layout shift a real border would cause against
+   siblings that have none. */
 .settings-preferences .segmented-option-selected,
+.settings-preferences .reading-option-selected,
 .settings-preferences .btn[aria-pressed="true"] {
-  border-color: var(--hairline-strong);
   background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--hairline-strong);
   color: var(--ink);
+  font-weight: 550;
+}
+
+/* Reading size cannot use Segmented — each option previews its own type size
+   — but it must not invent a second "selected" language inside one panel. */
+.settings-preferences .reading-option {
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.settings-preferences .reading-option:hover:not(.reading-option-selected) {
+  background: color-mix(in srgb, var(--raised) 55%, transparent);
 }

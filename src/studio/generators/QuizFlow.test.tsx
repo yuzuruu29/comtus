@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FlashcardsPayload, Generation, QuizPayload, QuizQuestion } from "../../lib/types";
 
 const fx = vi.hoisted(() => ({
-  triggerConfettiCannon: vi.fn(),
   triggerScreenShake: vi.fn(),
 }));
 
@@ -13,7 +12,6 @@ vi.mock("../fx", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../fx")>();
   return {
     ...actual,
-    triggerConfettiCannon: fx.triggerConfettiCannon,
     triggerScreenShake: fx.triggerScreenShake,
   };
 });
@@ -69,7 +67,6 @@ const payload: QuizPayload = {
 
 afterEach(() => {
   cleanup();
-  fx.triggerConfettiCannon.mockClear();
   fx.triggerScreenShake.mockClear();
 });
 
@@ -95,13 +92,12 @@ describe("QuizTaker juice", () => {
     expect(fx.triggerScreenShake).not.toHaveBeenCalled();
   });
 
-  it("does not fire confetti, shake, or a streak badge on results", () => {
+  it("does not fire shake or a streak badge on results", () => {
     render(<QuizTaker payload={payload} />);
     answerCurrentCorrect();
     fireEvent.click(screen.getByRole("button", { name: /next item/i }));
     answerCurrentCorrect();
     fireEvent.click(screen.getByRole("button", { name: /see results/i }));
-    expect(fx.triggerConfettiCannon).not.toHaveBeenCalled();
     expect(fx.triggerScreenShake).not.toHaveBeenCalled();
     expect(screen.queryByText(/streak/i)).toBeNull();
     expect(screen.queryByText(/🔥/)).toBeNull();

@@ -29,10 +29,14 @@ Browser (pass token only) ──▶ /api/anthropic (Vercel Edge)
 
 - The Anthropic key exists **only** as a Vercel env var. Nothing in the
   client bundle, nothing in git.
-- Pass tokens are `comtus-pass-v1.<payload>.<hmac>` — signed, carry a
-  request quota + expiry, cannot be forged or self-issued in the browser.
+- Pass tokens are `comtus-pass-v1.<payload>.<hmac>`. A version-2 payload
+  carries an included usage budget (`c`, nano-USD). A payload with `q` and
+  no `v` is a request-count pass already sold, and it still counts requests.
+  A refund or dispute sets `passdeny:<jti>`. The order id restores the same token.
 - Users' own `sk-ant-` keys still go direct from their browser (their key,
   their responsibility). BYOK OpenRouter/Groq/Zen/etc. is unchanged.
+- Claude and ChatGPT subscription sign-in are not offered. A hosted pass
+  or a key the student brings are the only ways to reach a model.
 - Set `HOSTED_PROXY_OFF=1` on Vercel to pause all hosted traffic instantly
   (kill switch); redeploy without it to resume.
 

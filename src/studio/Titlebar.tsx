@@ -1,5 +1,6 @@
 import { Minus, Square, X } from "@phosphor-icons/react";
 import { detectPlatform, isTauri } from "../lib/desktop";
+import { ICON } from "../ui/iconScale";
 
 async function windowApi() {
   const { getCurrentWindow } = await import("@tauri-apps/api/window");
@@ -24,7 +25,7 @@ export default function CaptionButtons() {
         className="flex w-[46px] items-center justify-center text-muted hover:bg-ink/[0.06] hover:text-ink"
         aria-label="Minimize"
       >
-        <Minus size={14} weight="light" />
+        <Minus size={ICON.sm} weight="light" />
       </button>
       <button
         type="button"
@@ -32,7 +33,7 @@ export default function CaptionButtons() {
         className="flex w-[46px] items-center justify-center text-muted hover:bg-ink/[0.06] hover:text-ink"
         aria-label="Maximize"
       >
-        <Square size={12} weight="light" />
+        <Square size={ICON.xs} weight="light" />
       </button>
       <button
         type="button"
@@ -40,7 +41,7 @@ export default function CaptionButtons() {
         className="flex w-[46px] items-center justify-center text-muted hover:bg-rust/80 hover:text-ink"
         aria-label="Close"
       >
-        <X size={14} weight="light" />
+        <X size={ICON.sm} weight="light" />
       </button>
     </div>
   );

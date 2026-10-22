@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import { Eye } from "@phosphor-icons/react";
 import type { VisionRequest } from "../lib/import";
 import { Button, Dialog } from "../ui";
+import { ICON } from "../ui/iconScale";
 
 const pagesLabel = (n: number) => `${n} ${n === 1 ? "page" : "pages"}`;
 
@@ -41,7 +42,7 @@ export default function VisionConsentDialog({
     >
       <div className="space-y-4 text-body leading-relaxed">
         <p className="flex gap-3 text-ink">
-          <Eye size={20} className="mt-0.5 shrink-0 text-brass" aria-hidden="true" />
+          <Eye size={ICON.xl} className="mt-0.5 shrink-0 text-brass" aria-hidden="true" />
           <span>
             {isPhoto ? (
               <>“{request.fileName}” is a photo, so it has no text to search or cite.</>
@@ -80,7 +81,7 @@ export default function VisionConsentDialog({
           <Button variant="ghost" onClick={() => answer(false)}>
             Keep without text
           </Button>
-          <Button autoFocus onClick={() => answer(true)}>
+          <Button data-autofocus onClick={() => answer(true)}>
             {isPhoto ? "Read the photo" : `Read ${pagesLabel(request.pages)}`}
           </Button>
         </div>

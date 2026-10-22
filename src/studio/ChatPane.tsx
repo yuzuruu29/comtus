@@ -26,6 +26,7 @@ import MessageList from "./MessageList";
 import Composer from "./Composer";
 import CompadChat from "./CompadChat";
 import { useCompadChat } from "./CompadChatContext";
+import { ICON } from "../ui/iconScale";
 
 const lastSessionKey = (notebookId: string) => `comtus:lastChat:${notebookId}`;
 type ChatRequest = { controller: AbortController; notebookId: string; token: number };
@@ -119,6 +120,7 @@ export default function ChatPane({
   const [finalizeTick, setFinalizeTick] = useState(0);
 
   const activeSession = sessions.find((s) => s.id === activeId) ?? null;
+  const hasConversation = messages.length > 0 || streaming !== null;
   const requestIsCurrent = useCallback((request: ChatRequest) =>
     requestRef.current === request && request.token === loadToken.current &&
     notebookIdRef.current === request.notebookId && !request.controller.signal.aborted, []);
@@ -174,7 +176,7 @@ export default function ChatPane({
 
   useEffect(() => {
     const el = scrollRef.current;
-    if (el && stickBottom.current) el.scrollTop = el.scrollHeight;
+    if (el && stickBottom.current) el.scrollTop = messages.length || streaming ? el.scrollHeight : 0;
   }, [streaming, messages, smoothed.text, surfaceTarget]);
 
   useEffect(() => {
@@ -207,13 +209,13 @@ export default function ChatPane({
       const el = scrollRef.current;
       if (el && stickBottom.current) {
         requestAnimationFrame(() => {
-          el.scrollTop = el.scrollHeight;
+          el.scrollTop = hasConversation ? el.scrollHeight : 0;
         });
       }
     };
     vp.addEventListener("resize", handleResize);
     return () => vp.removeEventListener("resize", handleResize);
-  }, []);
+  }, [hasConversation]);
 
   useEffect(() => {
     const epoch = loadToken;
@@ -501,7 +503,7 @@ export default function ChatPane({
   if (!notebook) return surfaceTarget === undefined ? <div className="flex-1" /> : null;
 
   const fullChat = (
-    <div ref={fullChatRef} className="flex h-full min-h-0 flex-col bg-ground">
+    <div ref={fullChatRef} className="bg-paper-parchment flex h-full min-h-0 flex-col">
       <SessionMenu
         sessions={sessions}
         activeId={activeId}
@@ -525,6 +527,8 @@ export default function ChatPane({
         onSaveToNote={(title, text) => void handleSaveToNote(title, text)}
         onSend={(prompt) => void send(prompt)}
         onAddSources={onAddSources}
+        hasModel={hasKey()}
+        onOpenSettings={onOpenSettings}
         scrollRef={scrollRef}
         onScroll={onScroll}
         error={error}
@@ -571,9 +575,9 @@ export default function ChatPane({
         open={toastNoteSaved}
         onClose={() => setToastNoteSaved(false)}
         durationMs={2600}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-sage/40 bg-surface px-4 py-2.5 text-[13px] text-sage shadow-modal"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-[var(--radius-dialog)] border border-sage/40 bg-surface px-4 py-2.5 text-[13px] text-sage shadow-modal"
       >
-        <Check size={16} weight="bold" />
+        <Check size={ICON.md} weight="bold" />
         <span role="status">Saved to Studio Notes</span>
       </Toast>
     </div>

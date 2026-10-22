@@ -23,8 +23,9 @@ describe("brand: no CRT chrome", () => {
 });
 
 describe("brand: motion", () => {
-  /** Files whose motion is rewritten by a later task. Shrink only. */
-  const MOTION_DEBT = ["src/landing/cantor-theme.css", "src/landing/scholar-deck.css"];
+  /** Files whose motion is still being rewritten. Empty: the console and
+   *  deck worlds are deleted, so every remaining file must already comply. */
+  const MOTION_DEBT: string[] = [];
 
   it("uses no bounce or overshoot easing", () => {
     // cubic-bezier with y1 or y2 > 1 overshoots. BRAND.md 5 forbids it.

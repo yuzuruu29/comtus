@@ -27,10 +27,11 @@ import {
 } from "../lib/librarySearch";
 import type { Notebook as NotebookRow } from "../lib/types";
 import { detectPlatform } from "../lib/desktop";
-import { SOFT } from "./fx";
+import { ENTER, EXIT, SOFT } from "./fx";
 import { useDesk } from "./DeskContext";
 import type { LayoutMode } from "./layout";
 import { modLabel } from "./shortcuts";
+import { ICON } from "../ui/iconScale";
 
 type Item = {
   id: string;
@@ -227,7 +228,8 @@ export default function CommandPalette({
           className="pointer-events-auto fixed inset-0 z-[80] flex items-start justify-center px-4 pt-[min(18vh,7rem)]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.16 } }}
+          exit={{ opacity: 0, transition: EXIT }}
+          transition={SOFT}
         >
           <button
             type="button"
@@ -242,9 +244,9 @@ export default function CommandPalette({
             aria-modal="true"
             aria-labelledby="command-palette-title"
             onKeyDownCapture={onPanelKey}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8, transition: { duration: 0.14 } }}
+            initial={ENTER.initial}
+            animate={ENTER.animate}
+            exit={{ ...ENTER.exit, transition: EXIT }}
             transition={SOFT}
             className="relative w-full max-w-xl overflow-hidden rounded-[var(--radius-field)] border border-hairline bg-surface shadow-[0_24px_80px_-24px_rgba(0,0,0,0.7)]"
           >
@@ -252,22 +254,22 @@ export default function CommandPalette({
               Command palette
             </h2>
             <div className="flex items-center gap-2.5 border-b border-hairline px-3.5 py-2.5">
-              <MagnifyingGlass size={16} weight="light" className="text-muted" />
+              <MagnifyingGlass size={ICON.md} weight="light" className="text-muted" />
               <input
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search your notebooks, or type a command"
                 role="combobox"
-                aria-label="Search your library and commands"
+                aria-label="Search your notebooks and commands"
                 aria-autocomplete="list"
                 aria-expanded="true"
                 aria-controls="command-palette-results"
                 aria-activedescendant={items[active] ? `command-${items[active].id}` : undefined}
                 autoComplete="off"
-                className="min-w-0 flex-1 bg-transparent text-[14px] text-ink outline-none placeholder:text-muted/55"
+                className="min-w-0 flex-1 bg-transparent text-[14px] text-ink placeholder:text-muted"
               />
-              <kbd className="font-mono text-[10px] text-muted/70">esc</kbd>
+              <kbd className="font-mono text-[10px] text-muted">esc</kbd>
             </div>
             <div
               id="command-palette-results"
@@ -277,7 +279,7 @@ export default function CommandPalette({
             >
               {items.length === 0 && (
                 <div className="px-4 py-8 text-center text-[13px] text-muted">
-                  {searching ? "Searching your library…" : "Nothing in your library matches."}
+                  {searching ? "Searching your notebooks…" : "Nothing in your notebooks matches."}
                 </div>
               )}
               {items.map((item, i) => {
@@ -285,7 +287,7 @@ export default function CommandPalette({
                 return (
                   <div key={item.id}>
                     {showGroup && (
-                      <div className="px-3.5 pb-1 pt-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted/60">
+                      <div className="px-3.5 pb-1 pt-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
                         {item.group}
                       </div>
                     )}
@@ -302,7 +304,7 @@ export default function CommandPalette({
                       } ${i === active ? "bg-brass/[0.1] text-ink" : "text-ink/85"}`}
                     >
                       <item.icon
-                        size={16}
+                        size={ICON.md}
                         weight="light"
                         className={`shrink-0 text-muted ${item.snippet ? "mt-0.5" : ""}`}
                       />
@@ -324,7 +326,7 @@ export default function CommandPalette({
                         )}
                       </span>
                       {item.hint && (
-                        <span className="font-mono text-[10px] text-muted/55">{item.hint}</span>
+                        <span className="font-mono text-[10px] text-muted">{item.hint}</span>
                       )}
                     </button>
                   </div>

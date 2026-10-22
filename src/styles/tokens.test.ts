@@ -32,9 +32,7 @@ const REDEFINE_DEBT: string[] = [];
 /** Files still carrying raw hex, each with the task that removes them.
  *  This list may shrink. It may never grow. */
 const HEX_DEBT: Record<string, string> = {
-  "src/landing/scholar-deck.css": "Task 4.1 — deck deleted",
-  "src/landing/cantor-theme.css": "Task 4.1 — landing rebuilt",
-  "src/index.css": "Task 4.1 — landing-only literals move or go",
+  "src/index.css": "5 theme-independent literals in @theme: a permanently dark panel, plus the two reading tones the landing needs regardless of theme",
 };
 
 function cssFiles(): string[] {

@@ -5,22 +5,15 @@ import { groundContext, type GroundingDoc } from "./retrieval";
 import { buildSearchQuery, searchWeb } from "./webSearch";
 import { webSearchGroundingClause, webSearchUserReminder } from "./webSearchPrompt";
 import { compatFetchBase } from "./compatRoute";
-import { useSettings, CODEX_FALLBACK_MODELS } from "./settings";
-import { parseCodexUsageFromHeaders } from "./codexUsage";
-import { ensureFreshAccessToken, jwtClaims } from "./oauthProviders";
-
 /**
- * The lamp. Three ways to light it:
+ * The lamp. Two ways to light it:
  *  - Anthropic (official SDK): adaptive thinking, streaming with visible
- *    reasoning, API-native citations on source documents. Also serves
- *    Claude-subscription sign-ins (OAuth bearer + beta header).
+ *    reasoning, API-native citations on source documents. A hosted pass
+ *    talks to /api/anthropic; a user's own key talks to Anthropic directly.
  *  - OpenAI-compatible (OpenAI SDK against any baseURL): OpenRouter,
  *    Ollama, LM Studio, Groq, DeepSeek, Together, vLLM, OpenAI itself.
  *    Reasoning surfaces when the model exposes reasoning deltas; grounding
  *    works everywhere, citations degrade to inline [Title] mentions.
- *  - ChatGPT/Codex sign-in (Responses API through our /api/codex relay):
- *    the subscription path — instructions + input in, streamed deltas out,
- *    reasoning summaries surface as thinking.
  */
 
 /* ── Catalogue ────────────────────────────────────────────── */
@@ -170,68 +163,22 @@ export function isHostedPass(apiKey: string): boolean {
   return apiKey.trim().startsWith("comtus-pass-");
 }
 
-/* ChatGPT/Codex sign-in: the relay forwards to the Codex backend, which
-   only speaks the Responses API (and only in streaming mode). The live
-   model roster lives in the settings store (CODEX_FALLBACK_MODELS until
-   discovery refreshes it) — see oauthProviders.listCodexModels. */
-export function codexUsesLite(model: string): boolean {
-  try {
-    const raw = localStorage.getItem("comtus-settings");
-    if (raw) {
-      const parsed = JSON.parse(raw) as {
-        state?: { codexModels?: { id?: string; lite?: boolean }[] };
-      };
-      const found = parsed.state?.codexModels?.find((m) => m.id === model);
-      if (found) return found.lite === true;
-    }
-  } catch {
-    /* fall through to heuristic */
-  }
-  return /^gpt-5\.6|daybreak/i.test(model);
+/** Hosted passes clamp xhigh so one reply cannot reserve the whole budget. */
+function callEffort(apiKey: string, effort: Effort): Effort {
+  return isHostedPass(apiKey) && effort === "xhigh" ? "high" : effort;
 }
 
-/** Fallback roster for label lookups; discovery replaces it at runtime
- *  (see oauthProviders.listCodexModels). */
-export const CODEX_MODELS: { id: string; label: string; note: string }[] = CODEX_FALLBACK_MODELS.map(
-  (m) => ({ id: m.id, label: m.label, note: m.ctx ? `${m.ctx} context` : "" }),
-);
-
-/** Pure effort → wire tier mapping for Codex. The wire ladder accepts
- *  xhigh; clamp only when the model's own roster says it doesn't. */
-export function codexEffort(
-  effort: Effort,
-  supportsXhigh: boolean,
-): "low" | "medium" | "high" | "xhigh" {
-  if (effort === "low") return "low";
-  if (effort === "medium") return "medium";
-  if (effort === "xhigh" && supportsXhigh) return "xhigh";
-  return "high";
+function hostedSystem(apiKey: string, text: string): string | Anthropic.TextBlockParam[] {
+  if (!isHostedPass(apiKey)) return text;
+  return [{ type: "text", text, cache_control: { type: "ephemeral" } }];
 }
 
-function codexSupportsXhigh(model: string): boolean {
-  try {
-    const raw = localStorage.getItem("comtus-settings");
-    if (raw) {
-      const parsed = JSON.parse(raw) as {
-        state?: { codexModels?: { id?: string; levels?: string[] }[] };
-      };
-      const found = parsed.state?.codexModels?.find((m) => m.id === model);
-      if (found?.levels?.length) return found.levels.includes("xhigh");
-    }
-  } catch {
-    /* fall through to heuristic below */
-  }
-  // The 5.6 family advertises the full ladder; anything older clamps.
-  return /^gpt-5\.6|daybreak/i.test(model);
-}
 /** Human label for the active model across every provider — curated
  *  catalogue labels first, prettified ids as fallback. Never truncates
  *  mid-word like the old `.slice(0, 16)` did. */
 export function modelLabelFor(provider: ProviderId, model: string): string {
-  if (provider === "anthropic" || provider === "claude-oauth")
+  if (provider === "anthropic")
     return MODELS.find((m) => m.id === model)?.label ?? model;
-  if (provider === "codex")
-    return CODEX_MODELS.find((m) => m.id === model)?.label ?? model;
   const short = model.split("/").pop() ?? model;
   const pretty = short.replace(/:free$/i, "").replace(/[-_]+/g, " ").trim();
   if (!pretty) return model;
@@ -250,16 +197,6 @@ export function effortLabelFor(effort: Effort): string {
 function getAnthropic(cs: CallSettings): Anthropic {
   const key = cs.apiKey.trim();
   const hosted = isHostedPass(key);
-  if (cs.provider === "claude-oauth") {
-    // Subscription sign-in: bearer auth + the OAuth beta header; the
-    // key never touches x-api-key. Tokens are refreshed by the caller.
-    return new Anthropic({
-      authToken: key,
-      dangerouslyAllowBrowser: true,
-      maxRetries: 2,
-      defaultHeaders: { "anthropic-beta": "oauth-2025-04-20" },
-    });
-  }
   return new Anthropic({
     // Pass tokens go to the proxy; a user's own sk-ant- key goes direct.
     apiKey: key,
@@ -285,44 +222,6 @@ function getCompat(cs: CallSettings): OpenAI {
     defaultHeaders: { "X-Title": "Comtus" },
   });
 }
-/** Mutable holder for the relay's plan-meter headers. The OpenAI SDK v7
- *  Stream class no longer keeps the raw Response, so headers are captured
- *  at the fetch boundary instead of read off the stream object. */
-type CodexUsageCapture = { headers: Headers | null };
-
-function getResponses(cs: CallSettings, capture?: CodexUsageCapture): OpenAI {
-  // The ChatGPT account id rides in a JWT claim; the backend rejects
-  // requests without it in the header. The Codex client also requires
-  // the beta header and first-turn session/conversation ids.
-  const claims = jwtClaims(cs.apiKey);
-  const accountId = typeof claims.chatgpt_account_id === "string" ? claims.chatgpt_account_id : "";
-  return new OpenAI({
-    apiKey: cs.apiKey,
-    baseURL: `${API_ORIGIN}/api/codex`,
-    dangerouslyAllowBrowser: true,
-    maxRetries: 1,
-    fetch: async (url, init) => {
-      const response = await fetch(url, init);
-      if (capture) capture.headers = response.headers;
-      return response;
-    },
-    defaultHeaders: {
-      ...(accountId ? { "chatgpt-account-id": accountId } : {}),
-      originator: "comtus",
-      "openai-beta": "responses=experimental",
-      session_id: crypto.randomUUID(),
-      conversation_id: crypto.randomUUID(),
-      version: "0.144.1",
-    },
-  });
-}
-
-/** Read 5-hour + weekly plan windows from x-codex-* headers on the relay response. */
-function captureCodexUsage(headers: Headers | null | undefined): void {
-  if (!headers) return;
-  useSettings.getState().setCodexUsage(parseCodexUsageFromHeaders(headers));
-}
-
 export function isAbort(err: unknown): boolean {
   return (
     err instanceof Anthropic.APIUserAbortError ||
@@ -333,13 +232,8 @@ export function isAbort(err: unknown): boolean {
 
 export function friendlyError(err: unknown): string {
   if (isAbort(err)) return "Stopped.";
-  const stored = storedProviderPeek();
   const auth = err instanceof Anthropic.AuthenticationError || err instanceof OpenAI.AuthenticationError;
   if (auth) {
-    if (stored === "claude-oauth")
-      return "Claude rejected the sign-in — the session may have expired. Reconnect your account in Settings.";
-    if (stored === "codex")
-      return "ChatGPT rejected the sign-in — the session may have expired. Reconnect your account in Settings.";
     if (storedKeyIsHostedPass())
       return "This pass was rejected — it may be expired or mistyped. Paste the token from your PayPal email.";
     return "The API key was rejected. Check it in Settings — the lamp can't light without it.";
@@ -351,21 +245,7 @@ export function friendlyError(err: unknown): string {
   const isDailyOrQuotaLimit =
     /daily limit|rate limit|too many requests|free model limit|per-day|exceeded.*quota|credit balance/i.test(errMsg);
 
-  // Codex-specific error mapping (the backend's own codes, per oh-my-pi).
-  if (stored === "codex") {
-    if (/usage_limit_reached|usage_not_included|plan.*limit|usage limit/i.test(errMsg))
-      return "You've hit your ChatGPT plan's usage limit — it resets on your plan's schedule. Try again later or switch models.";
-    if (/model.*not founded|invalid_model|model_not_available|model.*unavailable/i.test(errMsg))
-      return "That ChatGPT model isn't available on your account — pick another from the model menu.";
-    if (/workspace.*not authorized|residency/i.test(errMsg))
-      return "Your ChatGPT workspace's data region isn't accepted by Comtus's relay — try a different account or contact support.";
-  }
-
   if (rate || is429 || (is402 && !storedKeyIsHostedPass()) || isDailyOrQuotaLimit) {
-    if (stored === "claude-oauth")
-      return "Your Claude plan's usage window is full right now — it resets on your plan's schedule. Try again later or switch models.";
-    if (stored === "codex")
-      return "Your ChatGPT plan's usage limit is reached right now — it resets on your plan's schedule. Try again later or switch models.";
     // Notify application to trigger FreeLimitWarningModal if using free tier
     try {
       if (typeof window !== "undefined") {
@@ -384,7 +264,7 @@ export function friendlyError(err: unknown): string {
   }
 
   if (err instanceof Anthropic.APIError || err instanceof OpenAI.APIError) {
-    if (err.status === 402) return "This pass has reached its request limit.";
+    if (err.status === 402) return err.message.slice(0, 180) || "This pass has reached its limit.";
     return `The API returned ${err.status}. ${err.message.slice(0, 180)}`;
   }
   if (err instanceof Anthropic.APIConnectionError || err instanceof OpenAI.APIConnectionError) {
@@ -394,18 +274,6 @@ export function friendlyError(err: unknown): string {
     return "Couldn't reach the endpoint — check your connection, and if it's a local server (Ollama / LM Studio) make sure it's running.";
   }
   return err instanceof Error ? err.message : "Something went wrong.";
-}
-
-/* Best-effort peek at the stored settings so errors can be specific. */
-function storedProviderPeek(): ProviderId | null {
-  try {
-    const raw = localStorage.getItem("comtus-settings");
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { state?: { provider?: ProviderId } };
-    return parsed.state?.provider ?? null;
-  } catch {
-    return null;
-  }
 }
 
 function storedKeyIsHostedPass(): boolean {
@@ -555,11 +423,9 @@ export async function streamChat(args: StreamChatArgs): Promise<ChatReply> {
   }
 
   const reply =
-    args.provider === "codex"
-      ? await streamCodex(args, docs, mode, webSearchMeta)
-      : args.provider === "openai-compatible"
-        ? await streamCompatible(args, docs, mode, webSearchMeta)
-        : await streamAnthropic(args, docs, mode, webSearchMeta);
+    args.provider === "openai-compatible"
+      ? await streamCompatible(args, docs, mode, webSearchMeta)
+      : await streamAnthropic(args, docs, mode, webSearchMeta);
   return { ...reply, webSearch: webSearchMeta };
 }
 
@@ -569,10 +435,7 @@ async function streamAnthropic(
   mode: "full" | "retrieved",
   webSearch?: WebSearchMeta,
 ): Promise<ChatReply> {
-  // Subscription sign-ins refresh their bearer token before every call.
-  const apiKey =
-    args.provider === "claude-oauth" ? await ensureFreshAccessToken("claude-oauth") : args.apiKey;
-  const client = getAnthropic({ ...args, apiKey });
+  const client = getAnthropic(args);
 
   const content: Anthropic.ContentBlockParam[] = docs.map((d, i) => ({
     type: "document" as const,
@@ -581,14 +444,21 @@ async function streamAnthropic(
     citations: { enabled: true },
     context: `Source [${i}] of this notebook`,
   }));
+  if (isHostedPass(args.apiKey) && content.length > 0) {
+    const last = content[content.length - 1] as Anthropic.ContentBlockParam & {
+      cache_control?: { type: "ephemeral" };
+    };
+    last.cache_control = { type: "ephemeral" };
+  }
   const question = webSearch ? `${args.question}${webSearchUserReminder(webSearch)}` : args.question;
   content.push({ type: "text", text: question });
+  const systemText = `${CHAT_SYSTEM}\n\n${groundingPreamble(docs, mode, args.notebookName, true, args.reasoning, webSearch)}`;
 
   const stream = client.messages.stream(
     {
       model: args.model,
       max_tokens: 64000,
-      system: `${CHAT_SYSTEM}\n\n${groundingPreamble(docs, mode, args.notebookName, true, args.reasoning, webSearch)}`,
+      system: hostedSystem(args.apiKey, systemText),
       messages: [
         ...args.history.slice(-12),
         { role: "user", content },
@@ -596,7 +466,7 @@ async function streamAnthropic(
       ...(args.reasoning
         ? {
             thinking: { type: "adaptive" as const, display: "summarized" as const },
-            output_config: { effort: args.effort },
+            output_config: { effort: callEffort(args.apiKey, args.effort) },
           }
         : {}),
     },
@@ -626,94 +496,6 @@ async function streamAnthropic(
     mode === "retrieved" ? { ...c, startChar: undefined, endChar: undefined } : c,
   );
   return { text, thinking, citations };
-}
-
-async function streamCodex(
-  args: StreamChatArgs,
-  docs: GroundingDoc[],
-  mode: "full" | "retrieved",
-  webSearch?: WebSearchMeta,
-): Promise<ChatReply> {
-  const token = await ensureFreshAccessToken("codex");
-  const usageCapture: CodexUsageCapture = { headers: null };
-  const client = getResponses({ ...args, apiKey: token }, usageCapture);
-
-  // No document-citation API on this backend — sources ride in the
-  // prompt exactly like the compatible path, citations degrade to
-  // inline [Title] mentions.
-  const sourcesText = docs
-    .map((d) => `<<<SOURCE: ${d.source.title}>>>\n${d.text}\n<<<END SOURCE>>>`)
-    .join("\n\n");
-  const asked = webSearch ? `${args.question}${webSearchUserReminder(webSearch)}` : args.question;
-  const userContent = docs.length
-    ? `Sources:\n\n${sourcesText}\n\n---\n\nQuestion: ${asked}`
-    : `Question: ${asked}`;
-
-  const instructions = `${CHAT_SYSTEM_COMPAT}\n\n${groundingPreamble(docs, mode, args.notebookName, false, args.reasoning, webSearch)}`;
-  // gpt-5.6-family models speak the Responses-Lite wire format: base
-  // instructions ride in as a developer input item, top-level
-  // `instructions` is rejected (codex-rs build_responses_request).
-  const lite = codexUsesLite(args.model);
-  const input: OpenAI.Responses.ResponseInput = lite
-    ? [
-        { role: "developer" as const, content: instructions },
-        ...args.history.slice(-12).map((m) => ({ role: m.role, content: m.content })),
-        { role: "user" as const, content: userContent },
-      ]
-    : [
-        ...args.history.slice(-12).map((m) => ({ role: m.role, content: m.content })),
-        { role: "user" as const, content: userContent },
-      ];
-
-  // The Codex backend only accepts streaming requests with store off.
-  // Reasoning summaries flow back as events and surface as thinking.
-  const base = {
-    model: args.model,
-    ...(lite ? {} : { instructions }),
-    input,
-    stream: true as const,
-    store: false as const,
-    ...(args.reasoning
-      ? { reasoning: { effort: codexEffort(args.effort, codexSupportsXhigh(args.model)) } }
-      : {}),
-  };
-  let stream: AsyncIterable<OpenAI.Responses.ResponseStreamEvent>;
-  try {
-    stream = await client.responses.create(base, { signal: args.signal });
-  } catch (err) {
-    if (isAbort(err)) throw err;
-    const msg = err instanceof Error ? err.message : "";
-    if (!(err instanceof OpenAI.APIError && err.status === 400 && /reasoning|effort/i.test(msg))) throw err;
-    const { reasoning: _drop, ...rest } = base;
-    stream = await client.responses.create(rest, { signal: args.signal });
-  }
-  captureCodexUsage(usageCapture.headers);
-
-  let thinking = "";
-  let text = "";
-  for await (const event of stream) {
-    // Read structurally — the SDK's event union shifts across releases.
-    const kind = (event as { type?: string }).type ?? "";
-    const delta = (event as unknown as { delta?: unknown }).delta;
-    if (kind === "response.output_text.delta" && typeof delta === "string" && delta) {
-      text += delta;
-      args.onText?.(delta, text);
-    } else if (kind === "response.reasoning_summary_text.delta" && typeof delta === "string" && delta) {
-      thinking += delta;
-      args.onThinking?.(delta, thinking);
-    } else if (kind === "response.failed" || kind === "error") {
-      const failure = event as unknown as {
-        response?: { error?: { message?: string } };
-        message?: string;
-        code?: string;
-      };
-      throw new Error(
-        failure.response?.error?.message || failure.message || failure.code || "The ChatGPT stream failed.",
-      );
-    }
-  }
-
-  return { text, thinking, citations: extractTextCitations(text, docs) };
 }
 
 async function streamCompatible(
@@ -876,20 +658,15 @@ const JSON_ASK = `\n\nRespond with ONLY the raw JSON value matching the requeste
 export async function generateJSON<T>(args: GenerateArgs): Promise<T> {
   const askRaw = async (nag: boolean): Promise<string> => {
     const prompt = args.user + (nag ? JSON_NAG : JSON_ASK);
-    if (args.provider === "codex") {
-      return codexText(args, args.system, prompt, undefined, args.signal);
-    }
-    if (args.provider === "anthropic" || args.provider === "claude-oauth") {
-      const apiKey =
-        args.provider === "claude-oauth" ? await ensureFreshAccessToken("claude-oauth") : args.apiKey;
-      const response = await getAnthropic({ ...args, apiKey }).messages.create(
+    if (args.provider === "anthropic") {
+      const response = await getAnthropic(args).messages.create(
         {
           model: args.model,
           max_tokens: 64000,
-          system: args.system,
-          messages: [{ role: "user", content: prompt }],
+          system: hostedSystem(args.apiKey, args.system),
+          messages: [{ role: "user", content: hostedSystem(args.apiKey, prompt) }],
           thinking: { type: "adaptive", display: "omitted" },
-          output_config: { effort: args.effort },
+          output_config: { effort: callEffort(args.apiKey, args.effort) },
         },
         { signal: args.signal },
       );
@@ -956,70 +733,6 @@ async function createCompatNonStream(
   return text;
 }
 
-/** One completion on the ChatGPT/Codex path. The backend only speaks
- *  streaming, so non-streaming callers accumulate the events. */
-async function codexText(
-  cs: CallSettings,
-  system: string,
-  user: string,
-  image?: { dataUrl: string; mediaType: "image/png" | "image/jpeg" },
-  signal?: AbortSignal,
-): Promise<string> {
-  const token = await ensureFreshAccessToken("codex");
-  const usageCapture: CodexUsageCapture = { headers: null };
-  const client = getResponses({ ...cs, apiKey: token }, usageCapture);
-  const content: OpenAI.Responses.EasyInputMessage["content"] = image
-    ? [
-        { type: "input_image", image_url: image.dataUrl, detail: "auto" },
-        { type: "input_text", text: user },
-      ]
-    : user;
-  const input: OpenAI.Responses.ResponseInput = codexUsesLite(cs.model)
-    ? [
-        { role: "developer" as const, content: system },
-        { role: "user" as const, content },
-      ]
-    : [
-        { role: "user" as const, content },
-      ];
-  const base = {
-    model: cs.model,
-    ...(codexUsesLite(cs.model) ? {} : { instructions: system }),
-    input,
-    stream: true as const,
-    store: false as const,
-    reasoning: { effort: codexEffort(cs.effort, codexSupportsXhigh(cs.model)) },
-  };
-  let stream: AsyncIterable<OpenAI.Responses.ResponseStreamEvent>;
-  try {
-    stream = await client.responses.create(base, { signal });
-  } catch (err) {
-    if (isAbort(err)) throw err;
-    const msg = err instanceof Error ? err.message : "";
-    if (!(err instanceof OpenAI.APIError && err.status === 400 && /reasoning|effort/i.test(msg))) throw err;
-    const { reasoning: _drop, ...rest } = base;
-    stream = await client.responses.create(rest, { signal });
-  }
-  captureCodexUsage(usageCapture.headers);
-  let out = "";
-  for await (const event of stream) {
-    const kind = (event as { type?: string }).type ?? "";
-    const delta = (event as unknown as { delta?: unknown }).delta;
-    if (kind === "response.output_text.delta" && typeof delta === "string") out += delta;
-    else if (kind === "response.failed" || kind === "error") {
-      const failure = event as unknown as {
-        response?: { error?: { message?: string } };
-        message?: string;
-        code?: string;
-      };
-      throw new Error(
-        failure.response?.error?.message || failure.message || failure.code || "The ChatGPT stream failed.",
-      );
-    }
-  }
-  return out;
-}
-
 /** Tolerant JSON extraction: try as-is first, then strip fences and
  *  surrounding prose only if that fails. */
 export function parseJSON<T>(raw: string): T {
@@ -1042,20 +755,15 @@ export function parseJSON<T>(raw: string): T {
 /* ── Markdown document generation (study aids, essay feedback) ── */
 
 export async function generateMarkdown(args: GenerateArgs): Promise<string> {
-  if (args.provider === "codex") {
-    return codexText(args, args.system, args.user, undefined, args.signal);
-  }
-  if (args.provider === "anthropic" || args.provider === "claude-oauth") {
-    const apiKey =
-      args.provider === "claude-oauth" ? await ensureFreshAccessToken("claude-oauth") : args.apiKey;
-    const response = await getAnthropic({ ...args, apiKey }).messages.create(
+  if (args.provider === "anthropic") {
+    const response = await getAnthropic(args).messages.create(
       {
         model: args.model,
         max_tokens: 32000,
-        system: args.system,
-        messages: [{ role: "user", content: args.user }],
+        system: hostedSystem(args.apiKey, args.system),
+        messages: [{ role: "user", content: hostedSystem(args.apiKey, args.user) }],
         thinking: { type: "adaptive", display: "omitted" },
-        output_config: { effort: args.effort },
+        output_config: { effort: callEffort(args.apiKey, args.effort) },
       },
       { signal: args.signal },
     );
@@ -1144,11 +852,9 @@ async function visionText(
   signal?: AbortSignal,
 ): Promise<string> {
   try {
-    if (cs.provider === "codex") return await codexText(cs, system, ask, image, signal);
-    if (cs.provider === "anthropic" || cs.provider === "claude-oauth") {
-      const apiKey = cs.provider === "claude-oauth" ? await ensureFreshAccessToken("claude-oauth") : cs.apiKey;
+    if (cs.provider === "anthropic") {
       const data = image.dataUrl.slice(image.dataUrl.indexOf(",") + 1);
-      const response = await getAnthropic({ ...cs, apiKey }).messages.create(
+      const response = await getAnthropic(cs).messages.create(
         {
           model: cs.model,
           max_tokens: maxTokens,
@@ -1251,27 +957,7 @@ export async function validateConnection(
   cs: CallSettings,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    if (cs.provider === "claude-oauth") {
-      const token = await ensureFreshAccessToken("claude-oauth");
-      await getAnthropic({ ...cs, apiKey: token }).messages.create({
-        model: cs.model || "claude-opus-5",
-        max_tokens: 4,
-        messages: [{ role: "user", content: "ping" }],
-      });
-    } else if (cs.provider === "codex") {
-      const token = await ensureFreshAccessToken("codex");
-      // The backend only speaks streaming; a tiny capped stream is the ping.
-      const stream = await getResponses({ ...cs, apiKey: token }).responses.create({
-        model: cs.model || "gpt-5.6-luna",
-        input: "ping",
-        max_output_tokens: 16,
-        stream: true,
-        store: false,
-      });
-      for await (const event of stream) {
-        void event; // Drain — 16 output tokens completes almost instantly.
-      }
-    } else if (cs.provider === "anthropic") {
+    if (cs.provider === "anthropic") {
       const client = getAnthropic(cs);
       await client.messages.create({
         model: cs.model || "claude-sonnet-5",

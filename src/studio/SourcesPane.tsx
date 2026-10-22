@@ -8,14 +8,14 @@ import {
   FileText,
   Globe,
   Image as ImageIcon,
+  MagnifyingGlass,
   SidebarSimple,
   Square,
   Trash,
   VideoCamera,
   YoutubeLogo,
 } from "@phosphor-icons/react";
-import { Button, Dialog, Empty, Field, IconButton, Input, Textarea } from "../ui";
-import { ComtusEmblem } from "../components/brand/ComtusLogo";
+import { Button, Dialog, Field, IconButton, Input, Textarea } from "../ui";
 import { loadFocus, pruneFocus, saveFocus, subscribeFocus } from "./focus";
 import { db, deleteSource } from "../lib/db";
 import type { Source } from "../lib/types";
@@ -26,13 +26,13 @@ import VisionConsentDialog from "./VisionConsentDialog";
 import { estTokens } from "../lib/retrieval";
 import { uid } from "../lib/db";
 import { addSourceWithChunks } from "../lib/db";
-import { DRIFT_X, RISE_2, SOFT, Spotlight } from "./fx";
+import { DRIFT_X, ENTER, EXIT, RISE_2, SOFT } from "./fx";
 import { ErrorNote } from "./ui";
 import AddSourceMenu from "./AddSourceMenu";
 import SourceReader from "./SourceReader";
 import { highlightCounts } from "../lib/highlights";
-import { UsageLimitsPanel } from "./UsageLimitsPanel";
 import { isTauri } from "../lib/desktop";
+import { ICON } from "../ui/iconScale";
 
 const KIND_ICON: Record<string, typeof FileText> = {
   pdf: FilePdf,
@@ -128,6 +128,7 @@ export default function SourcesPane({
   onAsk?: (prompt: string) => void;
 }) {
   const [sources, setSources] = useState<Source[]>([]);
+  const [query, setQuery] = useState("");
   const [marks, setMarks] = useState<Map<string, number>>(new Map());
   const [importing, setImporting] = useState<{ done: number; total: number; current: string } | null>(
     null,
@@ -288,7 +289,7 @@ export default function SourcesPane({
     };
   }, [onPendingConsumed, pendingView]);
 
-  const totalTokens = sources.reduce((s, x) => s + x.tokens, 0);
+const visibleSources = sources.filter((source) => source.title.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
 
   // All sources selected by default (focused === null or all included)
   const validFocused = focused ? focused.filter((id) => sources.some((s) => s.id === id)) : null;
@@ -318,14 +319,19 @@ export default function SourcesPane({
   const openPicker = () => fileRef.current?.click();
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-surface/40">
-      <div className="flex items-center justify-between border-b border-hairline px-4 py-3.5">
-        <h2 className="font-display text-heading font-[450] text-ink">Sources</h2>
-        {onCollapse && (
-          <IconButton aria-label="Collapse sources pane" title="Collapse sources" onClick={onCollapse}>
-            <SidebarSimple size={17} weight="light" />
-          </IconButton>
-        )}
+    <div className="source-index">
+      <div className="pane-head">
+        <div className="pane-head-title">
+          <span className="pane-index" aria-hidden="true">01</span>
+          <h2>Sources</h2>
+        </div>
+        <div className="pane-head-actions">
+          {onCollapse && (
+            <IconButton size="sm" aria-label="Collapse sources pane" title="Collapse sources" onClick={onCollapse}>
+              <SidebarSimple size={ICON.lg} weight="light" />
+            </IconButton>
+          )}
+        </div>
       </div>
 
       <input
@@ -343,13 +349,17 @@ export default function SourcesPane({
       {/* Sole "Add source" control while sources exist — the empty state
           below owns it otherwise (Task 2.3 brief rule 10). */}
       {sources.length > 0 && (
-        <div className="flex items-center justify-between gap-3 px-3.5 pb-2 pt-3.5">
+        <div className="source-index-toolbar">
           <AddSourceMenu
             disabled={!!importing}
             onPickFiles={openPicker}
             onPasteText={() => setPasteOpen(true)}
             onWebAddress={() => setUrlOpen(true)}
           />
+          <label className="source-index-search">
+            <MagnifyingGlass size={ICON.md} aria-hidden="true" />
+            <input type="search" aria-label="Find a source" placeholder="Find a source…" value={query} onChange={(event) => setQuery(event.target.value)} />
+          </label>
         </div>
       )}
 
@@ -360,11 +370,11 @@ export default function SourcesPane({
               key="import-progress"
               role="status"
               aria-live="polite"
-              initial={{ opacity: 0, y: RISE_2 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6, transition: { duration: 0.16 } }}
+              initial={ENTER.initial}
+              animate={ENTER.animate}
+              exit={{ ...ENTER.exit, transition: EXIT }}
               transition={SOFT}
-              className="rounded-xl border border-hairline bg-ink/[0.02] px-3.5 py-3"
+              className="rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] px-3.5 py-3"
             >
               <div className="text-label text-muted">
                 {importing.current || "Processing…"} ({importing.done}/{importing.total})
@@ -377,7 +387,7 @@ export default function SourcesPane({
                   aria-valuemin={0}
                   aria-valuemax={importing.total}
                   aria-valuenow={importing.done}
-                  className={`h-full grad-lamp transition-all duration-300${flushed ? " lamp-flush" : ""}`}
+                  className={`h-full grad-lamp transition-all duration-slow${flushed ? " lamp-flush" : ""}`}
                   style={{ width: `${(importing.done / Math.max(1, importing.total)) * 100}%` }}
                 />
               </div>
@@ -395,7 +405,7 @@ export default function SourcesPane({
         {importNotes.length > 0 && (
           <div role="status" className="mt-3 space-y-1.5">
             {importNotes.map((note) => (
-              <p key={note} className="rounded-xl border border-hairline bg-surface px-3.5 py-2.5 text-label leading-relaxed text-muted">
+              <p key={note} className="rounded-[var(--radius-dialog)] border border-hairline bg-surface px-3.5 py-2.5 text-label leading-relaxed text-muted">
                 {note}
               </p>
             ))}
@@ -404,71 +414,72 @@ export default function SourcesPane({
       </div>
 
       {sources.length > 0 && (
-        <div className="anim-fade flex items-center justify-between border-b border-hairline px-4 py-2 text-label text-muted">
+        <div className="source-index-selection">
+          <span>{selectedCount} of {sources.length} in this conversation</span>
           <button
             onClick={toggleSelectAll}
-            className="flex items-center gap-2 hover:text-ink transition-colors"
-          >
-            <span>Select all sources</span>
-            <span className="font-mono text-label text-muted/70">({selectedCount}/{sources.length})</span>
-          </button>
-          <button
-            onClick={toggleSelectAll}
-            className="flex h-6 w-6 items-center justify-center text-brass hover:text-brasspale transition-colors"
+            className="source-index-select"
+            aria-pressed={isAllSelected}
             aria-label={isAllSelected ? "Deselect all sources" : "Select all sources"}
           >
             {isAllSelected ? (
-              <CheckSquare size={16} weight="fill" />
+              <CheckSquare size={ICON.md} weight="fill" />
             ) : (
-              <Square size={16} weight="light" />
+              <Square size={ICON.md} weight="light" />
             )}
           </button>
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3.5 py-2 space-y-1.5">
+      <div className="source-index-list scroll-thin">
         <AnimatePresence initial={false}>
-          {sources.map((s, i) => {
+          {visibleSources.map((s, i) => {
             const isUrl = s.kind === "url";
             const isYoutube = isUrl && (s.meta?.url?.includes("youtube.com") || s.meta?.url?.includes("youtu.be"));
             const Icon = isYoutube ? YoutubeLogo : (KIND_ICON[s.kind] ?? FileText);
             const isSelected = focused === null || focused.includes(s.id);
 
             return (
-              <Spotlight key={s.id} className="rounded-xl" radius={180}>
                 <motion.div
+                  key={s.id}
                   layout
-                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: -DRIFT_X, scale: 0.96, transition: { duration: 0.16 } }}
+                  initial={{ opacity: 0, y: -RISE_2 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -DRIFT_X, transition: EXIT }}
                   transition={i < 10 ? { ...SOFT, delay: i * 0.03 } : SOFT}
-                  className={`desk-row group flex items-center gap-2 rounded-xl px-2.5 py-2 transition-all duration-200 hover:-translate-y-0.5 hover:border-brass/40 hover:bg-surface hover:shadow-[0_4px_16px_-2px_rgba(0,0,0,0.35),0_0_12px_-3px_rgba(227,176,75,0.12)] ${
-                    isSelected ? "bg-surface/80 border border-hairline/60" : "opacity-60 hover:opacity-100 bg-surface/40 border border-transparent"
-                  }`}
+                  className="source-index-row group rule-bookmark"
+                  data-selected={isSelected}
                 >
                   <button
                     onClick={() => setViewing({ source: s })}
-                    className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+                    className="source-index-open"
                   >
-                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                      isYoutube ? "bg-rust/10 text-rust" : "bg-ink/[0.04] text-muted group-hover:text-brasspale"
-                    }`}>
-                      <Icon size={15} weight={isYoutube ? "fill" : "light"} />
+                    <span className="source-index-icon">
+                      <Icon size={ICON.xl} weight={isYoutube ? "fill" : "light"} />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-body font-[450] text-ink/90 group-hover:text-ink">
+                      <span className="source-index-title">
                         {s.title}
                       </span>
-                      <span className="block font-mono text-label uppercase tracking-[0.1em] text-muted/60">
+                      <span className="source-index-fact">
                         {sourceFact(s, marks.get(s.id))}
                       </span>
                     </span>
                   </button>
 
-                  <div className="flex items-center gap-1">
+                  <div className="source-index-actions">
+                    <button
+                      onClick={() => toggleSourceSelection(s.id)}
+                      className="source-index-select"
+                      aria-pressed={isSelected}
+                      aria-label={`Toggle inclusion of ${s.title}`}
+                    >
+                      {isSelected ? <CheckSquare size={ICON.lg} weight="fill" /> : <Square size={ICON.lg} weight="light" />}
+                    </button>
                     <IconButton
                       variant="danger"
                       size="sm"
+                      className="source-index-delete"
                       aria-label={`Delete ${s.title}`}
                       title="Delete source"
                       onClick={async (e) => {
@@ -484,51 +495,39 @@ export default function SourcesPane({
                         void refresh();
                       }}
                     >
-                      <Trash size={13} weight="light" />
+                      <Trash size={ICON.sm} weight="light" />
                     </IconButton>
 
-                    <button
-                      onClick={() => toggleSourceSelection(s.id)}
-                      className="flex h-7 w-7 items-center justify-center text-brass hover:text-brasspale transition-colors"
-                      aria-label={`Toggle inclusion of ${s.title}`}
-                    >
-                      {isSelected ? (
-                        <CheckSquare size={16} weight="fill" />
-                      ) : (
-                        <Square size={16} weight="light" className="text-muted/60" />
-                      )}
-                    </button>
                   </div>
                 </motion.div>
-              </Spotlight>
             );
           })}
         </AnimatePresence>
 
         {sources.length === 0 && !importing && (
-          <Empty
-            icon={<ComtusEmblem size={24} breathe />}
-            title="No sources yet."
-            body="Add a chapter, your notes, or a link. Every answer will cite the page it came from."
-            action={
+          <section className="source-index-empty" aria-label="Start your source collection">
+            <FileText size={ICON.xxxl} weight="light" aria-hidden="true" />
+            <h3>Your reading starts here.</h3>
+            <p>Add a chapter, your notes, or a link. Keep the material behind your questions within reach.</p>
               <AddSourceMenu
                 onPickFiles={openPicker}
                 onPasteText={() => setPasteOpen(true)}
                 onWebAddress={() => setUrlOpen(true)}
               />
-            }
-          />
+            <span className="source-index-format">PDF, documents, images & text</span>
+          </section>
         )}
+        {sources.length > 0 && visibleSources.length === 0 && <p role="status" className="source-index-no-results">No sources match “{query.trim()}”.</p>}
       </div>
 
+{/* A plain count, no token telemetry. BRAND.md 3 gives brass to action
+          and sage/rust/candle to state; a developer metric in the footer of a
+          study tool spends the reader's attention on nothing they can act on. */}
       {sources.length > 0 && (
-        <div className="anim-fade border-t border-hairline px-4 py-2.5 font-mono text-label uppercase tracking-[0.14em] text-muted/70 flex items-center justify-between">
-          <span>{totalTokens.toLocaleString()} tokens</span>
-          <span>{sources.length} sources</span>
+        <div className="source-index-footer">
+          <span>{sources.length} {sources.length === 1 ? "source" : "sources"} · saved on this device</span>
         </div>
       )}
-      <UsageLimitsPanel />
-
       <UrlModal
         open={urlOpen}
         onClose={() => setUrlOpen(false)}
@@ -629,7 +628,7 @@ function UrlModal({
     <Dialog open={open} onClose={onClose} title="Add a web page">
       <div className="space-y-5">
         <Field label="URL" hint="Article or web document URL">
-          <Input autoFocus value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" />
+          <Input data-autofocus value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" />
         </Field>
         {err && <ErrorNote>{err}</ErrorNote>}
         <div className="flex justify-end gap-3">

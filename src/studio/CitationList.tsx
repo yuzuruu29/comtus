@@ -1,16 +1,29 @@
 import { Quotes } from "@phosphor-icons/react";
 import type { Citation } from "../lib/types";
+import { ICON } from "../ui/iconScale";
+
+/** Citations arrive from model output, so `citedText` and `sourceTitle` are
+ *  only as trustworthy as the provider's JSON — the non-optional fields on
+ *  Citation are a compile-time claim, not a runtime guarantee. dedupe
+ *  already coped with a missing citedText; the render path did not, and
+ *  `c.citedText.slice()` on an undefined took the whole chat pane into the
+ *  error boundary. Normalise once here rather than guarding at each read:
+ *  every render routes through this function. */
+type SafeCitation = Citation & { citedText: string; sourceTitle: string };
 
 /** Same source cited twice (e.g. two chunks of one page) collapses to one
  *  footnote; caps at 10 like every other stagger in the studio. */
-function dedupeCitations(list: Citation[]): Citation[] {
+function dedupeCitations(list: Citation[]): SafeCitation[] {
   const seen = new Set<string>();
-  const out: Citation[] = [];
-  for (const c of list) {
-    const key = `${c.sourceId}:${c.startChar ?? "x"}:${(c.citedText ?? "").slice(0, 32)}`;
+  const out: SafeCitation[] = [];
+  for (const c of list ?? []) {
+    if (!c) continue;
+    const citedText = typeof c.citedText === "string" ? c.citedText : "";
+    const sourceTitle = typeof c.sourceTitle === "string" ? c.sourceTitle : "";
+    const key = `${c.sourceId}:${c.startChar ?? "x"}:${citedText.slice(0, 32)}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push(c);
+    out.push({ ...c, citedText, sourceTitle });
   }
   return out.slice(0, 10);
 }
@@ -29,16 +42,19 @@ export default function CitationList({
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1">
-      <Quotes size={13} weight="light" className="text-muted/60" />
+      <Quotes size={ICON.sm} weight="light" className="text-muted" />
       {list.map((c, i) => (
         <button
           key={`${c.sourceId ?? "cite"}-${i}`}
           type="button"
           onClick={() => c.sourceId && onCite(c.sourceId, c.startChar)}
           title={c.citedText.slice(0, 160)}
-          className="cite-footnote font-mono text-label text-brasspale transition-colors hover:text-brass"
+          className="cite-footnote font-mono text-label text-brass transition-colors hover:text-ink"
         >
-          [{i + 1}] {c.sourceTitle.length > 28 ? `${c.sourceTitle.slice(0, 28)}…` : c.sourceTitle}
+          {/* The index is not decoration — it is how the answer refers to
+              this citation, so it stays in the accessible name. */}
+          <span>[{i + 1}]</span>{" "}
+          <span className="cite-footnote-title">{c.sourceTitle || "Source"}</span>
         </button>
       ))}
     </div>

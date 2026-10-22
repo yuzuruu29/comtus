@@ -2,12 +2,13 @@ import { useCallback, useEffect, useRef, useState, type ComponentType } from "re
 import { motion } from "motion/react";
 import { Books, Notebook } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
-import { RISE_2, SPRING, SOFT, deskPane } from "../studio/fx";
+import { ENTER, SPRING, SOFT, deskPane } from "../studio/fx";
 import SourcesPane from "../studio/SourcesPane";
 import ChatPane from "../studio/ChatPane";
 import StudioPane from "../studio/StudioPane";
 import { panesFor, type LayoutMode } from "../studio/layout";
 import { useMediaQuery } from "../lib/useMediaQuery";
+import { ICON } from "../ui/iconScale";
 
 const SOURCES_W = 260;
 const STUDIO_W = 280;
@@ -128,8 +129,8 @@ export default function NotebookDesk({
       <main className="min-w-0 flex-1">
         <motion.div
           key="chat"
-          initial={{ opacity: 0, y: RISE_2 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={ENTER.initial}
+          animate={ENTER.animate}
           transition={SOFT}
           className={`${deskPane} overflow-hidden`}
         >
@@ -191,10 +192,10 @@ function RailButton({
     <div className="group relative">
       <button
         onClick={onClick}
-        className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-brasspale"
+        className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-brass"
         aria-label={`Show ${label}`}
       >
-        <Icon size={16} weight="light" />
+        <Icon size={ICON.md} weight="light" />
       </button>
       <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-control)] border border-hairline bg-surface px-2 py-1 text-[11px] text-ink opacity-0 transition-opacity group-hover:opacity-100">
         {label}

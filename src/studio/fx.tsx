@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type HTMLAttributes, type MouseEvent, type ReactNode } from "react";
-import { AnimatePresence, MotionConfig, animate, motion, useReducedMotion, type HTMLMotionProps } from "motion/react";
+import { AnimatePresence, MotionConfig, animate, motion, useReducedMotion } from "motion/react";
 import { useSettings } from "../lib/settings";
 
 /** Hook to query the user's active motion mode with system fallback. */
@@ -11,25 +11,59 @@ export function useMotionMode(): "none" | "minimal" | "full" {
 }
 
 /* ── Motion primitives for the studio ────────────────────────
-   The 21st.dev-style vocabulary: spring physics everywhere,
-   AnimatePresence for enter/exit, mouse-tracked spotlights,
-   magnetic buttons, celebration particle emitters, and
-   orbiting border beams.
+   One feel across the whole app: tweened entrances, spring presses,
+   AnimatePresence for enter/exit, and a three-tier motion budget
+   the user controls (full / minimal / none).
    Everything here respects prefers-reduced-motion. */
 
-/** House springs — one feel across the whole app. */
-export const SPRING = { type: "spring", stiffness: 350, damping: 32 } as const;
-/** A tween, not a spring: springs overshoot, and BRAND.md 5 forbids bounce. */
-export const SOFT = { type: "tween", duration: 0.2, ease: [0.16, 1, 0.3, 1] } as const;
-export const CRISP = { type: "spring", stiffness: 420, damping: 36, mass: 0.8 } as const;
+/** House springs — one feel across the whole app.
+ *  BRAND.md 5 forbids bounce, so these are critically damped: the damping
+ *  ratio zeta = damping / (2 * sqrt(stiffness * mass)) is 1 or just above.
+ *  A zeta below 1 overshoots, and a desk should not spring at someone at 2am. */
+export const SPRING = { type: "spring", stiffness: 256, damping: 32, mass: 1 } as const;
+export const CRISP = { type: "spring", stiffness: 420, damping: 37, mass: 0.8 } as const;
 /** Cubic approximation of the house ease, for non-spring tweens. */
 export const HOUSE = [0.16, 1, 0.3, 1] as const;
+
+/** The CSS motion ladder, in seconds, for the motion/react layer.
+ *  Mirrors --dur-fast / --dur-med / --dur-slow / --dur-glow / --dur-settle
+ *  in src/styles/tokens.css so both layers move at the same speed. */
+export const DUR = {
+  fast: 0.12,
+  med: 0.22,
+  slow: 0.36,
+  glow: 0.48,
+  settle: 0.7,
+} as const;
+
+/** A tween, not a spring: springs overshoot, and BRAND.md 5 forbids bounce. */
+export const SOFT = { type: "tween", duration: DUR.med, ease: HOUSE } as const;
+
+/** The house close: the same curve, one rung faster than the open.
+ *  A panel that took 220ms to arrive should be gone before the reader
+ *  looks away, so exits ride the fast rung. */
+export const EXIT = { duration: DUR.fast, ease: HOUSE } as const;
 
 /** Distances for spring/tween keyframes */
 export const RISE_1 = 4;
 export const RISE_2 = 8;
 export const RISE_3 = 14;
 export const DRIFT_X = 12;
+
+/** House entrance: fade, and a short rise. No scale — a scaling popover is
+ *  a generated-UI tell, and the brand's entrances fade and lift. */
+export const ENTER = {
+  initial: { opacity: 0, y: RISE_2 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -RISE_1 },
+} as const;
+
+/** Standard popover travel for AnimatePresence-wrapped menus */
+export const POPOVER = {
+  initial: { opacity: 0, y: -RISE_1 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -2 },
+} as const;
 
 /** House stagger — mirrors `--stagger-step` / the 10-item cap in BRAND.md §5. */
 export const STAGGER_STEP_MS = 30;
@@ -44,22 +78,33 @@ export function staggerDelay(index: number): string {
 export const BEAM_IDLE_S = 5;
 export const BEAM_STREAM_S = 3.4;
 
-/** Standard popover travel for AnimatePresence-wrapped menus */
-export const POPOVER = {
-  initial: { opacity: 0, y: -6, scale: 0.98 },
-  animate: { opacity: 1, y: 0, scale: 1 },
-  exit: { opacity: 0, y: -4, scale: 0.985 },
-} as const;
-
 /** Bound desk pane — flush to the window, split by hairlines. */
 export const deskPane = "h-full min-h-0 bg-ground";
 export const glassPane = deskPane;
 
-/** Wraps the studio in motion's reduced-motion awareness */
+/** The user's motion preference, mirrored onto the document root so CSS can
+ *  read it. "minimal" and "none" are the user's own choices; the OS
+ *  preference collapses to "none" (see useMotionMode). */
+export function useMotionEffect(mode: "none" | "minimal" | "full") {
+  useEffect(() => {
+    document.documentElement.dataset.motion = mode;
+  }, [mode]);
+}
+
+/** Wraps the app in motion's reduced-motion awareness.
+ *  "full" keeps the house vocabulary and still honours the OS setting.
+ *  "minimal" and "none" strip transforms and scale: motion's "always" mode
+ *  leaves opacity alone, so a fade still reads, while nothing travels. */
 export function MotionPrefs({ children }: { children: ReactNode }) {
   const mode = useMotionMode();
+  useMotionEffect(mode);
   return (
-    <MotionConfig reducedMotion={mode === "none" ? "always" : "user"}>{children}</MotionConfig>
+    <MotionConfig
+      reducedMotion={mode === "full" ? "user" : "always"}
+      transition={mode === "none" ? { duration: 0 } : undefined}
+    >
+      {children}
+    </MotionConfig>
   );
 }
 
@@ -88,7 +133,7 @@ export function Spotlight({
     <div ref={ref} {...rest} onMouseMove={onMove} className={`spotlight group relative ${className}`}>
       <div
         aria-hidden
-        className="spotlight-glow pointer-events-none absolute inset-0 z-0 rounded-[inherit] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+        className="spotlight-glow pointer-events-none absolute inset-0 z-0 rounded-[inherit] opacity-0 transition-opacity duration-glow group-hover:opacity-100"
         style={{ ["--sr" as string]: `${radius}px` }}
       />
       <div className="relative z-[1] h-full">{children}</div>
@@ -116,7 +161,7 @@ export function BorderBeam({
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 rounded-[inherit] border-[1.5px] border-transparent overflow-hidden [mask-clip:padding-box,border-box] [mask-composite:intersect] [mask-image:linear-gradient(transparent,transparent),linear-gradient(#000,#000)]"
+      className="pointer-events-none absolute inset-0 rounded-[inherit] border-[1.5px] border-transparent overflow-hidden [mask-clip:padding-box,border-box] [mask-composite:intersect] [mask-image:linear-gradient(transparent,transparent),linear-gradient(black,black)]"
     >
       <motion.div
         className="absolute aspect-square"
@@ -154,7 +199,7 @@ export function Collapse({
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: "auto", opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.36, ease: HOUSE }}
+          transition={{ duration: DUR.slow, ease: HOUSE }}
           className={`overflow-hidden ${className}`}
         >
           {children}
@@ -166,7 +211,9 @@ export function Collapse({
 
 /* ── CountUp — numbers land with weight ─────────────────────── */
 
-export function useCountUp(target: number, durationMs = 900): number {
+/** CountUp — numbers land with weight. The climb rides the settle rung:
+ *  a score arriving is a long settle, not a fade. */
+export function useCountUp(target: number, durationS = DUR.settle): number {
   const [value, setValue] = useState(0);
   const mode = useMotionMode();
   const lastRef = useRef(0);
@@ -178,141 +225,11 @@ export function useCountUp(target: number, durationMs = 900): number {
       return;
     }
     const controls = animate(from, target, {
-      duration: durationMs / 1000,
+      duration: durationS,
       ease: HOUSE,
       onUpdate: (v) => setValue(Math.round(v)),
     });
     return () => controls.stop();
-  }, [target, durationMs, mode]);
+  }, [target, durationS, mode]);
   return value;
-}
-
-/* ── Celebration Confetti & Spark Particle Emitter ─────────── */
-
-export function triggerConfettiCannon(originX = 0.5, originY = 0.6) {
-  if (typeof window === "undefined" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-  const canvas = document.createElement("canvas");
-  canvas.className = "pointer-events-none fixed inset-0 z-[999]";
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  document.body.appendChild(canvas);
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    canvas.remove();
-    return;
-  }
-
-  const colors = ["#FFD166", "#E3B04B", "#F7E0A3", "#5CE1E6", "#4EED88", "#FFF8DC"];
-  const particles: Array<{
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    w: number;
-    h: number;
-    color: string;
-    rotation: number;
-    vRot: number;
-    alpha: number;
-  }> = [];
-
-  const count = 48;
-  const startX = originX * window.innerWidth;
-  const startY = originY * window.innerHeight;
-
-  for (let i = 0; i < count; i++) {
-    const angle = (Math.PI * (180 + (Math.random() * 180 - 90))) / 180;
-    const speed = 7 + Math.random() * 12;
-    particles.push({
-      x: startX,
-      y: startY,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 4,
-      w: 6 + Math.random() * 6,
-      h: 4 + Math.random() * 5,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      rotation: Math.random() * 360,
-      vRot: (Math.random() - 0.5) * 14,
-      alpha: 1,
-    });
-  }
-
-  const start = performance.now();
-
-  const draw = (now: number) => {
-    const elapsed = now - start;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    let active = false;
-    particles.forEach((p) => {
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.35; // gravity
-      p.rotation += p.vRot;
-      p.alpha = Math.max(0, 1 - elapsed / 1800);
-
-      if (p.alpha > 0.01) {
-        active = true;
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate((p.rotation * Math.PI) / 180);
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.alpha;
-        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
-        ctx.restore();
-      }
-    });
-
-    if (active && elapsed < 2000) {
-      requestAnimationFrame(draw);
-    } else {
-      canvas.remove();
-    }
-  };
-
-  requestAnimationFrame(draw);
-}
-
-/* ── Magnetic Interactive Button (3D spring physics) ───────── */
-
-export function MagneticButton({
-  children,
-  className = "",
-  onClick,
-  ...rest
-}: HTMLMotionProps<"button">) {
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-
-  const onMouseMove = (e: MouseEvent<HTMLButtonElement>) => {
-    if (typeof window !== "undefined" && window.matchMedia("(hover: none)").matches) return;
-    const el = btnRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = e.clientX - (rect.left + rect.width / 2);
-    const y = e.clientY - (rect.top + rect.height / 2);
-    setOffset({ x: x * 0.25, y: y * 0.25 });
-  };
-
-  const onMouseLeave = () => {
-    setOffset({ x: 0, y: 0 });
-  };
-
-  return (
-    <motion.button
-      ref={btnRef}
-      onMouseMove={onMouseMove}
-      onMouseLeave={onMouseLeave}
-      animate={{ x: offset.x, y: offset.y }}
-      transition={{ type: "spring", stiffness: 350, damping: 25 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={onClick}
-      className={`relative cursor-pointer transition-colors ${className}`}
-      {...rest}
-    >
-      {children}
-    </motion.button>
-  );
 }

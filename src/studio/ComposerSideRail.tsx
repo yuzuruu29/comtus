@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Brain, CaretDown, CaretRight, Gauge, Lightning, Sparkle } from "@phosphor-icons/react";
+import { Brain, CaretDown, Gauge, Lightning, Sparkle } from "@phosphor-icons/react";
 import { EFFORTS, effortLabelFor } from "../lib/llm";
 import { useSettings } from "../lib/settings";
 import type { Effort } from "../lib/types";
 import { effortToStep, stepFromTrackX, stepToEffort } from "./composerControls";
-import { POPOVER, SOFT, SPRING } from "./fx";
+import { DUR, EXIT, POPOVER, RISE_2, SOFT, SPRING } from "./fx";
+import { ICON } from "../ui/iconScale";
 
 /* Per-level metadata for chip, preview card, and indicators. */
 const LEVEL_FACES: Record<
@@ -48,7 +49,7 @@ type BurstPart = {
 };
 
 function makeBurst(): Burst {
-  const colors = ["var(--brass)", "var(--rust)", "var(--brasspale)"];
+  const colors = ["var(--brass)", "var(--rust)", "var(--brass-pale)"];
   const parts = Array.from({ length: 10 }, (_, i) => {
     const angle = (i / 10) * Math.PI * 2 + (Math.random() - 0.5);
     const dist = 13 + Math.random() * 13;
@@ -158,7 +159,7 @@ export function ComposerSideRail({
     };
   }, [isDragging]);
 
-  const slide = reduceMotion ? { duration: 0 } : { duration: 0.18 };
+  const slide = reduceMotion ? { duration: 0 } : { duration: DUR.fast };
 
   return (
     <div ref={rootRef} className="effort-picker">
@@ -176,19 +177,19 @@ export function ComposerSideRail({
           <motion.span
             key={label}
             className="effort-chip-face"
-            initial={{ y: reduceMotion ? 0 : 7, opacity: 0 }}
+            initial={{ y: reduceMotion ? 0 : RISE_2, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: reduceMotion ? 0 : -7, opacity: 0 }}
+            exit={{ y: reduceMotion ? 0 : -RISE_2, opacity: 0 }}
             transition={slide}
           >
-            <FaceIcon size={11} weight="fill" className="shrink-0 text-brass" />
+            <FaceIcon size={ICON.xs} weight="fill" className="shrink-0 text-brass" />
             <span className="hidden xs:inline">Think: {label}</span>
             <span className="xs:hidden">{label}</span>
           </motion.span>
         </AnimatePresence>
         <CaretDown
-          size={10}
-          className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          size={ICON.xs}
+          className={`transition-transform duration-med ${open ? "rotate-180" : ""}`}
         />
       </button>
 
@@ -197,7 +198,7 @@ export function ComposerSideRail({
           <motion.div
             initial={POPOVER.initial}
             animate={POPOVER.animate}
-            exit={POPOVER.exit}
+            exit={{ ...POPOVER.exit, transition: EXIT }}
             transition={SOFT}
             className="effort-popover"
             role="dialog"
@@ -207,13 +208,13 @@ export function ComposerSideRail({
             {/* Header: Title + Active Badge */}
             <div className="flex items-center justify-between border-b border-hairline px-3.5 py-2.5">
               <div className="flex items-center gap-1.5">
-                <Brain size={13} weight="fill" className="text-brass" />
+                <Brain size={ICON.sm} weight="fill" className="text-brass" />
                 <span className="font-mono text-[11px] font-semibold tracking-wide text-ink">
                   Reasoning effort
                 </span>
               </div>
               <span
-                className={`font-mono text-[9.5px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${face.accentClass}`}
+                className={`font-mono text-[9.5px] uppercase tracking-wider px-2 py-0.5 rounded-[var(--radius-pill)] border ${face.accentClass}`}
               >
                 {activeOption.badge}
               </span>
@@ -332,8 +333,8 @@ export function ComposerSideRail({
                     onClick={() => onEffortChange(item.id)}
                     className={`font-mono text-[10px] tracking-wide transition-colors cursor-pointer ${
                       item.id === effort
-                        ? "font-semibold text-brasspale"
-                        : "text-muted/60 hover:text-ink"
+                        ? "font-semibold text-brass"
+                        : "text-muted hover:text-ink"
                     }`}
                   >
                     {item.shortLabel}
@@ -343,13 +344,13 @@ export function ComposerSideRail({
             </div>
 
             {/* Active Tier Info Card */}
-            <div className="mx-3.5 mb-2.5 rounded-xl border border-hairline bg-ground/80 p-2.5">
+            <div className="mx-3.5 mb-2.5 rounded-[var(--radius-dialog)] border border-hairline bg-ground/80 p-2.5">
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-1.5 font-medium text-[12px] text-ink">
-                  <FaceIcon size={13} weight="fill" className="text-brass" />
+                  <FaceIcon size={ICON.sm} weight="fill" className="text-brass" />
                   <span>{face.title}</span>
                 </div>
-                <span className="font-mono text-[9px] uppercase tracking-wider text-muted/60">
+                <span className="font-mono text-[9px] uppercase tracking-wider text-muted">
                   {step + 1} of 4
                 </span>
               </div>
@@ -367,9 +368,9 @@ export function ComposerSideRail({
                     key={item.id}
                     type="button"
                     onClick={() => onEffortChange(item.id)}
-                    className={`flex-1 rounded-lg border py-1 font-mono text-[10px] uppercase tracking-wider transition-all active:scale-[0.96] cursor-pointer ${
+                    className={`flex-1 rounded-[var(--radius-field)] border py-1 font-mono text-[10px] uppercase tracking-wider transition-all active:scale-[0.96] cursor-pointer ${
                       active
-                        ? "border-brass/60 bg-brass/20 text-brasspale font-semibold shadow-[0_0_8px_rgba(227,176,75,0.2)]"
+                        ? "border-brass/60 bg-brass/20 text-brass font-semibold shadow-[0_0_8px_rgba(227,176,75,0.2)]"
                         : "border-hairline bg-ground/40 text-muted hover:border-brass/30 hover:text-ink"
                     }`}
                   >
@@ -381,7 +382,7 @@ export function ComposerSideRail({
 
             {/* Footer */}
             <div className="border-t border-hairline px-3.5 py-2 flex items-center justify-between">
-              <span className="font-mono text-[9px] text-muted/60 uppercase tracking-widest">
+              <span className="font-mono text-[9px] text-muted uppercase tracking-widest">
                 Arrow keys / 1-4
               </span>
               {onOpenSettings && (
@@ -394,7 +395,6 @@ export function ComposerSideRail({
                   }}
                 >
                   Settings
-                  <CaretRight size={10} />
                 </button>
               )}
             </div>

@@ -1,6 +1,6 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Modal } from "./ui";
 
@@ -47,5 +47,29 @@ describe("Modal", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Close Quiz · 10 items" }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("owns initial focus priority and restores the opener after closing", async () => {
+    function Example() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>Read image</button>
+          <Modal open={open} onClose={() => setOpen(false)} title="Read text from image">
+            <input type="checkbox" aria-label="Remember this choice" />
+            <button type="button" data-autofocus onClick={() => setOpen(false)}>Read</button>
+          </Modal>
+        </>
+      );
+    }
+    render(<Example />);
+    const opener = screen.getByRole("button", { name: "Read image" });
+    opener.focus();
+    fireEvent.click(opener);
+
+    const read = screen.getByRole("button", { name: "Read" });
+    await waitFor(() => expect(read).toHaveFocus());
+    fireEvent.click(read);
+    await waitFor(() => expect(opener).toHaveFocus());
   });
 });

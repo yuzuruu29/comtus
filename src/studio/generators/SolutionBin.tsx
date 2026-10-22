@@ -3,8 +3,9 @@ import { motion } from "motion/react";
 import { AssessmentContent } from "../../components/AssessmentContent";
 
 import type { SolutionCheck, SolutionVerdict } from "../../lib/types";
-import { SOFT } from "../fx";
+import { ENTER, SOFT } from "../fx";
 import { ArrowCounterClockwise, Camera, ImageSquare, Trash } from "@phosphor-icons/react";
+import { ICON } from "../../ui/iconScale";
 
 /**
  * The submission bin — a handwritten solution goes in, a verdict comes
@@ -87,15 +88,15 @@ export function SolutionBin({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <span className="label-mono !text-[10px]">Submission bin</span>
+        <span className="field-label">Submission bin</span>
         {submission && !readOnly && (
           <div className="flex items-center gap-1">
             <button
               onClick={() => pick(fileRef)}
-              className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-muted transition-colors hover:bg-ink/5 hover:text-ink"
+              className="flex h-8 items-center gap-1.5 rounded-[var(--radius-field)] px-2 text-muted transition-colors hover:bg-ink/5 hover:text-ink"
               title="Replace photo"
             >
-              <ArrowCounterClockwise size={13} />
+              <ArrowCounterClockwise size={ICON.sm} />
               <span className="text-[11.5px] font-medium">Replace</span>
             </button>
             <button
@@ -103,11 +104,11 @@ export function SolutionBin({
                 onChange?.(null);
                 setError("");
               }}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-rust/10 hover:text-rust"
+              className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-field)] text-muted transition-colors hover:bg-rust/10 hover:text-rust"
               title="Remove photo"
               aria-label="Remove photo"
             >
-              <Trash size={14} />
+              <Trash size={ICON.sm} />
             </button>
           </div>
         )}
@@ -136,7 +137,7 @@ export function SolutionBin({
       />
 
       {submission ? (
-        <div className="overflow-hidden rounded-xl border border-hairline bg-ground/60">
+        <div className="overflow-hidden rounded-[var(--radius-dialog)] border border-hairline bg-ground/60">
           <img
             src={submission.dataUrl}
             alt="Your handwritten solution"
@@ -157,14 +158,14 @@ export function SolutionBin({
             setDragOver(false);
             void handleFiles(e.dataTransfer.files);
           }}
-          className={`flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-6 py-8 text-center transition-colors ${
+          className={`flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed px-6 py-8 text-center transition-colors ${
             dragOver
               ? "border-brass/60 bg-brass/[0.05]"
               : "border-hairline-strong bg-ground/60"
           }`}
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brass/10 text-brass">
-            <ImageSquare size={19} />
+          <span className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-dialog)] bg-brass/10 text-brass">
+            <ImageSquare size={ICON.xl} />
           </span>
           <div>
             <p className="text-[13.5px] font-medium text-ink">
@@ -179,9 +180,9 @@ export function SolutionBin({
               <button
                 onClick={() => pick(cameraRef)}
                 disabled={busy}
-                className="inline-flex min-h-[38px] items-center gap-2 rounded-[var(--radius-control)] grad-lamp px-4 py-2 text-[12.5px] font-semibold text-night transition-all hover:brightness-[1.06] active:scale-[0.97] disabled:opacity-40"
+                className="inline-flex min-h-[38px] items-center gap-2 rounded-[var(--radius-control)] grad-lamp px-4 py-2 text-[12.5px] font-semibold text-ground transition-all hover:brightness-[1.06] active:scale-[0.97] disabled:opacity-40"
               >
-                <Camera size={14} />
+                <Camera size={ICON.sm} />
                 Take photo
               </button>
               <button
@@ -189,17 +190,17 @@ export function SolutionBin({
                 disabled={busy}
                 className="inline-flex min-h-[38px] items-center gap-2 rounded-[var(--radius-control)] border border-hairline bg-ink/[0.03] px-4 py-2 text-[12.5px] font-medium text-ink/90 transition-all hover:border-hairline-strong hover:bg-ink/[0.07] active:scale-[0.97] disabled:opacity-40"
               >
-                <ImageSquare size={14} />
+                <ImageSquare size={ICON.sm} />
                 Upload file
               </button>
             </div>
           )}
           {busy && (
-            <p className="text-[11.5px] text-brasspale" role="status">
+            <p className="text-[11.5px] text-brass" role="status">
               Preparing your photo…
             </p>
           )}
-          <p className="hidden text-[10.5px] text-muted/60 sm:block">
+          <p className="hidden text-[10.5px] text-muted sm:block">
             or drop an image here
           </p>
         </div>
@@ -225,7 +226,7 @@ const VERDICT_META: Record<SolutionVerdict, { label: string; cls: string }> = {
 
 const VERDICT_TEXT: Record<SolutionVerdict, string> = {
   correct: "text-sage",
-  partial: "text-brasspale",
+  partial: "text-brass",
   incorrect: "text-rust",
   unreadable: "text-moon",
 };
@@ -243,11 +244,11 @@ export function SolutionVerdictCard({ check }: { check: SolutionCheck }) {
   const meta = VERDICT_META[check.verdict];
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={ENTER.initial}
+      animate={ENTER.animate}
       exit={{ opacity: 0 }}
       transition={SOFT}
-      className={`rounded-xl border px-4 py-3.5 ${meta.cls}`}
+      className={`rounded-[var(--radius-dialog)] border px-4 py-3.5 ${meta.cls}`}
     >
       <div className={`font-mono text-[10.5px] font-semibold uppercase tracking-[0.16em] ${VERDICT_TEXT[check.verdict]}`}>
         {meta.label}
@@ -266,7 +267,7 @@ export function SolutionVerdictCard({ check }: { check: SolutionCheck }) {
         <ul className="mt-2 space-y-1">
           {check.errors.map((e, i) => (
             <li key={i} className="flex gap-2 text-[12.5px] leading-relaxed text-ink/80">
-              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current opacity-60" />
+              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-[var(--radius-pill)] bg-current opacity-60" />
               <AssessmentContent>{e}</AssessmentContent>
             </li>
           ))}

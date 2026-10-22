@@ -7,6 +7,7 @@ import { Button } from "../../ui";
 import { ErrorNote } from "../ui";
 import { AssessmentContent } from "../../components/AssessmentContent";
 import "./deck-import.css";
+import { ICON } from "../../ui/iconScale";
 
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
@@ -128,7 +129,7 @@ export default function DeckImport({ notebookId, onDone }: { notebookId: string;
           <Button
             variant="secondary"
             size="sm"
-            icon={<FileArrowUp size={15} aria-hidden="true" />}
+            icon={<FileArrowUp size={ICON.md} aria-hidden="true" />}
             aria-describedby={hintId}
             onClick={() => fileRef.current?.click()}
           >

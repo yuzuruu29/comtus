@@ -1,11 +1,12 @@
 import type { RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Books, Flame, Plus } from "@phosphor-icons/react";
+import { Flame, Plus } from "@phosphor-icons/react";
 import type { ChatMessage, Notebook, WebSearchMeta } from "../lib/types";
 import { Button } from "../ui";
-import { DRIFT_X, SPRING } from "./fx";
+import { DRIFT_X, EXIT, SOFT } from "./fx";
 import AssistantMessage, { SearchStatusStrip } from "./AssistantMessage";
 import "./chat-welcome.css";
+import { ICON } from "../ui/iconScale";
 
 const STARTERS = [
   { label: "Find the key ideas", prompt: "Summarize the key ideas across my sources" },
@@ -16,12 +17,12 @@ const STARTERS = [
 function UserBubble({ content }: { content: string }) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: DRIFT_X, scale: 0.98 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
-      transition={SPRING}
+      initial={{ opacity: 0, x: DRIFT_X }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={SOFT}
       className="flex justify-end"
     >
-      <div className="max-w-[82%] rounded-2xl bg-ink/[0.05] border border-hairline-strong px-4 py-3 text-body leading-relaxed text-ink shadow-sm">
+      <div className="max-w-[82%] rounded-[var(--radius-dialog)] bg-ink/[0.05] border border-hairline-strong px-4 py-3 text-body leading-relaxed text-ink shadow-sm">
         {content}
       </div>
     </motion.div>
@@ -44,6 +45,8 @@ export default function MessageList({
   onSaveToNote,
   onSend,
   onAddSources,
+  hasModel = true,
+  onOpenSettings,
   scrollRef,
   onScroll,
   error,
@@ -68,6 +71,8 @@ export default function MessageList({
   onSaveToNote: (title: string, content: string) => void;
   onSend: (prompt: string) => void;
   onAddSources?: () => void;
+  hasModel?: boolean;
+  onOpenSettings?: () => void;
   scrollRef: RefObject<HTMLDivElement | null>;
   onScroll: () => void;
   error: string;
@@ -82,27 +87,36 @@ export default function MessageList({
       aria-label="Chat history"
       className="chat-scroll min-h-0 flex-1 overflow-y-auto"
     >
-      <div className="mx-auto w-full max-w-3xl px-6 pb-8 pt-6">
+      <div className="chat-reading-column">
         {messages.length === 0 && !streaming && (
           <section className="chat-welcome" aria-label="Start studying">
-            <div className="chat-welcome-mark" aria-hidden="true"><Books size={30} weight="light" /></div>
-            <p className="chat-welcome-context">{notebook.name}</p>
-            <h1>{sourceCount > 0 ? "What would you like to understand?" : "Start with your study material."}</h1>
+            <p className="chat-welcome-context">
+              <span className="chat-welcome-rule" aria-hidden="true" />
+              {sourceCount > 0 ? `${sourceCount} ${sourceCount === 1 ? "source" : "sources"} on your desk` : "A fresh page"}
+            </p>
+            <h1>{sourceCount > 0 ? "Follow a question." : "Understanding starts here."}</h1>
             <p className="chat-welcome-copy">
               {sourceCount > 0
-                ? `Ask a question, connect ideas, or put your knowledge to the test. Your ${sourceCount === 1 ? "source is" : `${sourceCount} sources are`} here to keep the answers grounded.`
-                : "Bring a chapter, lecture notes, or a link. Turn what you are reading into something you understand."}
+                ? hasModel
+                  ? "Find the thread between ideas. Ask about a passage, work through a concept, or see what you remember."
+                  : "Your material is ready. Choose an AI model to ask questions and work through it together."
+                : "Bring your reading, notes, and half-formed questions. This is where you work them out."}
             </p>
-            {sourceCount > 0 ? (
-              <div className="chat-starters">
-                {STARTERS.map(({ label, prompt }) => (
-                  <button key={label} type="button" onClick={() => onSend(prompt)}>{label}</button>
+            {sourceCount > 0 && hasModel ? (
+              <div className="chat-starters" aria-label="Ways to begin">
+                {STARTERS.map(({ label, prompt }, index) => (
+                  <button key={label} type="button" onClick={() => onSend(prompt)}>
+                    <span className="chat-starter-index" aria-hidden="true">0{index + 1}</span>
+                    <span>{label}</span>
+                  </button>
                 ))}
               </div>
+            ) : sourceCount > 0 ? (
+              onOpenSettings && <Button onClick={onOpenSettings}>Choose a model</Button>
             ) : (
               <>
-                {onAddSources && <Button icon={<Plus size={16} aria-hidden="true" />} onClick={onAddSources}>Add your first source</Button>}
-                <p className="chat-welcome-hint">You can also start with a question below.</p>
+                {onAddSources && <Button icon={<Plus size={ICON.md} aria-hidden="true" />} onClick={onAddSources}>Add your first source</Button>}
+                <p className="chat-welcome-hint">PDFs, notes, or a web page. Start with one.</p>
               </>
             )}
           </section>
@@ -159,10 +173,10 @@ export default function MessageList({
               {error && (
                 <motion.div
                   role="alert"
-                  className="anim-shake flex items-start gap-3 rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] text-rust"
-                  exit={{ opacity: 0, transition: { duration: 0.18 } }}
+                  className="anim-shake flex items-start gap-3 rounded-[var(--radius-dialog)] border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] text-rust"
+                  exit={{ opacity: 0, transition: EXIT }}
                 >
-                  <Flame size={16} className="mt-0.5 shrink-0" />
+                  <Flame size={ICON.md} className="mt-0.5 shrink-0" />
                   <span>{error}</span>
                 </motion.div>
               )}

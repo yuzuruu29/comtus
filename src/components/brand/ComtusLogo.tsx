@@ -37,7 +37,7 @@ export function ComtusEmblem({
       viewBox="0 0 48 48"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={`${breathe ? "animate-[pulse_3s_ease-in-out_infinite]" : ""} ${className}`}
+      className={`${breathe ? "animate-[pulse_3s_var(--ease-inout)_infinite]" : ""} ${className}`}
       aria-hidden="true"
     >
       <rect x="8" y="6" width="32" height="36" rx="4" fill="#F5ECDC" stroke="#28372F" strokeWidth="2" />
@@ -71,7 +71,7 @@ export default function ComtusLogo({
   if (variant === "mark") {
     return (
       <div
-        className={`flex items-center justify-center rounded-xl bg-brass/10 border border-brass/25 text-brass shadow-[0_0_16px_rgba(227,176,75,0.2)] ${config.box} ${className}`}
+        className={`flex items-center justify-center rounded-[var(--radius-dialog)] bg-brass/10 border border-brass/25 text-brass shadow-[0_0_16px_rgba(227,176,75,0.2)] ${config.box} ${className}`}
       >
         <ComtusEmblem size={config.icon} breathe={breathe} />
       </div>
@@ -81,7 +81,7 @@ export default function ComtusLogo({
   return (
     <div className={`flex items-center select-none ${config.gap} ${className}`}>
       <div
-        className={`flex items-center justify-center rounded-xl bg-brass/10 border border-brass/25 text-brass shadow-[0_0_16px_rgba(227,176,75,0.2)] shrink-0 ${config.box}`}
+        className={`flex items-center justify-center rounded-[var(--radius-dialog)] bg-brass/10 border border-brass/25 text-brass shadow-[0_0_16px_rgba(227,176,75,0.2)] shrink-0 ${config.box}`}
       >
         <ComtusEmblem size={config.icon} breathe={breathe} />
       </div>

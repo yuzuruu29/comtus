@@ -1,9 +1,15 @@
 @import "tailwindcss";
 @import "./styles/tokens.css";
+@import "./styles/paper.css";
 @import "./styles/chrome-pixel.css";
 @import "./styles/font-presets.css";
 
 @import "@fontsource-variable/literata";
+/* The drawn italic. Without it every <em> and italic Literata line is a
+   synthesized slant of the roman, which is what the landing's emphasis
+   words and the reader's quotations were silently using. The browser only
+   fetches the subset an italic glyph actually needs. */
+@import "@fontsource-variable/literata/wght-italic.css";
 @import "@fontsource-variable/instrument-sans";
 
 @import "@fontsource/jetbrains-mono/400.css";
@@ -25,19 +31,14 @@
   --color-brass-deep: var(--brass-deep);
   --color-brass-pale: var(--brass-pale);
   --color-leather: var(--leather);
-  /* Deprecated spellings — Task 2.5 retires the last consumer. */
-  --color-brassdeep: var(--brass-deep);
-  --color-brasspale: var(--brass-pale);
   --color-moon: var(--moon);
   --color-moondeep: var(--moondeep);
   --color-sage: var(--sage);
   --color-rust: var(--rust);
   --color-candle: var(--candle);
 
-  /* Landing-only literals — always Lamplight dark */
+  /* Landing-only literals — always Lamplight dark, whatever the theme is. */
   --color-night: #0b0f1a;
-  --color-study: #121828;
-  --color-shelf: #1a2136;
   --color-parchment: #f2ede3;
   --color-faded: #8e96ab;
 
@@ -55,8 +56,10 @@
   --font-display: var(--font-read);
   --font-body: var(--font-ui);
 
-  --ease-house: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-house-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  /* The Tailwind bridge reads the ladder in tokens.css; it does not
+     restate the curves. --ease-out and --ease-inout live there. */
+  --ease-house: var(--ease-out);
+  --ease-house-inout: var(--ease-inout);
 
   --shadow-card: var(--elev-card);
   --shadow-lift: var(--elev-lift);
@@ -121,11 +124,6 @@ html[data-shell="desktop"] {
   font-size: 14px;
 }
 
-html[data-shell] .cursor-dot,
-html[data-shell] .cursor-ring {
-  display: none !important;
-}
-
 *[data-tauri-drag-region] {
   app-region: drag;
 }
@@ -140,14 +138,14 @@ html[data-shell="desktop"][data-platform="mac"] .desk-header {
 
 html {
   background: var(--ground);
-  scroll-behavior: auto; /* Lenis owns scrolling */
+  scroll-behavior: auto; /* smooth anchor scrolling is opt-in per surface: see landing-motion.css */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   overflow-x: hidden;
 }
 
 html[data-shell] {
-  transition: background-color 240ms var(--ease-house), color 240ms var(--ease-house);
+  transition: background-color var(--dur-med) var(--ease-house), color var(--dur-med) var(--ease-house);
 }
 
 body {
@@ -164,12 +162,13 @@ body {
 }
 
 html[data-shell] body {
-  transition: background-color 240ms var(--ease-house), color 240ms var(--ease-house);
+  transition: background-color var(--dur-med) var(--ease-house), color var(--dur-med) var(--ease-house);
 }
 
+/* The Tailwind utility owns the family. This rule only asks the variable
+   font for optical sizing; it must never set font-family here. */
 .font-display {
   font-optical-sizing: auto;
-  font-variation-settings: "opsz" auto;
 }
 
 /* Prevent iOS auto-zoom on input focus while keeping custom desktop sizing */
@@ -193,7 +192,7 @@ html[data-shell] body {
 
 /* ── Signature helpers ─────────────────────────────────── */
 .grad-lamp {
-  background: linear-gradient(92deg, var(--brassdeep), var(--brasspale));
+  background: linear-gradient(92deg, var(--brass-deep), var(--brass-pale));
 }
 
 /* Solid, not a gradient clipped to text: gradient text is a generated-UI tell
@@ -206,66 +205,9 @@ html[data-shell] body {
   border-color: var(--hairline);
 }
 
-/* Mono eyebrow label — the margin note */
-.label-mono {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: inherit;
-}
-
-/* Film grain — fixed overlay, jittered */
-.grain {
-  position: fixed;
-  inset: -100%;
-  z-index: 200;
-  pointer-events: none;
-  opacity: 0.045;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  animation: grain-jitter 0.9s steps(8) infinite;
-}
-
-@keyframes grain-jitter {
-  0% { transform: translate(0, 0); }
-  12.5% { transform: translate(-2%, 3%); }
-  25% { transform: translate(3%, -2%); }
-  37.5% { transform: translate(-3%, -3%); }
-  50% { transform: translate(2%, 2%); }
-  62.5% { transform: translate(-1%, 2%); }
-  75% { transform: translate(3%, 1%); }
-  87.5% { transform: translate(-2%, -1%); }
-  100% { transform: translate(0, 0); }
-}
-
 /* Custom cursor */
-.cursor-dot,
-.cursor-ring {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 99999;
-  pointer-events: none;
-  border-radius: 999px;
-}
-.cursor-dot {
-  width: 6px;
-  height: 6px;
-  margin-left: -3px;
-  margin-top: -3px;
-  background: var(--brasspale);
-}
 /* Scales with transform rather than animating width/height/margin: those are
    layout-bound and force a reflow every frame (spec 6.6). */
-.cursor-ring {
-  width: 38px;
-  height: 38px;
-  margin-left: -19px;
-  margin-top: -19px;
-  border: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
-  transition: transform var(--dur-slow) var(--ease-out), border-color var(--dur-slow);
-}
 .cursor-ring.is-active {
   transform: scale(1.526);
   border-color: color-mix(in srgb, var(--brass-pale) 80%, transparent);
@@ -300,68 +242,8 @@ html[data-shell] body {
    Rendered only for fine pointers with motion allowed (TorchLayer).
    The halo layers are fixed and pointer-driven via transforms; the
    showcase veil derives entirely from each section's --lit variable. */
-.torch-halo,
-.torch-halo-core {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 250;
-  pointer-events: none;
-  border-radius: 999px;
-  mix-blend-mode: screen;
-  will-change: transform;
-}
-.torch-halo {
-  width: 560px;
-  height: 560px;
-  margin-left: -280px;
-  margin-top: -280px;
-  background: radial-gradient(
-    circle,
-    rgba(227, 176, 75, 0.16) 0%,
-    rgba(201, 146, 54, 0.08) 38%,
-    rgba(227, 176, 75, 0) 70%
-  );
-}
-.torch-halo-core {
-  width: 220px;
-  height: 220px;
-  margin-left: -110px;
-  margin-top: -110px;
-  background: radial-gradient(
-    circle,
-    rgba(240, 206, 140, 0.22) 0%,
-    rgba(227, 176, 75, 0.1) 45%,
-    rgba(227, 176, 75, 0) 72%
-  );
-}
 
 /* ── Pixel Torch Cursor & Rekindling Animations ── */
-.cursor-torch {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 99999;
-  pointer-events: none;
-  display: none;
-  will-change: transform;
-  margin-left: -25px;
-  margin-top: -8px;
-  transition: transform 0.15s var(--ease-out), filter 0.3s ease;
-  filter: drop-shadow(0 0 10px rgba(255, 152, 0, 0.5));
-}
-
-body.torch-on .cursor-torch {
-  display: block;
-}
-
-body.torch-on .cursor-dot {
-  display: none;
-}
-
-body.torch-on .cursor-ring {
-  display: none;
-}
 
 .cursor-torch.is-active {
   transform: scale(1.18);
@@ -369,266 +251,29 @@ body.torch-on .cursor-ring {
 }
 
 /* Pixel flame flicker animation */
-@keyframes pixel-flicker {
-  0%, 100% {
-    transform: scale(1) rotate(0deg);
-  }
-  25% {
-    transform: scale(1.06, 0.95) rotate(-2deg);
-  }
-  50% {
-    transform: scale(0.96, 1.05) rotate(1.5deg);
-  }
-  75% {
-    transform: scale(1.04, 1.02) rotate(-1deg);
-  }
-}
-
-.animate-pixel-flicker {
-  animation: pixel-flicker 0.22s steps(4, jump-none) infinite;
-}
 
 /* Sparks drifting */
-@keyframes spark-drift-1 {
-  0% { transform: translate(0, 0); opacity: 1; }
-  100% { transform: translate(3px, -7px); opacity: 0; }
-}
-
-@keyframes spark-drift-2 {
-  0% { transform: translate(0, 0); opacity: 1; }
-  100% { transform: translate(-2px, -9px); opacity: 0; }
-}
-
-@keyframes spark-drift-3 {
-  0% { transform: translate(0, 0); opacity: 0.9; }
-  100% { transform: translate(1px, -6px); opacity: 0; }
-}
-
-.animate-spark-drift-1 {
-  animation: spark-drift-1 0.45s steps(3, end) infinite;
-}
-
-.animate-spark-drift-2 {
-  animation: spark-drift-2 0.55s steps(4, end) infinite 0.15s;
-}
-
-.animate-spark-drift-3 {
-  animation: spark-drift-3 0.38s steps(3, end) infinite 0.08s;
-}
 
 /* Torch ignition flare */
-@keyframes torch-ignite {
-  0% {
-    transform: scale(0.8);
-    filter: brightness(1);
-  }
-  40% {
-    transform: scale(1.45);
-    filter: brightness(2.2) drop-shadow(0 0 24px rgba(255, 179, 0, 1));
-  }
-  100% {
-    transform: scale(1);
-    filter: brightness(1) drop-shadow(0 0 10px rgba(255, 152, 0, 0.5));
-  }
-}
-
-.animate-torch-ignite {
-  animation: torch-ignite 0.85s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-.animate-pulse-gentle {
-  animation: pulse-gentle 2.2s ease-in-out infinite alternate;
-}
-
-@keyframes pulse-gentle {
-  0% { transform: scale(0.92); opacity: 0.7; }
-  100% { transform: scale(1.15); opacity: 1; }
-}
 
 /* Floating Pixel Embers */
-.pixel-ember {
-  position: absolute;
-  width: 2px;
-  height: 2px;
-  background: #FFD54F;
-  border-radius: 0;
-  box-shadow: 0 0 4px #FF6F00;
-  pointer-events: none;
-}
-
-.ember-1 {
-  top: 10%;
-  right: 25%;
-  animation: ember-float-1 1.4s steps(5, end) infinite;
-}
-
-.ember-2 {
-  top: 5%;
-  right: 35%;
-  animation: ember-float-2 1.8s steps(6, end) infinite 0.4s;
-}
-
-.ember-3 {
-  top: 15%;
-  right: 20%;
-  animation: ember-float-3 1.2s steps(4, end) infinite 0.8s;
-}
-
-@keyframes ember-float-1 {
-  0% { transform: translate(0, 0); opacity: 0; }
-  30% { opacity: 1; }
-  100% { transform: translate(5px, -18px); opacity: 0; }
-}
-
-@keyframes ember-float-2 {
-  0% { transform: translate(0, 0); opacity: 0; }
-  30% { opacity: 1; }
-  100% { transform: translate(-6px, -22px); opacity: 0; }
-}
-
-@keyframes ember-float-3 {
-  0% { transform: translate(0, 0); opacity: 0; }
-  30% { opacity: 1; }
-  100% { transform: translate(2px, -14px); opacity: 0; }
-}
-
-body.torch-on .cursor-dot {
-  width: 9px;
-  height: 9px;
-  background: radial-gradient(circle at 40% 35%, #fff7e0, var(--brasspale) 55%, var(--brass) 100%);
-  animation: torch-flicker 2.6s ease-in-out infinite;
-}
-@keyframes torch-flicker {
-  0%, 100% { box-shadow: 0 0 10px 2px rgba(240, 206, 140, 0.85), 0 0 26px 8px rgba(227, 176, 75, 0.4); }
-  22% { box-shadow: 0 0 12px 3px rgba(240, 206, 140, 0.95), 0 0 30px 10px rgba(227, 176, 75, 0.48); }
-  47% { box-shadow: 0 0 8px 2px rgba(240, 206, 140, 0.75), 0 0 22px 7px rgba(227, 176, 75, 0.36); }
-  71% { box-shadow: 0 0 11px 2px rgba(240, 206, 140, 0.9), 0 0 28px 9px rgba(227, 176, 75, 0.44); }
-}
 
 /* Night veil over the showcase sections — lifts as --lit rises. */
-body.torch-on [data-torch]::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  pointer-events: none;
-  background: radial-gradient(120% 90% at 50% 40%, rgba(11, 15, 26, 0.18), rgba(11, 15, 26, 0.45));
-  opacity: calc(0.35 * (1 - var(--lit, 1)));
-}
-
-.torch-pill {
-  position: fixed;
-  right: 1.25rem;
-  bottom: calc(1.25rem + var(--sab));
-  z-index: 260;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.95rem;
-  border-radius: 999px;
-  border: 1px solid var(--hairline-strong);
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  box-shadow: 0 4px 18px color-mix(in srgb, var(--brass) 16%, transparent), 0 1px 3px rgba(0, 0, 0, 0.05);
-  backdrop-filter: blur(12px);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--brass);
-  transition: all var(--dur-med) var(--ease-house);
-}
-.torch-pill:hover {
-  border-color: var(--brass);
-  background: var(--surface);
-  box-shadow: 0 6px 24px color-mix(in srgb, var(--brass) 22%, transparent);
-}
-.torch-pill[aria-pressed="true"] {
-  color: var(--brass);
-  border-color: var(--hairline-strong);
-}
-
-.torch-hint-zone {
-  position: fixed;
-  right: 1.25rem;
-  bottom: calc(3.8rem + var(--sab));
-  z-index: 260;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.5rem;
-  pointer-events: none;
-}
-.torch-hint {
-  max-width: 260px;
-  padding: 0.75rem 1.1rem;
-  border-radius: 1rem;
-  border: 1px solid var(--hairline-strong);
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
-  box-shadow: 0 8px 30px color-mix(in srgb, var(--brass) 16%, transparent);
-  backdrop-filter: blur(12px);
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--muted);
-  animation: torch-hint-in 0.5s var(--ease-house) both;
-}
-.torch-hint-off {
-  border-color: var(--hairline);
-  animation: torch-hint-in 0.5s var(--ease-house) both,
-    torch-hint-out 0.4s var(--ease-house) 3.5s forwards;
-}
-.torch-hint-title {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--brass);
-  margin-bottom: 0.35rem;
-}
-.torch-hint-body {
-  color: var(--muted);
-  margin-bottom: 0.3rem;
-}
-.torch-hint-keys {
-  font-size: 10.5px;
-  color: var(--muted);
-}
-.torch-hint-key {
-  color: var(--brass);
-  background: color-mix(in srgb, var(--brass) 10%, transparent);
-  border: 1px solid var(--hairline-strong);
-  border-radius: 4px;
-  padding: 1px 5px;
-  font-size: 10px;
-  font-weight: 700;
-}
-.torch-pill-label {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-.torch-pill-mode {
-  color: inherit;
-}
-.torch-pill-sep {
-  color: rgba(4, 74, 179, 0.4);
-}
-@keyframes torch-hint-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes torch-hint-out {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(4px); }
-}
 
 /* Focus — brass ring on every keyboard-reachable control, inputs included.
    Two exceptions carry their own visible focus treatment instead of this
    ring: the composer textarea keeps its inset brass ring (studio.css), and
    `inputCls` fields wake a border/shadow glow (ui.tsx). Never suppress an
    outline without a visible alternative — earlier blanket resets here
-   silently broke keyboard navigation app-wide. */
+   silently broke keyboard navigation app-wide.
+
+   The ring is brass, the same colour the primitive kit uses, so the app
+   stops showing grey on some controls and brass on others. Brass clears
+   3:1 against every surface the ring can land on: 5.29:1 on Daylight
+   ground, 5.71:1 on surface, 4.70:1 on raised, 9.64:1 on Lamplight
+   ground. The old ink-at-24% ring scored 1.68:1, so it was not a ring
+   at all. The offset keeps the ring off the control's own fill, so a
+   brass button shows its parent's surface in the gap. */
 button:focus-visible,
 a:focus-visible,
 [tabindex]:focus-visible,
@@ -636,32 +281,15 @@ input:focus-visible,
 select:focus-visible,
 textarea:not(.composer-shell textarea):focus-visible,
 [contenteditable]:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--ink) 24%, transparent);
+  outline: 2px solid var(--brass);
   outline-offset: 2px;
 }
 
 html[data-theme="light"] .grad-lamp {
-  background: linear-gradient(92deg, #c18b2e, #e0b85e);
-}
-
-html[data-theme="light"] button:focus-visible,
-html[data-theme="light"] a:focus-visible,
-html[data-theme="light"] [tabindex]:focus-visible,
-html[data-theme="light"] input:focus-visible,
-html[data-theme="light"] select:focus-visible,
-html[data-theme="light"] textarea:not(.composer-shell textarea):focus-visible,
-html[data-theme="light"] [contenteditable]:focus-visible {
-  outline-color: rgba(0, 0, 0, 0.22);
+  background: linear-gradient(92deg, var(--brass-deep), var(--brass));
 }
 
 /* Pencil underline for text links / nav */
-.link-pencil {
-  background-image: linear-gradient(currentColor, currentColor);
-  background-position: 0 100%;
-  background-repeat: no-repeat;
-  background-size: 0 1px;
-  transition: background-size var(--dur-med) var(--ease-house), color var(--dur-med) var(--ease-house);
-}
 @media (hover: hover) {
   .link-pencil:hover,
   .link-pencil:focus-visible {
@@ -690,25 +318,33 @@ html[data-theme="light"] [contenteditable]:focus-visible {
    changes still read as changes. Springs/tweens from motion/react collapse
    separately via MotionPrefs (fx.tsx). */
 @media (prefers-reduced-motion: reduce) {
-  /* Tier 1 — ambient/infinite loops stop entirely and rest visibly. */
-  .grain,
+  /* Tier 1 — ambient/infinite loops stop entirely and rest visibly.
+     The same list as the "minimal" tier above, so a visitor who turns the
+     OS preference on sees exactly what they asked for. src/styles/motion.test.ts
+     asserts the two lists match. */
   .breathe,
   .phase-dot,
   .send-halo,
   .bar-sheen,
   .think-gloss,
   .studio-motes span,
-  .lamp-glow {
+  .pixel-eq-bar,
+  .pixel-thought-cursor,
+  .thinking-live,
+  .pixel-reasoning-laser-top,
+  .typing-harmonic-dot,
+  .stream-typing-beacon-core,
+  .stream-typing-beacon-halo,
+  .effort-dot,
+  .effort-fill,
+  .effort-thumb-ring,
+  .effort-chip svg,
+  .effort-level-icon,
+  .effort-bar {
     animation: none !important;
   }
   .send-halo {
     opacity: 0 !important;
-  }
-  /* The composer's lamp glow stops breathing but stays lit — .is-lit's
-     static opacity: 1 is what's left once the animation is gone, so the
-     lamp rests visibly on instead of vanishing (Task 2.4). */
-  .composer-ambience.is-breathing {
-    animation: none !important;
   }
 
   /* The streaming beacon rests as a static solid caret — still marking
@@ -719,6 +355,15 @@ html[data-theme="light"] [contenteditable]:focus-visible {
     animation: none !important;
     transform: none;
     opacity: 1;
+  }
+
+  /* The "Thinking…" label loses its shimmer but keeps its brass, so the
+     state still reads. `html` outranks the base rule wherever it lands in
+     the bundle. */
+  html .thinking-live {
+    background: none;
+    -webkit-text-fill-color: var(--brass);
+    color: var(--brass);
   }
 
   /* Tier 2 — entrances keep their opacity fade, lose all translation/scale.
@@ -747,6 +392,82 @@ html[data-theme="light"] [contenteditable]:focus-visible {
   }
 }
 
+/* ── Motion tiers ──────────────────────────────────────────────────────────
+   Three budgets, in order of severity:
+
+     full     — the house vocabulary.
+     minimal  — the user's "Minimal" setting. Ambient loops rest in their
+                calm state, entrances fade without travelling, and direct
+                feedback stays: a press still reads as a press.
+     none     — nothing moves. Every state change lands in one frame.
+
+   The OS preference collapses to "none" (useMotionMode in studio/fx.tsx), and
+   the prefers-reduced-motion block below stays the CSS-only backstop.
+
+   The ambient list is written twice on purpose — once here, once in the
+   reduced-motion block. src/styles/motion.test.ts asserts the two lists match,
+   so they cannot drift apart. Informational loops (the button spinner, the
+   skeleton shimmer, the toast fuse, progress bars) are deliberately absent:
+   they carry information, not decoration, and they keep running. */
+
+html[data-motion="minimal"] .breathe,
+html[data-motion="minimal"] .phase-dot,
+html[data-motion="minimal"] .send-halo,
+html[data-motion="minimal"] .bar-sheen,
+html[data-motion="minimal"] .think-gloss,
+html[data-motion="minimal"] .studio-motes span,
+html[data-motion="minimal"] .pixel-eq-bar,
+html[data-motion="minimal"] .pixel-thought-cursor,
+html[data-motion="minimal"] .thinking-live,
+html[data-motion="minimal"] .pixel-reasoning-laser-top,
+html[data-motion="minimal"] .typing-harmonic-dot,
+html[data-motion="minimal"] .stream-typing-beacon-core,
+html[data-motion="minimal"] .stream-typing-beacon-halo,
+html[data-motion="minimal"] .effort-dot,
+html[data-motion="minimal"] .effort-fill,
+html[data-motion="minimal"] .effort-thumb-ring,
+html[data-motion="minimal"] .effort-chip svg,
+html[data-motion="minimal"] .effort-level-icon,
+html[data-motion="minimal"] .effort-bar {
+  animation: none !important;
+}
+
+/* The streaming beacon rests as a static solid caret — still marking
+   "more is coming", just without movement. */
+html[data-motion="minimal"] .stream-typing-beacon-core,
+html[data-motion="minimal"] .stream-typing-beacon-halo {
+  transform: none;
+  opacity: 1;
+}
+
+/* The "Thinking…" label loses its shimmer but keeps its brass, so the state
+   still reads. */
+html[data-motion="minimal"] .thinking-live {
+  background: none;
+  -webkit-text-fill-color: var(--brass);
+  color: var(--brass);
+}
+
+/* Entrances fade in place. The travel and the scale are what "minimal"
+   gives up; the fade is what still tells you something arrived. */
+html[data-motion="minimal"] .anim-rise,
+html[data-motion="minimal"] .anim-slide-l,
+html[data-motion="minimal"] .anim-slide-r,
+html[data-motion="minimal"] .anim-pop,
+html[data-motion="minimal"] .chip-in {
+  animation-name: fade-in;
+}
+
+/* Nothing moves, but every state still changes: colour, border and
+   position land in the same frame. */
+html[data-motion="none"] *,
+html[data-motion="none"] *::before,
+html[data-motion="none"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
 /* ── Screen shake keyframes removed — the desk does not shake. ────── */
 
 /* Crisp rendering during transform transitions */
@@ -772,7 +493,7 @@ html[data-theme="light"] [contenteditable]:focus-visible {
 }
 *::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--muted) 30%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-pill);
 }
 *::-webkit-scrollbar-track {
   background: transparent;

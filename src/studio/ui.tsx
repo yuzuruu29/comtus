@@ -5,8 +5,8 @@ export function LampPulse({ label }: { label?: string }) {
   return (
     <div role="status" aria-live="polite" className="flex items-center gap-3 text-muted">
       <span className="relative flex h-3 w-3">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brass/50 [animation-duration:1.6s]" />
-        <span className="relative inline-flex h-3 w-3 rounded-full bg-brass" />
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-[var(--radius-pill)] bg-brass/50 [animation-duration:1.6s]" />
+        <span className="relative inline-flex h-3 w-3 rounded-[var(--radius-pill)] bg-brass" />
       </span>
       {label && <span className="text-body">{label}</span>}
     </div>
@@ -22,7 +22,7 @@ export const btnLamp = "btn btn-md btn-primary";
 
 export function ErrorNote({ children }: { children: ReactNode }) {
   return (
-    <div role="alert" className="anim-shake rounded-xl border border-rust/30 bg-rust/[0.07] px-4 py-3 text-body leading-relaxed text-rust">
+    <div role="alert" className="anim-shake rounded-[var(--radius-dialog)] border border-rust/30 bg-rust/[0.07] px-4 py-3 text-body leading-relaxed text-rust">
       {children}
     </div>
   );

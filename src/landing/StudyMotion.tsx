@@ -3,6 +3,7 @@ import { ArrowCounterClockwise, Pause, Play } from "@phosphor-icons/react";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import type { MotionState } from "../lib/pixelMotion";
 import "./study-motion.css";
+import { ICON } from "../ui/iconScale";
 
 const STEPS = [
   { id: "gather", label: "Gather", caption: "A chapter. A question. Somewhere to begin." },
@@ -110,7 +111,7 @@ export default function StudyMotion({ motionMode }: { motionMode: MotionState })
         <div className="study-motion-practice">
           <div className="study-motion-practice-turn">
             <div className="study-motion-practice-face study-motion-practice-front">
-              <div className="study-motion-paper-meta"><span>A little practice</span><span>↗</span></div>
+              <div className="study-motion-paper-meta"><span>A little practice</span></div>
               <p>What makes<br />a memory <em>stay?</em></p>
               <span className="study-motion-practice-foot">One question, from your notes.</span>
             </div>
@@ -149,7 +150,7 @@ export default function StudyMotion({ motionMode }: { motionMode: MotionState })
               title={allowsMotion ? (autoplay ? "Pause motion" : "Play motion") : "Motion is off in your preferences"}
               disabled={!allowsMotion}
             >
-              {autoplay && allowsMotion ? <Pause size={17} weight="fill" aria-hidden="true" /> : <Play size={17} weight="fill" aria-hidden="true" />}
+              {autoplay && allowsMotion ? <Pause size={ICON.lg} weight="fill" aria-hidden="true" /> : <Play size={ICON.lg} weight="fill" aria-hidden="true" />}
             </button>
             <button
               type="button"
@@ -157,7 +158,7 @@ export default function StudyMotion({ motionMode }: { motionMode: MotionState })
               aria-label="Replay study sequence"
               title="Replay study sequence"
             >
-              <ArrowCounterClockwise size={18} aria-hidden="true" />
+              <ArrowCounterClockwise size={ICON.lg} aria-hidden="true" />
             </button>
           </div>
         </div>

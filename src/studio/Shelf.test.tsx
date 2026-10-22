@@ -1,4 +1,5 @@
 import "fake-indexeddb/auto";
+import Dexie from "dexie";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import type { ReactNode } from "react";
@@ -6,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { createNotebook, db } from "../lib/db";
 import Shelf from "./Shelf";
+import * as backup from "../lib/backup";
 
 vi.mock("motion/react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("motion/react")>();
@@ -25,12 +27,40 @@ vi.mock("./DeskShell", () => ({
 
 afterEach(async () => {
   cleanup();
+  vi.restoreAllMocks();
   sessionStorage.clear();
   await db.notebooks.clear();
   await db.sources.clear();
 });
 
 describe("Shelf", () => {
+  it("keeps a failed library read distinct from an empty library while retrying", async () => {
+    let finishRetry!: (value: never[]) => void;
+    vi.spyOn(db.notebooks, "toArray")
+      .mockRejectedValueOnce(new Error("Storage unavailable"))
+      .mockImplementationOnce(() => new Dexie.Promise<never[]>((resolve) => { finishRetry = resolve; }));
+    render(<MemoryRouter><Shelf onOpen={() => {}} needsKey={false} /></MemoryRouter>);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your notebooks couldn’t open.");
+    expect(screen.queryByRole("list", { name: "How a notebook works" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(screen.getByLabelText("Loading notebooks")).toHaveAttribute("aria-busy", "true");
+    expect(screen.queryByRole("list", { name: "How a notebook works" })).not.toBeInTheDocument();
+    finishRetry([]);
+    expect(await screen.findByRole("list", { name: "How a notebook works" })).toBeInTheDocument();
+  });
+
+  it("reports a failed export and keeps the original notebook available", async () => {
+    const notebook = await createNotebook("Memory and learning");
+    vi.spyOn(backup, "exportNotebook").mockRejectedValueOnce(new Error("Export failed"));
+    render(<MemoryRouter><Shelf onOpen={() => {}} needsKey={false} /></MemoryRouter>);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Notebook options for Memory and learning" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Export" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your original is still on this device.");
+    expect(await db.notebooks.get(notebook.id)).toBeDefined();
+  });
+
   it("explains the notebook flow and lets someone create before connecting a model", async () => {
     const onOpen = vi.fn();
     render(
@@ -116,17 +146,23 @@ describe("Shelf", () => {
     expect(screen.getByRole("button", { name: "Open Pharmacology" })).toBeInTheDocument();
   });
 
-  it("keeps notebook actions separate from opening a notebook", async () => {
+  it("restores focus after renaming and keeps notebook actions separate from opening", async () => {
     const notebook = await createNotebook("Anatomy");
     const onOpen = vi.fn();
     render(<MemoryRouter><Shelf onOpen={onOpen} needsKey={false} /></MemoryRouter>);
 
-    fireEvent.click(await screen.findByRole("button", { name: "Notebook options for Anatomy" }));
+    const options = await screen.findByRole("button", { name: "Notebook options for Anatomy" });
+    options.focus();
+    fireEvent.click(options);
     expect(screen.getByRole("menuitem", { name: "Export" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
-    fireEvent.change(screen.getByLabelText("Notebook name"), { target: { value: "Human anatomy" } });
+    const name = screen.getByLabelText("Notebook name");
+    await waitFor(() => expect(name).toHaveFocus());
+    fireEvent.change(name, { target: { value: "Human anatomy" } });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Notebook options for Human anatomy" }));
+    const renamedOptions = await screen.findByRole("button", { name: "Notebook options for Human anatomy" });
+    await waitFor(() => expect(renamedOptions).toHaveFocus());
+    fireEvent.click(renamedOptions);
     fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete permanently" }));
 

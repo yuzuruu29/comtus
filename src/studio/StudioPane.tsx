@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   BookOpen,
   ArrowCounterClockwise,
-  ArrowUpRight,
   Briefcase,
   CaretDown,
   ClockCounterClockwise,
@@ -40,7 +39,7 @@ import type {
   DocPayload,
   NotePayload,
 } from "../lib/types";
-import { SOFT } from "./fx";
+import { DRIFT_X, EXIT, RISE_2, SOFT } from "./fx";
 import { Toast } from "./Toast";
 import { timeAgo, Modal, Field, inputCls, btnLamp, btnGhost } from "./ui";
 import ExportMenu from "./ExportMenu";
@@ -62,6 +61,7 @@ import { fmtScore } from "./generators/common";
 import { kindAccent } from "../lib/milestones";
 import { Button, IconButton } from "../ui";
 import "./study-tools.css";
+import { ICON } from "../ui/iconScale";
 
 type Flow = "quiz" | "exam" | "essay" | "flashcards" | "presentation" | "aids" | null;
 type DeletedGenerationNotice = {
@@ -76,16 +76,20 @@ const DOCUMENT_TOOLS: { kind: GenerationKind; icon: typeof BookOpen; name: strin
   { kind: "timeline", icon: ClockCounterClockwise, name: "Timeline" },
 ];
 
+/* The rows used to carry a tinted icon tile each — brass, sage, rust at 10%
+   behind the glyph. That spent three semantic colours on decoration (sage
+   means verified, rust means error) and the tiles washed out to pale
+   squares in Lamplight. The rows are ink on paper now; the brass bookmark
+   in .rule-bookmark marks the one you are on. */
 const PRACTICE_TOOLS: {
   flow: Exclude<Flow, null>;
   icon: typeof ListChecks;
   name: string;
   line: string;
-  kindVar: string;
 }[] = [
-  { flow: "quiz", icon: ListChecks, name: "Practice quiz", line: "Check what you know", kindVar: "var(--brass)" },
-  { flow: "flashcards", icon: Stack, name: "Flashcards", line: "Remember the key ideas", kindVar: "var(--sage)" },
-  { flow: "exam", icon: GraduationCap, name: "Mock exam", line: "Practice under time pressure", kindVar: "var(--rust)" },
+  { flow: "quiz", icon: ListChecks, name: "Practice quiz", line: "Check what you know" },
+  { flow: "flashcards", icon: Stack, name: "Flashcards", line: "Remember the key ideas" },
+  { flow: "exam", icon: GraduationCap, name: "Mock exam", line: "Practice under time pressure" },
 ];
 
 const KIND_CSS: Record<ReturnType<typeof kindAccent>, string> = {
@@ -139,6 +143,8 @@ export default function StudioPane({
   onPendingGenerationConsumed?: () => void;
 }) {
   const desk = useDesk();
+  const createStudyId = useId();
+  const savedWorkId = useId();
   const [gens, setGens] = useState<Generation[]>([]);
   const [lastAttempts, setLastAttempts] = useState<Map<string, Attempt>>(new Map());
   const [historyVersion, setHistoryVersion] = useState(0);
@@ -281,87 +287,79 @@ export default function StudioPane({
 
   return (
     <div className="study-tools">
-      <div className="study-tools-header">
-        <h2>Study tools</h2>
-        {onCollapse && (
-          <IconButton
-            onClick={onCollapse}
-            size="sm"
-            aria-label="Collapse studio pane"
-            title="Collapse studio"
-          >
-            <SidebarSimple size={17} aria-hidden="true" />
-          </IconButton>
-        )}
+      <div className="pane-head">
+        <div className="pane-head-title">
+          <span className="pane-index" aria-hidden="true">03</span>
+          <h2>Study tools</h2>
+        </div>
+        <div className="pane-head-actions">
+          {onCollapse && (
+            <IconButton
+              onClick={onCollapse}
+              size="sm"
+              aria-label="Collapse studio pane"
+              title="Collapse studio"
+            >
+              <SidebarSimple size={ICON.lg} aria-hidden="true" />
+            </IconButton>
+          )}
+        </div>
       </div>
 
       <div className="study-tools-body scroll-thin">
-        <section aria-labelledby="create-study-title">
+        <section aria-labelledby={createStudyId}>
           <div className="study-tools-intro">
-            <span className="study-tools-eyebrow">Put your learning to work</span>
-            <h3 id="create-study-title">Make something from your sources.</h3>
-            <p>Choose a format. Make it your own.</p>
+            <h3 id={createStudyId}>Put it into practice.</h3>
+            <p>Work with your material. See what stays.</p>
           </div>
           <div className="practice-tools">
             {PRACTICE_TOOLS.map((tool) => (
               <Button
                 key={tool.flow}
                 variant="secondary"
-                className="practice-tool"
+                className={`practice-tool rule-bookmark${tool.flow === "quiz" ? " practice-tool-primary" : ""}`}
                 onClick={() => (tool.flow === "quiz" ? openQuiz() : setFlow(tool.flow))}
-                style={{ ["--kind" as string]: tool.kindVar }}
               >
-                <span className="practice-tool-icon"><tool.icon size={19} aria-hidden="true" /></span>
+                <span className="practice-tool-icon"><tool.icon size={ICON.xl} aria-hidden="true" /></span>
                 <span className="practice-tool-copy">
                   <strong>{tool.name}</strong>
                   <span>{tool.line}</span>
                 </span>
-                <ArrowUpRight className="practice-tool-arrow" size={15} aria-hidden="true" />
               </Button>
             ))}
           </div>
           <details className="study-tools-more">
             <summary>
               <span>More ways to study<small>Guides, writing & presentations</small></span>
-              <CaretDown size={16} aria-hidden="true" />
+              <CaretDown size={ICON.md} aria-hidden="true" />
             </summary>
             <div className="study-tools-secondary">
               {DOCUMENT_TOOLS.map((tool) => (
                 <Button key={tool.kind} variant="ghost" size="sm" onClick={() => openAid(tool.kind)}>
-                  <tool.icon size={16} aria-hidden="true" />
+                  <tool.icon size={ICON.md} aria-hidden="true" />
                   {tool.name}
                 </Button>
               ))}
               <Button variant="ghost" size="sm" onClick={() => setFlow("essay")}>
-                <PenNib size={16} aria-hidden="true" />Essay coach
+                <PenNib size={ICON.md} aria-hidden="true" />Essay coach
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setFlow("presentation")}>
-                <Presentation size={16} aria-hidden="true" />Slides & deck
+                <Presentation size={ICON.md} aria-hidden="true" />Slides & deck
               </Button>
             </div>
           </details>
         </section>
 
-        <ExamPlan
-          notebookId={notebookId}
-          version={historyVersion}
-          onOpenDeck={openGeneration}
-          onPractice={(topic) => openQuiz(topic ?? "")}
-          onMockExam={() => setFlow("exam")}
-        />
-
-        <StudyStanding notebookId={notebookId} version={historyVersion} onPractice={openQuiz} />
-
-        <section className="study-saved" aria-labelledby="saved-work-title">
+        <section className="study-saved" aria-labelledby={savedWorkId}>
           <div className="study-saved-heading">
             <div className="study-saved-title">
-              <h3 id="saved-work-title">Saved work</h3>
+              <h3 id={savedWorkId}>Saved work</h3>
               <span>{gens.length}</span>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              icon={<Plus size={14} aria-hidden="true" />}
+              icon={<Plus size={ICON.sm} aria-hidden="true" />}
               onClick={() => {
                 setEditingNote(null);
                 setNoteTitle("");
@@ -382,9 +380,9 @@ export default function StudioPane({
                     <motion.div
                       key={g.id}
                       layout
-                      initial={{ opacity: 0, y: -6 }}
+                      initial={{ opacity: 0, y: -RISE_2 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: -10, transition: { duration: 0.15 } }}
+                      exit={{ opacity: 0, x: -DRIFT_X, transition: EXIT }}
                       transition={SOFT}
                       className="study-saved-row group"
                     >
@@ -395,9 +393,9 @@ export default function StudioPane({
                         }}
                       >
                         {isNote ? (
-                          <NotePencil size={18} aria-hidden="true" />
+                          <NotePencil size={ICON.lg} aria-hidden="true" />
                         ) : (
-                          <FileText size={18} aria-hidden="true" />
+                          <FileText size={ICON.lg} aria-hidden="true" />
                         )}
                       </div>
 
@@ -438,7 +436,7 @@ export default function StudioPane({
                             aria-label={`Edit note ${g.title}`}
                             title="Edit note"
                           >
-                            <PencilSimple size={15} aria-hidden="true" />
+                            <PencilSimple size={ICON.md} aria-hidden="true" />
                           </IconButton>
                         )}
                         <IconButton
@@ -448,7 +446,7 @@ export default function StudioPane({
                           aria-label={`${isNote ? "Delete note" : "Delete saved item"} ${g.title}`}
                           title={isNote ? "Delete note" : "Delete saved item"}
                         >
-                          <Trash size={15} aria-hidden="true" />
+                          <Trash size={ICON.md} aria-hidden="true" />
                         </IconButton>
                       </div>
                     </motion.div>
@@ -456,21 +454,29 @@ export default function StudioPane({
               })}
             </AnimatePresence>
 
-            {gens.length === 0 && (
-              <div className="study-saved-empty">
-                <NotePencil size={24} aria-hidden="true" />
-                <h4>Your work, all in one place.</h4>
-                <p>Add a note or try a study tool above. Everything you create stays with this notebook.</p>
-              </div>
+{gens.length === 0 && (
+              <p className="study-saved-empty">
+                Save an answer, write a note, or make a study set. It waits here when you come back.
+              </p>
             )}
 
             {deleteError && (
-              <p role="alert" className="rounded-lg border border-rust/30 bg-rust/[0.07] px-3 py-2 text-[11.5px] leading-relaxed text-rust">
+              <p role="alert" className="rounded-[var(--radius-field)] border border-rust/30 bg-rust/[0.07] px-3 py-2 text-[11.5px] leading-relaxed text-rust">
                 {deleteError}
               </p>
             )}
           </div>
         </section>
+
+        <ExamPlan
+          notebookId={notebookId}
+          version={historyVersion}
+          onOpenDeck={openGeneration}
+          onPractice={(topic) => openQuiz(topic ?? "")}
+          onMockExam={() => setFlow("exam")}
+        />
+
+        <StudyStanding notebookId={notebookId} version={historyVersion} onPractice={openQuiz} />
       </div>
 
       {/* Keyed by notice id: a second delete while one is open remounts the
@@ -545,7 +551,7 @@ export default function StudioPane({
         <div className="space-y-4">
           <Field label="Note Title">
             <input
-              autoFocus
+              data-autofocus
               value={noteTitle}
               onChange={(e) => setNoteTitle(e.target.value)}
               placeholder="Title your note…"
@@ -632,7 +638,7 @@ function UndoDeleteToast({
       open={notice !== null}
       onClose={onExpire}
       durationMs={UNDO_DELETE_MS}
-      className="fixed bottom-[calc(5.5rem+var(--sab))] right-4 z-[80] flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl border border-brass/30 bg-raised px-4 py-3 text-[12.5px] text-ink shadow-modal lg:bottom-6 lg:right-6"
+      className="fixed bottom-[calc(5.5rem+var(--sab))] right-4 z-[80] flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-[var(--radius-dialog)] border border-brass/30 bg-raised px-4 py-3 text-[12.5px] text-ink shadow-modal lg:bottom-6 lg:right-6"
     >
       {notice && (
         <>
@@ -644,9 +650,9 @@ function UndoDeleteToast({
             type="button"
             onClick={onUndo}
             aria-label="Undo deletion"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-brass/40 bg-brass/[0.09] px-3 py-1.5 font-medium text-brasspale transition-colors hover:bg-brass/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/70"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-pill)] border border-brass/40 bg-brass/[0.09] px-3 py-1.5 font-medium text-brass transition-colors hover:bg-brass/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/70"
           >
-            <ArrowCounterClockwise size={13} weight="bold" />
+            <ArrowCounterClockwise size={ICON.sm} weight="bold" />
             Undo
           </button>
         </>

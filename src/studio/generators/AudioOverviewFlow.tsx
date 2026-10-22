@@ -13,6 +13,7 @@ import { saveGeneration, uid } from "../../lib/db";
 import type { AudioOverviewPayload, Generation } from "../../lib/types";
 import { btnGhost, btnLamp, ErrorNote } from "../ui";
 import { BorderBeam } from "../fx";
+import { ICON } from "../../ui/iconScale";
 
 export async function generateAudioOverviewScript(
   notebookId: string,
@@ -163,13 +164,13 @@ export function AudioOverviewViewer({
   return (
     <div className="space-y-6">
       {/* Player Header Card */}
-      <div className="rounded-2xl border border-brass/30 bg-surface/80 p-5 shadow-sm relative overflow-hidden">
+      <div className="rounded-[var(--radius-dialog)] border border-brass/30 bg-surface/80 p-5 shadow-sm relative overflow-hidden">
         <BorderBeam size={100} duration={playing ? 4 : 10} />
 
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brass/15 text-brass">
-              <Broadcast size={24} weight={playing ? "fill" : "light"} className={playing ? "animate-pulse" : ""} />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-dialog)] bg-brass/15 text-brass">
+              <Broadcast size={ICON.xxl} weight={playing ? "fill" : "light"} className={playing ? "animate-pulse" : ""} />
             </div>
             <div>
               <h3 className="font-display text-[17px] font-[500] text-ink">{payload.title}</h3>
@@ -180,37 +181,37 @@ export function AudioOverviewViewer({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPlaybackSpeed((s) => (s === 1 ? 1.25 : s === 1.25 ? 1.5 : 1))}
-              className="rounded-full border border-hairline bg-surface px-3 py-1 font-mono text-[11px] text-muted hover:text-ink transition-colors"
+              className="rounded-[var(--radius-pill)] border border-hairline bg-surface px-3 py-1 font-mono text-[11px] text-muted hover:text-ink transition-colors"
               title="Playback speed"
             >
               {playbackSpeed}x
             </button>
             <button
               onClick={restart}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline bg-surface text-muted hover:text-ink transition-colors"
+              className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-pill)] border border-hairline bg-surface text-muted hover:text-ink transition-colors"
               title="Restart"
             >
-              <ArrowCounterClockwise size={15} />
+              <ArrowCounterClockwise size={ICON.md} />
             </button>
             <button
               onClick={togglePlay}
-              className="flex h-10 w-10 items-center justify-center rounded-full grad-lamp text-night shadow-sm hover:brightness-105 active:scale-95 transition-all"
+              className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-pill)] grad-lamp text-ground shadow-sm hover:brightness-105 active:scale-95 transition-all"
               aria-label={playing ? "Pause" : "Play"}
             >
-              {playing ? <Pause size={17} weight="bold" /> : <Play size={17} weight="bold" className="ml-0.5" />}
+              {playing ? <Pause size={ICON.lg} weight="bold" /> : <Play size={ICON.lg} weight="bold" className="ml-0.5" />}
             </button>
           </div>
         </div>
 
         {/* Progress Bar */}
         <div className="relative z-10 mt-5">
-          <div className="h-1.5 w-full rounded-full bg-ink/[0.08] overflow-hidden">
+          <div className="h-1.5 w-full rounded-[var(--radius-pill)] bg-ink/[0.08] overflow-hidden">
             <div
-              className="h-full grad-lamp transition-all duration-300 rounded-full"
+              className="h-full grad-lamp transition-all duration-slow rounded-[var(--radius-pill)]"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
-          <div className="mt-1.5 flex justify-between font-mono text-[10px] text-muted/70">
+          <div className="mt-1.5 flex justify-between font-mono text-[10px] text-muted">
             <span>Segment {currentTurn + 1} of {totalTurns}</span>
             <span>{playing ? "Playing conversation…" : "Paused"}</span>
           </div>
@@ -226,7 +227,7 @@ export function AudioOverviewViewer({
 
         <div
           ref={transcriptRef}
-          className="max-h-[50vh] space-y-3 overflow-y-auto rounded-2xl border border-hairline bg-surface/40 p-4"
+          className="max-h-[50vh] space-y-3 overflow-y-auto rounded-[var(--radius-dialog)] border border-hairline bg-surface/40 p-4"
         >
           {turns.map((turn, i) => {
             const isAlex = turn.speaker === "Alex";
@@ -241,23 +242,23 @@ export function AudioOverviewViewer({
                   setCurrentTurn(i);
                   if (playing) speakCurrent(i);
                 }}
-                className={`block w-full text-left cursor-pointer rounded-xl p-3.5 transition-all ${
+                className={`block w-full text-left cursor-pointer rounded-[var(--radius-dialog)] p-3.5 transition-all ${
                   isActive
                     ? "bg-brass/[0.09] border border-brass/35 shadow-sm"
                     : "hover:bg-ink/[0.03] border border-transparent opacity-75 hover:opacity-100"
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-mono ${
-                    isAlex ? "bg-moon/20 text-moon font-medium" : "bg-brass/20 text-brasspale font-medium"
+                  <span className={`flex h-5 w-5 items-center justify-center rounded-[var(--radius-pill)] text-[10px] font-mono ${
+                    isAlex ? "bg-moon/20 text-moon font-medium" : "bg-brass/20 text-brass font-medium"
                   }`}>
                     {isAlex ? "A" : "S"}
                   </span>
                   <span className="font-display text-[13px] font-[500] text-ink">{turn.speaker}</span>
                   {isActive && playing && (
                     <span className="ml-auto flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-brass opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-brass" />
+                      <span className="animate-ping absolute inline-flex h-2 w-2 rounded-[var(--radius-pill)] bg-brass opacity-75" />
+                      <span className="relative inline-flex rounded-[var(--radius-pill)] h-2 w-2 bg-brass" />
                     </span>
                   )}
                 </div>
@@ -272,7 +273,7 @@ export function AudioOverviewViewer({
       <div className="flex justify-between items-center pt-2">
         {onRegenerate && (
           <button onClick={onRegenerate} className={btnGhost}>
-            <ArrowCounterClockwise size={14} className="mr-1.5" />
+            <ArrowCounterClockwise size={ICON.sm} className="mr-1.5" />
             Regenerate Overview
           </button>
         )}
@@ -312,8 +313,8 @@ export function AudioOverviewModal({
   return (
     <div className="space-y-5">
       <div className="flex items-start gap-3.5">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brass/10 text-brass">
-          <SpeakerHigh size={20} weight="light" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-dialog)] bg-brass/10 text-brass">
+          <SpeakerHigh size={ICON.xl} weight="light" />
         </div>
         <div>
           <h3 className="font-display text-[15px] font-[500] text-ink">Generate Audio Overview</h3>

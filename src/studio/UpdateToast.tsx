@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowCircleDown, CheckCircle, Warning } from "@phosphor-icons/react";
-import { SPRING } from "./fx";
+import { ENTER, EXIT, SOFT } from "./fx";
 import { useUpdater } from "./useUpdater";
+import { ICON } from "../ui/iconScale";
 
 /** Update prompts for the Desk App — silent checks surface here. */
 export default function UpdateToast() {
@@ -20,17 +21,17 @@ export default function UpdateToast() {
         <motion.div
           role={state.phase === "error" ? "alert" : "status"}
           aria-live={state.phase === "error" ? "assertive" : "polite"}
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 12, transition: { duration: 0.15 } }}
-          transition={SPRING}
+          initial={ENTER.initial}
+          animate={ENTER.animate}
+          exit={{ ...ENTER.exit, transition: EXIT }}
+          transition={SOFT}
           className="fixed bottom-5 right-5 z-[90] w-[min(21rem,calc(100vw-2.5rem))]"
         >
           <div className="overflow-hidden rounded-[var(--radius-field)] border border-hairline bg-surface/95 shadow-[0_18px_60px_-18px_rgba(0,0,0,0.75)]">
             {state.phase === "available" && (
               <div className="p-4">
                 <div className="flex items-center gap-2 text-[13.5px] font-medium text-ink">
-                  <ArrowCircleDown size={17} weight="light" className="text-brass" />
+                  <ArrowCircleDown size={ICON.lg} weight="light" className="text-brass" />
                   Comtus {pendingVersion ?? "a new version"} is ready
                 </div>
                 <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
@@ -39,7 +40,7 @@ export default function UpdateToast() {
                 <div className="mt-3 flex items-center gap-2">
                   <button
                     onClick={() => void install()}
-                    className="rounded-[var(--radius-control)] bg-brass px-3 py-1.5 text-[12.5px] font-medium text-night transition hover:bg-brasspale"
+                    className="rounded-[var(--radius-control)] bg-brass px-3 py-1.5 text-[12.5px] font-medium text-ground transition hover:bg-brass-deep"
                   >
                     Update &amp; restart
                   </button>
@@ -55,14 +56,14 @@ export default function UpdateToast() {
             {state.phase === "downloading" && (
               <div className="p-4">
                 <div className="text-[13px] font-medium text-ink">Downloading update…</div>
-                <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-white/[0.08]">
+                <div className="mt-2.5 h-1 overflow-hidden rounded-[var(--radius-pill)] bg-white/[0.08]">
                   <div
                     role="progressbar"
                     aria-label="Update download"
                     aria-valuemin={0}
                     aria-valuemax={100}
                     aria-valuenow={state.progress >= 0 ? Math.round(state.progress * 100) : undefined}
-                    className="h-full rounded-full bg-brass transition-[width] duration-300"
+                    className="h-full rounded-[var(--radius-pill)] bg-brass transition-[width] duration-slow"
                     style={{ width: state.progress >= 0 ? `${Math.round(state.progress * 100)}%` : "40%" }}
                   />
                 </div>
@@ -73,13 +74,13 @@ export default function UpdateToast() {
             )}
             {state.phase === "up-to-date" && (
               <button onClick={reset} className="flex w-full items-center gap-2 p-4 text-left">
-                <CheckCircle size={16} weight="light" className="shrink-0 text-sage" />
+                <CheckCircle size={ICON.md} weight="light" className="shrink-0 text-sage" />
                 <span className="text-[13px] text-ink">Comtus is up to date.</span>
               </button>
             )}
             {state.phase === "error" && (
               <button onClick={reset} className="flex w-full items-start gap-2 p-4 text-left">
-                <Warning size={16} weight="light" className="mt-0.5 shrink-0 text-rust" />
+                <Warning size={ICON.md} weight="light" className="mt-0.5 shrink-0 text-rust" />
                 <span>
                   <span className="block text-[13px] text-ink">Update check failed.</span>
                   <span className="mt-0.5 block break-words text-[11.5px] leading-relaxed text-muted">

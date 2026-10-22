@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { ArrowUp, Stop } from "@phosphor-icons/react";
 import type { ChatMessage, Notebook, WebSearchMeta } from "../lib/types";
 import AssistantMessage from "./AssistantMessage";
+import { ICON } from "../ui/iconScale";
 
 export default function CompadChat({
   notebook, modelLabel, sourceCount, messages, activeSessionId, input, onInputChange,
@@ -73,8 +74,8 @@ export default function CompadChat({
               if (!streaming && !preparing && hasModel && ready && input.trim()) { stickBottom.current = true; onSend(); }
             }
           }} />
-        {streaming ? <button type="button" className="compad-send" onClick={onStop} aria-label="Stop response"><Stop size={17} weight="fill" aria-hidden="true" /></button>
-          : <button type="submit" className="compad-send" disabled={preparing || !hasModel || !ready || !input.trim()} aria-label="Send message"><ArrowUp size={19} weight="bold" aria-hidden="true" /></button>}
+        {streaming ? <button type="button" className="compad-send" onClick={onStop} aria-label="Stop response"><Stop size={ICON.lg} weight="fill" aria-hidden="true" /></button>
+          : <button type="submit" className="compad-send" disabled={preparing || !hasModel || !ready || !input.trim()} aria-label="Send message"><ArrowUp size={ICON.xl} weight="bold" aria-hidden="true" /></button>}
       </form>
     </div>
   );

@@ -22,12 +22,13 @@ import type { Notebook } from "../lib/types";
 import StudyGlyph from "../components/icons/StudyGlyph";
 import ComtusLogo from "../components/brand/ComtusLogo";
 import { ByokBadge, ProBadge, SettingsButton, CreateNotebookEmblem } from "../components/brand/BrandControls";
-import { SOFT, Spotlight, staggerDelay } from "../studio/fx";
+import { EXIT, POPOVER, SOFT, Spotlight, staggerDelay } from "../studio/fx";
 import { Modal, Field, inputCls, btnLamp, btnGhost, timeAgo } from "../studio/ui";
 import { examCountdown } from "../lib/exam";
 import { AnimatePresence, motion } from "motion/react";
 import { useSettings } from "../lib/settings";
 import ReviewDueStrip from "../studio/ReviewDueStrip";
+import { ICON } from "../ui/iconScale";
 
 type SortOption = "recent" | "az" | "oldest" | "sources";
 
@@ -54,9 +55,16 @@ export default function DeskHome({
 }) {
   const isPro = useSettings((s) => Boolean(s.isPro && s.planTier !== "free"));
   const planTier = useSettings((s) => s.planTier);
-  const tokenBalance = useSettings((s) => s.tokenBalance || 0);
-  const tokensUsed = useSettings((s) => s.tokensUsed || 0);
-  const remainingTokens = Math.max(0, tokenBalance - tokensUsed);
+  const lastBackupAt = useSettings((s) => s.lastBackupAt) ?? 0;
+  const [needsBackup, setNeedsBackup] = useState(false);
+
+  useEffect(() => {
+    if (lastBackupAt > 0) {
+      setNeedsBackup(false);
+      return;
+    }
+    void db.sources.count().then((n) => setNeedsBackup(n > 0)).catch(() => setNeedsBackup(false));
+  }, [lastBackupAt]);
 
   const [notebooks, setNotebooks] = useState<NotebookWithCount[]>([]);
   const [loadError, setLoadError] = useState(false);
@@ -240,7 +248,6 @@ export default function DeskHome({
             {isPro ? (
               <ProBadge
                 planTier={planTier}
-                remainingTokens={remainingTokens}
                 onClick={onSettings}
               />
             ) : (
@@ -248,6 +255,10 @@ export default function DeskHome({
             )}
           </div>
         </div>
+
+        {needsBackup && (
+          <p className="mt-4 text-[13px] text-muted">Export a backup. This browser can remove site data.</p>
+        )}
 
         {/* Filter & View Controls Toolbar */}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
@@ -257,7 +268,7 @@ export default function DeskHome({
               onClick={() => setActiveTab("all")}
               className={`rounded-[var(--radius-control)] px-3.5 py-1 text-[13px] font-medium transition-all ${
                 activeTab === "all"
-                  ? "bg-brass/15 text-brasspale shadow-sm"
+                  ? "bg-brass/15 text-brass shadow-sm"
                   : "text-muted hover:text-ink"
               }`}
             >
@@ -267,7 +278,7 @@ export default function DeskHome({
               onClick={() => setActiveTab("my")}
               className={`rounded-[var(--radius-control)] px-3.5 py-1 text-[13px] font-medium transition-all ${
                 activeTab === "my"
-                  ? "bg-brass/15 text-brasspale shadow-sm"
+                  ? "bg-brass/15 text-brass shadow-sm"
                   : "text-muted hover:text-ink"
               }`}
             >
@@ -280,7 +291,7 @@ export default function DeskHome({
             {/* Search Input */}
             <div className="relative hidden sm:block">
               <MagnifyingGlass
-                size={14}
+                size={ICON.sm}
                 weight="light"
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
               />
@@ -289,14 +300,14 @@ export default function DeskHome({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search notebooks…"
-                className="h-9 w-44 rounded-[var(--radius-control)] border border-hairline bg-surface/50 pl-8 pr-3 text-[12.5px] text-ink placeholder:text-muted/60 outline-none transition-all focus:w-60 focus:border-brass/40 focus:bg-surface"
+                className="h-9 w-44 rounded-[var(--radius-control)] border border-hairline bg-surface/50 pl-8 pr-3 text-[12.5px] text-ink placeholder:text-muted transition-all focus:w-60 focus:border-brass/40 focus:bg-surface"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
                 >
-                  <X size={12} />
+                  <X size={ICON.xs} />
                 </button>
               )}
             </div>
@@ -307,25 +318,25 @@ export default function DeskHome({
                 onClick={() => setViewMode("grid")}
                 className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] transition-colors ${
                   viewMode === "grid"
-                    ? "bg-ink/[0.08] text-brasspale"
+                    ? "bg-ink/[0.08] text-brass"
                     : "text-muted hover:text-ink"
                 }`}
                 title="Grid view"
                 aria-label="Grid view"
               >
-                <SquaresFour size={16} weight={viewMode === "grid" ? "fill" : "light"} />
+                <SquaresFour size={ICON.md} weight={viewMode === "grid" ? "fill" : "light"} />
               </button>
               <button
                 onClick={() => setViewMode("list")}
                 className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] transition-colors ${
                   viewMode === "list"
-                    ? "bg-ink/[0.08] text-brasspale"
+                    ? "bg-ink/[0.08] text-brass"
                     : "text-muted hover:text-ink"
                 }`}
                 title="List view"
                 aria-label="List view"
               >
-                <ListDashes size={16} weight={viewMode === "list" ? "bold" : "light"} />
+                <ListDashes size={ICON.md} weight={viewMode === "list" ? "bold" : "light"} />
               </button>
             </div>
 
@@ -350,9 +361,9 @@ export default function DeskHome({
               <AnimatePresence>
                 {sortMenuOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -4, scale: 0.98, transition: { duration: 0.12 } }}
+                    initial={POPOVER.initial}
+                    animate={POPOVER.animate}
+                    exit={{ ...POPOVER.exit, transition: EXIT }}
                     transition={SOFT}
                     className="absolute right-0 top-[calc(100%+6px)] z-50 w-40 overflow-hidden rounded-[var(--radius-control)] border border-hairline bg-surface p-1 shadow-modal"
                   >
@@ -370,7 +381,7 @@ export default function DeskHome({
                         }}
                         className={`flex w-full items-center px-3 py-2 text-left text-[12.5px] rounded-[var(--radius-control)] transition-colors ${
                           sortOption === opt.id
-                            ? "bg-brass/10 text-brasspale font-medium"
+                            ? "bg-brass/10 text-brass font-medium"
                             : "text-muted hover:bg-ink/[0.04] hover:text-ink"
                         }`}
                       >
@@ -398,23 +409,23 @@ export default function DeskHome({
               onClick={pickFile}
               className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3.5 text-[13px] text-ink/85 hover:border-hairline-strong hover:text-ink transition-colors"
             >
-              <FolderOpen size={15} />
+              <FolderOpen size={ICON.md} />
               <span>Open a file</span>
             </button>
             <button
               onClick={() => setReceiving(true)}
               className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3.5 text-[13px] text-ink/85 hover:border-hairline-strong hover:text-ink transition-colors"
             >
-              <DeviceMobile size={15} />
+              <DeviceMobile size={ICON.md} />
               <span>From another device</span>
             </button>
 
             {/* + Create New Button */}
             <button
               onClick={openCreateModal}
-              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] grad-lamp px-4 text-[13px] font-semibold text-night shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
+              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] grad-lamp px-4 text-[13px] font-semibold text-ground shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
             >
-              <Plus size={15} weight="bold" />
+              <Plus size={ICON.md} weight="bold" />
               <span>Create new</span>
             </button>
           </div>
@@ -439,8 +450,8 @@ export default function DeskHome({
         </div>
 
         {loadError && (
-          <div role="alert" className="mb-6 flex items-center gap-2.5 rounded-xl border border-rust/30 bg-rust/[0.06] px-4 py-3 text-[13px] text-rust">
-            <WarningCircle size={16} weight="light" />
+          <div role="alert" className="mb-6 flex items-center gap-2.5 rounded-[var(--radius-dialog)] border border-rust/30 bg-rust/[0.06] px-4 py-3 text-[13px] text-rust">
+            <WarningCircle size={ICON.md} weight="light" />
             The desk could not read your library. No data was removed.
           </div>
         )}
@@ -455,7 +466,7 @@ export default function DeskHome({
                 className="card-wake group flex min-h-[175px] h-full w-full flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed border-hairline-strong bg-surface/30 p-5 text-center"
               >
                 <CreateNotebookEmblem />
-                <span className="font-display text-[15px] font-[450] text-ink/90 group-hover:text-brasspale">
+                <span className="font-display text-[15px] font-[450] text-ink/90 group-hover:text-brass">
                   Create new notebook
                 </span>
               </button>
@@ -476,13 +487,13 @@ export default function DeskHome({
                     <motion.div
                       layout
                       initial={false}
-                      exit={{ opacity: 0, scale: 0.97 }}
+                      exit={{ opacity: 0 }}
                       transition={SOFT}
                       className="card-wake group relative flex min-h-[175px] h-full flex-col justify-between rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-5 before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-1 before:rounded-t-[var(--radius-dialog)] before:bg-gradient-to-r before:from-brass/70 before:via-moon/40 before:to-sage/50"
                     >
                       {/* Top Row: Study Glyph & 3-Dot Menu */}
                       <div className="flex items-start justify-between">
-                        <StudyGlyph name={nb.name} size="md" />
+                        <StudyGlyph name={nb.name} size="md" bare />
 
                         {/* 3-Dot Context Menu */}
                         <div className="relative" data-notebook-menu>
@@ -494,15 +505,15 @@ export default function DeskHome({
                             className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink transition-colors"
                             aria-label="Notebook options"
                           >
-                            <DotsThreeVertical size={18} weight="bold" />
+                            <DotsThreeVertical size={ICON.lg} weight="bold" />
                           </button>
 
                           <AnimatePresence>
                             {isMenuOpen && (
                               <motion.div
-                                initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.1 } }}
+                                initial={POPOVER.initial}
+                                animate={POPOVER.animate}
+                                exit={{ ...POPOVER.exit, transition: EXIT }}
                                 transition={SOFT}
                                 className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-[var(--radius-control)] border border-hairline bg-surface p-1 shadow-modal"
                               >
@@ -515,7 +526,7 @@ export default function DeskHome({
                                   }}
                                   className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
                                 >
-                                  <PencilSimple size={13} />
+                                  <PencilSimple size={ICON.sm} />
                                   Rename
                                 </button>
                                 <button
@@ -525,7 +536,7 @@ export default function DeskHome({
                                   }}
                                   className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
                                 >
-                                  <DownloadSimple size={13} />
+                                  <DownloadSimple size={ICON.sm} />
                                   Export
                                 </button>
                                 <button
@@ -536,7 +547,7 @@ export default function DeskHome({
                                   }}
                                   className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
                                 >
-                                  <DeviceMobile size={13} />
+                                  <DeviceMobile size={ICON.sm} />
                                   Send to device
                                 </button>
                                 <div className="my-1 border-t border-hairline" />
@@ -547,7 +558,7 @@ export default function DeskHome({
                                   }}
                                   className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-rust hover:bg-rust/10"
                                 >
-                                  <Trash size={13} />
+                                  <Trash size={ICON.sm} />
                                   Delete
                                 </button>
                               </motion.div>
@@ -559,23 +570,23 @@ export default function DeskHome({
                       {/* Main Title & Open Action */}
                       <button
                         onClick={() => onOpenResume(nb.id)}
-                        className="my-3 text-left outline-none"
+                        className="my-3 text-left"
                       >
-                        <h3 className="line-clamp-2 font-display text-[16px] font-[450] leading-snug text-ink transition-colors group-hover:text-brasspale">
+                        <h3 className="line-clamp-2 font-display text-[16px] font-[450] leading-snug text-ink transition-colors group-hover:text-brass">
                           {nb.name}
                         </h3>
                       </button>
 
                       {/* Footer Meta Row (Screenshot 1 format: "Oct 6, 2025 · 1 source") */}
-                      <div className="flex items-center text-[11.5px] text-muted">
+                      <div className="flex items-center text-[13px] text-muted">
                         <span>{formatDate(nb.updatedAt)}</span>
-                        <span className="mx-1.5 text-muted/60">·</span>
+                        <span className="mx-1.5 text-muted">·</span>
                         <span>
                           {nb.sourceCount} {nb.sourceCount === 1 ? "source" : "sources"}
                         </span>
                         {examCountdown(nb) && (
                           <>
-                            <span className="mx-1.5 text-muted/60">·</span>
+                            <span aria-hidden="true" className="mx-1.5 text-muted">·</span>
                             <span className="font-[560] text-brass">{examCountdown(nb)}</span>
                           </>
                         )}
@@ -600,9 +611,9 @@ export default function DeskHome({
                     onClick={() => onOpenResume(nb.id)}
                     className="flex min-w-0 flex-1 items-center gap-3.5 text-left"
                   >
-                    <StudyGlyph name={nb.name} size="sm" />
+                    <StudyGlyph name={nb.name} size="sm" bare />
                     <div className="min-w-0">
-                      <span className="block truncate font-display text-[15px] font-[450] text-ink group-hover:text-brasspale">
+                      <span className="block truncate font-display text-[15px] font-[450] text-ink group-hover:text-brass">
                         {nb.name}
                       </span>
                     </div>
@@ -612,7 +623,7 @@ export default function DeskHome({
                     {examCountdown(nb) && (
                       <span className="font-[560] text-brass">{examCountdown(nb)}</span>
                     )}
-                    <span className="rounded-full bg-ink/[0.04] px-2.5 py-0.5 font-mono text-[11px]">
+                    <span className="rounded-[var(--radius-pill)] bg-ink/[0.04] px-2.5 py-0.5 font-mono text-[12px]">
                       {nb.sourceCount} {nb.sourceCount === 1 ? "source" : "sources"}
                     </span>
                     <span className="w-28 text-right">{timeAgo(nb.updatedAt)}</span>
@@ -626,14 +637,14 @@ export default function DeskHome({
                         className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
                         title="Rename"
                       >
-                        <PencilSimple size={14} />
+                        <PencilSimple size={ICON.sm} />
                       </button>
                       <button
                         onClick={() => setDeletingId(nb.id)}
                         className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-rust/10 hover:text-rust"
                         title="Delete"
                       >
-                        <Trash size={14} />
+                        <Trash size={ICON.sm} />
                       </button>
                     </div>
                   </div>
@@ -660,7 +671,7 @@ export default function DeskHome({
         <div className="space-y-5">
           <Field label="Notebook name" hint="e.g. Comparison of Android 15 and iOS 18, Cellular Biology, etc.">
             <input
-              autoFocus
+              data-autofocus
               value={newNotebookName}
               onChange={(e) => setNewNotebookName(e.target.value)}
               onKeyDown={(e) => {
@@ -707,7 +718,7 @@ export default function DeskHome({
         <div className="space-y-5">
           <Field label="Notebook name">
             <input
-              autoFocus
+              data-autofocus
               value={renameDraft}
               onChange={(e) => setRenameDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && void handleRename()}

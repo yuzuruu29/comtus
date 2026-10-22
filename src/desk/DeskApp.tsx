@@ -14,13 +14,14 @@ import DeskShell from "../studio/DeskShell";
 import SettingsModal from "../studio/SettingsModal";
 import CaptionButtons from "../studio/Titlebar";
 import { LampPulse, Modal, btnGhost } from "../studio/ui";
-import { HOUSE } from "../studio/fx";
+import { ENTER, SOFT } from "../studio/fx";
 import { useNotebookDesk } from "../studio/useNotebookDesk";
 import { studioNotebookIdFromPath } from "../studio/studioPath";
 import MilestonesButton from "../studio/companion/MilestonesButton";
 import LibraryRail from "./LibraryRail";
 import DeskHome from "./DeskHome";
 import NotebookDesk from "./NotebookDesk";
+import { ICON } from "../ui/iconScale";
 
 /** Comtus for desktop — a standalone product surface. The library is a
     persistent rail, never a page; the desk at rest is a working home;
@@ -205,10 +206,10 @@ export default function DeskApp() {
             {notebookId ? (
               <motion.div
                 key={notebookId}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.22, ease: HOUSE }}
+                initial={ENTER.initial}
+                animate={ENTER.animate}
+                exit={ENTER.exit}
+                transition={SOFT}
                 className="flex min-h-0 flex-1"
               >
                 {desk.notebook?.id === notebookId ? (
@@ -263,7 +264,7 @@ export default function DeskApp() {
                       <div className="mt-5 flex justify-center gap-2">
                         <button
                           onClick={desk.retryLoad}
-                          className="rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 text-[12px] font-medium text-brasspale hover:bg-brass/10"
+                          className="rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 text-[12px] font-medium text-brass hover:bg-brass/10"
                         >
                           Retry
                         </button>
@@ -285,10 +286,10 @@ export default function DeskApp() {
             ) : (
               <motion.div
                 key="home"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.22, ease: HOUSE }}
+                initial={ENTER.initial}
+                animate={ENTER.animate}
+                exit={ENTER.exit}
+                transition={SOFT}
                 className="flex min-h-0 flex-1"
               >
                 <DeskHome
@@ -338,9 +339,6 @@ function AppHeader({
   const [stats, setStats] = useState<{ sources: number; tokens: number; gens: number } | null>(null);
 
   const isPro = useSettings((s) => Boolean(s.isPro && s.planTier !== "free"));
-  const tokenBalance = useSettings((s) => s.tokenBalance || 0);
-  const tokensUsed = useSettings((s) => s.tokensUsed || 0);
-  const remainingTokens = Math.max(0, tokenBalance - tokensUsed);
 
   const openAnalytics = async () => {
     if (!notebook) return;
@@ -378,7 +376,7 @@ function AppHeader({
               defaultValue={notebook.name}
               onBlur={(e) => onRename(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-              className="no-drag w-[min(34ch,34vw)] truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-0.5 font-display text-[14.5px] font-[450] text-ink outline-none hover:border-hairline focus:border-brass/40"
+              className="no-drag w-[min(34ch,34vw)] truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-0.5 font-display text-[14.5px] font-[450] text-ink hover:border-hairline focus:border-brass/40"
               aria-label="Notebook name"
             />
           </>
@@ -413,14 +411,13 @@ function AppHeader({
             className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
             aria-label="Settings"
           >
-            <GearSix size={16} weight="light" />
+            <GearSix size={ICON.md} weight="light" />
           </button>
 
           {/* Plan Tier Status Badge (PRO only if Anthropic plan availed, else BYOK) */}
           {isPro ? (
             <ProBadge
               planTier="PRO"
-              remainingTokens={remainingTokens}
               onClick={onSettings}
               className="hidden sm:flex"
             />
@@ -434,7 +431,7 @@ function AppHeader({
           {/* User Avatar Badge */}
           <button
             onClick={onSettings}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-brass/20 text-brass text-[11px] font-bold font-mono hover:brightness-110 transition-all select-none"
+            className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-pill)] bg-brass/20 text-brass text-[11px] font-bold font-mono hover:brightness-110 transition-all select-none"
             title="User Profile & Model Settings"
           >
             N
@@ -448,21 +445,21 @@ function AppHeader({
         <Modal open={analyticsOpen} onClose={() => setAnalyticsOpen(false)} title="Notebook Analytics">
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-xl border border-hairline bg-surface/70 p-3">
-                <div className="font-mono text-[18px] font-semibold text-brasspale">{stats?.sources ?? 0}</div>
+              <div className="rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-3">
+                <div className="font-mono text-[18px] font-semibold text-brass">{stats?.sources ?? 0}</div>
                 <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted mt-1">Sources</div>
               </div>
-              <div className="rounded-xl border border-hairline bg-surface/70 p-3">
-                <div className="font-mono text-[18px] font-semibold text-brasspale">{((stats?.tokens ?? 0) / 1000).toFixed(1)}k</div>
+              <div className="rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-3">
+                <div className="font-mono text-[18px] font-semibold text-brass">{((stats?.tokens ?? 0) / 1000).toFixed(1)}k</div>
                 <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted mt-1">Tokens Grounded</div>
               </div>
-              <div className="rounded-xl border border-hairline bg-surface/70 p-3">
-                <div className="font-mono text-[18px] font-semibold text-brasspale">{stats?.gens ?? 0}</div>
+              <div className="rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-3">
+                <div className="font-mono text-[18px] font-semibold text-brass">{stats?.gens ?? 0}</div>
                 <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted mt-1">Saved Artifacts</div>
               </div>
             </div>
 
-            <div className="rounded-xl border border-hairline/80 bg-ink/[0.02] p-3 text-[12.5px] leading-relaxed text-muted">
+            <div className="rounded-[var(--radius-dialog)] border border-hairline/80 bg-ink/[0.02] p-3 text-[12.5px] leading-relaxed text-muted">
               🔒 <strong>Local-First Storage:</strong> All documents, question history, and generated notes for <em>{notebook.name}</em> live exclusively in IndexedDB on this device.
             </div>
 

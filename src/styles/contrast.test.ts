@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /** WCAG AA for every colour pair the product actually renders (spec 4).
@@ -61,5 +62,54 @@ describe.each([
     for (const bg of ["--ground", "--surface"]) {
       expect(ratio(hex(b, "--brass"), hex(b, bg)), `--brass on ${bg}`).toBeGreaterThanOrEqual(4.5);
     }
+  });
+
+  it("brass-pale is illegible as Daylight text, which is why it is decorative only", () => {
+    // Records the reason for the lint below rather than a rendered pair:
+    // --brass-pale scores 1.57-1.90:1 on Daylight grounds. It only ever
+    // looked acceptable because the product was built dark-first, where it
+    // reads 10-12:1. If a palette change ever makes it legible here, this
+    // test fails and the lint below can be reconsidered — not before.
+    if (_label !== "Daylight") return;
+    for (const bg of ["--ground", "--surface", "--raised"]) {
+      expect(ratio(hex(b, "--brass-pale"), hex(b, bg)), `--brass-pale on ${bg}`).toBeLessThan(4.5);
+    }
+  });
+});
+
+/** tokens.css calls --brass-pale "decorative glow only" and BRAND.md 3 says
+ *  to use --brass for readable accent text. That stayed prose while 121
+ *  `text-brasspale` usages across 29 theme-aware files shipped accent text
+ *  at 1.57:1 in Daylight. The landing is exempt: index.css pins it to
+ *  Lamplight literals, where brass-pale reads 12.68:1. */
+describe("brass-pale is never a text colour on theme-aware surfaces", () => {
+  const THEME_AWARE = ["src/studio", "src/desk", "src/checkout", "src/components", "src/ui"];
+
+  const sourceFiles = (dir: string): string[] => {
+    const root = join(process.cwd(), dir);
+    return readdirSync(root, { recursive: true, encoding: "utf8" })
+      .map((rel) => `${dir}/${rel.split("\\").join("/")}`)
+      .filter((f) => /\.tsx?$/.test(f) && !f.includes(".test."));
+  };
+
+  it("uses text-brass, never text-brasspale", () => {
+    const offenders = THEME_AWARE.flatMap(sourceFiles).filter((rel) =>
+      /text-brass-?pale/.test(readFileSync(join(process.cwd(), rel), "utf8")),
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  /** --muted is already the dimmest token that clears AA (5.86:1 Daylight,
+   *  5.98:1 Lamplight). Any alpha below it drops out: /80 lands at 3.79:1,
+   *  /60 at 2.54:1, /40 at 1.80:1 — and every site using them was 9-11px
+   *  label text, where even the large-text allowance does not apply. */
+  it("never dims --muted below its own contrast floor", () => {
+    const offenders: string[] = [];
+    for (const rel of THEME_AWARE.flatMap(sourceFiles)) {
+      const src = readFileSync(join(process.cwd(), rel), "utf8");
+      const hits = src.match(/text-muted\/\d+/g);
+      if (hits) offenders.push(`${rel}: ${[...new Set(hits)].join(", ")}`);
+    }
+    expect(offenders).toEqual([]);
   });
 });

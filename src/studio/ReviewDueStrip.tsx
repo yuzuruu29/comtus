@@ -3,6 +3,7 @@ import { ArrowRight, Cards } from "@phosphor-icons/react";
 import { listDueDecks, type DueDeck } from "../lib/reviews";
 import { DESK_ACTIVITY } from "../lib/activity";
 import "./review-due.css";
+import { ICON } from "../ui/iconScale";
 
 const SHOWN = 4;
 
@@ -51,7 +52,7 @@ export default function ReviewDueStrip({
   return (
     <section className="review-due" aria-labelledby="review-due-title">
       <div className="review-due-head">
-        <Cards className="review-due-icon" size={26} weight="light" aria-hidden="true" />
+        <Cards className="review-due-icon" size={ICON.xxl} weight="light" aria-hidden="true" />
         <div>
           <h2 id="review-due-title">Ready for review</h2>
           <p>
@@ -74,7 +75,7 @@ export default function ReviewDueStrip({
                 <span className="review-due-deck-title">{deck.title}</span>
               </span>
               <span className="review-due-count">{deck.due} due</span>
-              <ArrowRight className="review-due-arrow" size={16} aria-hidden="true" />
+              <ArrowRight className="review-due-arrow" size={ICON.md} aria-hidden="true" />
             </button>
           </li>
         ))}

@@ -1,0 +1,3 @@
+Already up to date
+Done in 2.6s using pnpm v11.1.2
+src/studio/Shelf.test.tsx(40,37): error TS2741: Property 'timeout' is missing in type 'Promise<unknown>' but required in type 'PromiseExtended<unknown>'.

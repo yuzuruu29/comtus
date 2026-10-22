@@ -369,11 +369,10 @@ export interface AudioOverviewPayload {
 
 /* ── Settings ─────────────────────────────────────────────── */
 
-/** Anthropic (official API, hosted passes, or a Claude-subscription OAuth
- *  login), any OpenAI-compatible endpoint (OpenRouter, Ollama, LM Studio,
- *  Groq, DeepSeek, Together, vLLM, OpenAI itself…), a ChatGPT/Codex OAuth
- *  login, or a Claude-subscription OAuth login. */
-export type ProviderId = "anthropic" | "openai-compatible" | "claude-oauth" | "codex";
+/** Anthropic (official API or a hosted pass) or any OpenAI-compatible
+ *  endpoint (OpenRouter, Ollama, LM Studio, Groq, DeepSeek, Together, vLLM,
+ *  OpenAI itself…). */
+export type ProviderId = "anthropic" | "openai-compatible";
 
 export type AnthropicModelId = "claude-opus-5" | "claude-sonnet-5";
 export type Effort = "low" | "medium" | "high" | "xhigh";
@@ -386,48 +385,4 @@ export interface StoredKey {
   baseUrl: string;
   defaultModel?: string;
   createdAt: number;
-}
-
-/** A signed-in provider subscription (Claude Pro/Max or ChatGPT Plus/Pro).
- *  Tokens live only in this browser's localStorage — the relays forward
- *  requests but never see them at rest. */
-export interface OAuthAccount {
-  provider: "claude-oauth" | "codex";
-  accessToken: string;
-  refreshToken: string;
-  /** Epoch ms after which the access token stops working. */
-  expiresAt: number;
-  /** Best-effort account label (email) from the login, when available. */
-  email?: string;
-  /** Codex only: ChatGPT account id required by the backend header. */
-  accountId?: string;
-  connectedAt: number;
-}
-
-/** One discoverable Codex model. `lite` models need the Responses-Lite
- *  wire format (instructions delivered as a developer input item, not a
- *  top-level field). Discovered live from the backend on connect. */
-export interface CodexModelInfo {
-  id: string;
-  label: string;
-  lite?: boolean;
-  ctx?: string;
-  /** Wire reasoning tiers the model accepts, from the roster. */
-  levels?: string[];
-}
-
-/** One Codex plan window (5-hour or weekly), from x-codex-* headers. */
-export interface CodexUsageWindow {
-  usedPercent: number;
-  windowMinutes: number;
-  /** Epoch ms when the window resets (0 = unknown). */
-  resetsAt: number;
-}
-
-/** Snapshot of ChatGPT plan usage. Primary ≈ 5-hour, secondary ≈ weekly;
- *  slots are assigned by window length, not header name, because some
- *  accounts swap the two. */
-export interface CodexUsage {
-  fiveHour: CodexUsageWindow | null;
-  weekly: CodexUsageWindow | null;
 }

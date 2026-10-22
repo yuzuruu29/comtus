@@ -4,6 +4,7 @@ import { PAYPAL_CLIENT_ID, type StudyPlan } from "../lib/paypal";
 import { isTauri } from "../lib/desktop";
 import ExternalLink from "./ExternalLink";
 import { CheckCircle, CircleNotch, WarningCircle } from "@phosphor-icons/react";
+import { ICON } from "../ui/iconScale";
 
 /**
  * PayPal checkout. Money logic lives server-side: order creation uses
@@ -144,7 +145,7 @@ export default function PayPalCheckout({
         </p>
         <ExternalLink
           href={`${website}/checkout?plan=${plan.id}`}
-          className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 font-medium text-brasspale hover:bg-brass/10"
+          className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 font-medium text-brass hover:bg-brass/10"
         >
           Continue securely in browser · {plan.name}
         </ExternalLink>
@@ -155,31 +156,31 @@ export default function PayPalCheckout({
   return (
     <div className="space-y-2">
       {error && (
-        <div key="error" className="anim-fade anim-fade--fast flex items-center gap-2 rounded-lg border border-rust/30 bg-rust/[0.08] p-2.5 text-[12px] text-rust">
-          <WarningCircle size={14} className="shrink-0" />
+        <div key="error" className="anim-fade anim-fade--fast flex items-center gap-2 rounded-[var(--radius-field)] border border-rust/30 bg-rust/[0.08] p-2.5 text-[12px] text-rust">
+          <WarningCircle size={ICON.sm} className="shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div key="success" className="anim-fade anim-fade--fast flex items-start gap-2 rounded-lg border border-sage/30 bg-sage/[0.08] p-2.5 text-left text-[12px] leading-relaxed text-sage">
-          <CheckCircle size={14} className="mt-0.5 shrink-0" />
+        <div key="success" className="anim-fade anim-fade--fast flex items-start gap-2 rounded-[var(--radius-field)] border border-sage/30 bg-sage/[0.08] p-2.5 text-left text-[12px] leading-relaxed text-sage">
+          <CheckCircle size={ICON.sm} className="mt-0.5 shrink-0" />
           <span>
-            Payment confirmed (Order #{success.slice(-8)}) — your Access Pass has been issued.
+            Payment confirmed. Order {success}. Your Access Pass has been issued. Keep this order id — it restores the pass.
           </span>
         </div>
       )}
 
       {!sdkReady && !error && (
-        <div key="sdk-loading" className="anim-fade anim-fade--fast flex items-center justify-center gap-2 rounded-lg border border-hairline bg-ink/[0.02] py-3 text-[12px] text-muted">
-          <CircleNotch size={14} className="animate-spin text-brass" />
+        <div key="sdk-loading" className="anim-fade anim-fade--fast flex items-center justify-center gap-2 rounded-[var(--radius-field)] border border-hairline bg-ink/[0.02] py-3 text-[12px] text-muted">
+          <CircleNotch size={ICON.sm} className="animate-spin text-brass" />
           <span>Loading secure PayPal checkout…</span>
         </div>
       )}
 
       {loading && (
-        <div key="confirming" className="anim-fade anim-fade--fast flex items-center justify-center gap-2 rounded-lg border border-brass/30 bg-brass/[0.06] py-3 text-[12px] text-brasspale">
-          <CircleNotch size={14} className="animate-spin text-brass" />
+        <div key="confirming" className="anim-fade anim-fade--fast flex items-center justify-center gap-2 rounded-[var(--radius-field)] border border-brass/30 bg-brass/[0.06] py-3 text-[12px] text-brass">
+          <CircleNotch size={ICON.sm} className="animate-spin text-brass" />
           <span>Confirming payment & activating your pass…</span>
         </div>
       )}

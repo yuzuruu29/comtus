@@ -1,6 +1,7 @@
 import { Medal } from "@phosphor-icons/react";
 import { MILESTONES } from "../../lib/milestones";
 import { useMilestoneUi } from "./milestoneUi";
+import { ICON } from "../../ui/iconScale";
 
 export default function MilestonesButton({ className = "" }: { className?: string }) {
   const { count, open } = useMilestoneUi();
@@ -13,7 +14,7 @@ export default function MilestonesButton({ className = "" }: { className?: strin
       aria-label={`Milestones, ${count} of ${total}`}
       title="Milestones"
     >
-      <Medal size={13} weight="fill" />
+      <Medal size={ICON.sm} weight="fill" />
       <span>
         {count}/{total}
       </span>

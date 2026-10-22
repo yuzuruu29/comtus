@@ -7,6 +7,7 @@ import type { Notebook } from "../lib/types";
 import { SPRING, Spotlight } from "../studio/fx";
 import { btnGhost, Modal, timeAgo } from "../studio/ui";
 import { useMediaQuery } from "../lib/useMediaQuery";
+import { ICON } from "../ui/iconScale";
 
 const WIDE = 236;
 const SLIM = 52;
@@ -93,7 +94,7 @@ export default function LibraryRail({
               title="Library stays compact at this window size"
               aria-hidden="true"
             >
-              <SidebarSimple size={15} weight="light" />
+              <SidebarSimple size={ICON.md} weight="light" />
             </span>
           ) : (
             <button
@@ -101,7 +102,7 @@ export default function LibraryRail({
               className="mx-auto flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
               aria-label="Expand library"
             >
-              <SidebarSimple size={15} weight="light" />
+              <SidebarSimple size={ICON.md} weight="light" />
             </button>
           )
         ) : (
@@ -114,7 +115,7 @@ export default function LibraryRail({
               className="ml-auto flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
               aria-label="Collapse library"
             >
-              <SidebarSimple size={15} weight="light" />
+              <SidebarSimple size={ICON.md} weight="light" />
             </button>
           </>
         )}
@@ -125,24 +126,24 @@ export default function LibraryRail({
         {railCollapsed ? (
           <button
             onClick={onHome}
-            className={`mx-auto flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-ink/5 hover:text-ink ${
-              activeId === null ? "bg-ink/[0.06] text-brasspale" : ""
+            className={`mx-auto flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink ${
+              activeId === null ? "bg-ink/[0.06] text-brass" : ""
             }`}
             aria-label="Home"
             aria-current={activeId === null ? "page" : undefined}
             title="Home"
           >
-            <House size={15} weight="light" />
+            <House size={ICON.md} weight="light" />
           </button>
         ) : (
           <button
             onClick={onHome}
-            className={`flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-[12.5px] hover:bg-ink/5 hover:text-ink ${
-              activeId === null ? "bg-ink/[0.055] text-brasspale" : "text-muted"
+            className={`flex h-8 w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 text-[12.5px] hover:bg-ink/5 hover:text-ink ${
+              activeId === null ? "bg-ink/[0.055] text-brass" : "text-muted"
             }`}
             aria-current={activeId === null ? "page" : undefined}
           >
-            <House size={14} weight="light" />
+            <House size={ICON.sm} weight="light" />
             Desk home
           </button>
         )}
@@ -153,18 +154,18 @@ export default function LibraryRail({
         {railCollapsed ? (
           <button
             onClick={onNew}
-            className="mx-auto flex h-8 w-8 items-center justify-center rounded-md border border-brass/25 bg-brass/[0.08] text-brasspale hover:bg-brass/[0.14]"
+            className="mx-auto flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] border border-brass/25 bg-brass/[0.08] text-brass hover:bg-brass/[0.14]"
             aria-label="New notebook"
             title="New notebook"
           >
-            <Plus size={15} weight="light" />
+            <Plus size={ICON.md} weight="light" />
           </button>
         ) : (
           <button
             onClick={onNew}
-            className="flex h-8 w-full items-center gap-2 rounded-md border border-brass/25 bg-brass/[0.08] px-2.5 text-[12.5px] text-brasspale hover:bg-brass/[0.14]"
+            className="flex h-8 w-full items-center gap-2 rounded-[var(--radius-control)] border border-brass/25 bg-brass/[0.08] px-2.5 text-[12.5px] text-brass hover:bg-brass/[0.14]"
           >
-            <Plus size={14} weight="light" />
+            <Plus size={ICON.sm} weight="light" />
             New notebook
           </button>
         )}
@@ -193,8 +194,8 @@ export default function LibraryRail({
           ),
         )}
         {!railCollapsed && loadError && (
-          <div role="alert" className="mx-1 mt-2 flex gap-2 rounded-md border border-rust/25 bg-rust/[0.06] px-2.5 py-2 text-[11.5px] leading-relaxed text-rust">
-            <WarningCircle size={14} weight="light" className="mt-0.5 shrink-0" />
+          <div role="alert" className="mx-1 mt-2 flex gap-2 rounded-[var(--radius-control)] border border-rust/25 bg-rust/[0.06] px-2.5 py-2 text-[11.5px] leading-relaxed text-rust">
+            <WarningCircle size={ICON.sm} weight="light" className="mt-0.5 shrink-0" />
             <span>Library unavailable. Your data has not been removed.</span>
           </div>
         )}
@@ -245,7 +246,7 @@ export default function LibraryRail({
 function LetterTile({ name }: { name: string }) {
   const letter = name.trim().charAt(0).toUpperCase() || "·";
   return (
-    <span className="flex h-[22px] w-[22px] shrink-0 select-none items-center justify-center rounded bg-brass/10 font-mono text-[10px] tracking-normal text-brasspale">
+    <span className="flex h-[22px] w-[22px] shrink-0 select-none items-center justify-center rounded bg-brass/10 font-mono text-[10px] tracking-normal text-brass">
       {letter}
     </span>
   );
@@ -263,14 +264,14 @@ function RailItemWide({
   onRequestDelete: () => void;
 }) {
   return (
-    <Spotlight className="group relative rounded-md" radius={180}>
+    <Spotlight className="group relative rounded-[var(--radius-control)]" radius={180}>
       {active && (
-        <span className="pointer-events-none absolute inset-y-[7px] left-0 w-[2px] rounded-full bg-brass shadow-[0_0_8px_rgba(227,176,75,0.45)]" />
+        <span className="pointer-events-none absolute inset-y-[7px] left-0 w-[2px] rounded-[var(--radius-pill)] bg-brass shadow-[0_0_8px_rgba(227,176,75,0.45)]" />
       )}
       <button
         onClick={() => onSelect(notebook.id)}
         aria-current={active ? "page" : undefined}
-        className={`relative flex w-full items-center gap-2.5 rounded-md px-2 py-[7px] text-left transition-colors duration-150 ${
+        className={`relative flex w-full items-center gap-2.5 rounded-[var(--radius-control)] px-2 py-[7px] text-left transition-colors duration-med ${
           active ? "bg-ink/[0.055]" : "hover:bg-ink/[0.03]"
         }`}
         title={notebook.name}
@@ -287,10 +288,10 @@ function RailItemWide({
       </button>
       <button
         onClick={onRequestDelete}
-        className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-control)] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 text-muted/60 hover:bg-rust/10 hover:text-rust"
+        className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[var(--radius-control)] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 text-muted hover:bg-rust/10 hover:text-rust"
         aria-label={`Delete ${notebook.name}`}
       >
-        <Trash size={13} weight="light" />
+        <Trash size={ICON.sm} weight="light" />
       </button>
     </Spotlight>
   );
@@ -311,12 +312,12 @@ function RailItemSlim({
       title={notebook.name}
       aria-label={notebook.name}
       aria-current={active ? "page" : undefined}
-      className={`group relative mx-auto my-0.5 flex h-9 w-9 items-center justify-center rounded-md ${
+      className={`group relative mx-auto my-0.5 flex h-9 w-9 items-center justify-center rounded-[var(--radius-control)] ${
         active ? "bg-ink/[0.06]" : "hover:bg-ink/[0.03]"
       }`}
     >
       {active && (
-        <span className="pointer-events-none absolute inset-y-[6px] -left-[6px] w-[2px] rounded-full bg-brass shadow-[0_0_8px_rgba(227,176,75,0.45)]" />
+        <span className="pointer-events-none absolute inset-y-[6px] -left-[6px] w-[2px] rounded-[var(--radius-pill)] bg-brass shadow-[0_0_8px_rgba(227,176,75,0.45)]" />
       )}
       <LetterTile name={notebook.name} />
     </button>

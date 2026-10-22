@@ -1,6 +1,7 @@
 import { cloneElement, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent, ReactElement, ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { EXIT, POPOVER, SOFT } from "../studio/fx";
 
 export interface MenuItem {
   key: string;
@@ -76,10 +77,10 @@ export function Menu({
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.985, transition: { duration: 0.15 } }}
-            transition={{ duration: 0.18 }}
+            initial={POPOVER.initial}
+            animate={POPOVER.animate}
+            exit={{ ...POPOVER.exit, transition: EXIT }}
+            transition={SOFT}
             role="menu"
             aria-label={ariaLabel}
             onKeyDown={(event) => {

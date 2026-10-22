@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPoi
 import { AnimatePresence, motion } from "motion/react";
 
 import { useDesk } from "../DeskContext";
-import { SPRING } from "../fx";
+import { ENTER, EXIT, RISE_1, SOFT } from "../fx";
 import { useFocusVision } from "./useFocusVision";
 import { playProceduralSfx, playSfx } from "./sfx";
 import {
@@ -15,68 +15,49 @@ import {
 } from "./lampPos";
 import "./companion.css";
 import { ArrowCounterClockwise, BookOpen, Brain, Camera, CameraSlash, Command, EyeSlash, Flame, Lightning, Moon, Pause, Play, Sparkle, SpeakerHigh, SpeakerX, Sun, Timer, Trophy, X } from "@phosphor-icons/react";
+import { ICON } from "../../ui/iconScale";
 
-export type FocusBeaconColor = "gold" | "green" | "cyan" | "orange" | "red" | "rose" | "moon";
+export type FocusBeaconColor = "brass" | "sage" | "moon" | "rust";
 
+/** Spec 4 rule 1: brass is the only accent for action, sage/rust/moon carry
+ *  state, and none of the four is a stock palette colour. Four beacons, one
+ *  per accent. This replaces a seven-swatch picker built from Tailwind's
+ *  amber/emerald/cyan/orange/rose/blue, three of which were unreachable. */
 const BEACON_THEMES: Record<
   FocusBeaconColor,
   { label: string; ring: string; glow: string; text: string; bg: string; border: string }
 > = {
-  gold: {
-    label: "Amber Glow",
-    ring: "#FFD166",
-    glow: "rgba(255, 209, 102, 0.45)",
-    text: "text-amber-300",
-    bg: "bg-amber-500/15",
-    border: "border-amber-500/40",
+  brass: {
+    label: "Study",
+    ring: "var(--brass)",
+    glow: "color-mix(in srgb, var(--brass) 45%, transparent)",
+    text: "text-brass",
+    bg: "bg-brass/15",
+    border: "border-brass/40",
   },
-  green: {
-    label: "Lock-In",
-    ring: "#4EED88",
-    glow: "rgba(78, 237, 136, 0.45)",
-    text: "text-emerald-300",
-    bg: "bg-emerald-500/15",
-    border: "border-emerald-500/40",
-  },
-  cyan: {
-    label: "Deep Review",
-    ring: "#5CE1E6",
-    glow: "rgba(92, 225, 230, 0.45)",
-    text: "text-cyan-300",
-    bg: "bg-cyan-500/15",
-    border: "border-cyan-500/40",
-  },
-  orange: {
-    label: "Exam Sprint",
-    ring: "#FF9E43",
-    glow: "rgba(255, 158, 67, 0.45)",
-    text: "text-orange-300",
-    bg: "bg-orange-500/15",
-    border: "border-orange-500/40",
-  },
-  red: {
-    label: "Focus Alert",
-    ring: "#FF4D6D",
-    glow: "rgba(255, 77, 109, 0.55)",
-    text: "text-rose-300",
-    bg: "bg-rose-500/20",
-    border: "border-rose-500/50",
-  },
-  rose: {
-    label: "Creative Note",
-    ring: "#F472B6",
-    glow: "rgba(244, 114, 182, 0.45)",
-    text: "text-pink-300",
-    bg: "bg-pink-500/15",
-    border: "border-pink-500/40",
+  sage: {
+    label: "Lock-in",
+    ring: "var(--sage)",
+    glow: "color-mix(in srgb, var(--sage) 45%, transparent)",
+    text: "text-sage",
+    bg: "bg-sage/15",
+    border: "border-sage/40",
   },
   moon: {
-    label: "Quiet Rest",
-    ring: "#93C5FD",
-    glow: "rgba(147, 197, 253, 0.45)",
-    text: "text-blue-300",
-    bg: "bg-blue-500/15",
-    border: "border-blue-500/40",
+    label: "Review",
+    ring: "var(--moon)",
+    glow: "color-mix(in srgb, var(--moon) 45%, transparent)",
+    text: "text-moon",
+    bg: "bg-moon/15",
+    border: "border-moon/40",
+  },
+  rust: {
+    label: "Alert",
+    ring: "var(--rust)",
+    glow: "color-mix(in srgb, var(--rust) 45%, transparent)",
+    text: "text-rust",
+    bg: "bg-rust/15",
+    border: "border-rust/40",
   },
 };
 
@@ -94,7 +75,7 @@ export default function StudyFocusDock({
   const desk = useDesk();
   const [placed, setPlaced] = useState<LampPos | null>(() => loadLampPos());
   const [dockOpen, setDockOpen] = useState(false);
-  const [beacon, setBeacon] = useState<FocusBeaconColor>("gold");
+  const [beacon, setBeacon] = useState<FocusBeaconColor>("brass");
   const [sfxEnabled, setSfxEnabled] = useState(true);
 
   // Optional Pomodoro Timer State (disabled/hidden by default to avoid distraction)
@@ -247,11 +228,12 @@ export default function StudyFocusDock({
       {/* AFK Alarm Toast Banner */}
       {focusVision.status === "alarm" && (
         <motion.div
-          initial={{ opacity: 0, y: 8, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          className="mb-2 px-3 py-2 bg-rose-950/90 border border-rose-500/80 rounded-xl shadow-2xl backdrop-blur-md flex items-center gap-2 text-rose-200 text-[12px] font-mono"
+          initial={ENTER.initial}
+          animate={ENTER.animate}
+          transition={SOFT}
+          className="mb-2 px-3 py-2 bg-rust/10 border border-rust/40 rounded-[var(--radius-dialog)] shadow-2xl backdrop-blur-md flex items-center gap-2 text-rust text-[12px] font-mono"
         >
-          <span className="animate-ping w-2 h-2 rounded-full bg-rose-400" />
+          <span className="animate-ping w-2 h-2 rounded-[var(--radius-pill)] bg-rust" />
           <span className="font-semibold">FOCUS ALERT:</span>
           <span>Away from study desk!</span>
         </motion.div>
@@ -261,20 +243,20 @@ export default function StudyFocusDock({
       <AnimatePresence>
         {dockOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.94, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 4 }}
-            transition={SPRING}
-            className="mb-2 w-72 bg-night/95 border border-hairline/80 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl p-3 text-parchment font-sans overflow-hidden"
+            initial={ENTER.initial}
+            animate={ENTER.animate}
+            exit={{ opacity: 0, y: RISE_1, transition: EXIT }}
+            transition={SOFT}
+            className="mb-2 w-72 bg-night/95 border border-hairline/80 rounded-[var(--radius-dialog)] shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl p-3 text-parchment font-sans overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-hairline/60">
               <div className="flex items-center gap-1.5">
                 <span
-                  className="w-2.5 h-2.5 rounded-full"
+                  className="w-2.5 h-2.5 rounded-[var(--radius-pill)]"
                   style={{ backgroundColor: activeTheme.ring, boxShadow: `0 0 8px ${activeTheme.glow}` }}
                 />
-                <span className="font-mono text-[11px] uppercase tracking-wider text-brasspale font-semibold">
+                <span className="font-mono text-[11px] uppercase tracking-wider text-brass font-semibold">
                   Study Sanctuary
                 </span>
               </div>
@@ -283,16 +265,16 @@ export default function StudyFocusDock({
                   type="button"
                   title={sfxEnabled ? "Mute sound effects" : "Enable sound effects"}
                   onClick={() => setSfxEnabled(!sfxEnabled)}
-                  className="p-1 text-muted hover:text-ink rounded cursor-pointer transition-colors"
+                  className="p-1 text-faded hover:text-parchment rounded cursor-pointer transition-colors"
                 >
-                  {sfxEnabled ? <SpeakerHigh size={13} className="text-brass" /> : <SpeakerX size={13} />}
+                  {sfxEnabled ? <SpeakerHigh size={ICON.sm} className="text-brass" /> : <SpeakerX size={ICON.sm} />}
                 </button>
                 <button
                   type="button"
                   onClick={() => setDockOpen(false)}
-                  className="p-1 text-muted hover:text-ink rounded cursor-pointer transition-colors"
+                  className="p-1 text-faded hover:text-parchment rounded cursor-pointer transition-colors"
                 >
-                  <X size={13} />
+                  <X size={ICON.sm} />
                 </button>
               </div>
             </div>
@@ -306,10 +288,10 @@ export default function StudyFocusDock({
               <div className="grid grid-cols-4 gap-1">
                 {(
                   [
-                    { key: "gold", label: "Study", icon: Flame },
-                    { key: "green", label: "Lock-In", icon: Sun },
-                    { key: "cyan", label: "Review", icon: Lightning },
-                    { key: "moon", label: "Quiet", icon: Moon },
+                    { key: "brass", label: "Study", icon: Flame },
+                    { key: "sage", label: "Lock-in", icon: Sun },
+                    { key: "moon", label: "Review", icon: Lightning },
+                    { key: "rust", label: "Alert", icon: Moon },
                   ] as const
                 ).map(({ key, label, icon: Icon }) => (
                   <button
@@ -319,13 +301,13 @@ export default function StudyFocusDock({
                       setBeacon(key);
                       if (sfxEnabled) playProceduralSfx("click");
                     }}
-                    className={`flex flex-col items-center gap-0.5 p-1.5 rounded-lg border text-[9.5px] font-mono transition-all cursor-pointer ${
+                    className={`flex flex-col items-center gap-0.5 p-1.5 rounded-[var(--radius-field)] border text-[9.5px] font-mono transition-all cursor-pointer ${
                       beacon === key
                         ? `${BEACON_THEMES[key].border} ${BEACON_THEMES[key].bg} text-parchment`
                         : "border-white/10 bg-white/[0.02] text-faded hover:text-parchment"
                     }`}
                   >
-                    <Icon size={12} style={{ color: BEACON_THEMES[key].ring }} />
+                    <Icon size={ICON.xs} style={{ color: BEACON_THEMES[key].ring }} />
                     <span>{label}</span>
                   </button>
                 ))}
@@ -333,10 +315,10 @@ export default function StudyFocusDock({
             </div>
 
             {/* Optional Pomodoro Timer Section */}
-            <div className="p-2.5 rounded-xl bg-white/[0.03] border border-hairline/60 mb-3 space-y-2">
+            <div className="p-2.5 rounded-[var(--radius-dialog)] bg-white/[0.03] border border-hairline/60 mb-3 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Timer size={13} className="text-brasspale" />
+                  <Timer size={ICON.sm} className="text-brass" />
                   <span className="font-mono text-[10.5px] text-faded uppercase tracking-wider font-semibold">
                     Pomodoro Timer
                   </span>
@@ -349,9 +331,9 @@ export default function StudyFocusDock({
                       setPomoActive(false);
                       if (sfxEnabled) playProceduralSfx("click");
                     }}
-                    className="text-[10px] font-mono text-muted hover:text-rose-300 flex items-center gap-1 transition-colors"
+                    className="text-[10px] font-mono text-faded hover:text-rust flex items-center gap-1 transition-colors"
                   >
-                    <EyeSlash size={11} />
+                    <EyeSlash size={ICON.xs} />
                     <span>Hide</span>
                   </button>
                 )}
@@ -364,9 +346,9 @@ export default function StudyFocusDock({
                     key={preset.mins}
                     type="button"
                     onClick={() => setPreset(preset.mins)}
-                    className={`py-1 px-1.5 rounded-lg border text-[10px] font-mono transition-all cursor-pointer text-center ${
+                    className={`py-1 px-1.5 rounded-[var(--radius-field)] border text-[10px] font-mono transition-all cursor-pointer text-center ${
                       pomoActive && selectedMins === preset.mins
-                        ? "border-brass/50 bg-brass/20 text-brasspale font-semibold"
+                        ? "border-brass/50 bg-brass/20 text-brass font-semibold"
                         : "border-white/10 bg-white/[0.02] text-faded hover:text-parchment"
                     }`}
                   >
@@ -388,13 +370,13 @@ export default function StudyFocusDock({
                       setPomoRunning(!pomoRunning);
                       if (sfxEnabled) playProceduralSfx("click");
                     }}
-                    className={`px-3 py-1.5 rounded-lg border font-mono text-[11px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-[var(--radius-field)] border font-mono text-[11px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                       pomoRunning
-                        ? "border-amber-500/50 bg-amber-500/20 text-amber-300"
-                        : "border-brass/40 bg-brass/15 text-brasspale hover:bg-brass/25"
+                        ? "border-brass/50 bg-brass/20 text-brass"
+                        : "border-brass/40 bg-brass/15 text-brass hover:bg-brass/25"
                     }`}
                   >
-                    {pomoRunning ? <Pause size={12} /> : <Play size={12} />}
+                    {pomoRunning ? <Pause size={ICON.xs} /> : <Play size={ICON.xs} />}
                     <span>{pomoRunning ? "Pause" : pomoActive ? "Resume" : "Start"}</span>
                   </button>
                   {pomoActive && (
@@ -406,9 +388,9 @@ export default function StudyFocusDock({
                         setPomoSecs(selectedMins * 60);
                         if (sfxEnabled) playProceduralSfx("click");
                       }}
-                      className="p-1.5 rounded-lg border border-white/10 bg-white/[0.02] text-muted hover:text-ink cursor-pointer"
+                      className="p-1.5 rounded-[var(--radius-field)] border border-white/10 bg-white/[0.02] text-faded hover:text-parchment cursor-pointer"
                     >
-                      <ArrowCounterClockwise size={12} />
+                      <ArrowCounterClockwise size={ICON.xs} />
                     </button>
                   )}
                 </div>
@@ -422,14 +404,14 @@ export default function StudyFocusDock({
                 focusVision.toggleFocusCam();
                 if (sfxEnabled) playProceduralSfx("ignite");
               }}
-              className={`w-full mb-3 p-2 rounded-xl border flex items-center justify-between text-[11px] font-mono font-medium transition-all cursor-pointer ${
+              className={`w-full mb-3 p-2 rounded-[var(--radius-dialog)] border flex items-center justify-between text-[11px] font-mono font-medium transition-all cursor-pointer ${
                 focusVision.isActive
-                  ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-300"
-                  : "border-white/10 bg-white/[0.02] text-muted hover:text-ink hover:border-white/20"
+                  ? "border-sage/50 bg-sage/15 text-sage"
+                  : "border-white/10 bg-white/[0.02] text-faded hover:text-parchment hover:border-white/20"
               }`}
             >
               <div className="flex items-center gap-2">
-                {focusVision.isActive ? <Camera size={14} className="text-emerald-400" /> : <CameraSlash size={14} />}
+                {focusVision.isActive ? <Camera size={ICON.sm} className="text-sage" /> : <CameraSlash size={ICON.sm} />}
                 <span>{focusVision.isActive ? "Focus Cam: Active" : "Enable Focus Cam"}</span>
               </div>
               <span className="text-[10px] opacity-75 font-mono">100% On-Device</span>
@@ -439,31 +421,31 @@ export default function StudyFocusDock({
             <div className="grid grid-cols-2 gap-1.5">
               <button
                 type="button"
-                className="p-2 rounded-lg border border-white/10 bg-white/[0.02] hover:border-brass/40 hover:bg-brass/10 text-[11px] font-mono text-parchment flex items-center gap-2 cursor-pointer transition-all"
+                className="p-2 rounded-[var(--radius-field)] border border-white/10 bg-white/[0.02] hover:border-brass/40 hover:bg-brass/10 text-[11px] font-mono text-parchment flex items-center gap-2 cursor-pointer transition-all"
                 onClick={() => {
                   setDockOpen(false);
                   desk.openPalette();
                   if (sfxEnabled) playProceduralSfx("click");
                 }}
               >
-                <Brain size={13} className="text-brass" />
+                <Brain size={ICON.sm} className="text-brass" />
                 <span>Quiz & Aid</span>
               </button>
               <button
                 type="button"
-                className="p-2 rounded-lg border border-white/10 bg-white/[0.02] hover:border-brass/40 hover:bg-brass/10 text-[11px] font-mono text-parchment flex items-center gap-2 cursor-pointer transition-all"
+                className="p-2 rounded-[var(--radius-field)] border border-white/10 bg-white/[0.02] hover:border-brass/40 hover:bg-brass/10 text-[11px] font-mono text-parchment flex items-center gap-2 cursor-pointer transition-all"
                 onClick={() => {
                   setDockOpen(false);
                   desk.focusChat();
                   if (sfxEnabled) playProceduralSfx("click");
                 }}
               >
-                <BookOpen size={13} className="text-moon" />
+                <BookOpen size={ICON.sm} className="text-moon" />
                 <span>Ask Note</span>
               </button>
               <button
                 type="button"
-                className="p-2 rounded-lg border border-white/10 bg-white/[0.02] hover:border-brass/40 hover:bg-brass/10 text-[11px] font-mono text-parchment flex items-center gap-2 cursor-pointer transition-all"
+                className="p-2 rounded-[var(--radius-field)] border border-white/10 bg-white/[0.02] hover:border-brass/40 hover:bg-brass/10 text-[11px] font-mono text-parchment flex items-center gap-2 cursor-pointer transition-all"
                 onClick={() => {
                   setDockOpen(false);
                   if (onMilestonesOpen) onMilestonesOpen();
@@ -471,19 +453,19 @@ export default function StudyFocusDock({
                   if (sfxEnabled) playProceduralSfx("milestone");
                 }}
               >
-                <Trophy size={13} className="text-amber-400" />
+                <Trophy size={ICON.sm} className="text-brass" />
                 <span>Milestones</span>
               </button>
               <button
                 type="button"
-                className="p-2 rounded-lg border border-white/10 bg-white/[0.02] hover:border-brass/40 hover:bg-brass/10 text-[11px] font-mono text-parchment flex items-center gap-2 cursor-pointer transition-all"
+                className="p-2 rounded-[var(--radius-field)] border border-white/10 bg-white/[0.02] hover:border-brass/40 hover:bg-brass/10 text-[11px] font-mono text-parchment flex items-center gap-2 cursor-pointer transition-all"
                 onClick={() => {
                   setDockOpen(false);
                   desk.openPalette();
                   if (sfxEnabled) playProceduralSfx("click");
                 }}
               >
-                <Command size={13} className="text-muted" />
+                <Command size={ICON.sm} className="text-faded" />
                 <span>Palette (⌘K)</span>
               </button>
             </div>
@@ -499,7 +481,7 @@ export default function StudyFocusDock({
           setDockOpen(!dockOpen);
           if (sfxEnabled) playProceduralSfx("click");
         }}
-        className={`flex items-center gap-2.5 px-3 py-1.5 rounded-full border shadow-lg backdrop-blur-xl cursor-pointer transition-all ${
+        className={`flex items-center gap-2.5 px-3 py-1.5 rounded-[var(--radius-pill)] border shadow-lg backdrop-blur-xl cursor-pointer transition-all ${
           activeTheme.border
         } ${activeTheme.bg} bg-night/90`}
         style={{
@@ -509,7 +491,7 @@ export default function StudyFocusDock({
         {/* Glowing Lamp Ambient Beacon Core */}
         <div className="relative flex items-center justify-center">
           <span
-            className="w-2 h-2 rounded-full transition-all"
+            className="w-2 h-2 rounded-[var(--radius-pill)] transition-all"
             style={{
               backgroundColor: activeTheme.ring,
               boxShadow: `0 0 8px ${activeTheme.glow}`,
@@ -517,7 +499,7 @@ export default function StudyFocusDock({
           />
           {pomoRunning && (
             <span
-              className="absolute w-4 h-4 rounded-full animate-ping opacity-60 pointer-events-none"
+              className="absolute w-4 h-4 rounded-[var(--radius-pill)] animate-ping opacity-60 pointer-events-none"
               style={{ backgroundColor: activeTheme.ring }}
             />
           )}
@@ -528,7 +510,7 @@ export default function StudyFocusDock({
           {pomoActive ? (
             <>
               <span className="font-semibold text-parchment tracking-wide">{timeStr}</span>
-              <span className="text-muted/60 text-[10px]">·</span>
+              <span className="text-faded text-[10px]">·</span>
               <span className={`${activeTheme.text} font-medium text-[10.5px]`}>{activeTheme.label}</span>
             </>
           ) : (
@@ -539,7 +521,7 @@ export default function StudyFocusDock({
         </div>
 
         {/* Sparkle Quick Action Icon */}
-        <Sparkle size={12} className={`${activeTheme.text} opacity-80`} />
+        <Sparkle size={ICON.xs} className={`${activeTheme.text} opacity-80`} />
       </motion.div>
     </div>
   );

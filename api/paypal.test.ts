@@ -5,7 +5,14 @@ import handler from "./paypal";
 
 const SECRET = "test-signing-secret";
 
-const ENV_KEYS = ["PASS_SIGNING_SECRET", "PAYPAL_CLIENT_SECRET", "PAYPAL_CLIENT_ID"];
+const ENV_KEYS = [
+  "PASS_SIGNING_SECRET",
+  "PAYPAL_CLIENT_SECRET",
+  "PAYPAL_CLIENT_ID",
+  "PAYPAL_WEBHOOK_ID",
+  "UPSTASH_REDIS_REST_URL",
+  "UPSTASH_REDIS_REST_TOKEN",
+];
 
 interface MockRes {
   statusCode: number;
@@ -216,5 +223,89 @@ describe("PayPal checkout", () => {
     const captureCall = fetchMock.mock.calls.find((c) => String(c[0]).endsWith("/capture"));
     const headers = (captureCall?.[1] as RequestInit).headers as Record<string, string>;
     expect(headers["paypal-request-id"]).toBe("comtus-capture-NEWORDER1");
+  });
+
+  it("rejects a webhook with no signature", async () => {
+    process.env.PAYPAL_WEBHOOK_ID = "WH-1";
+    process.env.PAYPAL_CLIENT_SECRET = "secret";
+    const res = await call(paypalReq("webhook", { event_type: "PAYMENT.CAPTURE.REFUNDED" }));
+    expect(res.status).toBe(401);
+  });
+
+  it("denies a pass when a verified refund names the order", async () => {
+    process.env.PAYPAL_WEBHOOK_ID = "WH-1";
+    process.env.PAYPAL_CLIENT_SECRET = "secret";
+    process.env.PASS_SIGNING_SECRET = SECRET;
+    process.env.UPSTASH_REDIS_REST_URL = "https://redis.example";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "redis-token";
+    const commands: unknown[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+        const u = String(input instanceof Request ? input.url : input);
+        if (u.includes("/oauth2/token")) return new Response(JSON.stringify({ access_token: "t" }), { status: 200 });
+        if (u.includes("verify-webhook-signature")) {
+          return new Response(JSON.stringify({ verification_status: "SUCCESS" }), { status: 200 });
+        }
+        if (u === "https://redis.example") {
+          commands.push(JSON.parse(String(init?.body)));
+          return new Response(JSON.stringify({ result: "OK" }), { status: 200 });
+        }
+        return new Response("{}", { status: 200 });
+      }),
+    );
+    const res = await call({
+      url: "/api/paypal?p=paypal/webhook",
+      headers: {
+        "paypal-transmission-id": "id",
+        "paypal-transmission-time": "time",
+        "paypal-transmission-sig": "sig",
+        "paypal-cert-url": "https://certs.example/cert",
+        "paypal-auth-algo": "SHA256withRSA",
+      },
+      body: {
+        id: "WH-EVENT",
+        event_type: "PAYMENT.CAPTURE.REFUNDED",
+        resource: { supplementary_data: { related_ids: { order_id: "ORDER123" } } },
+      },
+    });
+    expect(res.status).toBe(200);
+    const set = commands.find((cmd) => Array.isArray(cmd) && cmd[0] === "SET") as string[] | undefined;
+    expect(set?.[1]).toMatch(/^passdeny:[0-9a-f]{12}$/);
+    expect(set?.[2]).toBe("1");
+  });
+
+  it("restores a pass from a completed order id", async () => {
+    process.env.PASS_SIGNING_SECRET = SECRET;
+    process.env.PAYPAL_CLIENT_SECRET = "secret";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        const u = String(input instanceof Request ? input.url : input);
+        if (u.includes("/oauth2/token")) return new Response(JSON.stringify({ access_token: "t" }), { status: 200 });
+        if (u.includes("/v2/checkout/orders/ORDER123")) {
+          return new Response(
+            JSON.stringify({
+              status: "COMPLETED",
+              purchase_units: [
+                {
+                  amount: { value: "6.99", currency_code: "USD" },
+                  payments: { captures: [{ status: "COMPLETED", create_time: "2026-06-01T10:00:00Z" }] },
+                },
+              ],
+            }),
+            { status: 200 },
+          );
+        }
+        return new Response(JSON.stringify({ result: null }), { status: 200 });
+      }),
+    );
+    const res = await call(paypalReq("recover", { orderId: "ORDER123" }));
+    expect(res.status).toBe(200);
+    const { passToken } = res.json() as { passToken: string };
+    const payloadB64 = passToken.slice("comtus-pass-v1.".length, passToken.lastIndexOf("."));
+    const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString()) as { v: number; c: number };
+    expect(payload.v).toBe(2);
+    expect(payload.c).toBe(3_495_000_000);
   });
 });

@@ -22,6 +22,7 @@ import { playSfx as playEngineSfx } from "../../lib/soundEngine";
 import { bpAtLeast, useBreakpoint } from "../../lib/useBreakpoint";
 import { ArrowsOut, Brain, Lightning, Moon, Sun } from "@phosphor-icons/react";
 import "./compad-companion.css";
+import { ICON } from "../../ui/iconScale";
 
 export type BatteryAnimationMood = "idle" | "think" | "poke" | "sleep" | "cheer" | "celebrate";
 export type LampAnimationMood = BatteryAnimationMood;
@@ -260,7 +261,9 @@ export function PixelBatteryCompanion({
   const bp = useBreakpoint();
   const isMobile = !bpAtLeast(bp, "lg");
 
-  const defaultScale = propScale ?? (isMobile ? 2.25 : 4.5);
+  // Compact by default: the companion sits on the desk beside the work, not
+  // in the middle of it. A 36px sprite at 2.75 is roughly 99px wide.
+  const defaultScale = propScale ?? (isMobile ? 2 : 2.75);
   const defaultScaleRef = useRef(defaultScale);
   const [viewport, setViewport] = useState(getViewport);
   const [preferredWidth, setPreferredWidth] = useState(() => loadSavedWidth(storageKey));
@@ -354,7 +357,9 @@ export function PixelBatteryCompanion({
       next = loadSavedBatteryPos(storageKey);
       manuallyPlacedRef.current = Boolean(next);
     }
-    next ??= computeBottomRightRestingPos(dims, viewport, restingOffset);
+    if (!next || !manuallyPlacedRef.current) {
+      next = computeBottomRightRestingPos(dims, viewport, restingOffset);
+    }
     moveTo(freePlacement && manuallyPlacedRef.current
       ? clampCoordinates(next, dims, viewport)
       : nudgeOutOfRects(next, dims, getAvoidRects(), viewport));
@@ -668,7 +673,7 @@ export function PixelBatteryCompanion({
       {speech && (
         <div
           id={speechId}
-          className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-brass/30 bg-ground/95 px-2.5 py-1 text-center font-mono text-[11px] font-semibold text-brasspale shadow-lg backdrop-blur-md anim-fade"
+          className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-[var(--radius-field)] border border-brass/30 bg-ground/95 px-2.5 py-1 text-center font-mono text-[11px] font-semibold text-brass shadow-lg backdrop-blur-md anim-fade"
         >
           {speech}
           <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-b border-r border-brass/30 bg-ground" />
@@ -678,7 +683,7 @@ export function PixelBatteryCompanion({
       {/* Floating Mood Controls */}
       {showControls && (isHovered || isFocused) && (
         <div
-          className="absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full border border-brass/40 bg-ground/90 p-1 shadow-md backdrop-blur-sm"
+          className="absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-[var(--radius-pill)] border border-brass/40 bg-ground/90 p-1 shadow-md backdrop-blur-sm"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
@@ -689,39 +694,39 @@ export function PixelBatteryCompanion({
             type="button"
             title="Idle Mood"
             onClick={() => handleMoodTransition("idle")}
-            className={`rounded-full p-1 transition-colors ${
-              currentMood === "idle" ? "bg-brass text-night font-bold" : "text-muted hover:text-ink"
+            className={`rounded-[var(--radius-pill)] p-1 transition-colors ${
+              currentMood === "idle" ? "bg-brass text-ground font-bold" : "text-muted hover:text-ink"
             }`}
           >
-            <Sun size={12} />
+            <Sun size={ICON.xs} />
           </button>
           <button
             type="button"
             title="Think Mood"
             onClick={() => handleMoodTransition("think")}
-            className={`rounded-full p-1 transition-colors ${
-              currentMood === "think" ? "bg-brass text-night font-bold" : "text-muted hover:text-ink"
+            className={`rounded-[var(--radius-pill)] p-1 transition-colors ${
+              currentMood === "think" ? "bg-brass text-ground font-bold" : "text-muted hover:text-ink"
             }`}
           >
-            <Brain size={12} />
+            <Brain size={ICON.xs} />
           </button>
           <button
             type="button"
             title="Sleep Mood"
             onClick={() => handleMoodTransition("sleep")}
-            className={`rounded-full p-1 transition-colors ${
-              currentMood === "sleep" ? "bg-brass text-night font-bold" : "text-muted hover:text-ink"
+            className={`rounded-[var(--radius-pill)] p-1 transition-colors ${
+              currentMood === "sleep" ? "bg-brass text-ground font-bold" : "text-muted hover:text-ink"
             }`}
           >
-            <Moon size={12} />
+            <Moon size={ICON.xs} />
           </button>
           <button
             type="button"
             title="Poke Companion"
             onClick={triggerPoke}
-            className="rounded-full p-1 text-brasspale hover:bg-brass/20"
+            className="rounded-[var(--radius-pill)] p-1 text-brass hover:bg-brass/20"
           >
-            <Lightning size={12} />
+            <Lightning size={ICON.xs} />
           </button>
         </div>
       )}
@@ -772,7 +777,7 @@ export function PixelBatteryCompanion({
             setWidth(spriteW + direction * (event.shiftKey ? 20 : 6));
           }}
         >
-          <ArrowsOut size={16} aria-hidden="true" />
+          <ArrowsOut size={ICON.md} aria-hidden="true" />
         </button>
       )}
     </div>

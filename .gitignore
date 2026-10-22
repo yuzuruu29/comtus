@@ -20,8 +20,9 @@ src-tauri/gen
 .hoplite/shots/
 .pnpm-store/
 
-# Installers ship via GitHub Releases, not the repo
-desktop-releases/
+# Installers ship from the public releases repo. Only the updater manifest is served by Vercel.
+desktop-releases/*
+!desktop-releases/latest.json
 # Ad renders
 minimax-ad-assets/
 # Export tests used to drop PDFs here

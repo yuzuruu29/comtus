@@ -115,6 +115,7 @@ export async function createNotebook(name: string): Promise<Notebook> {
   const nb: Notebook = { id: uid(), name, createdAt: now, updatedAt: now };
   await db.notebooks.add(nb);
   notifyDeskActivity();
+  void navigator.storage?.persist?.().catch(() => undefined);
   return nb;
 }
 

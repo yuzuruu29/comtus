@@ -1,0 +1,327 @@
+/* ==========================================================================
+   Landing motion: entrance, scroll and hover.
+
+   Everything here is progressive enhancement over the finished page in
+   landing.css. With motion off, with no scroll-timeline support, or with no
+   script, the page is already complete: no rule below hides anything at rest,
+   and every animation starts from a hidden frame only while it is running.
+
+   The student's motion budget (BRAND.md 5) is a real switch. It arrives as
+   data-motion, on the landing root and on <html>:
+
+     full     rise and fade, drawn rules, the pen stroke, scroll progress
+     minimal  fade in place: nothing travels, nothing is drawn
+     none     nothing here applies (landing.css already rests every state)
+
+   Scroll motion uses native timelines (animation-timeline), so it costs no
+   script, runs off the main thread for opacity and transform, and is tied to
+   the real scroll position: it can be scrubbed, and it can never be "stuck".
+   The whole block sits behind @supports. src/styles/landing-motion.test.ts
+   holds the line on the rules this file depends on.
+   ========================================================================== */
+
+/* The progress of a row arriving. 1 is "fully drawn", which is also the value
+   at rest, so a ruled margin is complete whenever nothing is animating it. */
+@property --reveal {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+/* Only the "from" frame is written. The "to" frame is the element's own
+   style, so the keyframes can never disagree with the finished page. */
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--landing-rise, 14px));
+    --reveal: 0;
+  }
+}
+@keyframes landing-fade {
+  from {
+    opacity: 0;
+    --reveal: 0;
+  }
+}
+@keyframes landing-line-up {
+  from {
+    transform: translateY(calc(100% + 0.4em));
+  }
+}
+@keyframes landing-rule-in {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes landing-draw {
+  from {
+    stroke-dashoffset: 1.02;
+  }
+}
+@keyframes landing-write {
+  from {
+    clip-path: inset(-0.15em 100% -0.3em -0.05em);
+  }
+  to {
+    clip-path: inset(-0.15em -0.1em -0.3em -0.05em);
+  }
+}
+@keyframes landing-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes landing-check {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes landing-mark-flash {
+  from {
+    background-color: color-mix(in srgb, var(--brass) 40%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--brass) 40%, transparent);
+  }
+  to {
+    background-color: color-mix(in srgb, var(--brass) 14%, transparent);
+    box-shadow: 0 0 0 9px transparent;
+  }
+}
+
+/* ── 1 · The hero arrives ──────────────────────────────────────────────
+   Typeset, not faded: each line of the headline is lifted into its window,
+   the second a beat behind the first, then the pen draws its stroke under
+   the one phrase the sentence leans on. The page is readable and clickable
+   from the first frame; the whole sequence settles in about a second. */
+
+.landing-home[data-motion="full"] .landing-line-text {
+  animation: landing-line-up 1000ms var(--ease-out) 60ms both;
+}
+.landing-home[data-motion="full"] .landing-line + .landing-line .landing-line-text {
+  animation-delay: 170ms;
+}
+.landing-home[data-motion="full"] .landing-ink-underline path {
+  animation: landing-draw 780ms var(--ease-inout) 620ms both;
+}
+
+.landing-home[data-motion="full"] :is(.landing-hero-signature, .landing-hero-lead, .landing-hero-actions, .landing-hero-note) {
+  --landing-rise: 12px;
+  animation: landing-rise 640ms var(--ease-out) both;
+}
+.landing-home[data-motion="full"] .landing-hero-lead {
+  animation-delay: 200ms;
+}
+.landing-home[data-motion="full"] .landing-hero-actions {
+  animation-delay: 270ms;
+}
+.landing-home[data-motion="full"] .landing-hero-note {
+  animation-delay: 340ms;
+}
+.landing-home[data-motion="full"] .landing-hero-signature::before {
+  transform-origin: 0 50%;
+  animation: landing-rule-in 700ms var(--ease-out) 120ms both;
+}
+
+.landing-home[data-motion="minimal"] .landing-hero-editorial {
+  animation: landing-fade var(--dur-slow) var(--ease-out) both;
+}
+
+/* Document pages open the same way, only quieter: kicker, title, standfirst. */
+html[data-motion="full"] .landing-document-header > * {
+  --landing-rise: 10px;
+  animation: landing-rise 560ms var(--ease-out) both;
+}
+html[data-motion="full"] .landing-document-header > :nth-child(2) {
+  animation-delay: 70ms;
+}
+html[data-motion="full"] .landing-document-header > :nth-child(3) {
+  animation-delay: 140ms;
+}
+
+/* ── 2 · The page comes into view as it is read ────────────────────────
+   Rows, headings and notes carry data-landing-reveal. Each has its own view
+   timeline, so a list staggers by itself as the eye travels down it, and the
+   hairline under a row is drawn by the same progress (--reveal). */
+
+@supports (animation-timeline: view()) {
+  .landing-home[data-motion="full"] [data-landing-reveal] {
+    animation: landing-rise linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 60%;
+  }
+  .landing-home[data-motion="minimal"] [data-landing-reveal] {
+    animation: landing-fade linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 60%;
+  }
+
+  /* The italic words in a heading are written left to right a beat after the
+     heading has arrived. They follow the heading's own timeline, whose range is
+     sized by the heading and not by the window, so the last word is always
+     finished once the heading is fully on screen, on any display. Only on a
+     wide measure: a phrase that wraps would be revealed down both lines at once. */
+  .landing-home[data-motion="full"] :is(.landing-section-heading, .field-guide-heading, .landing-closing) {
+    view-timeline: --landing-heading block;
+  }
+  @media (min-width: 761px) {
+    .landing-home[data-motion="full"] :is(.landing-section h2, .field-guide-heading h2, .landing-closing-inner > p) em {
+      animation: landing-write linear both;
+      animation-timeline: --landing-heading;
+      animation-range: entry 20% entry 100%;
+    }
+  }
+
+  /* Where you are on the page, as a brass ribbon along the foot of the bar.
+     It is the one thing in the nav that moves, and it carries information. */
+  html[data-motion="full"] .landing-nav::after {
+    animation: landing-progress linear both;
+    animation-timeline: scroll(root block);
+  }
+}
+
+.landing-nav::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 2px;
+  background: var(--brass);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  pointer-events: none;
+}
+
+/* In-page links glide, and the sticky bar is allowed for by the sections'
+   own scroll-margin. Scoped to the landing: other surfaces own their scrolling. */
+html[data-motion="full"]:has(.landing-home) {
+  scroll-behavior: smooth;
+}
+
+/* ── 3 · The navigation answers the pointer ───────────────────────────── */
+
+.landing-nav-links a {
+  position: relative;
+}
+.landing-nav-links a::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 9px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform var(--dur-med) var(--ease-out);
+}
+.landing-nav-links a:is(:hover, :focus-visible)::after,
+.landing-nav-links a[aria-current="location"]::after {
+  transform: scaleX(1);
+}
+.landing-nav-links a[aria-current="location"] {
+  color: var(--ink);
+}
+.landing-nav-links a[aria-current="location"]::after {
+  background: var(--brass);
+}
+
+/* Both glyphs sit in one grid cell and trade places, rather than one being swapped for the other. */
+.landing-nav-toggle svg {
+  grid-area: 1 / 1;
+  transition:
+    opacity var(--dur-med) var(--ease-out),
+    transform var(--dur-med) var(--ease-out);
+}
+.landing-nav-toggle[aria-expanded="false"] .landing-nav-icon-close,
+.landing-nav-toggle[aria-expanded="true"] .landing-nav-icon-open {
+  opacity: 0;
+}
+html[data-motion="full"] .landing-nav-toggle[aria-expanded="false"] .landing-nav-icon-close {
+  transform: rotate(-45deg);
+}
+html[data-motion="full"] .landing-nav-toggle[aria-expanded="true"] .landing-nav-icon-open {
+  transform: rotate(45deg);
+}
+
+@media (max-width: 760px) {
+  .landing-nav-links a::after {
+    display: none;
+  }
+
+  /* The menu is opened from display: none, so it can be focused the instant it
+     opens. The transitions only dress that: with no support it simply appears. */
+  html:not([data-motion="none"]) .landing-nav-links {
+    opacity: 0;
+    transition:
+      opacity var(--dur-med) var(--ease-out),
+      transform var(--dur-med) var(--ease-out),
+      display var(--dur-med) allow-discrete;
+  }
+  html:not([data-motion="none"]) .landing-nav-links[data-open="true"] {
+    opacity: 1;
+  }
+  html[data-motion="full"] .landing-nav-links {
+    transform: translateY(-8px);
+  }
+  html[data-motion="full"] .landing-nav-links[data-open="true"] {
+    transform: none;
+  }
+  @starting-style {
+    html:not([data-motion="none"]) .landing-nav-links[data-open="true"] {
+      opacity: 0;
+    }
+    html[data-motion="full"] .landing-nav-links[data-open="true"] {
+      transform: translateY(-8px);
+    }
+  }
+}
+
+/* ── 4 · Questions open ───────────────────────────────────────────────
+   Height is never animated (it reflows the page on every frame). The answer
+   settles into the space the row has just made for it. */
+
+.landing-home[data-motion="full"] .landing-faq-list details[open] > p {
+  --landing-rise: 8px;
+  animation: landing-rise var(--dur-slow) var(--ease-out) both;
+}
+.landing-home[data-motion="minimal"] .landing-faq-list details[open] > p {
+  animation: landing-fade var(--dur-med) var(--ease-out) both;
+}
+
+/* ── 5 · The sample notebook answers back ─────────────────────────────
+   Nothing here runs until the visitor has asked for something: the sample
+   opens already written. data-touched is set by their first interaction. */
+
+.landing-home[data-motion="full"] .landing-preview[data-touched="true"] :is(.landing-sample-answer > *, .landing-preview-practice, .landing-practice-feedback > span) {
+  --landing-rise: 8px;
+  animation: landing-rise 440ms var(--ease-out) both;
+}
+.landing-home[data-motion="full"] .landing-preview[data-touched="true"] .landing-sample-answer > :nth-child(2) {
+  animation-delay: 60ms;
+}
+.landing-home[data-motion="full"] .landing-preview[data-touched="true"] .landing-sample-answer > :nth-child(3) {
+  animation-delay: 130ms;
+}
+.landing-home[data-motion="minimal"] .landing-preview[data-touched="true"] :is(.landing-sample-answer > *, .landing-preview-practice, .landing-practice-feedback > span) {
+  animation: landing-fade var(--dur-med) var(--ease-out) both;
+}
+.landing-home[data-motion="full"] .landing-practice-options .is-correct > svg {
+  animation: landing-check 420ms var(--ease-out) 80ms both;
+}
+
+/* Following a citation lands on the passage and lets it flare once, the way a
+   citation settles onto its source in the desk. */
+.landing-home[data-motion="full"] .landing-sample-page:target mark {
+  animation: landing-mark-flash 1400ms var(--ease-out) 300ms both;
+}
+
+/* ── 6 · Paper keeps its content ──────────────────────────────────────── */
+
+@media print {
+  .landing-site *,
+  .landing-site *::before,
+  .landing-site *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

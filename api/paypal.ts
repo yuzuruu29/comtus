@@ -110,19 +110,21 @@ interface ServerPlan {
   name: string;
   price: string;
   currency: "USD";
-  requests: number;
+  /** Included Anthropic usage in nano-USD (sticker price / 2). */
+  budgetNano: number;
   days: number;
 }
 
 const SERVER_PLANS: Record<string, ServerPlan> = {
-  sprint: { id: "sprint", name: "Sprint Pass", price: "2.99", currency: "USD", requests: 60, days: 60 },
-  scholar: { id: "scholar", name: "Scholar Pass", price: "6.99", currency: "USD", requests: 200, days: 120 },
-  mastery: { id: "mastery", name: "Mastery Pass", price: "14.99", currency: "USD", requests: 500, days: 180 },
+  sprint: { id: "sprint", name: "Sprint Pass", price: "2.99", currency: "USD", budgetNano: 1_495_000_000, days: 60 },
+  scholar: { id: "scholar", name: "Scholar Pass", price: "6.99", currency: "USD", budgetNano: 3_495_000_000, days: 120 },
+  mastery: { id: "mastery", name: "Mastery Pass", price: "14.99", currency: "USD", budgetNano: 7_495_000_000, days: 180 },
 };
 
 interface PassPayload {
+  v: 2;
   j: string;
-  q: number;
+  c: number;
   e: number;
   n?: string;
 }
@@ -153,19 +155,54 @@ async function deterministicJti(orderId: string, secret: string): Promise<string
  *  the jti derives from the order and the expiry from the capture time, so
  *  re-submitting an old order returns the same pass instead of restarting
  *  its clock. */
+async function redisCommand(command: unknown[]): Promise<unknown> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify(command),
+  });
+  const data = (await res.json()) as { result?: unknown };
+  return data.result;
+}
+
+async function readStoredPass(orderId: string): Promise<string | null> {
+  try {
+    const result = await redisCommand(["GET", `passpayload:${orderId}`]);
+    return typeof result === "string" && result.startsWith("comtus-pass-") ? result : null;
+  } catch {
+    return null;
+  }
+}
+
+async function storePass(orderId: string, pass: string, ttlSec: number): Promise<void> {
+  try {
+    await redisCommand(["SET", `passpayload:${orderId}`, pass, "EX", ttlSec]);
+  } catch {
+    /* the token is still returned; a later capture mints the same payload */
+  }
+}
+
 async function issuePassForOrder(plan: ServerPlan, orderId: string, paidAtMs: number): Promise<string> {
   const secret = process.env.PASS_SIGNING_SECRET ?? "";
   if (!secret) throw new Error("PASS_SIGNING_SECRET is not configured");
+  const stored = await readStoredPass(orderId);
+  if (stored) return stored;
   const j = await deterministicJti(orderId, secret);
   const payload: PassPayload = {
+    v: 2,
     j,
-    q: plan.requests,
+    c: plan.budgetNano,
     e: Math.floor(paidAtMs / 1000) + plan.days * 86400,
     n: plan.name,
   };
   const payloadB64 = b64url(JSON.stringify(payload));
   const sig = await signPayload(payloadB64, secret);
-  return `comtus-pass-v1.${payloadB64}.${sig}`;
+  const token = `comtus-pass-v1.${payloadB64}.${sig}`;
+  await storePass(orderId, token, plan.days * 86400 + 30 * 86400);
+  return token;
 }
 
 /* ── PayPal client ──────────────────────────────────────── */
@@ -248,7 +285,7 @@ async function handleCreateOrder(req: IncomingMessage, res: ServerResponse, orig
         intent: "CAPTURE",
         purchase_units: [
           {
-            description: `Comtus ${plan.name} — ${plan.requests} hosted requests`,
+            description: `Comtus ${plan.name} — hosted model usage`,
             amount: { currency_code: plan.currency, value: plan.price },
           },
         ],
@@ -359,12 +396,139 @@ async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, ori
     return sendJson(
       res,
       200,
-      { passToken, requests: plan.requests, expiresDays: plan.days, orderId },
+      { passToken, budgetNano: plan.budgetNano, expiresDays: plan.days, orderId },
       origin,
     );
   } catch (e) {
     console.error("capture-order error:", e instanceof Error ? e.message : e);
     return sendJson(res, 502, { error: "Fulfillment failed. If you were charged, contact support." }, origin);
+  }
+}
+
+function orderIdIn(value: unknown): string | null {
+  return typeof value === "string" && /^[A-Z0-9]{5,32}$/i.test(value) ? value : null;
+}
+
+function relatedOrderId(resource: Json | undefined): string | null {
+  const related = (resource?.supplementary_data as Json | undefined)?.related_ids as Json | undefined;
+  return orderIdIn(related?.order_id);
+}
+
+async function denyPass(orderId: string): Promise<void> {
+  const secret = process.env.PASS_SIGNING_SECRET ?? "";
+  if (!secret) return;
+  const j = await deterministicJti(orderId, secret);
+  await redisCommand(["SET", `passdeny:${j}`, "1", "EX", 400 * 86400]);
+}
+
+async function handleWebhook(req: IncomingMessage, res: ServerResponse, origin?: string | string[]): Promise<void> {
+  const webhookId = process.env.PAYPAL_WEBHOOK_ID;
+  const clientId = process.env.PAYPAL_CLIENT_ID || PAYPAL_CLIENT_ID_FALLBACK;
+  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+  if (!webhookId || !clientSecret) {
+    return sendJson(res, 503, { error: "Webhook is not configured." }, origin);
+  }
+  const event = readBody<Json>(req);
+  if (!event) return sendJson(res, 400, { error: "Invalid JSON body." }, origin);
+
+  const headers = req.headers;
+  const transmissionId = headers["paypal-transmission-id"];
+  const transmissionTime = headers["paypal-transmission-time"];
+  const transmissionSig = headers["paypal-transmission-sig"];
+  const certUrl = headers["paypal-cert-url"];
+  const authAlgo = headers["paypal-auth-algo"];
+  if (![transmissionId, transmissionTime, transmissionSig, certUrl, authAlgo].every((v) => typeof v === "string")) {
+    return sendJson(res, 401, { error: "Missing webhook signature." }, origin);
+  }
+
+  try {
+    const token = await paypalOauthToken(clientId, clientSecret);
+    const verified = await paypal("/v1/notifications/verify-webhook-signature", "POST", token, {
+      body: {
+        auth_algo: authAlgo,
+        cert_url: certUrl,
+        transmission_id: transmissionId,
+        transmission_sig: transmissionSig,
+        transmission_time: transmissionTime,
+        webhook_id: webhookId,
+        webhook_event: event,
+      },
+    });
+    const status = (verified.data as { verification_status?: string }).verification_status;
+    if (verified.status !== 200 || status !== "SUCCESS") {
+      return sendJson(res, 401, { error: "Webhook signature rejected." }, origin);
+    }
+
+    const type = typeof event.event_type === "string" ? event.event_type : "";
+    const watched = new Set(["PAYMENT.CAPTURE.REFUNDED", "PAYMENT.CAPTURE.REVERSED", "CUSTOMER.DISPUTE.CREATED"]);
+    if (!watched.has(type)) return sendJson(res, 200, { ok: true }, origin);
+
+    const resource = event.resource as Json | undefined;
+    let orderId = relatedOrderId(resource);
+    if (!orderId && type.startsWith("CUSTOMER.DISPUTE")) {
+      const captureId = (resource?.disputed_transactions as Json[] | undefined)?.[0]?.seller_transaction_id;
+      if (typeof captureId === "string" && captureId) {
+        const capture = await paypal(`/v2/payments/captures/${captureId}`, "GET", token);
+        orderId = relatedOrderId(capture.data);
+      }
+    }
+    if (!orderId) {
+      console.error("paypal webhook missing order id:", event.id);
+      return sendJson(res, 200, { ok: true }, origin);
+    }
+    await denyPass(orderId);
+    return sendJson(res, 200, { ok: true }, origin);
+  } catch (e) {
+    console.error("webhook error:", e instanceof Error ? e.message : e);
+    return sendJson(res, 500, { error: "Webhook handling failed." }, origin);
+  }
+}
+
+async function planForCompletedOrder(order: OrderShape): Promise<ServerPlan | null> {
+  const unit = order.purchase_units?.[0];
+  const price = unit?.amount?.value;
+  const currency = unit?.amount?.currency_code;
+  return (
+    Object.values(SERVER_PLANS).find((plan) => plan.price === price && plan.currency === currency) ?? null
+  );
+}
+
+async function handleRecover(req: IncomingMessage, res: ServerResponse, origin?: string | string[]): Promise<void> {
+  const clientId = process.env.PAYPAL_CLIENT_ID || PAYPAL_CLIENT_ID_FALLBACK;
+  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+  if (!clientSecret || !process.env.PASS_SIGNING_SECRET) {
+    return sendJson(res, 503, { error: "Restore is temporarily unavailable." }, origin);
+  }
+  if (!(await withinIpThrottle(req, process.env.PASS_SIGNING_SECRET, 60))) {
+    return sendJson(res, 429, { error: "Too many requests. Try again later." }, origin);
+  }
+  const body = readBody<{ orderId?: string }>(req);
+  const orderId = body?.orderId ?? "";
+  if (!/^[A-Z0-9]{5,32}$/i.test(orderId)) {
+    return sendJson(res, 400, { error: "Enter the PayPal order id from your receipt." }, origin);
+  }
+  try {
+    const token = await paypalOauthToken(clientId, clientSecret);
+    const loaded = await paypal(`/v2/checkout/orders/${orderId}`, "GET", token);
+    if (loaded.status === 404) return sendJson(res, 404, { error: "Order not found." }, origin);
+    if (loaded.status !== 200) return sendJson(res, 502, { error: "Could not verify the order with PayPal." }, origin);
+    const order = loaded.data as OrderShape;
+    const plan = await planForCompletedOrder(order);
+    if (!plan || order.status !== "COMPLETED") {
+      return sendJson(res, 409, { error: "That order is not a completed Comtus pass." }, origin);
+    }
+    const captureStatus = order.purchase_units?.[0]?.payments?.captures?.[0]?.status;
+    if (captureStatus && captureStatus !== "COMPLETED") {
+      return sendJson(res, 409, { error: "That payment has not completed." }, origin);
+    }
+    const j = await deterministicJti(orderId, process.env.PASS_SIGNING_SECRET);
+    const denied = await redisCommand(["GET", `passdeny:${j}`]);
+    if (denied === "1") return sendJson(res, 401, { error: "This pass has been revoked." }, origin);
+    const passToken = await issuePassForOrder(plan, orderId, paidAt(order));
+    return sendJson(res, 200, { passToken, orderId, budgetNano: plan.budgetNano }, origin);
+  } catch (e) {
+    console.error("recover error:", e instanceof Error ? e.message : e);
+    return sendJson(res, 502, { error: "Could not restore that pass." }, origin);
   }
 }
 
@@ -384,5 +548,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
   if (p.endsWith("create-order")) return handleCreateOrder(req, res, origin);
   if (p.endsWith("capture-order")) return handleCaptureOrder(req, res, origin);
+  if (p.endsWith("recover")) return handleRecover(req, res, origin);
+  if (p.endsWith("webhook")) return handleWebhook(req, res, origin);
   return sendJson(res, 404, { error: "Not found." }, origin);
 }

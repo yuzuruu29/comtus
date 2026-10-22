@@ -1,0 +1,168 @@
+/* ==========================================================================
+   Comtus material layer — parchment, paper-curl and the brass bookmark.
+
+   BRAND.md 3 names the texture backdrops and BRAND.md 5 names the paper-curl
+   lift. Until this file, none of them existed under src/: the landing carried
+   the identity and every product surface was flat --ground. This is that
+   material, built once, theme-aware, and read from tokens.
+
+   Only what the product actually uses lives here. The sepia dithers and the
+   margin rule were drafted alongside these and cut again on the same pass:
+   nothing consumed them, and an unused class is a promise the next person
+   has to keep. BRAND.md 3 records them as unbuilt.
+
+   No hex literals (src/styles/tokens.test.ts). Noise SVGs carry no fill, so
+   they rasterise black and the tint comes from blend mode + opacity, which
+   is also what lets one asset serve Daylight and Lamplight.
+
+   Nothing here animates. Paper does not move; BRAND.md 5 Tier 1 wants
+   ambient loops at rest, and a study surface that shimmers is a study
+   surface nobody can read on.
+   ========================================================================== */
+
+/* ── 1 · Parchment ─────────────────────────────────────────────────────
+   Fibrous grain over the ground. Daylight multiplies (fibre darkens the
+   sheet); Lamplight screens (dust catches the lamp). The tile is 300px and
+   fractal so the repeat never reads as a checker at full-viewport size. */
+
+.bg-paper-parchment {
+  position: relative;
+  background-color: var(--ground);
+  isolation: isolate;
+}
+
+/* Two layers, because one is not paper. Isotropic noise on its own reads as
+   screen dither at any opacity you can stand. Real stock has a fine tooth
+   AND a slow cloudy mottle from how the pulp settled, so: layer 1 is the
+   tooth (high frequency, isotropic); layer 2 is the mottle, anisotropic at
+   baseFrequency='0.02 0.55' so it streaks along the grain direction the way
+   laid paper does. The mottle is held at rect opacity 0.5 inside the asset,
+   which keeps one CSS opacity in charge of the whole sheet. */
+.bg-paper-parchment::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='t'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23t)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.55' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 300px 300px, 600px 600px;
+  mix-blend-mode: multiply;
+  opacity: 0.1;
+}
+
+html[data-theme="dark"] .bg-paper-parchment::before {
+  mix-blend-mode: screen;
+  opacity: 0.055;
+}
+
+/* ── 2 · Paper-curl lift (BRAND.md 5) ──────────────────────────────────
+   A neutral hairline edge, a warm cut edge at the top, an asymmetric
+   bottom-right shadow, and a 1.5px peel on hover. The asymmetry is the
+   point: light on the desk comes from the upper left, so a sheet lifting
+   off it throws its shadow down and to the right. BRAND.md 3 rule 5 keeps
+   the frame neutral; the brass belongs to the mark, not the border. */
+
+.card-paper-curl,
+.card-book-press {
+  position: relative;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-field);
+  background-color: var(--surface);
+  box-shadow: var(--elev-card);
+  transition:
+    transform var(--dur-med) var(--ease-out),
+    box-shadow var(--dur-med) var(--ease-out),
+    border-color var(--dur-med) var(--ease-out);
+}
+
+/* The top highlight is the cut edge of the sheet catching the lamp. */
+.card-paper-curl::after,
+.card-book-press:not(.card-paper-curl)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 70%, var(--brass-pale));
+}
+
+.card-paper-curl:hover,
+.card-book-press:hover {
+  transform: translateY(-1.5px);
+  border-color: color-mix(in srgb, var(--ink) 26%, transparent);
+  box-shadow: var(--elev-lift);
+}
+
+/* ── 3 · Book press ────────────────────────────────────────────────────
+   The same sheet, but it takes a press. For anything clickable. */
+
+.card-book-press:active {
+  transform: translateY(1px);
+  box-shadow:
+    inset 0 1px 3px color-mix(in srgb, var(--leather) 22%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--brass) 14%, transparent);
+}
+
+/* ── 4 · The bookmark ──────────────────────────────────────────────────
+   Compad carries a brass bookmark (BRAND.md 8); so does a row you are
+   about to open. It marks your place in a list the way a ribbon marks a
+   page — absent at rest, so the list reads as quiet ink until you move
+   through it. This replaces the tinted icon tiles, which spent three
+   palette colours on decoration and washed out in Lamplight. */
+
+.rule-bookmark {
+  position: relative;
+}
+
+.rule-bookmark::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 2px;
+  border-start-start-radius: inherit;
+  border-end-start-radius: inherit;
+  background: var(--brass);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform var(--dur-med) var(--ease-out);
+  pointer-events: none;
+}
+
+.rule-bookmark:hover::before,
+.rule-bookmark:focus-visible::before,
+.rule-bookmark[data-active="true"]::before {
+  transform: scaleY(1);
+}
+
+/* ── 5 · Reduced motion (BRAND.md 5, Tier 2) ───────────────────────────
+   Entrances keep a quiet fade; lift and press collapse to zero travel.
+   The state change stays visible through border and shadow alone, so the
+   row still answers the pointer without moving. */
+
+@media (prefers-reduced-motion: reduce) {
+  .card-paper-curl,
+  .card-book-press {
+    transition-duration: 0.01ms;
+  }
+
+  .card-paper-curl:hover,
+  .card-book-press:hover,
+  .card-book-press:active {
+    transform: none;
+  }
+
+  .rule-bookmark::before {
+    transition: none;
+    transform: scaleY(1);
+    opacity: 0;
+  }
+
+  .rule-bookmark:hover::before,
+  .rule-bookmark:focus-visible::before,
+  .rule-bookmark[data-active="true"]::before {
+    opacity: 1;
+  }
+}

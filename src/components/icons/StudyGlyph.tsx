@@ -32,11 +32,11 @@ export interface StudyGlyphProps {
 }
 
 const SIZE_STYLES = {
-  xs: { box: "h-6 w-6 rounded-md", icon: 14 },
-  sm: { box: "h-8 w-8 rounded-lg", icon: 18 },
-  md: { box: "h-10 w-10 rounded-xl", icon: 22 },
-  lg: { box: "h-12 w-12 rounded-2xl", icon: 28 },
-  xl: { box: "h-16 w-16 rounded-2xl", icon: 38 },
+  xs: { box: "h-6 w-6 rounded-[var(--radius-control)]", icon: 14 },
+  sm: { box: "h-8 w-8 rounded-[var(--radius-field)]", icon: 18 },
+  md: { box: "h-10 w-10 rounded-[var(--radius-dialog)]", icon: 22 },
+  lg: { box: "h-12 w-12 rounded-[var(--radius-dialog)]", icon: 28 },
+  xl: { box: "h-16 w-16 rounded-[var(--radius-dialog)]", icon: 38 },
 };
 
 /**

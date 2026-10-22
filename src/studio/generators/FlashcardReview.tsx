@@ -17,11 +17,12 @@ import {
 import { useSettings } from "../../lib/settings";
 import type { CardProgress, Flashcard, FlashcardsPayload, Generation } from "../../lib/types";
 import { Button, Dialog, Field, Input, Textarea } from "../../ui";
-import { SPRING } from "../fx";
+import { ENTER, SPRING } from "../fx";
 import { playSfx } from "../companion/sfx";
 import { ErrorNote, LampPulse } from "../ui";
 import { AssessmentContent } from "../../components/AssessmentContent";
 import "./flashcard-review.css";
+import { ICON } from "../../ui/iconScale";
 
 const RATING_LABEL: Record<Rating, string> = { again: "Again", hard: "Hard", good: "Good", easy: "Easy" };
 
@@ -207,7 +208,7 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
     const relearned = session?.relearned.size ?? 0;
     return (
       <div className="fc-rest" role="status">
-        <CheckCircle className="fc-rest-icon" size={34} weight="light" aria-hidden="true" />
+        <CheckCircle className="fc-rest-icon" size={ICON.xxxl} weight="light" aria-hidden="true" />
         {cards.length === 0 ? (
           <>
             <h3>This deck has no cards yet.</h3>
@@ -237,11 +238,11 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
         )}
         <div className="fc-rest-actions">
           {studyCards.length > 0 && (
-            <Button variant="secondary" icon={<ArrowCounterClockwise size={15} aria-hidden="true" />} onClick={studyAll}>
+            <Button variant="secondary" icon={<ArrowCounterClockwise size={ICON.md} aria-hidden="true" />} onClick={studyAll}>
               Study all {plural(studyCards.length, "card")}
             </Button>
           )}
-          <Button variant="ghost" icon={<Plus size={15} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
+          <Button variant="ghost" icon={<Plus size={ICON.md} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
             Add card
           </Button>
         </div>
@@ -282,9 +283,9 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
           type="button"
           onClick={flip}
           aria-label={flipped ? "Show the question" : "Show the answer"}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0, rotateY: flipped ? 180 : 0 }}
-          transition={{ ...SPRING, stiffness: 260, damping: 26 }}
+          initial={ENTER.initial}
+          animate={{ ...ENTER.animate, rotateY: flipped ? 180 : 0 }}
+          transition={{ ...SPRING, stiffness: 200, damping: 28 }}
           className="fc-card"
         >
           <span className="fc-face" aria-hidden={flipped}>
@@ -327,10 +328,10 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
         </div>
       ) : (
         <div className="fc-reveal">
-          <Button onClick={flip} icon={<Stack size={15} aria-hidden="true" />}>
+          <Button onClick={flip} icon={<Stack size={ICON.md} aria-hidden="true" />}>
             Show answer
           </Button>
-          <Button variant="ghost" size="sm" icon={<Plus size={14} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
+          <Button variant="ghost" size="sm" icon={<Plus size={ICON.sm} aria-hidden="true" />} onClick={() => setAddOpen(true)}>
             Add card
           </Button>
         </div>
@@ -379,7 +380,7 @@ function AddCardDialog({
       <div className="space-y-4">
         <Field label="Front" hint="A question or term, or a sentence with {{c1::a word}} to blank out.">
           <Input
-            autoFocus
+            data-autofocus
             value={front}
             onChange={(e) => setFront(e.target.value)}
             placeholder="e.g. Cranial nerve VII function"

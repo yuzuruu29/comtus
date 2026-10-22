@@ -2,6 +2,8 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { X } from "@phosphor-icons/react";
+import { EXIT, SOFT } from "../studio/fx";
+import { ICON } from "./iconScale";
 
 const sheetStack: symbol[] = [];
 
@@ -100,8 +102,8 @@ export function Sheet({
             key="scrim"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.2 } }}
-            transition={{ duration: 0.22 }}
+            exit={{ opacity: 0, transition: EXIT }}
+            transition={SOFT}
             className="sheet-scrim pointer-events-auto absolute inset-0"
           >
             <button
@@ -121,8 +123,8 @@ export function Sheet({
             key="panel"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
-            exit={{ x: "100%", transition: { duration: 0.18 } }}
-            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            exit={{ x: "100%", transition: EXIT }}
+            transition={SOFT}
             className={`sheet-panel pointer-events-auto relative flex h-full w-full flex-col overflow-hidden pb-[calc(1rem+var(--sab))] pt-[var(--sat)] pr-[var(--sar)] ${
               width === "lg" ? "sm:max-w-2xl" : "sm:max-w-md"
             }`}
@@ -136,7 +138,7 @@ export function Sheet({
                 {title}
               </h2>
               <button onClick={onClose} className="icon-btn icon-btn-ghost icon-btn-md" aria-label="Close">
-                <X size={18} weight="light" />
+                <X size={ICON.lg} weight="light" />
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
