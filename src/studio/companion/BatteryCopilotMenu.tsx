@@ -38,7 +38,7 @@ export default function BatteryCopilotMenu({ onClose, status, controls }: {
   }, [close]);
 
   return (
-    <div ref={rootRef} className="compad-panel" role="dialog" aria-modal="false" aria-label="Compad">
+    <div ref={rootRef} className="compad-panel glass" role="dialog" aria-modal="false" aria-label="Compad">
       <header className="compad-panel-header"><div><h2>Compad</h2><p>{status}</p></div><button type="button" onClick={close} aria-label="Close Compad"><X size={ICON.xl} aria-hidden="true" /></button></header>
       <div ref={setTarget} className="compad-chat-target" />
       {greeting && <p className="compad-greeting" role="status">Hello. One question at a time. I’m right here.</p>}

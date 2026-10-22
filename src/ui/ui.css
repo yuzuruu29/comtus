@@ -486,6 +486,32 @@
   font-size: 0.875rem;
 }
 
+/* ── Ink mark: one pen stroke, drawn only at the Full budget ─────────── */
+
+.ink-mark {
+  width: 1.25em;
+  height: 1.25em;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+html[data-motion="full"] .ink-mark path {
+  stroke-dasharray: 1;
+  animation: ink-draw var(--dur-slow) var(--ease-out) backwards;
+}
+
+html[data-motion="full"] .ink-mark path + path {
+  animation-delay: 140ms;
+}
+
+@keyframes ink-draw {
+  from { stroke-dashoffset: 1; }
+}
+
 /* ── Reduced motion (BRAND.md 5) ─────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {

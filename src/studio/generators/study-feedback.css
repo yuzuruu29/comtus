@@ -1,0 +1,116 @@
+/* Study feedback: how a checked answer and a finished quiz read.
+   A right answer is marked the way a tutor marks paper: a check is drawn, and
+   the right option gets a ribbon down its leading edge. A miss is crossed, never
+   shaken. Every mark is complete in its resting state; only the Full budget
+   draws it in. */
+
+.quiz-option {
+  position: relative;
+  overflow: hidden;
+}
+
+.quiz-option::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  background: var(--sage);
+  transform: scaleY(0);
+  transform-origin: top;
+}
+
+.quiz-option[data-state="answer"]::before { transform: none; }
+.quiz-option[data-state="wrong"]::before { transform: none; background: var(--rust); opacity: 0.7; }
+
+html[data-motion="full"] .quiz-option[data-state="answer"]::before,
+html[data-motion="full"] .quiz-option[data-state="wrong"]::before {
+  animation: feedback-ribbon var(--dur-slow) var(--ease-out) backwards;
+}
+
+@keyframes feedback-ribbon {
+  from { transform: scaleY(0); }
+}
+
+/* Unchecked options answer the pointer: the hairline warms and the row lifts a
+   hair, as paper does under a fingertip. */
+@media (hover: hover) {
+  .quiz-option[data-state="idle"]:not(:disabled):hover {
+    border-color: color-mix(in srgb, var(--brass) 38%, var(--hairline-strong));
+    box-shadow: var(--elev-card);
+    transform: translateY(-1px);
+  }
+}
+
+.quiz-option[data-state="idle"] {
+  transition-property: border-color, background-color, box-shadow, transform;
+}
+
+/* ── The finished quiz ─────────────────────────────────────────────────── */
+
+.quiz-pass {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--brass) 40%, var(--hairline));
+  border-radius: var(--radius-dialog);
+  background: color-mix(in srgb, var(--brass) 8%, var(--surface));
+  text-align: center;
+}
+
+/* A brass seal pressed beside the line. */
+.quiz-pass-seal {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1.5px solid var(--brass);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--brass) 14%, transparent);
+  color: var(--brass);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--brass) 10%, transparent);
+}
+
+.quiz-score {
+  position: relative;
+  display: grid;
+  width: 188px;
+  height: 188px;
+  margin: 12px auto 0;
+  place-items: center;
+}
+
+.quiz-score-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.quiz-score-ring circle {
+  fill: none;
+  stroke-width: 4;
+}
+
+.quiz-score-track { stroke: var(--hairline); }
+
+.quiz-score-arc {
+  stroke: var(--brass);
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+}
+
+.quiz-score-arc[data-band="strong"] { stroke: var(--sage); }
+.quiz-score-arc[data-band="low"] { stroke: var(--rust); }
+
+html[data-motion="full"] .quiz-score-arc {
+  animation: score-ring var(--dur-settle) var(--ease-out) 120ms backwards;
+}
+
+@keyframes score-ring {
+  from { stroke-dashoffset: 100; }
+}

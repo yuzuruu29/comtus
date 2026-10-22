@@ -205,6 +205,32 @@ html[data-shell] body {
   border-color: var(--hairline);
 }
 
+/* Glass: frosted for what floats above the page (Compad, the focus timer,
+   toasts). A lit top edge, a hairline, and a soft shadow thrown down. Where the
+   browser cannot blur, or the reader asks for less transparency, it is the
+   plain surface. */
+.glass {
+  border: 1px solid var(--glass-edge);
+  background: var(--glass-fill);
+  box-shadow: inset 0 1px 0 var(--glass-sheen), var(--glass-shadow);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  backdrop-filter: blur(18px) saturate(1.35);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: var(--surface);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 /* Custom cursor */
 /* Scales with transform rather than animating width/height/margin: those are
    layout-bound and force a reflow every frame (spec 6.6). */

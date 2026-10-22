@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { loadPomodoro } from "./pomodoro";
 import type { GenerationKind } from "./types";
 
 export type MilestoneAccent = "brass" | "moon" | "sage" | "rust";
@@ -11,6 +12,10 @@ export interface DeskSnapshot {
   kinds: Partial<Record<GenerationKind, number>>;
   streakDays: number;
   nightStudy: boolean;
+  /** Focus sessions that ran to the bell. */
+  focusSessions: number;
+  /** Flashcards with a review on record. */
+  reviews: number;
 }
 
 export interface MilestoneDef {
@@ -79,6 +84,27 @@ export const MILESTONES: MilestoneDef[] = [
     line: "A flashcard deck is ready.",
     accent: "sage",
     met: (s) => kindCount(s, "flashcards") >= 1,
+  },
+  {
+    id: "first-recall",
+    title: "From memory",
+    line: "You reviewed a card and rated your recall.",
+    accent: "sage",
+    met: (s) => s.reviews >= 1,
+  },
+  {
+    id: "first-focus",
+    title: "One session kept",
+    line: "A focus session ran to the bell.",
+    accent: "sage",
+    met: (s) => s.focusSessions >= 1,
+  },
+  {
+    id: "full-round",
+    title: "A full round",
+    line: "Four focus sessions, with rests between.",
+    accent: "brass",
+    met: (s) => s.focusSessions >= 4,
   },
   {
     id: "first-essay",
@@ -216,11 +242,12 @@ export function saveMilestoneRecord(record: MilestoneRecord): void {
 }
 
 export async function gatherDeskSnapshot(record: MilestoneRecord): Promise<DeskSnapshot> {
-  const [notebooks, sources, messages, generations] = await Promise.all([
+  const [notebooks, sources, messages, generations, reviews] = await Promise.all([
     db.notebooks.count(),
     db.sources.count(),
     db.messages.toArray(),
     db.generations.toArray(),
+    db.cardProgress.count(),
   ]);
   const kinds: Partial<Record<GenerationKind, number>> = {};
   for (const gen of generations) {
@@ -234,6 +261,8 @@ export async function gatherDeskSnapshot(record: MilestoneRecord): Promise<DeskS
     kinds,
     streakDays: record.streakDays,
     nightStudy: record.nightStudy,
+    focusSessions: loadPomodoro().kept,
+    reviews,
   };
 }
 

@@ -1,0 +1,186 @@
+/* Focus timer: a pomodoro in the notebook header. Brass for focus, sage for
+   rest. The ring empties as time passes; it is information, so it moves at
+   every motion budget (BRAND.md 5). */
+
+.focus-timer {
+  --tone: var(--brass);
+  position: relative;
+}
+.focus-timer[data-phase="short"],
+.focus-timer[data-phase="long"] { --tone: var(--sage); }
+
+.focus-trigger {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-med) var(--ease-out),
+    background-color var(--dur-med) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+
+.focus-trigger:hover {
+  border-color: color-mix(in srgb, var(--tone) 35%, var(--hairline));
+  background: color-mix(in srgb, var(--tone) 7%, transparent);
+  color: var(--ink);
+}
+.focus-trigger:active { transform: translateY(1px); }
+.focus-trigger:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.focus-trigger[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--tone) 45%, var(--hairline));
+  color: var(--ink);
+}
+
+/* Underway, the trigger is the clock: tabular figures in the tone. */
+.focus-timer[data-running] .focus-trigger,
+.focus-trigger:has(.focus-mini-ring) {
+  border-color: color-mix(in srgb, var(--tone) 32%, var(--hairline));
+  background: color-mix(in srgb, var(--tone) 8%, var(--surface));
+  color: var(--ink);
+}
+.focus-trigger-clock { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+
+.focus-mini-ring { width: 20px; height: 20px; transform: rotate(-90deg); }
+
+.focus-ring-track,
+.focus-ring-arc { fill: none; }
+.focus-ring-track { stroke: color-mix(in srgb, var(--tone) 18%, var(--hairline)); }
+.focus-ring-arc {
+  stroke: var(--tone);
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  transition: stroke-dashoffset 600ms linear, stroke var(--dur-med) var(--ease-out);
+}
+.focus-mini-ring circle { stroke-width: 2.5; }
+
+@media (max-width: 639px) {
+  .focus-trigger-label { display: none; }
+  .focus-trigger { padding: 0 8px; }
+}
+
+/* ── The panel ─────────────────────────────────────────────────────────── */
+
+.focus-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 70;
+  display: grid;
+  width: 300px;
+  justify-items: center;
+  gap: 14px;
+  padding: 20px 18px 18px;
+  border-radius: var(--radius-dialog);
+  color: var(--ink);
+}
+
+html[data-motion="full"] .focus-panel { animation: focus-panel-in var(--dur-med) var(--ease-out) backwards; }
+html[data-motion="minimal"] .focus-panel { animation: focus-panel-fade var(--dur-med) var(--ease-out) backwards; }
+@keyframes focus-panel-in { from { opacity: 0; transform: translateY(-6px); } }
+@keyframes focus-panel-fade { from { opacity: 0; } }
+
+@media (max-width: 639px) {
+  .focus-panel {
+    position: fixed;
+    top: calc(76px + var(--sat) + 6px);
+    right: 8px;
+    left: 8px;
+    width: auto;
+  }
+}
+
+.focus-dial {
+  position: relative;
+  display: grid;
+  width: 168px;
+  height: 168px;
+  place-items: center;
+}
+.focus-dial svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.focus-dial circle { stroke-width: 4; }
+
+/* A faint lamp behind the dial while the clock runs. */
+.focus-dial::before {
+  content: "";
+  position: absolute;
+  inset: 18%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--tone) 16%, transparent), transparent);
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+.focus-timer[data-running] .focus-dial::before { opacity: 1; }
+
+.focus-dial-face { position: relative; display: grid; justify-items: center; gap: 2px; }
+.focus-dial-phase { color: var(--tone); font-size: var(--text-label); font-weight: 600; }
+.focus-dial-time {
+  font-family: var(--font-read);
+  font-size: 40px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 420;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.focus-dial-state { color: var(--muted); font-size: 12px; }
+
+/* Four sessions to a round; a kept one is filled with ink. */
+.focus-rounds {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.focus-rounds li {
+  width: 26px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--hairline-strong);
+  transition: background-color var(--dur-slow) var(--ease-out);
+}
+.focus-rounds li[data-kept] { background: var(--brass); }
+.focus-rounds li[data-current] { background: color-mix(in srgb, var(--brass) 40%, var(--hairline-strong)); }
+
+.focus-note {
+  max-width: 30ch;
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--font-read);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.focus-actions {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.focus-actions .btn { flex: 1; }
+
+.focus-length {
+  display: grid;
+  width: 100%;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--glass-edge);
+}
+.focus-length > span { color: var(--muted); font-size: 12px; }
+.focus-length .segmented { width: 100%; }
+.focus-length .segmented-option { flex: 1; }

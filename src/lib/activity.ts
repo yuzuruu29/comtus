@@ -8,6 +8,29 @@ export function notifyDeskActivity(): void {
   window.dispatchEvent(new Event(DESK_ACTIVITY));
 }
 
+export const COMPAD_CUE = "comtus:compad-cue";
+
+/** Study moments Compad answers with a face. Senders stay unaware of the
+ *  companion, which may be off or on another page. */
+export type CompadCue =
+  | "correct"
+  | "miss"
+  | "recalled"
+  | "relearn"
+  | "flip"
+  | "passed"
+  | "finished"
+  | "deck-done"
+  | "focus"
+  | "pause"
+  | "break"
+  | "long-break";
+
+export function cueCompad(cue: CompadCue): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<CompadCue>(COMPAD_CUE, { detail: cue }));
+}
+
 export const WORK_SAVED = "comtus:work-saved";
 
 /** Saved work in a notebook changed somewhere other than the studio pane

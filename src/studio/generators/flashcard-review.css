@@ -180,14 +180,22 @@
   cursor: pointer;
   transition:
     background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-med) var(--ease-out),
     transform var(--dur-fast) var(--ease-out);
 }
 
+/* Each rating warms to its own tone and lifts, so the four read as four
+   different promises before one is chosen. */
 .fc-rate:hover {
+  border-color: color-mix(in oklab, var(--tone) 70%, var(--hairline));
   background: color-mix(in oklab, var(--tone) 8%, var(--surface));
+  box-shadow: 0 6px 16px -10px color-mix(in oklab, var(--tone) 60%, transparent);
+  transform: translateY(-1px);
 }
 
 .fc-rate:active {
+  box-shadow: none;
   transform: translateY(1px);
 }
 
@@ -229,6 +237,17 @@
 
 .fc-rest-icon {
   color: var(--sage);
+}
+
+html[data-motion="full"] .fc-rest > * {
+  animation: fc-rest-rise var(--dur-slow) var(--ease-out) backwards;
+}
+html[data-motion="full"] .fc-rest > :nth-child(2) { animation-delay: 60ms; }
+html[data-motion="full"] .fc-rest > :nth-child(3) { animation-delay: 120ms; }
+html[data-motion="full"] .fc-rest > :nth-child(n + 4) { animation-delay: 180ms; }
+
+@keyframes fc-rest-rise {
+  from { opacity: 0; transform: translateY(8px); }
 }
 
 .fc-rest h3 {

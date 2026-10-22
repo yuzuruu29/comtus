@@ -156,6 +156,23 @@ Movement in Comtus is physical, warm, and intentional. Interactions follow the p
   - `@keyframes pixel-flicker` / `torch-flicker`: warm filament micro-flicker for the pixel chrome.
   - `@keyframes citation-spotlight` / `cite-bloom`: a citation settling onto its passage, decaying over `--dur-settle`.
   - `@keyframes rise-in` / `fade-in` / `pop-in`: entrances. A short rise with a fade, never a scale — a panel that grows from 96% is a generated-UI tell.
+- **Glass for floating layers only (`.glass`, `src/index.css`)**: frosted paper
+  for the layers that float over the desk: Compad's panel and speech, the focus
+  timer, the milestone toast. Panes, cards and dialogs stay opaque paper. Glass
+  falls back to `--surface` without `backdrop-filter` and under
+  `prefers-reduced-transparency`. Neumorphism is out: it fails contrast and
+  reads as plastic, not paper.
+
+### Study feedback — marked like paper
+
+A tutor marks paper; Comtus does the same (`src/studio/generators/study-feedback.css`).
+
+- A right answer gets a drawn check (`InkMark`, `src/ui/InkMark.tsx`) and a sage
+  ribbon down the option's leading edge. A miss gets a drawn cross and a rust
+  ribbon. Neither shakes, pops or scales.
+- A finished quiz shows its score inside a ring drawn to the score, sage for a
+  strong pass, brass in the middle, rust when low. A strong pass gets a brass seal.
+- Every mark is complete at rest. Only the Full budget draws it in.
 
 ### Motion Budgets — Full, Minimal, None
 
@@ -275,5 +292,17 @@ A warm scholar, not a hype startup. Second person. Plain, precise words. No excl
   Offer direct dragging, resizing, keyboard controls, and a position reset. Its
   compact chat shares the notebook conversation, draft, model, and sources. Keep the
   library free of the companion.
+- **Compad reactions**: Compad answers what the student does, not a timer. It
+  lifts under the pointer, tilts when dragged, and reacts to study cues sent with
+  `cueCompad()` (`src/lib/activity.ts`): a right or missed answer, a card flipped
+  or recalled, a finished deck or quiz, a focus session starting or ending. Lines
+  are short and calm and never scold a miss. While a dialog is open and Compad is
+  clear of it, Compad shows above the dim but takes no clicks.
+- **Focus timer**: A pomodoro in the notebook header (`src/studio/FocusTimer.tsx`,
+  logic in `src/lib/pomodoro.ts`). It runs on a deadline, so a reload or a sleeping
+  tab keeps true time. Each phase waits for the student to start it. Four kept
+  sessions earn a long break. Kept sessions feed milestones; a skipped one does not.
+- **Milestones**: Marks of study craft (a first recall, a kept session, a full
+  round), never streaks, XP or guilt.
 - **Themes and motion**: Preserve Daylight, dark Lamplight, reading size, and reduced
   motion. Motion helps track a change and always leaves content immediately usable.

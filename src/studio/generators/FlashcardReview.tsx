@@ -19,6 +19,7 @@ import type { CardProgress, Flashcard, FlashcardsPayload, Generation } from "../
 import { Button, Dialog, Field, Input, Textarea } from "../../ui";
 import { ENTER, SPRING } from "../fx";
 import { playSfx } from "../companion/sfx";
+import { cueCompad } from "../../lib/activity";
 import { ErrorNote, LampPulse } from "../ui";
 import { AssessmentContent } from "../../components/AssessmentContent";
 import "./flashcard-review.css";
@@ -102,12 +103,15 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
   const finished = session !== null && session.queue.length === 0;
 
   useEffect(() => {
-    if (finished) playSfx("unlock", sfxOn);
+    if (!finished) return;
+    playSfx("unlock", sfxOn);
+    cueCompad("deck-done");
   }, [finished, sfxOn]);
 
   const flip = useCallback(() => {
     setFlipped((f) => !f);
     playSfx("cardFlip", sfxOn);
+    cueCompad("flip");
   }, [sfxOn]);
 
   const rate = useCallback(
@@ -130,6 +134,7 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
         });
         setFlipped(false);
         playSfx(answer === "again" ? "wrong" : "lampClick", sfxOn);
+        cueCompad(answer === "again" ? "relearn" : answer === "hard" ? "flip" : "recalled");
       } catch {
         setSaveError("That answer was not saved. Your deck is unchanged — try again.");
       } finally {

@@ -106,7 +106,7 @@ describe("PixelBatteryCompanion", () => {
   });
 
   it("keeps every notebook mood inside the sprite frame with pages, binding and a ribbon", () => {
-    expect(Object.keys(COZY_PIXEL_BATTERY_ANIMATIONS).sort()).toEqual(["celebrate", "cheer", "idle", "poke", "sleep", "think"]);
+    expect(Object.keys(COZY_PIXEL_BATTERY_ANIMATIONS).sort()).toEqual(["celebrate", "cheer", "idle", "nod", "poke", "read", "sleep", "think"]);
     expect(Object.keys(BATTERY_PALETTE).join(" ")).not.toMatch(/TERMINAL|SCREEN|CYAN/);
     for (const animation of Object.values(COZY_PIXEL_BATTERY_ANIMATIONS)) {
       for (const frame of animation.frames) {

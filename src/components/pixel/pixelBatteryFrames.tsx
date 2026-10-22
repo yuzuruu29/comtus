@@ -23,7 +23,7 @@ export const BATTERY_WIDTH = 36;
 export const BATTERY_HEIGHT = 38;
 
 const p = BATTERY_PALETTE;
-type Face = "happy" | "blink" | "think" | "poke" | "sleep" | "cheer";
+type Face = "happy" | "blink" | "think" | "poke" | "sleep" | "cheer" | "read" | "nod";
 
 function notebookRuns(offset: number): PixelRun[] {
   const y = (row: number) => row + offset;
@@ -110,6 +110,20 @@ function faceRuns(face: Face, offset: number, step: number): PixelRun[] {
         [21, y(18), 1, 2, p.INK], [22, y(17), 2, 1, p.INK], [24, y(18), 1, 2, p.INK],
         [18, y(22), 4, 2, p.INK], [19, y(23), 2, 1, p.BLUSH],
       ];
+    case "read":
+      // Eyes lowered to the page, mouth set: keeping time with you.
+      return [...cheeks,
+        [14, y(16), 3, 1, p.INK], [21, y(16), 3, 1, p.INK],
+        [15, y(19), 2, 1, p.INK], [21, y(19), 2, 1, p.INK],
+        [18, y(22), 2, 1, p.INK],
+      ];
+    case "nod":
+      // Soft closed eyes and a small smile: a miss met kindly.
+      return [...cheeks,
+        [14, y(18), 1, 1, p.INK], [15, y(17), 2, 1, p.INK], [17, y(18), 1, 1, p.INK],
+        [21, y(18), 1, 1, p.INK], [22, y(17), 2, 1, p.INK], [24, y(18), 1, 1, p.INK],
+        [17, y(21), 1, 1, p.INK], [18, y(22), 2, 1, p.INK], [20, y(21), 1, 1, p.INK],
+      ];
     default:
       return [...cheeks,
         [14, y(17), 2, 3, p.INK], [22, y(17), 2, 3, p.INK],
@@ -168,8 +182,20 @@ const CHEER_FRAMES = [
   frame("cheer", 2, 3, 140), frame("cheer", -2, 4, 220), frame("cheer", 0, 5, 180),
 ];
 
+const READ_FRAMES = [
+  frame("read", 0, 0, 1400), frame("read", 1, 1, 900),
+  frame("read", 1, 2, 1100), frame("blink", 0, 3, 160),
+];
+// A slow nod, top to bottom and back, then the usual face.
+const NOD_FRAMES = [
+  frame("nod", 0, 0, 160), frame("nod", 1, 1, 180), frame("nod", 2, 2, 220),
+  frame("nod", 1, 3, 180), frame("nod", 0, 4, 260), frame("happy", 0, 5, 400),
+];
+
 export const COZY_PIXEL_BATTERY_ANIMATIONS: Record<string, PixelAnimation> = {
   idle: { frames: IDLE_FRAMES, loop: true },
+  read: { frames: READ_FRAMES, loop: true },
+  nod: { frames: NOD_FRAMES, loop: false },
   think: { frames: THINK_FRAMES, loop: true },
   poke: { frames: POKE_FRAMES, loop: false },
   sleep: { frames: SLEEP_FRAMES, loop: true },

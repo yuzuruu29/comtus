@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useLocation } from "react-router-dom";
-import { DESK_ACTIVITY } from "../../lib/activity";
+import { COMPAD_CUE, DESK_ACTIVITY, type CompadCue } from "../../lib/activity";
 import {
   evolveRecord,
   gatherDeskSnapshot,
@@ -10,11 +10,13 @@ import {
   type MilestoneDef,
   type MilestoneRecord,
 } from "../../lib/milestones";
+import { loadPomodoro } from "../../lib/pomodoro";
 import { useSettings } from "../../lib/settings";
 import { Toast } from "../Toast";
+import { InkMark } from "../../ui/InkMark";
 import MilestonesPanel from "./MilestonesPanel";
 import BatteryCopilotMenu, { copilotStatus } from "./BatteryCopilotMenu";
-import { PixelBatteryCompanion } from "../../components/pixel/PixelBatteryCompanion";
+import { PixelBatteryCompanion, type BatteryAnimationMood } from "../../components/pixel/PixelBatteryCompanion";
 import { playSfx, unlockSfx } from "./sfx";
 import { DEFAULT_IDLE_MS, useIdleWatch } from "./useIdleWatch";
 import { studioNotebookIdFromPath } from "../studioPath";
@@ -28,7 +30,32 @@ const MOTE_LAYOUT = [
   { x: "88%", y: "80%", d: "5s", dur: "24s" },
 ] as const;
 
-export type DeskMood = "idle" | "sleepy" | "celebrate" | "cheer" | "poke";
+const SPEECH_MS = 3400;
+
+/** How Compad answers each study moment. Lines are calm and second person,
+ *  and a miss is met kindly: it is where the learning happens. */
+const CUE_REACTIONS: Record<
+  CompadCue,
+  { mood: BatteryAnimationMood | null; ms: number; rest?: "read" | "idle"; lines?: readonly string[] }
+> = {
+  correct: { mood: "cheer", ms: 1400, lines: ["That's it.", "Right, and you know why.", "Well read."] },
+  miss: { mood: "nod", ms: 1800, lines: ["Close. The why is worth a read.", "A miss is where it sticks.", "Look again at the source."] },
+  recalled: { mood: "cheer", ms: 900 },
+  relearn: { mood: "nod", ms: 1500 },
+  flip: { mood: "think", ms: 700 },
+  passed: { mood: "celebrate", ms: 2600, lines: ["A strong pass. The lamp stays lit."] },
+  finished: { mood: "cheer", ms: 1800, lines: ["Done. Your misses are the next round.", "Finished. Every answer counted."] },
+  "deck-done": { mood: "celebrate", ms: 2200, lines: ["That's the deck for today."] },
+  focus: { mood: null, ms: 0, rest: "read", lines: ["I'll keep the time.", "Heads down. I'll watch the clock."] },
+  pause: { mood: null, ms: 0, rest: "idle" },
+  break: { mood: "cheer", ms: 1600, rest: "idle", lines: ["Break. Stand up, look far away.", "Rest your eyes. Water helps."] },
+  "long-break": { mood: "celebrate", ms: 2600, rest: "idle", lines: ["Four sessions kept. Rest a while."] },
+};
+
+function focusRunning(): boolean {
+  const s = loadPomodoro();
+  return s.phase === "focus" && s.endsAt !== null;
+}
 
 export default function DeskLife({
   panelOpen,
@@ -42,22 +69,38 @@ export default function DeskLife({
   const { pathname } = useLocation();
   const companion = useSettings((s) => s.companion !== false) && Boolean(studioNotebookIdFromPath(pathname));
   const sfxOn = useSettings((s) => s.companionSfx !== false);
-  const [ignite, setIgnite] = useState(false);
   const [record, setRecord] = useState<MilestoneRecord>(() => loadMilestoneRecord());
-  const [mood, setMood] = useState<DeskMood>("idle");
+  // A passing reaction over Compad's own life; null hands the face back.
+  const [mood, setMood] = useState<BatteryAnimationMood | null>(null);
+  const [rest, setRest] = useState<"read" | "idle">(() => (focusRunning() ? "read" : "idle"));
+  const [speech, setSpeech] = useState<string | null>(null);
   const [toast, setToast] = useState<MilestoneDef | null>(null);
   const [batteryThink, setBatteryThink] = useState(false);
+  const [watching, setWatching] = useState(false);
   const [batteryFace, setBatteryFace] = useState<"left" | "right" | null>(null);
   const [copilotOpen, setCopilotOpen] = useState(false);
   const moodTimer = useRef<number | undefined>(undefined);
+  const speechTimer = useRef<number | undefined>(undefined);
+  const lineTurn = useRef(0);
+  const wasThinking = useRef(false);
   const recordRef = useRef(record);
   recordRef.current = record;
 
-  const holdMood = useCallback((next: DeskMood, ms: number) => {
-    if (moodTimer.current !== undefined) window.clearTimeout(moodTimer.current);
+  const holdMood = useCallback((next: BatteryAnimationMood, ms: number) => {
+    window.clearTimeout(moodTimer.current);
     setMood(next);
-    if (next === "sleepy") return;
-    moodTimer.current = window.setTimeout(() => setMood("idle"), ms);
+    if (next !== "sleep") moodTimer.current = window.setTimeout(() => setMood(null), ms);
+  }, []);
+
+  const say = useCallback((line: string) => {
+    window.clearTimeout(speechTimer.current);
+    setSpeech(line);
+    speechTimer.current = window.setTimeout(() => setSpeech(null), SPEECH_MS);
+  }, []);
+
+  useEffect(() => () => {
+    window.clearTimeout(moodTimer.current);
+    window.clearTimeout(speechTimer.current);
   }, []);
 
   const refresh = useCallback(async () => {
@@ -94,6 +137,18 @@ export default function DeskLife({
   }, [refresh]);
 
   useEffect(() => {
+    const onCue = (event: Event) => {
+      const reaction = CUE_REACTIONS[(event as CustomEvent<CompadCue>).detail];
+      if (!reaction) return;
+      if (reaction.rest) setRest(reaction.rest);
+      if (reaction.mood) holdMood(reaction.mood, reaction.ms);
+      if (reaction.lines) say(reaction.lines[lineTurn.current++ % reaction.lines.length]);
+    };
+    window.addEventListener(COMPAD_CUE, onCue);
+    return () => window.removeEventListener(COMPAD_CUE, onCue);
+  }, [holdMood, say]);
+
+  useEffect(() => {
     const onUnlock = () => unlockSfx();
     window.addEventListener("pointerdown", onUnlock, { once: true });
     window.addEventListener("keydown", onUnlock, { once: true });
@@ -103,17 +158,9 @@ export default function DeskLife({
     };
   }, []);
 
-  useEffect(() => {
-    const onIgnite = () => {
-      setIgnite(true);
-      window.setTimeout(() => setIgnite(false), 900);
-    };
-    window.addEventListener("comtus:ignite", onIgnite);
-    return () => window.removeEventListener("comtus:ignite", onIgnite);
-  }, []);
-
   useIdleWatch({
-    enabled: true,
+    // Reading through a focus session is not idleness.
+    enabled: rest !== "read",
     idleMs:
       import.meta.env.DEV &&
       typeof window !== "undefined" &&
@@ -121,7 +168,7 @@ export default function DeskLife({
         ? 8_000
         : DEFAULT_IDLE_MS,
     onIdle: () => {
-      setMood("sleepy");
+      holdMood("sleep", 0);
       playSfx("nudge", sfxOn);
     },
     onActive: (wasIdle) => {
@@ -130,12 +177,22 @@ export default function DeskLife({
     },
   });
 
-  // Battery "think": hold while an existing streaming/busy marker is in the DOM
+  // Battery "think": hold while an existing streaming/busy marker is in the DOM.
+  // Watching: a quiz or deck opens in a modal; when it leaves Compad's corner
+  // clear, Compad looks on from above the dim so a checked answer still gets a
+  // face. A phone's bottom sheet covers the corner, so there it stays below.
   useEffect(() => {
     if (!companion) return;
     if (typeof MutationObserver === "undefined") return;
     const update = () => {
       setBatteryThink(Boolean(document.querySelector(".stream-typing-beacon, [data-lamp-think], [data-battery-think]")));
+      // Layout is read only while a dialog is open, never per streamed token.
+      const dialogEl = document.querySelector('[aria-modal="true"]');
+      const padEl = dialogEl && document.querySelector(".cozy-pixel-battery-companion");
+      if (!dialogEl || !padEl) return setWatching(false);
+      const dialog = dialogEl.getBoundingClientRect();
+      const pad = padEl.getBoundingClientRect();
+      setWatching(pad.left >= dialog.right || pad.right <= dialog.left || pad.top >= dialog.bottom || pad.bottom <= dialog.top);
     };
     update();
     const observer = new MutationObserver(update);
@@ -146,6 +203,12 @@ export default function DeskLife({
       window.removeEventListener("resize", update);
     };
   }, [companion]);
+
+  // An answer finished writing: a small brighten, once.
+  useEffect(() => {
+    if (wasThinking.current && !batteryThink) holdMood("cheer", 1000);
+    wasThinking.current = batteryThink;
+  }, [batteryThink, holdMood]);
 
   // Battery glance: face the side of the desk the user last touched
   useEffect(() => {
@@ -181,9 +244,7 @@ export default function DeskLife({
   }, [companion]);
 
   return (
-    <div className="desk-life">
-      {ignite && <div className="desk-ignite" aria-hidden />}
-      {mood === "celebrate" && <div className="desk-celebrate-flash" aria-hidden />}
+    <div className="desk-life" data-watching={watching || undefined}>
       <div className="studio-motes" aria-hidden>
         {MOTE_LAYOUT.map((mote, i) => (
           <span
@@ -201,13 +262,15 @@ export default function DeskLife({
       </div>
       {companion && (
         <PixelBatteryCompanion
-          mood={mood === "celebrate" ? "celebrate" : mood === "sleepy" ? "sleep" : mood === "cheer" ? "cheer" : undefined}
+          mood={mood ?? undefined}
+          restMood={rest === "read" ? "read" : undefined}
+          speech={copilotOpen ? null : speech}
           showControls={false}
           freePlacement
           resizable
           think={batteryThink}
           face={batteryFace}
-          avoidSelector="#study-focus-dock, .composer-shell, #mobile-bottom-nav, #workspace-sources-pane, #workspace-chat-pane, #workspace-chat-pane-mobile, .workspace-header"
+          avoidSelector=".composer-shell, #mobile-bottom-nav, #workspace-sources-pane, #workspace-chat-pane, #workspace-chat-pane-mobile, .workspace-header"
           restingOffset={restingOffset}
           onMenu={() => setCopilotOpen((v) => !v)}
           menuOpen={copilotOpen}
@@ -228,16 +291,15 @@ export default function DeskLife({
           open={Boolean(toast)}
           onClose={() => setToast(null)}
           durationMs={5200}
-          className="relative overflow-hidden"
+          className="milestone-toast glass"
         >
-          <div className="pr-2">
-            <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-brass">
-              Milestone
-            </div>
-            <div className="mt-0.5 font-display text-[15px] font-[450] text-ink">
-              {toast?.title}
-            </div>
-            <p className="mt-0.5 text-[12px] text-muted">{toast?.line}</p>
+          <span className="milestone-seal" data-accent={toast?.accent} aria-hidden>
+            <InkMark kind="check" />
+          </span>
+          <div role="status">
+            <p className="milestone-toast-kicker">Milestone held</p>
+            <p className="milestone-toast-title">{toast?.title}</p>
+            <p className="milestone-toast-line">{toast?.line}</p>
           </div>
         </Toast>
       </div>

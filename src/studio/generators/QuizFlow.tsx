@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 import type { QuizConfig, QuizPayload, QuizQuestion, QuizFormat, Generation, SolutionCheck } from "../../lib/types";
@@ -7,8 +7,11 @@ import AttemptFollowUp from "./AttemptFollowUp";
 import { generateJSON, checkSolution, friendlyError } from "../../lib/llm";
 import { useCallSettings, useSettings } from "../../lib/settings";
 import { saveGeneration } from "../../lib/db";
-import { DUR, DRIFT_X, ENTER, EXIT, SOFT, SPRING, useCountUp } from "../fx";
+import { DUR, DRIFT_X, ENTER, EXIT, SOFT, useCountUp } from "../fx";
 import { playSfx } from "../companion/sfx";
+import { cueCompad } from "../../lib/activity";
+import { InkMark } from "../../ui/InkMark";
+import "./study-feedback.css";
 import { GENERATOR_SYSTEM, ASSESSMENT_FORMAT_RULES, buildSourceBlock, sanitizeQuestions, solutionCredit, fmtScore } from "./common";
 import { AssessmentContent, AssessmentGraph } from "../../components/AssessmentContent";
 import { assessmentGradingStem, assessmentOptionLabel } from "../../lib/assessmentContent";
@@ -19,7 +22,7 @@ import {
   type SolutionSubmission,
 } from "./SolutionBin";
 import { Field, inputCls, btnLamp, btnGhost, LampPulse, ErrorNote } from "../ui";
-import { ArrowCounterClockwise, Check, Sparkle, Trophy, X } from "@phosphor-icons/react";
+import { ArrowCounterClockwise, Sparkle } from "@phosphor-icons/react";
 import { ICON } from "../../ui/iconScale";
 
 /* ── Configuration ────────────────────────────────────────── */
@@ -258,9 +261,8 @@ function QuizRun({
       setChecks((c) => c.map((v, j) => (j === i ? result : v)));
       setChecked((c) => c.map((v, j) => (j === i ? true : v)));
       const isSolCorrect = result.verdict === "correct" || result.verdict === "partial";
-      if (!isSolCorrect) {
-        playSfx("wrong", sfxOn);
-      }
+      playSfx(isSolCorrect ? "lampClick" : "wrong", sfxOn);
+      cueCompad(isSolCorrect ? "correct" : "miss");
     } catch (e) {
       setCheckErrors((errs) => errs.map((v, j) => (j === i ? friendlyError(e) : v)));
     } finally {
@@ -272,9 +274,8 @@ function QuizRun({
     const q = payload.questions[qIndex];
     setChecked((c) => c.map((v, i) => (i === qIndex ? true : v)));
     const ok = isCorrect(q, picked[qIndex], typed[qIndex]);
-    if (!ok) {
-      playSfx("wrong", sfxOn);
-    }
+    playSfx(ok ? "lampClick" : "wrong", sfxOn);
+    cueCompad(ok ? "correct" : "miss");
   };
 
   // Only checked items count — an unchecked pick must not leak correctness.
@@ -364,6 +365,9 @@ function QuizResults({
   const pct = Math.round((score / payload.questions.length) * 100);
   const shownPct = useCountUp(pct, DUR.settle);
   const isMaster = pct >= 80;
+  useEffect(() => {
+    cueCompad(isMaster ? "passed" : "finished");
+  }, [isMaster]);
   const byTopic = new Map<string, { c: number; t: number }>();
   items.forEach((it) => {
     const t = byTopic.get(it.topic) ?? { c: 0, t: 0 };
@@ -384,9 +388,11 @@ function QuizResults({
           initial={ENTER.initial}
           animate={ENTER.animate}
           transition={SOFT}
-          className="flex items-center justify-center gap-2 rounded-[var(--radius-dialog)] border border-brass/50 bg-gradient-to-r from-brass/[0.15] via-brass/[0.25] to-brass/[0.15] py-3 px-4 text-center shadow-[0_0_24px_rgba(227,176,75,0.2)]"
+          className="quiz-pass"
         >
-          <Trophy size={ICON.lg} className="text-brass" />
+          <span className="quiz-pass-seal" aria-hidden>
+            <InkMark kind="check" />
+          </span>
           <span className="font-display text-[15px] font-semibold text-brass">
             Strong pass — the lamp stays lit.
           </span>
@@ -400,8 +406,22 @@ function QuizResults({
         className="rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] p-7 text-center"
       >
         <div className="field-label">{scope === "misses" ? "Retake of missed items" : "Result"}</div>
-        <div className="mt-3 font-display text-[3.2rem] font-[420] leading-none text-lamp">
-          {shownPct}%
+        <div className="quiz-score">
+          <svg className="quiz-score-ring" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+            <circle cx="60" cy="60" r="53" className="quiz-score-track" />
+            <circle
+              cx="60"
+              cy="60"
+              r="53"
+              pathLength={100}
+              className="quiz-score-arc"
+              data-band={pct >= 70 ? "strong" : pct >= 40 ? "middle" : "low"}
+              style={{ strokeDashoffset: 100 - pct }}
+            />
+          </svg>
+          <div className="font-display text-[3.2rem] font-[420] leading-none text-lamp">
+            {shownPct}%
+          </div>
         </div>
         <div className="mt-2 text-[13px] text-muted">
           {fmtScore(score)} of {payload.questions.length} correct
@@ -579,12 +599,15 @@ function QuizQuestionView({
                     animate={ENTER.animate}
                     exit={{ opacity: 0 }}
                     transition={SOFT}
-                    className={`rounded-[var(--radius-dialog)] border px-4 py-3 text-[13.5px] ${correct ? "border-sage/30 bg-sage/[0.06]" : "border-rust/30 bg-rust/[0.06]"}`}
+                    className={`flex items-start gap-2 rounded-[var(--radius-dialog)] border px-4 py-3 text-[13.5px] ${correct ? "border-sage/30 bg-sage/[0.06]" : "border-rust/30 bg-rust/[0.06]"}`}
                   >
+                    <InkMark kind={correct ? "check" : "cross"} className={`mt-0.5 shrink-0 ${correct ? "text-sage" : "text-rust"}`} />
+                    <span className="min-w-0">
                     <span className={correct ? "text-sage" : "text-rust"}>
                       {correct ? "Correct — " : "The answer: "}
                     </span>
                     <AssessmentContent inline className="text-ink/90">{q.answer}</AssessmentContent>
+                    </span>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -610,7 +633,8 @@ function QuizQuestionView({
                     disabled={isChecked}
                     onClick={() => setPicked((p) => p.map((v, i) => (i === idx ? oi : v)))}
                     whileTap={{ scale: 0.985 }}
-                    className={`flex w-full items-center gap-3 rounded-[var(--radius-dialog)] border px-4 py-3 text-left text-[13.5px] transition-colors duration-med ${
+                    data-state={state}
+                    className={`quiz-option flex w-full items-center gap-3 rounded-[var(--radius-dialog)] border px-4 py-3 text-left text-[13.5px] transition-colors duration-med ${
                       state === "picked"
                         ? "border-brass/50 bg-brass/[0.08]"
                         : state === "answer"
@@ -624,30 +648,8 @@ function QuizQuestionView({
                       {String.fromCharCode(65 + oi)}
                     </span>
                     <AssessmentContent inline className="min-w-0 flex-1 text-ink/90">{opt}</AssessmentContent>
-                    <AnimatePresence>
-                      {state === "answer" && (
-                        <motion.span
-                          key="ok"
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={SPRING}
-                          className="shrink-0"
-                        >
-                          <Check size={ICON.md} className="text-sage" />
-                        </motion.span>
-                      )}
-                      {state === "wrong" && (
-                        <motion.span
-                          key="no"
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1, x: [0, -3, 3, -2, 0] }}
-                          transition={SPRING}
-                          className="shrink-0"
-                        >
-                          <X size={ICON.md} className="text-rust" />
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
+                    {state === "answer" && <InkMark kind="check" className="shrink-0 text-sage" />}
+                    {state === "wrong" && <InkMark kind="cross" className="shrink-0 text-rust" />}
                   </motion.button>
                 );
               })}

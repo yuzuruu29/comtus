@@ -1,4 +1,5 @@
 .compad-sprite-button {
+  position: relative;
   display: block;
   width: 100%;
   height: 100%;
@@ -8,6 +9,73 @@
   background: transparent;
   cursor: grab;
   touch-action: none;
+  transition: transform var(--dur-med) var(--ease-out);
+}
+
+.compad-sprite-body {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* A soft shadow on the desk under Compad. It narrows and fades as Compad is
+   lifted, so a hover reads as height, not as a bigger sprite. */
+.cozy-pixel-battery-companion::before {
+  content: "";
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: -2%;
+  height: 7%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--leather) 34%, transparent), transparent);
+  pointer-events: none;
+  transition: transform var(--dur-med) var(--ease-out), opacity var(--dur-med) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .compad-sprite-button:hover { transform: translateY(-3px); }
+  .cozy-pixel-battery-companion:has(.compad-sprite-button:hover)::before { transform: scaleX(0.8); opacity: 0.6; }
+}
+
+.compad-sprite-button:active { transform: translateY(1px); transition-duration: var(--dur-fast); }
+
+/* Carried: lifted higher and tipped, as a notebook is when you pick it up by
+   one corner. The tilt eases back on release. */
+.cozy-pixel-battery-companion[data-dragging="true"] .compad-sprite-button { transform: translateY(-6px) rotate(-4deg); }
+.cozy-pixel-battery-companion[data-dragging="true"]::before { transform: scaleX(0.62); opacity: 0.4; }
+
+/* Compad's line. Literata, in the margin voice, anchored to whichever side of
+   the sprite has room. */
+.compad-speech {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  width: max-content;
+  max-width: min(240px, calc(100vw - 32px));
+  margin: 0;
+  padding: 8px 12px 9px;
+  border-radius: var(--radius-field);
+  color: var(--ink);
+  font-family: var(--font-read);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.45;
+  pointer-events: none;
+  animation: compad-speech-in var(--dur-slow) var(--ease-out) backwards;
+}
+.compad-speech[data-side="end"] { right: 0; }
+.compad-speech[data-side="start"] { left: 0; }
+.compad-speech[data-below="true"] { top: calc(100% + 10px); bottom: auto; }
+
+@keyframes compad-speech-in {
+  from { opacity: 0; transform: translateY(5px); }
+}
+
+html[data-motion="minimal"] .compad-speech { animation-name: compad-speech-fade; }
+
+@keyframes compad-speech-fade {
+  from { opacity: 0; }
 }
 
 .compad-sprite-button:focus-visible,
@@ -60,5 +128,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .compad-resize-handle { transition: none; }
+  .compad-resize-handle,
+  .compad-sprite-button,
+  .cozy-pixel-battery-companion::before { transition: none; }
 }

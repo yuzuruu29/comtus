@@ -1,7 +1,9 @@
 /* Desk companion shell — the lamp, the dock, dust motes, and milestones.
    Motion is light: flicker, drift. Reduced-motion rests the loops. */
 
-.compad-panel { width: 360px; max-width: 100%; overflow: hidden; border: 1px solid var(--hairline-strong); border-radius: var(--radius-dialog); background: var(--surface); color: var(--ink); box-shadow: var(--elev-modal); font-family: var(--font-ui); font-size: 13px; pointer-events: auto; }
+.compad-panel { width: 360px; max-width: 100%; overflow: hidden; border-radius: var(--radius-dialog); color: var(--ink); font-family: var(--font-ui); font-size: 13px; pointer-events: auto; }
+html[data-motion="full"] .compad-panel { animation: compad-panel-in var(--dur-med) var(--ease-out) backwards; }
+@keyframes compad-panel-in { from { opacity: 0; transform: translateY(6px); } }
 .compad-panel button { cursor: pointer; }
 .compad-panel button:focus-visible, .compad-panel summary:focus-visible, .compad-panel textarea:focus-visible, .compad-panel input:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
 .compad-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 15px 10px 19px; }
@@ -10,7 +12,7 @@
 .compad-panel-header > button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--muted); }
 .compad-panel-header > button:hover { background: var(--raised); color: var(--ink); }
 .compad-chat-target, .compad-chat { min-width: 0; }
-.compad-context { display: flex; flex-direction: column; gap: 3px; padding: 10px 19px; border-block: 1px solid var(--hairline); background: color-mix(in srgb, var(--raised) 38%, var(--surface)); }
+.compad-context { display: flex; flex-direction: column; gap: 3px; padding: 10px 19px; border-block: 1px solid var(--hairline); background: color-mix(in srgb, var(--raised) 45%, transparent); }
 .compad-context strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; }
 .compad-context > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 11px; }
 .compad-transcript { height: 170px; overflow-y: auto; overflow-x: hidden; padding: 17px 19px; overscroll-behavior: contain; scrollbar-width: thin; }
@@ -64,6 +66,11 @@
 .cozy-pixel-lamp-companion {
   pointer-events: auto !important;
 }
+
+/* Above a study dialog's dim (z 220) while it leaves Compad's corner clear.
+   Only a spectator then: the dialog keeps the pointer and the keyboard. */
+.desk-life[data-watching] { z-index: 230; }
+.desk-life[data-watching] .cozy-pixel-battery-companion { pointer-events: none !important; }
 
 .studio-motes {
   position: fixed;
@@ -126,6 +133,7 @@
 }
 
 .milestone-card {
+  --tone: var(--brass);
   display: flex;
   gap: 0.75rem;
   align-items: flex-start;
@@ -134,15 +142,133 @@
   border: 1px solid var(--hairline);
   background: color-mix(in srgb, var(--surface) 80%, transparent);
   text-align: left;
+  transition: border-color var(--dur-med) var(--ease-out), box-shadow var(--dur-med) var(--ease-out),
+    transform var(--dur-med) var(--ease-out);
 }
+.milestone-card[data-accent="moon"], .milestone-seal[data-accent="moon"] { --tone: var(--moon); }
+.milestone-card[data-accent="sage"], .milestone-seal[data-accent="sage"] { --tone: var(--sage); }
+.milestone-card[data-accent="rust"], .milestone-seal[data-accent="rust"] { --tone: var(--rust); }
 
 .milestone-card[data-held="true"] {
-  border-color: color-mix(in srgb, var(--brass) 32%, var(--hairline));
+  border-color: color-mix(in srgb, var(--tone) 32%, var(--hairline));
   box-shadow: 0 0 18px -8px var(--glow-warm);
 }
 
+/* Unheld marks stay readable: they say what to do next. */
 .milestone-card[data-held="false"] {
-  opacity: 0.62;
+  border-style: dashed;
+  background: transparent;
+}
+.milestone-card[data-held="false"] h3 { color: var(--muted); }
+
+@media (hover: hover) {
+  .milestone-card[data-held="true"]:hover {
+    border-color: color-mix(in srgb, var(--tone) 55%, var(--hairline));
+    box-shadow: var(--elev-lift);
+    transform: translateY(-1.5px);
+  }
+}
+
+html[data-motion="full"] .milestone-card {
+  animation: milestone-arrive var(--dur-slow) var(--ease-out) backwards;
+  animation-delay: calc(min(var(--i, 0), 10) * 30ms + 80ms);
+}
+
+@keyframes milestone-arrive {
+  from { opacity: 0; transform: translateY(8px); }
+}
+
+/* A wax-seal circle in the mark's own colour; a held mark's check is drawn. */
+.milestone-seal {
+  --tone: var(--brass);
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1.5px solid color-mix(in srgb, var(--tone) 70%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tone) 12%, transparent);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--tone) 8%, transparent);
+  color: var(--tone);
+}
+.milestone-card[data-held="false"] .milestone-seal {
+  border-style: dashed;
+  border-color: var(--hairline-strong);
+  background: transparent;
+  box-shadow: none;
+}
+.milestone-seal-blank {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hairline-strong);
+}
+html[data-motion="full"] .milestone-card .ink-mark path {
+  animation-delay: calc(min(var(--i, 0), 10) * 30ms + 300ms);
+}
+
+.milestone-date {
+  margin-top: 0.3rem;
+  color: var(--tone);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* How much of the catalogue is held, drawn as one brass rule. */
+.milestone-meter {
+  position: relative;
+  height: 3px;
+  margin-top: 0.75rem;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--hairline);
+}
+.milestone-meter::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--brass);
+  transform: scaleX(var(--held, 0));
+  transform-origin: left;
+}
+html[data-motion="full"] .milestone-meter::after {
+  animation: milestone-meter var(--dur-settle) var(--ease-out) 120ms backwards;
+}
+@keyframes milestone-meter {
+  from { transform: scaleX(0); }
+}
+
+/* The toast that announces a new mark. */
+.milestone-toast {
+  position: relative;
+  display: flex;
+  max-width: min(340px, calc(100vw - 2rem));
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+  padding: 12px 16px 13px 12px;
+  border-radius: var(--radius-dialog);
+}
+.milestone-toast > div { min-width: 0; }
+.milestone-toast-kicker {
+  margin: 0;
+  color: var(--brass);
+  font-size: 11px;
+  font-weight: 600;
+}
+.milestone-toast-title {
+  margin: 1px 0 0;
+  color: var(--ink);
+  font-family: var(--font-read);
+  font-size: 16px;
+  font-weight: 450;
+  letter-spacing: -0.01em;
+}
+.milestone-toast-line {
+  margin: 1px 0 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .kind-tile {

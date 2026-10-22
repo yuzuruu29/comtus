@@ -25,6 +25,7 @@ import { useDesk } from "./DeskContext";
 import ConsoleShell from "./ConsoleShell";
 import { SendToDeviceDialog } from "./DeviceTransfer";
 import { ICON } from "../ui/iconScale";
+import FocusTimer from "./FocusTimer";
 
 type MobilePane = "sources" | "chat" | "studio";
 
@@ -495,6 +496,7 @@ function WorkspaceHeader({
         </div>
 
         <div className="no-drag workspace-actions">
+          <FocusTimer />
           <IconButton
             onClick={onToggleSources}
             title={panes.sources ? "Retract Sources Sidebar" : "Expand Sources Sidebar"}

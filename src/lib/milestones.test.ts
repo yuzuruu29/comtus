@@ -20,6 +20,8 @@ function snap(partial: Partial<DeskSnapshot> = {}): DeskSnapshot {
     kinds: {},
     streakDays: 0,
     nightStudy: false,
+    focusSessions: 0,
+    reviews: 0,
     ...partial,
   };
 }
@@ -102,9 +104,16 @@ describe("evolveRecord", () => {
 });
 
 describe("MILESTONES catalog", () => {
-  it("covers twelve study-craft marks", () => {
-    expect(MILESTONES).toHaveLength(12);
-    expect(new Set(MILESTONES.map((m) => m.id)).size).toBe(12);
+  it("covers fifteen study-craft marks", () => {
+    expect(MILESTONES).toHaveLength(15);
+    expect(new Set(MILESTONES.map((m) => m.id)).size).toBe(15);
+  });
+
+  it("marks kept focus sessions and recall, never a streak of answers", () => {
+    const met = (s: Partial<DeskSnapshot>) => MILESTONES.filter((m) => m.met(snap(s))).map((m) => m.id);
+    expect(met({ focusSessions: 1 })).toEqual(["first-focus"]);
+    expect(met({ focusSessions: 4 })).toEqual(["first-focus", "full-round"]);
+    expect(met({ reviews: 1 })).toEqual(["first-recall"]);
   });
 
   it("treats study aids as one family", () => {

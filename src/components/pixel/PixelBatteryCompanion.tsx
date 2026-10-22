@@ -24,7 +24,7 @@ import { ArrowsOut, Brain, Lightning, Moon, Sun } from "@phosphor-icons/react";
 import "./compad-companion.css";
 import { ICON } from "../../ui/iconScale";
 
-export type BatteryAnimationMood = "idle" | "think" | "poke" | "sleep" | "cheer" | "celebrate";
+export type BatteryAnimationMood = "idle" | "think" | "poke" | "sleep" | "cheer" | "celebrate" | "read" | "nod";
 export type LampAnimationMood = BatteryAnimationMood;
 
 export interface BatteryPosition {
@@ -54,6 +54,8 @@ export interface PixelBatteryCompanionProps {
   initialMood?: BatteryAnimationMood;
   /** Controlled mood state */
   mood?: BatteryAnimationMood;
+  /** Shown in place of "idle", so a poke or a busy desk still reads over it. */
+  restMood?: BatteryAnimationMood;
   /** Callback fired on mood transition */
   onMoodChange?: (mood: BatteryAnimationMood) => void;
   /** Interactive poke callback */
@@ -234,6 +236,7 @@ export function persistBatteryPos(pos: BatteryPosition | null, key: string = COM
 export function PixelBatteryCompanion({
   initialMood = "idle",
   mood: controlledMood,
+  restMood,
   onMoodChange,
   onPoke,
   onPlaySfx,
@@ -256,7 +259,7 @@ export function PixelBatteryCompanion({
   style,
 }: PixelBatteryCompanionProps) {
   const [internalMood, setInternalMood] = useState<BatteryAnimationMood>(initialMood);
-  const currentMood = controlledMood ?? internalMood;
+  const currentMood = controlledMood ?? (internalMood === "idle" && restMood ? restMood : internalMood);
 
   const bp = useBreakpoint();
   const isMobile = !bpAtLeast(bp, "lg");
@@ -645,6 +648,8 @@ export function PixelBatteryCompanion({
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsFocused(false);
       }}
+      data-mood={currentMood}
+      data-dragging={isDragging || isResizing ? "true" : undefined}
       className={`cozy-pixel-battery-companion pointer-events-auto fixed z-[60] select-none ${className}`}
       style={{
         left: position ? `${position.left}px` : undefined,
@@ -671,13 +676,15 @@ export function PixelBatteryCompanion({
 
       {/* Speech bubble */}
       {speech && (
-        <div
+        <p
+          key={speech}
           id={speechId}
-          className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-[var(--radius-field)] border border-brass/30 bg-ground/95 px-2.5 py-1 text-center font-mono text-[11px] font-semibold text-brass shadow-lg backdrop-blur-md anim-fade"
+          className="compad-speech glass"
+          data-side={(position?.left ?? 0) + spriteW / 2 > viewport.width / 2 ? "end" : "start"}
+          data-below={(position?.top ?? 0) < 72 ? "true" : undefined}
         >
           {speech}
-          <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-b border-r border-brass/30 bg-ground" />
-        </div>
+        </p>
       )}
 
       {/* Floating Mood Controls */}
@@ -746,10 +753,10 @@ export function PixelBatteryCompanion({
           if (event.detail === 0 || performance.now() > suppressClickUntilRef.current) activate();
         }}
       >
-        <span className="block h-full w-full pointer-events-none" style={{ transform: facingTransform }}>
+        <span className="compad-sprite-body" style={{ transform: facingTransform }}>
           <PixelSprite
             animations={COZY_PIXEL_BATTERY_ANIMATIONS}
-            animation={currentMood}
+            animation={isDragging ? "poke" : currentMood}
             frameWidth={BATTERY_WIDTH}
             frameHeight={BATTERY_HEIGHT}
             scale={scale}
