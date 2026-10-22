@@ -103,14 +103,14 @@ describe("tell: retired hype vocabulary", () => {
 
 /* ── Ratchets: real debt, a ceiling that only goes down ────────────────── */
 
-/** 47 uses of `uppercase`, nearly all a 9-11px mono badge or a section index.
+/** 35 uses of `uppercase`, nearly all a 9-11px mono badge or a section index.
  *  A micro-badge set in caps is legitimate; the eyebrow label is not, and rule
  *  1 above now owns that. Target 0. Lower this whenever you remove one. */
-const UPPERCASE_CEILING = 47;
+const UPPERCASE_CEILING = 35;
 
-/** 50 uses of the middle-dot joiner. Most are a genuine third fact in a list
+/** 48 uses of the middle-dot joiner. Most are a genuine third fact in a list
  *  where a second line or a pill would read better. Target 0. */
-const MIDDOT_CEILING = 50;
+const MIDDOT_CEILING = 48;
 
 function count(rel: string, needle: string): number {
   return read(rel).split(needle).length - 1;

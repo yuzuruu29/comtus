@@ -55,93 +55,143 @@ export const EFFORTS: EffortOption[] = [
     label: "Low",
     shortLabel: "Low",
     badge: "Fast",
-    desc: "Quick responses with light reasoning for factual queries and rapid drafting.",
+    desc: "Answers quickly after a brief check. Good for facts and definitions.",
   },
   {
     id: "medium",
     label: "Medium",
     shortLabel: "Medium",
     badge: "Balanced",
-    desc: "Balanced depth and speed for everyday queries, explanations, and standard coding.",
+    desc: "Thinks for a moment first. Good for most questions and explanations.",
   },
   {
     id: "high",
     label: "High",
     shortLabel: "High",
     badge: "Deep",
-    desc: "Deep reasoning for complex logic, multi-step math, and in-depth code debugging.",
+    desc: "Works through the problem step by step. Good for multi-step maths, proofs and tricky ideas.",
   },
   {
     id: "xhigh",
     label: "Extra High",
     shortLabel: "Extra High",
     badge: "Max",
-    desc: "Maximum compute and exhaustive verification for demanding workflows.",
+    desc: "Takes the longest and checks its own work. Save it for the hardest problems.",
   },
 ];
 
-export const COMPAT_PRESETS: { id: string; label: string; baseUrl: string; note: string }[] = [
+export const COMPAT_PRESETS: {
+  id: string;
+  label: string;
+  baseUrl: string;
+  note: string;
+  /** A model id this endpoint actually serves. Switching presets must not keep the previous provider's id. */
+  model: string;
+  keyHint: string;
+}[] = [
   {
     id: "openrouter",
     label: "OpenRouter",
     baseUrl: "https://openrouter.ai/api/v1",
     note: "hundreds of open & closed models, one key",
+    model: "openrouter/free",
+    keyHint: "sk-or-v1-…",
   },
   {
     id: "nous",
     label: "Nous",
     baseUrl: "https://inference-api.nousresearch.com/v1",
     note: "Nous-hosted inference, including ox-alpha",
+    model: "stealth/ox-alpha",
+    keyHint: "Nous key",
   },
   {
     id: "groq",
     label: "Groq",
     baseUrl: "https://api.groq.com/openai/v1",
     note: "very fast open models · free tier",
+    model: "llama-3.3-70b-versatile",
+    keyHint: "gsk_…",
   },
   {
     id: "zen",
     label: "OpenCode Zen",
     baseUrl: "https://opencode.ai/zen/v1",
     note: "curated frontier open models · free",
+    model: "qwen3-coder",
+    keyHint: "Zen key",
   },
   {
     id: "cerebras",
     label: "Cerebras",
     baseUrl: "https://api.cerebras.ai/v1",
     note: "wafer-scale speed · free tier",
+    model: "llama-3.3-70b",
+    keyHint: "csk-…",
   },
   {
     id: "google",
     label: "Google AI Studio",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
     note: "Gemini models · free tier",
+    model: "gemini-2.0-flash",
+    keyHint: "AIza…",
   },
   {
     id: "deepseek",
     label: "DeepSeek",
     baseUrl: "https://api.deepseek.com/v1",
     note: "cheap reasoners",
+    model: "deepseek-reasoner",
+    keyHint: "sk-…",
   },
   {
     id: "together",
     label: "Together",
     baseUrl: "https://api.together.xyz/v1",
     note: "hosted open models",
+    model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    keyHint: "Together key",
   },
   {
     id: "ollama",
     label: "Ollama",
     baseUrl: "http://localhost:11434/v1",
     note: "local & free — no key needed",
+    model: "llama3.3",
+    keyHint: "no key",
   },
   {
     id: "lmstudio",
     label: "LM Studio",
     baseUrl: "http://localhost:1234/v1",
     note: "local & free — no key needed",
+    model: "local-model",
+    keyHint: "no key",
   },
 ];
+
+/** A pasted key that visibly belongs to a different endpoint. Empty when it looks plausible. */
+export function keyMismatch(baseUrl: string, key: string): string {
+  const trimmed = key.trim();
+  if (!trimmed) return "";
+  const url = baseUrl.toLowerCase();
+  const looks = {
+    openrouter: trimmed.startsWith("sk-or-"),
+    groq: trimmed.startsWith("gsk_"),
+    google: trimmed.startsWith("AIza"),
+    anthropic: trimmed.startsWith("sk-ant-"),
+    pass: trimmed.startsWith("comtus-pass-"),
+  };
+  if (looks.pass) return "That's a Comtus pass, not a provider key. Use it under Smarter Models.";
+  if (looks.anthropic) return "That's an Anthropic key. This panel sends keys to the endpoint above, not to Claude directly.";
+  if (url.includes("openrouter") && (looks.groq || looks.google)) return "This looks like a different provider's key. OpenRouter keys start with sk-or-v1-.";
+  if (url.includes("groq") && looks.openrouter) return "This is an OpenRouter key. Groq keys start with gsk_.";
+  if (url.includes("groq") && (looks.google || looks.anthropic)) return "This doesn't look like a Groq key. Groq keys start with gsk_.";
+  if (url.includes("generativelanguage") && (looks.openrouter || looks.groq)) return "This doesn't look like a Google AI Studio key. Those start with AIza.";
+  if (!url.includes("openrouter") && looks.openrouter) return "This is an OpenRouter key. Switch the endpoint to OpenRouter, or paste this provider's own key.";
+  return "";
+}
 
 /** Everything a call needs, resolved from the settings store. */
 export interface CallSettings {
@@ -179,9 +229,13 @@ function hostedSystem(apiKey: string, text: string): string | Anthropic.TextBloc
 export function modelLabelFor(provider: ProviderId, model: string): string {
   if (provider === "anthropic")
     return MODELS.find((m) => m.id === model)?.label ?? model;
+  // OpenRouter's router id picks whichever free model is available; the
+  // model menu lists it under this name.
+  if (model === "openrouter/free") return "Auto Free Router";
   const short = model.split("/").pop() ?? model;
-  const pretty = short.replace(/:free$/i, "").replace(/[-_]+/g, " ").trim();
-  if (!pretty) return model;
+  const words = short.replace(/:free$/i, "").replace(/[-_]+/g, " ").trim();
+  if (!words) return model;
+  const pretty = words[0].toUpperCase() + words.slice(1);
   return pretty.length > 28 ? `${pretty.slice(0, 27).trimEnd()}…` : pretty;
 }
 
@@ -599,9 +653,16 @@ export function extractTextCitations(text: string, docs: GroundingDoc[]): Citati
       sourceId: docs[idx].source.id,
       sourceTitle: docs[idx].source.title,
       citedText: "",
+      url: webPageUrl(docs[idx]),
     });
   }
   return out;
+}
+
+/** Web search results are grounding-only and never saved as sources, so a
+ *  citation to one must carry its page address to lead anywhere. */
+function webPageUrl(doc: GroundingDoc): string | undefined {
+  return doc.source.meta?.origin === "web-search" ? doc.source.meta.url : undefined;
 }
 
 /* ── Anthropic citation mapping ───────────────────────────── */
@@ -634,6 +695,7 @@ function mapCitations(message: Anthropic.Message, docs: GroundingDoc[]): Citatio
         citedText: lc.cited_text,
         startChar: lc.start_char_index,
         endChar: lc.end_char_index,
+        url: webPageUrl(doc),
       });
     }
   }

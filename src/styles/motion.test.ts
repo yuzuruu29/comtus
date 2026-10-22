@@ -30,30 +30,18 @@ function tsxFiles(): string[] {
     .map((rel) => `src/${rel.split("\\").join("/")}`);
 }
 
-/** Selectors of the ambient loops: the lamp, the dust, the pixel chrome,
- *  the typing beacon, the effort meter. Informational loops (the button
- *  spinner, the skeleton shimmer, the toast fuse, progress bars) are not
- *  ambient — they carry information, so they keep running in every tier. */
+/** Selectors of the ambient loops: the lamp, the dust, the thinking
+ *  shimmer, the waiting dots, the answer's caret. Informational loops (the
+ *  button spinner, the skeleton shimmer, the toast fuse, progress bars) are
+ *  not ambient — they carry information, so they keep running in every tier. */
 const AMBIENT = [
   ".breathe",
-  ".phase-dot",
   ".send-halo",
   ".bar-sheen",
-  ".think-gloss",
   ".studio-motes span",
-  ".pixel-eq-bar",
-  ".pixel-thought-cursor",
   ".thinking-live",
-  ".pixel-reasoning-laser-top",
   ".typing-harmonic-dot",
-  ".stream-typing-beacon-core",
-  ".stream-typing-beacon-halo",
-  ".effort-dot",
-  ".effort-fill",
-  ".effort-thumb-ring",
-  ".effort-chip svg",
-  ".effort-level-icon",
-  ".effort-bar",
+  ".stream-typing-beacon",
 ];
 
 /** Pulls the selector list out of a rule block by its anchor selector. */

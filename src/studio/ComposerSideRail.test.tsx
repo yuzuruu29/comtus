@@ -110,4 +110,16 @@ describe("ComposerSideRail", () => {
     fireEvent.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
+
+  it("turns thinking back on when a level is chosen while it is off", () => {
+    const onEffortChange = vi.fn();
+    const onChange = vi.fn();
+    render(
+      <ComposerSideRail effort="high" onEffortChange={onEffortChange} reasoning={{ enabled: false, onChange }} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Thinking effort" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Medium" })[0]!);
+    expect(onEffortChange).toHaveBeenCalledWith("medium");
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
 });

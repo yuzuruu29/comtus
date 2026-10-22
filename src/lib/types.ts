@@ -51,6 +51,8 @@ export interface Citation {
   citedText: string;
   startChar?: number;
   endChar?: number;
+  /** Set when the cited document was a web search result rather than a saved source. */
+  url?: string;
 }
 
 /** One named conversation inside a notebook. Messages carry `sessionId`

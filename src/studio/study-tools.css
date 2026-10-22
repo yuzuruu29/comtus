@@ -31,9 +31,10 @@
   min-height: 0;
   overflow-y: auto;
   padding: 1.5rem 1rem;
-  /* Compad's lane. The scroll content stops above it so the companion has a
-     corner of its own instead of landing on the tools. */
-  padding-bottom: calc(1.5rem + var(--companion-lane, 0px));
+  /* Compad's lane. The scroll area itself ends above it, so at any scroll
+     position the companion has its own corner instead of resting on tools
+     that pass underneath. */
+  margin-bottom: var(--companion-lane, 0px);
   container-type: inline-size;
 }
 

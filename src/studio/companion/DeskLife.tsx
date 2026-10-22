@@ -286,7 +286,8 @@ export default function DeskLife({
           )}
         />
       )}
-      <div className="pointer-events-auto fixed bottom-[calc(5.5rem+var(--sab))] left-4 z-[57] lg:bottom-6">
+      {/* Clear of the sources footer on a desk and of the pane tabs on a phone. */}
+      <div className="pointer-events-auto fixed bottom-[calc(5.5rem+var(--sab))] left-4 z-[57] lg:bottom-[4.5rem]">
         <Toast
           open={Boolean(toast)}
           onClose={() => setToast(null)}

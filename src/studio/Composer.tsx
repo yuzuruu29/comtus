@@ -3,12 +3,10 @@ import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowDown,
   ArrowUp,
-  Brain,
   CaretDown,
   Check,
   Globe,
   Microphone,
-  PaperPlaneRight,
   Plus,
   Stack,
   Stop,
@@ -66,7 +64,6 @@ export default function Composer({
   webSearchEnabled,
   onWebSearchChange,
   voice,
-  tkEstimate,
   dismissedFollowUps,
   onDismissFollowUps,
   hasAnswer,
@@ -92,7 +89,6 @@ export default function Composer({
   webSearchEnabled: boolean;
   onWebSearchChange: (value: boolean) => void;
   voice: ReturnType<typeof useVoiceInput>;
-  tkEstimate: number;
   dismissedFollowUps: boolean;
   onDismissFollowUps: () => void;
   hasAnswer: boolean;
@@ -145,40 +141,11 @@ export default function Composer({
               <div className="composer-sources">
                 <FocusMenu notebook={notebook} sourcesVersion={sourcesVersion} />
               </div>
-              <AnimatePresence>
-                {streaming && (
-                  <motion.div
-                    initial={{ opacity: 0, x: RISE_1 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: RISE_1, transition: EXIT }}
-                    transition={SOFT}
-                    className="phase-pill-inline composer-phase"
-                    role="status"
-                  >
-                    <span className="phase-dot" />
-                    <AnimatePresence mode="popLayout" initial={false}>
-                      <motion.span
-                        key={streaming.phase ?? "reading"}
-                        className="phase-label"
-                        initial={{ opacity: 0, y: RISE_1 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -RISE_1 }}
-                        transition={{ duration: DUR.fast, ease: HOUSE }}
-                      >
-                        {streaming.phase === "thinking"
-                          ? "thinking"
-                          : streaming.phase === "answering"
-                            ? "answering"
-                            : streaming.phase === "searching"
-                              ? "searching the web"
-                              : "reading sources"}
-                      </motion.span>
-                    </AnimatePresence>
-                  </motion.div>
-                )}
-              </AnimatePresence>
               <div className="composer-effort">
-                <ComposerSideRailDock onOpenSettings={onOpenSettings} />
+                <ComposerSideRailDock
+                  onOpenSettings={onOpenSettings}
+                  reasoning={thinkingCapable ? { enabled: reasoningEnabled, onChange: onReasoningChange } : undefined}
+                />
               </div>
             </div>
 
@@ -249,84 +216,38 @@ export default function Composer({
                 title="Add sources"
                 onClick={() => onAddSources?.()}
               >
-                <Plus size={ICON.sm} weight="light" />
+                <Plus size={ICON.md} />
               </IconButton>
-              {/* Reasoning/Web-search rail — kept mounted so the toggles'
-                  state survives streams; collapse-grid hides height and,
-                  once visibility flips, keyboard tab order when folded. */}
-              <div className={`collapse-grid ml-1 ${streaming ? "" : "is-open"}`}>
-                <div className="flex items-center gap-1.5">
-                  {thinkingCapable && (
-                    <button
-                      type="button"
-                      onClick={() => onReasoningChange(!reasoningEnabled)}
-                      aria-pressed={reasoningEnabled}
-                      title={
-                        reasoningEnabled
-                          ? "Deep Reasoning active — Step-by-step logic, edge cases & verification"
-                          : "Enable Deep Reasoning"
-                      }
-                      className="composer-mode"
-                    >
-                      <Brain
-                        size={ICON.xs}
-                        weight={reasoningEnabled ? "fill" : "regular"}
-                        className={reasoningEnabled ? "text-brass" : "text-muted"}
-                      />
-                      <span>Reasoning</span>
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => onWebSearchChange(!webSearchEnabled)}
-                    aria-label="Web Search"
-                    aria-pressed={webSearchEnabled}
-                    title={
-                      webSearchEnabled
-                        ? "Web Search active — Searches live web summaries & external knowledge"
-                        : "Enable Web Search (useful when no sources are attached)"
-                    }
-                    className="composer-mode"
-                  >
-                    <Globe
-                      size={ICON.xs}
-                      weight={webSearchEnabled ? "fill" : "regular"}
-                      className={webSearchEnabled ? "text-brass" : "text-muted"}
-                    />
-                    <span>Web</span>
-                  </button>
-                </div>
+              {/* Kept mounted so the toggle's state survives a stream;
+                  collapse-grid folds it, and its tab stop, while one runs. */}
+              <div className={`collapse-grid ${streaming ? "" : "is-open"}`}>
+                <button
+                  type="button"
+                  onClick={() => onWebSearchChange(!webSearchEnabled)}
+                  aria-label="Web Search"
+                  aria-pressed={webSearchEnabled}
+                  title={webSearchEnabled ? "Searching the web is on for your next question" : "Also search the web"}
+                  className="composer-mode"
+                >
+                  <Globe size={ICON.sm} weight={webSearchEnabled ? "fill" : "regular"} />
+                  <span>Web</span>
+                </button>
               </div>
               <span className="flex-1" />
-              {tkEstimate > 0 && (
-                <span className="composer-tokens" title="Approximate conversation tokens">
-                  ~{tkEstimate.toLocaleString()} tk
-                </span>
-              )}
               {!streaming && (
-                <motion.button
-                  whileTap={{ scale: 0.88 }}
+                <button
+                  type="button"
                   onClick={voice.toggle}
                   disabled={preparing || voice.state === "transcribing"}
                   data-armed={voice.state !== "idle"}
-                  title="Voice input — your browser's speech engine, or your own key for clip transcription"
+                  title="Speak your question"
                   aria-label="Voice input"
                   aria-pressed={voice.state !== "idle"}
                   className="composer-voice"
                 >
-                  {voice.state === "listening" && (
-                    <span
-                      aria-hidden
-                      className="absolute inset-0 animate-ping rounded-[var(--radius-pill)] bg-brass/25 [animation-duration:1.6s]"
-                    />
-                  )}
-                  <Microphone
-                    size={ICON.sm}
-                    weight={voice.state === "idle" ? "light" : "fill"}
-                    className="relative z-10"
-                  />
-                </motion.button>
+                  {voice.state === "listening" && <span aria-hidden className="composer-voice-ring" />}
+                  <Microphone size={ICON.md} weight={voice.state === "idle" ? "regular" : "fill"} className="relative" />
+                </button>
               )}
               <AnimatePresence mode="popLayout" initial={false}>
                 {streaming ? (
@@ -336,7 +257,6 @@ export default function Composer({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={SOFT}
-                    whileTap={{ scale: 0.96 }}
                     onClick={onStop}
                     className="composer-stop"
                     aria-label="Stop generating"
@@ -350,7 +270,6 @@ export default function Composer({
                     data-armed={hasText}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    whileTap={{ scale: 0.96 }}
                     transition={SOFT}
                     onClick={() => onSend()}
                     aria-label="Send message"
@@ -358,31 +277,7 @@ export default function Composer({
                     disabled={!hasText}
                     className="composer-send"
                   >
-                    <AnimatePresence mode="wait" initial={false}>
-                      {hasText ? (
-                        <motion.span
-                          key="plane"
-                          initial={{ opacity: 0, y: RISE_2, scale: 0.5 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -RISE_2, scale: 0.5 }}
-                          transition={{ duration: DUR.fast, ease: HOUSE }}
-                          className="relative z-[1] flex"
-                        >
-                          <PaperPlaneRight size={ICON.md} weight="bold" />
-                        </motion.span>
-                      ) : (
-                        <motion.span
-                          key="up"
-                          initial={{ opacity: 0, y: -RISE_2, scale: 0.5 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: RISE_2, scale: 0.5 }}
-                          transition={{ duration: DUR.fast, ease: HOUSE }}
-                          className="relative z-[1] flex"
-                        >
-                          <ArrowUp size={ICON.md} weight="bold" />
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
+                    <ArrowUp size={ICON.md} weight="bold" />
                   </motion.button>
                 )}
               </AnimatePresence>
@@ -517,7 +412,7 @@ function FocusMenu({
         title="Choose which sources answers ground in"
         className="composer-source-trigger"
       >
-        <Stack size={ICON.xs} weight="light" className="shrink-0" />
+        <Stack size={ICON.sm} className="shrink-0" />
         <span>{label}</span>
         <CaretDown
           size={ICON.xs}
@@ -535,23 +430,14 @@ function FocusMenu({
             aria-label="Sources for this conversation"
             className="composer-source-menu"
           >
-            <div className="flex items-center justify-between border-b border-hairline px-3 py-1.5 text-[11px] text-muted">
+            <div className="flex items-center justify-between border-b border-hairline px-3 py-2 text-label text-muted">
               <span>Use sources</span>
               {sources.length > 0 && (
-                <div className="flex items-center gap-2 font-mono text-[10px]">
-                  <button
-                    type="button"
-                    onClick={selectAll}
-                    className="text-brass hover:underline cursor-pointer"
-                  >
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={selectAll} className="text-brass hover:underline">
                     All
                   </button>
-                  <span className="text-muted">|</span>
-                  <button
-                    type="button"
-                    onClick={selectNone}
-                    className="text-muted hover:text-ink hover:underline cursor-pointer"
-                  >
+                  <button type="button" onClick={selectNone} className="hover:text-ink hover:underline">
                     None
                   </button>
                 </div>

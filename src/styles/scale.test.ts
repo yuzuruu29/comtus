@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
  *  studio ended up with dozens of near-identical sizes. This is a ratchet: it
  *  is green at today's count and may only ever go down. Target is 0 outside
  *  src/landing; each time you remove one, lower CEILING to match. */
-const CEILING = 373;
+const CEILING = 329;
 
 const ARBITRARY = /text-\[[0-9.]+px\]/g;
 

@@ -2,8 +2,9 @@ import { memo, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { motion } from "motion/react";
-import { BookmarkSimple, Check, Copy, Flame, Globe } from "@phosphor-icons/react";
+import { BookmarkSimple, Check, Copy, Globe, WarningCircle } from "@phosphor-icons/react";
 import { mathRemarkPlugins, mathRehypePlugins } from "../lib/markdownMath";
+import { closeStreamingMarkdown, rehypeStreamCursor } from "../lib/streamingMarkdown";
 import { externalMarkdownComponents } from "./ExternalLink";
 import type { ChatMessage, WebSearchMeta } from "../lib/types";
 import { deriveSessionTitle } from "../lib/sessionText";
@@ -13,10 +14,8 @@ import ThinkingDrawer from "./ThinkingDrawer";
 import CitationList from "./CitationList";
 import { ICON } from "../ui/iconScale";
 
-function formatSearchMs(ms: number): string {
-  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.max(ms, 0)}ms`;
-}
-
+/** One quiet line above the answer saying what the web search did. Neutral
+ *  paper: moon is for reasoning and brass for action, and this is neither. */
 export function SearchStatusStrip({
   meta,
   searching,
@@ -24,80 +23,35 @@ export function SearchStatusStrip({
   meta?: WebSearchMeta;
   searching?: boolean;
 }) {
-  if (searching && !meta) {
-    return (
-      <div
-        key="searching"
-        role="status"
-        className="anim-rise flex items-center gap-2 rounded-[var(--radius-dialog)] border border-moon/25 bg-moon/[0.06] px-3.5 py-2 text-[12px] text-moon"
-      >
-        <Globe size={ICON.md} weight="fill" className="shrink-0 text-moon" />
-        <span>Searching the web…</span>
-      </div>
-    );
-  }
-  if (!meta) return null;
+  if (!meta && !searching) return null;
+  const failed = meta?.status === "error";
+  const text = !meta
+    ? "Searching the web…"
+    : failed
+      ? "Web search didn’t go through. This answer doesn’t use live pages."
+      : meta.status === "empty"
+        ? "Searched the web and found nothing useful."
+        : `Read ${meta.count} web ${meta.count === 1 ? "page" : "pages"}`;
 
-  if (meta.status === "error") {
-    return (
-      <div
-        key="error"
-        role="status"
-        className="anim-rise anim-shake flex items-start gap-2 rounded-[var(--radius-dialog)] border border-rust/30 bg-rust/[0.07] px-3.5 py-2 text-[12px] text-rust"
-      >
-        <Flame size={ICON.md} className="mt-0.5 shrink-0" />
-        <div className="min-w-0 flex-1">
-          <div>Web search failed — answering without live pages</div>
-          {meta.error && (
-            <div className="mt-0.5 truncate font-mono text-[10.5px] text-rust/80">{meta.error}</div>
-          )}
-        </div>
-        <span className="shrink-0 font-mono text-[10.5px] text-rust/70">{formatSearchMs(meta.ms)}</span>
-      </div>
-    );
-  }
-
-  if (meta.status === "empty") {
-    return (
-      <div
-        key="empty"
-        role="status"
-        className="anim-rise flex items-center gap-2 rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.03] px-3.5 py-2 text-[12px] text-muted"
-      >
-        <Globe size={ICON.md} className="shrink-0" />
-        <span className="min-w-0 flex-1 truncate">Searched the web · no results</span>
-        {meta.query && (
-          <span className="hidden max-w-[10rem] truncate font-mono text-[10.5px] sm:inline">
-            {meta.query}
-          </span>
-        )}
-        <span className="shrink-0 font-mono text-[10.5px]">{formatSearchMs(meta.ms)}</span>
-      </div>
-    );
-  }
-
-  const noun = meta.count === 1 ? "source" : "sources";
   return (
     <div
-      key="results"
+      key={meta?.status ?? "searching"}
       role="status"
-      className="anim-rise flex items-center gap-2 rounded-[var(--radius-dialog)] border border-moon/25 bg-moon/[0.06] px-3.5 py-2 text-[12px] text-moon"
+      title={failed ? meta?.error : undefined}
+      className="search-strip anim-rise"
+      data-tone={failed ? "error" : undefined}
     >
-      <Globe size={ICON.md} weight="fill" className="shrink-0 text-moon" />
-      <span className="min-w-0 flex-1">
-        Fetched {meta.count} web {noun} just now
-      </span>
-      {meta.query && (
-        <span
-          title={meta.query}
-          className="hidden max-w-[12rem] truncate font-mono text-[10.5px] text-moon/70 sm:inline"
-        >
+      {failed ? (
+        <WarningCircle size={ICON.md} className="shrink-0" />
+      ) : (
+        <Globe size={ICON.md} className={`shrink-0 ${meta ? "" : "breathe"}`} />
+      )}
+      <span className="min-w-0 flex-1">{text}</span>
+      {meta?.query && !failed && (
+        <span title={meta.query} className="search-strip-query">
           {meta.query}
         </span>
       )}
-      <span className="shrink-0 font-mono text-[10.5px] text-moon/70">
-        {formatSearchMs(meta.ms)}
-      </span>
     </div>
   );
 }
@@ -178,34 +132,24 @@ const AssistantMessage = memo(function AssistantMessage({
         <div className="md md-answer text-ink">
           <ReactMarkdown
             remarkPlugins={[remarkGfm, ...mathRemarkPlugins]}
-            rehypePlugins={[...mathRehypePlugins]}
+            rehypePlugins={streaming ? [...mathRehypePlugins, rehypeStreamCursor] : [...mathRehypePlugins]}
             components={externalMarkdownComponents}
           >
-            {msg.content}
+            {streaming ? closeStreamingMarkdown(msg.content) : msg.content}
           </ReactMarkdown>
-          {streaming && (
-            <span className="stream-typing-beacon" aria-hidden="true">
-              <span className="stream-typing-beacon-halo" />
-              <span className="stream-typing-beacon-core" />
-            </span>
-          )}
         </div>
       ) : (
-        streaming && (
-          <div className="flex items-center gap-3 text-[13px] py-2.5 font-mono">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--radius-pill)] bg-brass/10 border border-brass/30 shadow-sm">
+        // The search strip and the thinking drawer already say what is
+        // happening; this line only covers the gap before either appears.
+        streaming && !hasThinking && phase !== "searching" && (
+          <div role="status" className="flex items-center gap-2.5 py-2">
+            <span className="typing-dots" aria-hidden="true">
               <span className="typing-harmonic-dot" />
               <span className="typing-harmonic-dot" />
               <span className="typing-harmonic-dot" />
-            </div>
-            <span className="text-[12px] font-semibold tracking-wide text-brass">
-              {phase === "thinking"
-                ? "Synthesizing deep reasoning & dialectic proofs…"
-                : phase === "answering"
-                  ? "Composing verified response…"
-                  : phase === "searching"
-                    ? "Searching scholarly corpus…"
-                    : "Indexing study sources…"}
+            </span>
+            <span className="text-label text-moon">
+              {phase === "thinking" ? "Thinking…" : phase === "answering" ? "Writing…" : "Reading…"}
             </span>
           </div>
         )
@@ -216,10 +160,8 @@ const AssistantMessage = memo(function AssistantMessage({
       {/* Action bar — always visible, with explicit success feedback */}
       {!streaming && msg.content && (
         <div aria-live="polite" className="flex items-center justify-between pt-1">
-          <span className="font-mono text-[10px] tabular-nums text-muted">
-            {timeAgo(msg.createdAt)}
-          </span>
-          <div className="flex items-center gap-1.5">
+          <span className="text-label tabular-nums text-muted">{timeAgo(msg.createdAt)}</span>
+          <div className="flex items-center gap-1">
             <button
               onClick={() => {
                 if (saved) return;
@@ -228,27 +170,21 @@ const AssistantMessage = memo(function AssistantMessage({
                 setSaved(true);
                 setTimeout(() => setSaved(false), 2400);
               }}
-              className={`flex items-center gap-1.5 rounded-[var(--radius-pill)] border px-3 py-1 text-[12px] transition-colors ${
-                saved
-                  ? "border-sage/40 bg-sage/[0.12] text-sage"
-                  : "border-brass/35 bg-brass/[0.08] text-brass hover:bg-brass/[0.16]"
-              }`}
-              title="Save this answer to Studio Notes"
+              data-done={saved ? "" : undefined}
+              className="answer-action"
+              title="Save this answer to your notes"
             >
               {saved ? <Check size={ICON.sm} weight="bold" /> : <BookmarkSimple size={ICON.sm} />}
-              <span>{saved ? "Saved ✓" : "Save to note"}</span>
+              <span>{saved ? "Saved" : "Save to note"}</span>
             </button>
             <button
               onClick={copyText}
-              className={`flex items-center gap-1.5 rounded-[var(--radius-pill)] border px-3 py-1 text-[12px] transition-colors ${
-                copied
-                  ? "border-sage/40 bg-sage/[0.12] text-sage"
-                  : "border-hairline text-muted hover:border-hairline-strong hover:text-ink"
-              }`}
+              data-done={copied ? "" : undefined}
+              className="answer-action"
               title="Copy answer"
             >
               {copied ? <Check size={ICON.sm} weight="bold" /> : <Copy size={ICON.sm} />}
-              <span>{copied ? "Copied ✓" : "Copy"}</span>
+              <span>{copied ? "Copied" : "Copy"}</span>
             </button>
           </div>
         </div>

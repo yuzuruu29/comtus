@@ -152,7 +152,8 @@ Movement in Comtus is physical, warm, and intentional. Interactions follow the p
 - **Brass Bookmark (`.rule-bookmark`)** — `src/styles/paper.css`:
   - A 2px brass stroke on a row's leading edge, absent at rest and drawn top-down on hover or focus. It marks your place in a list the way a ribbon marks a page, and it is the reason study-tool rows need no coloured icon tiles.
 - **Organic & Stepped Animations** — the vocabulary that actually ships:
-  - `@keyframes breathe` / `effort-breathe`: ambient pulse, the lamp at rest and the effort chip while the model thinks.
+  - `@keyframes breathe`: ambient pulse, the lamp at rest and the globe while a web search runs.
+  - `@keyframes think-shimmer`: moon light passing over "Thinking…" while the model reasons.
   - `@keyframes pixel-flicker` / `torch-flicker`: warm filament micro-flicker for the pixel chrome.
   - `@keyframes citation-spotlight` / `cite-bloom`: a citation settling onto its passage, decaying over `--dur-settle`.
   - `@keyframes rise-in` / `fade-in` / `pop-in`: entrances. A short rise with a fade, never a scale — a panel that grows from 96% is a generated-UI tell.
@@ -198,10 +199,11 @@ not decoration.
 
 The OS preference is the backstop under the budget above.
 
-1. **Tier 1 (Ambient loops)**: Ambient loops (`breathe`, `phase-dot`, `send-halo`,
-   `bar-sheen`, `think-gloss`, the dust motes, the pixel equaliser, the typing
-   beacon, the effort meter, the thinking shimmer) stop immediately and rest
-   visibly in their calm state.
+1. **Tier 1 (Ambient loops)**: Ambient loops (`breathe`, `send-halo`,
+   `bar-sheen`, the dust motes, the thinking shimmer, the waiting dots, the
+   answer's ink caret) stop immediately and rest visibly in their calm state.
+   While an answer streams, one of them runs at a time: the shimmer while the
+   model reasons, the dots before anything arrives, the caret while it writes.
 2. **Tier 2 (Entrances & Shifts)**: Entrances keep a quiet opacity fade without
    translation, scale, or parallax. Ink-press and paper-curl transitions collapse
    to zero delay.

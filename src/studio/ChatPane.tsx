@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check } from "@phosphor-icons/react";
 import { loadFocus } from "./focus";
@@ -492,14 +492,6 @@ export default function ChatPane({
     })();
   }, [finalizeTick, smoothed.caughtUp, requestIsCurrent]);
 
-  const tkEstimate = useMemo(
-    () =>
-      Math.round(
-        (input.length + messages.reduce((n, m) => n + m.content.length, 0)) / 4,
-      ),
-    [input, messages],
-  );
-
   if (!notebook) return surfaceTarget === undefined ? <div className="flex-1" /> : null;
 
   const fullChat = (
@@ -562,7 +554,6 @@ export default function ChatPane({
         webSearchEnabled={webSearchEnabled}
         onWebSearchChange={setWebSearchEnabled}
         voice={voice}
-        tkEstimate={tkEstimate}
         dismissedFollowUps={dismissedFollowUps}
         onDismissFollowUps={() => setDismissedFollowUps(true)}
         hasAnswer={messages.some((m) => m.role === "assistant")}

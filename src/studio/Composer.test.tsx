@@ -35,7 +35,6 @@ function renderComposer(overrides: Partial<ComponentProps<typeof Composer>> = {}
     webSearchEnabled: false,
     onWebSearchChange: vi.fn(),
     voice: { state: "idle", active: false, interim: "", error: "", elapsed: 0, toggle: vi.fn() },
-    tkEstimate: 0,
     dismissedFollowUps: true,
     onDismissFollowUps: vi.fn(),
     hasAnswer: false,
@@ -71,15 +70,30 @@ describe("Composer", () => {
     expect(props.onSend).not.toHaveBeenCalled();
   });
 
-  it("shows the Think toggle by default", () => {
-    renderComposer();
-    expect(screen.getByRole("button", { name: /Reasoning/i })).toBeInTheDocument();
+  it("turns thinking on and off from the thinking chip, not a second toggle", () => {
+    const props = renderComposer({ reasoningEnabled: false });
+    expect(screen.queryByRole("button", { name: /Reasoning/i })).not.toBeInTheDocument();
+    const chip = screen.getByRole("button", { name: "Thinking effort" });
+    expect(chip).toHaveTextContent("Thinking off");
+    fireEvent.click(chip);
+    const toggle = screen.getByRole("switch", { name: "Think before answering" });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    fireEvent.click(toggle);
+    expect(props.onReasoningChange).toHaveBeenCalledWith(true);
   });
 
-  it("hides the Think toggle when capabilities.thinking is false", () => {
+  it("offers no thinking switch when the model can't think", () => {
     renderComposer({ capabilities: { thinking: false } });
-    expect(screen.queryByRole("button", { name: /Reasoning/i })).not.toBeInTheDocument();
-    // Web Search stays — the capability gate is scoped to Think only.
+    fireEvent.click(screen.getByRole("button", { name: "Thinking effort" }));
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+    // Web Search stays — the capability gate is scoped to thinking only.
     expect(screen.getByRole("button", { name: /Web Search/i })).toBeInTheDocument();
+  });
+
+  it("shows no token count or second progress label while an answer streams", () => {
+    renderComposer({ streaming: { phase: "thinking" } });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.queryByText(/tk$/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Stop generating" })).toBeInTheDocument();
   });
 });

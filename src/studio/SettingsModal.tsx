@@ -28,6 +28,7 @@ import {
   validateConnection,
   listCompatModels,
   friendlyError,
+  keyMismatch,
   type CallSettings,
 } from "../lib/llm";
 import type { ProviderId, StoredKey } from "../lib/types";
@@ -300,28 +301,20 @@ export default function SettingsModal({
 
   const handleProviderPresetChange = (p: StoredKey["provider"]) => {
     setNewKeyProvider(p);
-    if (p === "openrouter") {
-      setNewKeyBaseUrl("https://openrouter.ai/api/v1");
-      setNewKeyModel("dots-studio/dots-3-note-preview:free");
-    } else if (p === "groq") {
-      setNewKeyBaseUrl("https://api.groq.com/openai/v1");
-      setNewKeyModel("llama-3.3-70b-versatile");
-    } else if (p === "deepseek") {
-      setNewKeyBaseUrl("https://api.deepseek.com/v1");
-      setNewKeyModel("deepseek-reasoner");
-    } else if (p === "together") {
-      setNewKeyBaseUrl("https://api.together.xyz/v1");
-      setNewKeyModel("meta-llama/Llama-3.3-70B-Instruct-Turbo");
-    } else if (p === "ollama") {
-      setNewKeyBaseUrl("http://localhost:11434/v1");
-      setNewKeyModel("llama3.3");
-    } else if (p === "zen") {
-      setNewKeyBaseUrl("https://opencode.ai/zen/v1");
-      setNewKeyModel("qwen3-coder");
-    } else if (p === "cerebras") {
-      setNewKeyBaseUrl("https://api.cerebras.ai/v1");
-      setNewKeyModel("llama-3.3-70b");
-    }
+    const preset = COMPAT_PRESETS.find((item) => item.id === p);
+    if (!preset) return;
+    setNewKeyBaseUrl(preset.baseUrl);
+    setNewKeyModel(preset.model);
+  };
+
+  const applyEndpoint = (preset: (typeof COMPAT_PRESETS)[number]) => {
+    set({
+      compatBaseUrl: preset.baseUrl,
+      compatModel: preset.model,
+    });
+    setModelIds([]);
+    setModelsNote("");
+    setLastFetchedAt(null);
   };
 
   const fetchModels = async () => {
@@ -352,6 +345,8 @@ export default function SettingsModal({
     draft.provider === "openai-compatible" &&
     draft.compatBaseUrl.includes("openrouter") &&
     draft.compatKey.trim().length > 0;
+  const selectedPreset = COMPAT_PRESETS.find((preset) => preset.baseUrl === draft.compatBaseUrl);
+  const keyWarning = keyMismatch(draft.compatBaseUrl, draft.compatKey);
 
   const versionRow = (
     <div className="flex items-center justify-between gap-3">
@@ -662,17 +657,16 @@ export default function SettingsModal({
           {settingsMode === "advanced" && (
             <div key={settingsMode} className="space-y-6 anim-fade anim-fade--fast">
               {/* Back to Starter mode banner */}
-              <div className="rounded-[var(--radius-dialog)] border border-hairline bg-surface p-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-[12.5px] text-ink">
-                  <Sliders size={ICON.md} className="text-brass shrink-0" />
-                  <span>Advanced Settings Mode is active.</span>
-                </div>
+              <div className="flex items-center justify-between gap-3 text-[12.5px]">
+                <p className="text-muted">
+                  Your key stays on this device. Save & test before it is used for study.
+                </p>
                 <button
                   type="button"
                   onClick={() => setSettingsMode("starter")}
-                  className="font-mono text-[11px] text-brass hover:underline flex items-center gap-1"
+                  className="shrink-0 font-mono text-[11px] text-brass hover:underline"
                 >
-                  <span>← Back to Simple Model Picker</span>
+                  Simple models
                 </button>
               </div>
 
@@ -682,7 +676,7 @@ export default function SettingsModal({
                   <div className="flex items-center gap-2">
                     <Key size={ICON.md} className="text-brass shrink-0" />
                     <span className="text-[13px] font-medium text-ink">
-                      Stored BYOK Keys Vault ({storedKeys.length})
+                      Saved keys ({storedKeys.length})
                     </span>
                   </div>
                   <button
@@ -690,13 +684,13 @@ export default function SettingsModal({
                     onClick={() => setShowAddKeyModal(true)}
                     className="flex items-center gap-1 rounded-[var(--radius-field)] border border-brass/30 bg-brass/10 px-2.5 py-1 font-mono text-[11px] text-brass hover:bg-brass/20 transition-colors"
                   >
-                    <Plus size={ICON.xs} /> Add Key to Vault
+                    <Plus size={ICON.xs} /> Add a key
                   </button>
                 </div>
 
                 {storedKeys.length === 0 ? (
                   <p className="text-[11.5px] leading-relaxed text-muted">
-                    No stored keys yet. Save multiple OpenRouter, Groq, or DeepSeek API keys below to switch between them in 1 click.
+                    No saved keys yet. Save an OpenRouter, Groq, or local key, then switch without pasting again.
                   </p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -746,6 +740,8 @@ export default function SettingsModal({
                                     compatBaseUrl: k.baseUrl,
                                     compatModel: k.defaultModel || draft.compatModel,
                                   });
+                                  setModelIds([]);
+                                  setModelsNote("");
                                 }}
                                 className="font-mono text-[10.5px] text-moon hover:underline"
                               >
@@ -797,27 +793,30 @@ export default function SettingsModal({
 
               {/* Endpoint Presets Grid */}
               <div>
-                <div className="field-label mb-2">Endpoint presets</div>
+                <div className="field-label mb-2">Provider</div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {COMPAT_PRESETS.map((p) => (
+                  {COMPAT_PRESETS.map((p) => {
+                    const selected = draft.compatBaseUrl === p.baseUrl;
+                    return (
                     <button
                       key={p.id}
-                      onClick={() => {
-                        set({ compatBaseUrl: p.baseUrl });
-                        setModelIds([]);
-                        setModelsNote("");
-                        setLastFetchedAt(null);
-                      }}
-                      className={`min-h-[50px] rounded-[var(--radius-dialog)] border px-3 py-2.5 text-left transition-all active:scale-[0.98] ${
-                        draft.compatBaseUrl === p.baseUrl
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => applyEndpoint(p)}
+                      className={`min-h-[50px] rounded-[var(--radius-dialog)] border px-3 py-2.5 text-left transition-colors ${
+                        selected
                           ? "border-brass/60 bg-brass/[0.08]"
                           : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
                       }`}
                     >
-                      <div className="font-mono text-[11px] font-medium text-brass">{p.label}</div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-[11px] font-medium text-brass">{p.label}</span>
+                        {selected && <Check size={ICON.xs} className="text-brass" aria-hidden="true" />}
+                      </div>
                       <div className="mt-0.5 line-clamp-1 text-[10.5px] leading-snug text-muted">{p.note}</div>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -825,18 +824,26 @@ export default function SettingsModal({
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field
                   label="API key"
-                  hint="Local endpoints (Ollama, LM Studio) don't require a key."
+                  hint={
+                    selectedPreset
+                      ? selectedPreset.keyHint === "no key"
+                        ? "This local endpoint does not need a key."
+                        : `Looks like ${selectedPreset.keyHint}`
+                      : "Local endpoints (Ollama, LM Studio) don't require a key."
+                  }
                 >
                   <div className="relative">
                     <input
                       type={showCompatKey ? "text" : "password"}
                       value={draft.compatKey}
                       onChange={(e) => set({ compatKey: e.target.value })}
-                      placeholder="sk-or-… or gsk_…"
+                      placeholder={selectedPreset?.keyHint && selectedPreset.keyHint !== "no key" ? selectedPreset.keyHint : "sk-or-v1-…"}
                       className={inputCls + " pr-10 font-mono text-[13px]"}
                       spellCheck={false}
+                      autoComplete="off"
                     />
                     <button
+                      type="button"
                       onClick={() => setShowCompatKey((v) => !v)}
                       className="flex h-9 w-9 items-center justify-center absolute right-1.5 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
                       aria-label={showCompatKey ? "Hide key" : "Show key"}
@@ -844,6 +851,11 @@ export default function SettingsModal({
                       {showCompatKey ? <EyeSlash size={ICON.md} /> : <Eye size={ICON.md} />}
                     </button>
                   </div>
+                  {keyWarning && (
+                    <p className="mt-1.5 text-[12px] leading-snug text-brass" role="status">
+                      {keyWarning}
+                    </p>
+                  )}
                 </Field>
 
                 <Field label="Base URL" hint="Must include /v1 for most endpoints.">
@@ -1186,7 +1198,7 @@ export default function SettingsModal({
       <Modal
         open={showAddKeyModal}
         onClose={closeAddKeyModal}
-        title="Add Stored Key to BYOK Vault"
+        title="Save a key"
       >
         <div className="space-y-4">
           <Field label="Key Name / Description">
@@ -1267,7 +1279,7 @@ export default function SettingsModal({
               onClick={handleAddNewKey}
               disabled={!newKeyName.trim()}
             >
-              Save Key to Vault
+              Save key
             </button>
           </div>
         </div>

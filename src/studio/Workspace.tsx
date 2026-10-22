@@ -338,7 +338,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               </div>
             ) : (
               <div className="anim-fade flex h-full flex-col items-center pt-3" style={{ ["--d"]: "60ms" } as CSSProperties}>
-                <RailButton icon={Books} label="Studio" side="right" onClick={() => desk.setLayout(panes.sources ? "standard" : "writing")} />
+                <RailButton icon={Books} label="Study tools" side="right" onClick={() => desk.setLayout(panes.sources ? "standard" : "writing")} />
               </div>
             )}
 
@@ -401,7 +401,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               [
                 ["sources", Notebook, "Sources"],
                 ["chat", ChatCircle, "Chat"],
-                ["studio", Books, "Studio"],
+                ["studio", Books, "Study tools"],
               ] as const
             ).map(([id, Icon, label]) => (
               <button

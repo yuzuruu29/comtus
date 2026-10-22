@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Flame, Plus } from "@phosphor-icons/react";
+import { Plus, WarningCircle } from "@phosphor-icons/react";
 import type { ChatMessage, Notebook, WebSearchMeta } from "../lib/types";
 import { Button } from "../ui";
 import { DRIFT_X, EXIT, SOFT } from "./fx";
@@ -115,7 +115,8 @@ export default function MessageList({
               onOpenSettings && <Button onClick={onOpenSettings}>Choose a model</Button>
             ) : (
               <>
-                {onAddSources && <Button icon={<Plus size={ICON.md} aria-hidden="true" />} onClick={onAddSources}>Add your first source</Button>}
+                {/* Secondary: on a desk the sources pane beside it holds the primary Add source. */}
+                {onAddSources && <Button variant="secondary" icon={<Plus size={ICON.md} aria-hidden="true" />} onClick={onAddSources}>Add your first source</Button>}
                 <p className="chat-welcome-hint">PDFs, notes, or a web page. Start with one.</p>
               </>
             )}
@@ -173,10 +174,10 @@ export default function MessageList({
               {error && (
                 <motion.div
                   role="alert"
-                  className="anim-shake flex items-start gap-3 rounded-[var(--radius-dialog)] border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] text-rust"
+                  className="anim-rise flex items-start gap-3 rounded-[var(--radius-dialog)] border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] text-rust"
                   exit={{ opacity: 0, transition: EXIT }}
                 >
-                  <Flame size={ICON.md} className="mt-0.5 shrink-0" />
+                  <WarningCircle size={ICON.md} className="mt-0.5 shrink-0" />
                   <span>{error}</span>
                 </motion.div>
               )}

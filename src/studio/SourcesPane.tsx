@@ -31,6 +31,7 @@ import { ErrorNote } from "./ui";
 import AddSourceMenu from "./AddSourceMenu";
 import SourceReader from "./SourceReader";
 import { highlightCounts } from "../lib/highlights";
+import { sourceSize } from "../lib/sourceSize";
 import { isTauri } from "../lib/desktop";
 import { ICON } from "../ui/iconScale";
 
@@ -50,12 +51,7 @@ const KIND_ICON: Record<string, typeof FileText> = {
 /** The one fact a row shows beneath its title: page count when known,
  *  otherwise a rough word count. */
 function sourceFact(s: Source, highlights = 0): string {
-  const words = Math.round(s.chars / 5.5);
-  const size = s.meta?.pages
-    ? `${s.meta.pages} ${s.meta.pages === 1 ? "page" : "pages"}`
-    : words >= 1000
-      ? `${(words / 1000).toFixed(1)}k words`
-      : `${words} words`;
+  const size = sourceSize(s);
   return highlights ? `${size} · ${highlights} marked` : size;
 }
 

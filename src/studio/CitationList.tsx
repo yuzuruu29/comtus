@@ -1,6 +1,7 @@
-import { Quotes } from "@phosphor-icons/react";
+import { ArrowSquareOut, Quotes } from "@phosphor-icons/react";
 import type { Citation } from "../lib/types";
 import { ICON } from "../ui/iconScale";
+import ExternalLink from "./ExternalLink";
 
 /** Citations arrive from model output, so `citedText` and `sourceTitle` are
  *  only as trustworthy as the provider's JSON — the non-optional fields on
@@ -43,20 +44,60 @@ export default function CitationList({
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1">
       <Quotes size={ICON.sm} weight="light" className="text-muted" />
-      {list.map((c, i) => (
-        <button
-          key={`${c.sourceId ?? "cite"}-${i}`}
-          type="button"
-          onClick={() => c.sourceId && onCite(c.sourceId, c.startChar)}
-          title={c.citedText.slice(0, 160)}
-          className="cite-footnote font-mono text-label text-brass transition-colors hover:text-ink"
-        >
-          {/* The index is not decoration — it is how the answer refers to
-              this citation, so it stays in the accessible name. */}
-          <span>[{i + 1}]</span>{" "}
-          <span className="cite-footnote-title">{c.sourceTitle || "Source"}</span>
-        </button>
-      ))}
+      {list.map((c, i) => {
+        const key = `${c.sourceId ?? "cite"}-${i}`;
+        // The index is not decoration — it is how the answer refers to this
+        // citation, so it stays in the accessible name.
+        const index = <span>[{i + 1}]</span>;
+        const host = c.url ? hostOf(c.url) : "";
+        if (c.url) {
+          return (
+            <ExternalLink
+              key={key}
+              href={c.url}
+              title={c.url}
+              className="cite-footnote font-mono text-label text-brass transition-colors hover:text-ink"
+            >
+              {index} <span className="cite-footnote-title">{webTitle(c.sourceTitle) || host}</span>
+              {host && <> <span className="shrink-0 text-muted">{host}</span></>}
+              <ArrowSquareOut size={ICON.xs} className="shrink-0 self-center" aria-hidden="true" />
+            </ExternalLink>
+          );
+        }
+        // A web result cited before page addresses were kept has nothing to open.
+        if (c.sourceId?.startsWith("web-")) {
+          return (
+            <span key={key} className="cite-footnote font-mono text-label text-muted">
+              {index} <span className="cite-footnote-title">{webTitle(c.sourceTitle) || "Web page"}</span>
+            </span>
+          );
+        }
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => c.sourceId && onCite(c.sourceId, c.startChar)}
+            title={c.citedText.slice(0, 160)}
+            className="cite-footnote font-mono text-label text-brass transition-colors hover:text-ink"
+          >
+            {index} <span className="cite-footnote-title">{c.sourceTitle || "Source"}</span>
+          </button>
+        );
+      })}
     </div>
   );
+}
+
+/** Web results are titled "Web: …" so the model can tell them apart from
+ *  the student's own sources; the reader doesn't need the prefix. */
+function webTitle(title: string): string {
+  return title.replace(/^Web:\s*/, "");
+}
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
 }

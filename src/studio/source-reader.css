@@ -21,10 +21,7 @@ div:has(> .reader-head) {
 
 .reader-meta {
   color: var(--muted);
-  font-family: var(--font-mono);
   font-size: var(--text-label);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
 }
 
 .reader-body {

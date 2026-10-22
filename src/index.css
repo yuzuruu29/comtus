@@ -349,47 +349,34 @@ html[data-theme="light"] .grad-lamp {
      OS preference on sees exactly what they asked for. src/styles/motion.test.ts
      asserts the two lists match. */
   .breathe,
-  .phase-dot,
   .send-halo,
   .bar-sheen,
-  .think-gloss,
   .studio-motes span,
-  .pixel-eq-bar,
-  .pixel-thought-cursor,
   .thinking-live,
-  .pixel-reasoning-laser-top,
   .typing-harmonic-dot,
-  .stream-typing-beacon-core,
-  .stream-typing-beacon-halo,
-  .effort-dot,
-  .effort-fill,
-  .effort-thumb-ring,
-  .effort-chip svg,
-  .effort-level-icon,
-  .effort-bar {
+  .stream-typing-beacon {
     animation: none !important;
   }
   .send-halo {
     opacity: 0 !important;
   }
 
-  /* The streaming beacon rests as a static solid caret — still marking
-     "more is coming", just without movement. */
-  .stream-typing-beacon-core,
-  .stream-typing-beacon-halo,
+  /* The streaming caret rests as a solid stroke — still marking "more is
+     coming", just without movement. */
+  .stream-typing-beacon,
   .typing-harmonic-dot {
     animation: none !important;
     transform: none;
     opacity: 1;
   }
 
-  /* The "Thinking…" label loses its shimmer but keeps its brass, so the
+  /* The "Thinking…" label loses its shimmer but keeps its moon ink, so the
      state still reads. `html` outranks the base rule wherever it lands in
      the bundle. */
   html .thinking-live {
     background: none;
-    -webkit-text-fill-color: var(--brass);
-    color: var(--brass);
+    -webkit-text-fill-color: var(--moon);
+    color: var(--moon);
   }
 
   /* Tier 2 — entrances keep their opacity fade, lose all translation/scale.
@@ -437,41 +424,27 @@ html[data-theme="light"] .grad-lamp {
    they carry information, not decoration, and they keep running. */
 
 html[data-motion="minimal"] .breathe,
-html[data-motion="minimal"] .phase-dot,
 html[data-motion="minimal"] .send-halo,
 html[data-motion="minimal"] .bar-sheen,
-html[data-motion="minimal"] .think-gloss,
 html[data-motion="minimal"] .studio-motes span,
-html[data-motion="minimal"] .pixel-eq-bar,
-html[data-motion="minimal"] .pixel-thought-cursor,
 html[data-motion="minimal"] .thinking-live,
-html[data-motion="minimal"] .pixel-reasoning-laser-top,
 html[data-motion="minimal"] .typing-harmonic-dot,
-html[data-motion="minimal"] .stream-typing-beacon-core,
-html[data-motion="minimal"] .stream-typing-beacon-halo,
-html[data-motion="minimal"] .effort-dot,
-html[data-motion="minimal"] .effort-fill,
-html[data-motion="minimal"] .effort-thumb-ring,
-html[data-motion="minimal"] .effort-chip svg,
-html[data-motion="minimal"] .effort-level-icon,
-html[data-motion="minimal"] .effort-bar {
+html[data-motion="minimal"] .stream-typing-beacon {
   animation: none !important;
 }
 
-/* The streaming beacon rests as a static solid caret — still marking
-   "more is coming", just without movement. */
-html[data-motion="minimal"] .stream-typing-beacon-core,
-html[data-motion="minimal"] .stream-typing-beacon-halo {
-  transform: none;
+/* The streaming caret rests as a solid stroke — still marking "more is
+   coming", just without movement. */
+html[data-motion="minimal"] .stream-typing-beacon {
   opacity: 1;
 }
 
-/* The "Thinking…" label loses its shimmer but keeps its brass, so the state
-   still reads. */
+/* The "Thinking…" label loses its shimmer but keeps its moon ink, so the
+   state still reads. */
 html[data-motion="minimal"] .thinking-live {
   background: none;
-  -webkit-text-fill-color: var(--brass);
-  color: var(--brass);
+  -webkit-text-fill-color: var(--moon);
+  color: var(--moon);
 }
 
 /* Entrances fade in place. The travel and the scale are what "minimal"

@@ -27,6 +27,7 @@ import {
   type TextRun,
 } from "../lib/readerBlocks";
 import { useMediaQuery } from "../lib/useMediaQuery";
+import { SOURCE_KIND_NAMES, sourceSize } from "../lib/sourceSize";
 import ExternalLink from "./ExternalLink";
 import { popoverPosition, selectedRange } from "./readerSelection";
 import "./source-reader.css";
@@ -377,7 +378,7 @@ export default function SourceReader({
     <Dialog open onClose={onClose} onEscape={onEscape} title={source.title} wide>
       <div className="reader-head">
         <div className="reader-meta">
-          {source.kind} · {source.tokens.toLocaleString()} tokens
+          {SOURCE_KIND_NAMES[source.kind] ?? source.kind} · {sourceSize(source)}
           {source.meta?.url && (
             <>
               {" · "}
