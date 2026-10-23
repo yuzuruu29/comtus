@@ -189,11 +189,15 @@ export function QuizTaker({
   gen,
   onRegenerate,
   onOpenGeneration,
+  onActiveChange,
 }: {
   payload: QuizPayload;
   gen?: Generation;
   onRegenerate?: () => void;
   onOpenGeneration?: (gen: Generation) => void;
+  /** True while answered work is unfinished, so the host can confirm
+   *  before a dismissal throws it away. */
+  onActiveChange?: (active: boolean) => void;
 }) {
   const [run, setRun] = useState<QuizRunSpec>({ key: 0, questions: payload.questions, scope: "full" });
   return (
@@ -202,6 +206,7 @@ export function QuizTaker({
       payload={{ ...payload, questions: run.questions }}
       scope={run.scope}
       gen={gen}
+      onActiveChange={onActiveChange}
       onRetake={() => setRun((r) => ({ key: r.key + 1, questions: payload.questions, scope: "full" }))}
       onRetakeMisses={(missed) => setRun((r) => ({ key: r.key + 1, questions: missed, scope: "misses" }))}
       onRegenerate={onRegenerate}
@@ -218,6 +223,7 @@ function QuizRun({
   onRetakeMisses,
   onRegenerate,
   onOpenGeneration,
+  onActiveChange,
 }: {
   payload: QuizPayload;
   scope: "full" | "misses";
@@ -226,6 +232,7 @@ function QuizRun({
   onRetakeMisses: (missed: QuizQuestion[]) => void;
   onRegenerate?: () => void;
   onOpenGeneration?: (gen: Generation) => void;
+  onActiveChange?: (active: boolean) => void;
 }) {
   const cs = useCallSettings();
   const sfxOn = useSettings((s) => s.companionSfx !== false);
@@ -288,6 +295,12 @@ function QuizRun({
     });
     return total;
   }, [payload.questions, picked, typed, checked, checks]);
+
+  const active = !finished && (picked.some((p) => p !== null) || typed.some((t) => t.trim() !== "") || subs.some(Boolean));
+  useEffect(() => {
+    onActiveChange?.(active);
+    return () => onActiveChange?.(false);
+  }, [active, onActiveChange]);
 
   if (finished) {
     return (

@@ -3,7 +3,7 @@ import handler, { MAX_PARTS, PART_CHARS, TTL_S } from "./relay";
 
 const UPSTASH = "https://relay-upstash.example";
 
-/** Just enough Redis for the relay: SET (EX, NX), GET, INCR, EXPIRE, DEL. */
+/** Just enough Redis for the relay: SET (EX, NX), GET, INCR, EXPIRE, EXISTS, DEL. */
 function fakeRedis() {
   const store = new Map<string, string>();
   const ttl = new Map<string, number>();
@@ -30,6 +30,9 @@ function fakeRedis() {
       case "EXPIRE":
         ttl.set(key, Number(args[0]));
         result = 1;
+        break;
+      case "EXISTS":
+        result = [key, ...args].filter((k) => store.has(k)).length;
         break;
       case "DEL":
         result = [key, ...args].filter((k) => store.delete(k)).length;
@@ -84,6 +87,27 @@ describe("relay", () => {
     expect((await call("DELETE", "id=7K3FQX9P")).status).toBe(204);
     expect([...redis.store.keys()].filter((k) => k.startsWith("relay:"))).toEqual([]);
     expect((await call("GET", "id=7K3FQX9P")).status).toBe(404);
+  });
+
+  it("accepts a retried part whose first upload was stored but not confirmed", async () => {
+    await call("POST", "id=7K3FQX9P&parts=1&size=5");
+    const original = redis.fetchMock.getMockImplementation()!;
+    // The part lands in Redis, then the connection drops before the relay hears back.
+    let dropped = false;
+    redis.fetchMock.mockImplementation(async (url: string, init: RequestInit) => {
+      const response = await original(url, init);
+      const [cmd, key] = JSON.parse(String(init.body)) as string[];
+      if (cmd === "SET" && key === "relay:7K3FQX9P:0" && !dropped) {
+        dropped = true;
+        throw new Error("connection reset");
+      }
+      return response;
+    });
+    expect((await call("PUT", "id=7K3FQX9P&part=0", "abc_-")).status).toBe(502);
+    expect(redis.store.get("relay:7K3FQX9P:0")).toBe("abc_-");
+
+    expect((await call("PUT", "id=7K3FQX9P&part=0", "abc_-")).status).toBe(200);
+    expect(await (await call("GET", "id=7K3FQX9P")).json()).toMatchObject({ ready: true });
   });
 
   it("never lets a second sender take a transfer id", async () => {

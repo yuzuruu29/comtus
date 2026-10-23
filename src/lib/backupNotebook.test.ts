@@ -1,7 +1,7 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import { buildNotebookPayload, importBackupText, openNotebookText } from "./backup";
-import { db } from "./db";
+import { db, listChatSessions } from "./db";
 
 const NOW = 1_790_000_000_000;
 
@@ -65,6 +65,24 @@ describe("notebook export", () => {
     expect(await db.messages.where("notebookId").equals("keep").count()).toBe(1);
     expect(await db.cardProgress.get("keep-deck:c0")).toBeDefined();
     expect(await db.notebooks.get("other")).toBeUndefined();
+  });
+
+  it("restores pre-session chat history into one listed thread, even when restored twice", async () => {
+    await Promise.all([db.messages.clear(), db.chatSessions.clear()]);
+    const legacy = JSON.stringify({
+      app: "comtus",
+      schema: 1,
+      data: {
+        notebooks: [{ id: "keep", name: "Notebook keep", createdAt: NOW, updatedAt: NOW }],
+        messages: [{ id: "old-1", notebookId: "keep", role: "user", content: "What makes ATP?", createdAt: NOW }],
+      },
+    });
+    await importBackupText(legacy);
+    await importBackupText(legacy);
+
+    const sessions = await listChatSessions("keep");
+    expect(sessions).toHaveLength(1);
+    expect(await db.messages.where("sessionId").equals(sessions[0].id).count()).toBe(1);
   });
 
   it("explains a notebook that is gone", async () => {

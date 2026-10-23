@@ -152,6 +152,10 @@ export default function StudioPane({
   const [quizScope, setQuizScope] = useState("");
   const [aidKind, setAidKind] = useState<GenerationKind | undefined>(undefined);
   const [viewing, setViewing] = useState<Generation | null>(null);
+  // A quiz or exam with unfinished work: Escape, the backdrop and the close
+  // button ask first instead of discarding answers, photos and the clock.
+  const [sittingActive, setSittingActive] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const [deleteNotice, setDeleteNotice] = useState<DeletedGenerationNotice | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const artifactButtonRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -211,9 +215,12 @@ export default function StudioPane({
 
   /** Closing a saved item may have produced an attempt or a new deck. */
   const closeViewer = () => {
+    setConfirmLeave(false);
+    setSittingActive(false);
     setViewing(null);
     void refresh();
   };
+  const requestCloseViewer = () => (sittingActive ? setConfirmLeave(true) : closeViewer());
 
   /** Swap the viewer to another saved item, e.g. the Missed questions deck. */
   const openGeneration = (generation: Generation) => {
@@ -587,7 +594,7 @@ export default function StudioPane({
       {/* Artifact Viewer Modal */}
       <Modal
         open={viewing !== null}
-        onClose={closeViewer}
+        onClose={requestCloseViewer}
         title={
           <span className="flex items-center gap-3">
             <span className="min-w-0 truncate">{viewing?.title ?? ""}</span>
@@ -607,8 +614,23 @@ export default function StudioPane({
               openQuiz();
             }}
             onOpenGeneration={openGeneration}
+            onSittingChange={setSittingActive}
           />
         )}
+      </Modal>
+
+      <Modal open={confirmLeave} onClose={() => setConfirmLeave(false)} title="Leave this sitting?">
+        <p className="text-body leading-relaxed text-muted">
+          Your answers, any solution photos and the timer will be lost. Saved results are not affected.
+        </p>
+        <div className="flex justify-end gap-3 pt-5">
+          <button className={btnGhost} onClick={closeViewer}>
+            Leave
+          </button>
+          <button data-autofocus className={btnLamp} onClick={() => setConfirmLeave(false)}>
+            Keep going
+          </button>
+        </div>
       </Modal>
     </div>
   );
@@ -667,12 +689,14 @@ function ArtifactView({
   onClose,
   onNewQuiz,
   onOpenGeneration,
+  onSittingChange,
 }: {
   gen: Generation;
   notebookId: string;
   onClose: () => void;
   onNewQuiz: () => void;
   onOpenGeneration: (gen: Generation) => void;
+  onSittingChange: (active: boolean) => void;
 }) {
   switch (gen.kind) {
     case "quiz":
@@ -682,6 +706,7 @@ function ArtifactView({
           gen={gen}
           onRegenerate={onNewQuiz}
           onOpenGeneration={onOpenGeneration}
+          onActiveChange={onSittingChange}
         />
       );
     case "exam":
@@ -691,6 +716,7 @@ function ArtifactView({
           gen={gen}
           onExit={onClose}
           onOpenGeneration={onOpenGeneration}
+          onActiveChange={onSittingChange}
         />
       );
     case "essay-review":

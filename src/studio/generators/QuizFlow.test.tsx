@@ -102,6 +102,18 @@ describe("QuizTaker juice", () => {
     expect(screen.queryByText(/streak/i)).toBeNull();
     expect(screen.queryByText(/🔥/)).toBeNull();
   });
+
+  it("reports unfinished work to its host until the results are shown", () => {
+    const onActiveChange = vi.fn();
+    render(<QuizTaker payload={payload} onActiveChange={onActiveChange} />);
+    expect(onActiveChange).toHaveBeenLastCalledWith(false);
+    answerCurrentCorrect();
+    expect(onActiveChange).toHaveBeenLastCalledWith(true);
+    fireEvent.click(screen.getByRole("button", { name: /next item/i }));
+    answerCurrentCorrect();
+    fireEvent.click(screen.getByRole("button", { name: /see results/i }));
+    expect(onActiveChange).toHaveBeenLastCalledWith(false);
+  });
 });
 
 function answer(optionLabel: RegExp) {

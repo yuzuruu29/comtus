@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { MAX_CHUNK_CHARS, chunkText } from "./chunking";
 import type { Chunk, Source } from "./types";
 
 /**
@@ -144,11 +145,12 @@ export function scoreChunks(index: ChunkIndex, query: string): number[] {
 }
 
 /**
- * Chunks to ground on, in no particular order. Query hits first, down to a
- * floor of MIN_PICKS and up to the budget. A query with no lexical signal
- * ("summarize this") instead reads every source from its opening, round
- * robin, so the answer sees the whole notebook rather than whichever
- * chunks happened to sort first.
+ * Chunks to ground on, in no particular order. Query hits first, then
+ * unmatched chunks up to a floor of MIN_PICKS. A query with no lexical
+ * signal ("summarize this") instead reads every source from its opening,
+ * round robin, so the answer sees the whole notebook rather than whichever
+ * chunks happened to sort first. The budget is a hard cap either way: a
+ * chunk that would overflow it is skipped for a smaller one.
  */
 export function pickChunks(index: ChunkIndex, query: string, budget = RETRIEVAL_TOKEN_BUDGET): Chunk[] {
   const scores = scoreChunks(index, query);
@@ -158,7 +160,8 @@ export function pickChunks(index: ChunkIndex, query: string, budget = RETRIEVAL_
   if (scores.some((s) => s > 0)) {
     const order = scores.map((score, i) => ({ score, i })).sort((a, b) => b.score - a.score || a.i - b.i);
     for (const { score, i } of order) {
-      if (picked.length >= MIN_PICKS && (score <= 0 || used >= budget)) break;
+      if (picked.length >= MIN_PICKS && score <= 0) break;
+      if (used + index.chunks[i].tokens > budget) continue;
       picked.push(index.chunks[i]);
       used += index.chunks[i].tokens;
     }
@@ -171,12 +174,20 @@ export function pickChunks(index: ChunkIndex, query: string, budget = RETRIEVAL_
   for (let round = 0; used < budget && queues.some((q) => q.length > round); round++) {
     for (const q of queues) {
       const c = q[round];
-      if (!c || used >= budget) continue;
+      if (!c || used + c.tokens > budget) continue;
       picked.push(c);
       used += c.tokens;
     }
   }
   return picked;
+}
+
+/** Chunks saved before chunkText capped their size can each be larger than
+ *  the whole retrieval budget. Cut them to size in memory; the pieces keep
+ *  their parent's position so they stitch back in reading order. */
+function recut(chunk: Chunk): Chunk[] {
+  if (chunk.text.length <= MAX_CHUNK_CHARS) return [chunk];
+  return chunkText(chunk.text).map((text, i) => ({ ...chunk, id: `${chunk.id}.${i}`, text, tokens: estTokens(text) }));
 }
 
 /* The open notebook's index, reused while its source set is unchanged.
@@ -187,9 +198,9 @@ async function indexFor(notebookId: string, sources: Source[]): Promise<ChunkInd
   const key = `${notebookId}|${sources.map((s) => s.id).sort().join(",")}`;
   if (cached?.key === key) return cached.index;
   const allow = new Set(sources.map((s) => s.id));
-  const chunks = (await db.chunks.where("notebookId").equals(notebookId).toArray()).filter((c) =>
-    allow.has(c.sourceId),
-  );
+  const chunks = (await db.chunks.where("notebookId").equals(notebookId).toArray())
+    .filter((c) => allow.has(c.sourceId))
+    .flatMap(recut);
   const index = buildIndex(chunks, sources);
   cached = { key, index };
   return index;
@@ -229,7 +240,7 @@ export async function groundContext(
   for (const source of sources) {
     const list = bySource.get(source.id);
     if (!list) continue;
-    list.sort((a, b) => a.idx - b.idx);
+    list.sort((a, b) => a.idx - b.idx || a.id.localeCompare(b.id, undefined, { numeric: true }));
     docs.push({
       source,
       text: list.map((c) => `[…segment ${c.idx + 1}…]\n${c.text}`).join("\n\n"),

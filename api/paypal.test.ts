@@ -125,6 +125,35 @@ describe("PayPal checkout", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2); // OAuth + create order
   });
 
+  it("create-order: a network's AI usage does not count against checkout", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(1798300000000));
+    try {
+      // The hourly key api/anthropic.ts increments, after a full hour of AI calls.
+      const bucket = Math.floor(Date.now() / 3600_000);
+      const aiKey = `ipthrottle:${createHmac("sha256", SECRET).update(`unknown:${bucket}`).digest("hex").slice(0, 24)}`;
+      const counts = new Map([[aiKey, 240]]);
+      vi.stubGlobal("fetch", vi.fn(async (input: string | URL | Request) => {
+        const u = String(input instanceof Request ? input.url : input);
+        const incr = u.match(/^https:\/\/redis\.example\/incr\/(.+)$/);
+        if (incr) {
+          const n = (counts.get(incr[1]) ?? 0) + 1;
+          counts.set(incr[1], n);
+          return Response.json({ result: n });
+        }
+        if (u.startsWith("https://redis.example/")) return Response.json({ result: 1 });
+        if (u.includes("/oauth2/token")) return Response.json({ access_token: "paypal-token" });
+        if (u.includes("/v2/checkout/orders")) return Response.json({ id: "ORDER123" }, { status: 201 });
+        return Response.json({});
+      }));
+
+      expect((await call(paypalReq("create-order", { planId: "scholar" }))).status).toBe(200);
+      expect(counts.get(aiKey)).toBe(240);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("capture-order: issues deterministic pass for same order", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(1798300000000));

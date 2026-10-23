@@ -67,14 +67,16 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
     if (!desktop) setMobilePane("studio");
     else if (!panes.studio) setLayout(panes.sources ? "standard" : "writing");
   }, [desktop, panes.sources, panes.studio, pendingWork, setLayout]);
-  // Search deep links land on the pane that shows them on mobile.
+  // Search deep links, file picks and drops land on the pane that handles
+  // them on mobile.
   const pendingChat = desk.pendingChatId;
   const pendingSource = desk.pendingView;
+  const pendingFiles = desk.importTick > 0 || !!desk.dropFiles;
   useEffect(() => {
     if (desktop) return;
-    if (pendingSource) setMobilePane("sources");
+    if (pendingSource || pendingFiles) setMobilePane("sources");
     else if (pendingChat) setMobilePane("chat");
-  }, [desktop, pendingChat, pendingSource]);
+  }, [desktop, pendingChat, pendingFiles, pendingSource]);
 
   const clearPendingWork = useCallback(() => {
     setSearchParams(
@@ -277,16 +279,19 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           >
             {panes.sources ? (
               <div id="workspace-sources-content" className={`${deskPane} flex flex-col anim-fade anim-fade--fast`}>
+                {/* One-shot requests go to the visible pane only. This tree
+                    stays mounted (hidden) on mobile, where a second consumer
+                    stacked reader dialogs and imported every drop twice. */}
                 <SourcesPane
                   notebookId={notebookId}
                   version={desk.sourcesVersion}
                   onCollapse={() => desk.setLayout(panes.studio ? "writing" : "focus")}
                   onChanged={desk.bumpSources}
-                  pendingView={desk.pendingView}
+                  pendingView={desktop ? desk.pendingView : null}
                   onPendingConsumed={desk.clearPendingView}
-                  importTick={desk.importTick}
+                  importTick={desktop ? desk.importTick : 0}
                   onImportTriggered={desk.consumeImport}
-                  dropFiles={desk.dropFiles}
+                  dropFiles={desktop ? desk.dropFiles : null}
                   onDropConsumed={() => desk.setDropFiles(null)}
                   onAsk={askInChat}
                 />
@@ -369,11 +374,11 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   notebookId={notebookId}
                   version={desk.sourcesVersion}
                   onChanged={desk.bumpSources}
-                  pendingView={desk.pendingView}
+                  pendingView={desktop ? null : desk.pendingView}
                   onPendingConsumed={desk.clearPendingView}
-                  importTick={desk.importTick}
+                  importTick={desktop ? 0 : desk.importTick}
                   onImportTriggered={desk.consumeImport}
-                  dropFiles={desk.dropFiles}
+                  dropFiles={desktop ? null : desk.dropFiles}
                   onDropConsumed={() => desk.setDropFiles(null)}
                   onAsk={askInChat}
                 />

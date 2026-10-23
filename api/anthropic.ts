@@ -24,11 +24,31 @@ const ALLOWED_ORIGINS = new Set([
   "http://localhost:4173",
 ]);
 
+/** Every header @anthropic-ai/sdk sends from the browser (anthropic.test.ts
+ *  checks this against the installed SDK); one missing name fails preflight. */
+const ALLOWED_HEADERS = [
+  "content-type",
+  "x-api-key",
+  "anthropic-version",
+  "anthropic-beta",
+  "anthropic-dangerous-direct-browser-access",
+  "x-stainless-arch",
+  "x-stainless-lang",
+  "x-stainless-os",
+  "x-stainless-package-version",
+  "x-stainless-retry-count",
+  "x-stainless-runtime",
+  "x-stainless-runtime-version",
+  "x-stainless-timeout",
+  "x-stainless-helper",
+  "x-stainless-helper-method",
+].join(",");
+
 function corsHeaders(origin?: string | null): HeadersInit {
   return origin && ALLOWED_ORIGINS.has(origin)
     ? {
         "access-control-allow-origin": origin,
-        "access-control-allow-headers": "content-type,x-api-key,anthropic-version",
+        "access-control-allow-headers": ALLOWED_HEADERS,
         "access-control-allow-methods": "POST,OPTIONS",
         "access-control-expose-headers": "retry-after,request-id",
         vary: "origin",

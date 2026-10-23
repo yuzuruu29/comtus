@@ -1,7 +1,8 @@
 import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { db } from "./db";
-import { buildIndex, clearRetrievalCache, groundContext, pickChunks, scoreChunks, tokenize } from "./retrieval";
+import { MAX_CHUNK_CHARS, chunkText } from "./chunking";
+import { buildIndex, clearRetrievalCache, estTokens, groundContext, pickChunks, scoreChunks, tokenize } from "./retrieval";
 import type { Chunk, Source } from "./types";
 
 describe("groundContext", () => {
@@ -131,10 +132,42 @@ describe("chunk ranking", () => {
     expect(picked.map((c) => c.id)).toEqual(["bio:0", "law:0"]);
   });
 
-  it("keeps a floor of picks and stops at the budget", () => {
-    const picked = pickChunks(index, "negligence", 1000);
+  it("keeps a floor of picks when the budget has room", () => {
+    const picked = pickChunks(index, "negligence", 5000);
     expect(picked[0].id).toBe("law:1");
     expect(picked).toHaveLength(5);
+  });
+
+  it("never picks past the budget, floor or not", () => {
+    expect(pickChunks(index, "negligence", 2500).map((c) => c.id)).toEqual(["law:1", "bio:0"]);
+    expect(pickChunks(index, "summarize this", 1500).map((c) => c.id)).toEqual(["bio:0"]);
+  });
+});
+
+describe("oversized sources", () => {
+  const notebookId = "nb-huge";
+  // 550k characters with no sentence break: ≈137,500 estimated tokens.
+  const huge = Array.from({ length: 75_000 }, (_, i) => (i === 40_000 ? "mitochondria" : `word${i % 97}`)).join(" ").slice(0, 550_000);
+
+  it("chunks text without sentence breaks to a bounded size", () => {
+    const chunks = chunkText(huge);
+    expect(chunks.length).toBeGreaterThan(100);
+    expect(Math.max(...chunks.map((c) => c.length))).toBeLessThanOrEqual(MAX_CHUNK_CHARS);
+  });
+
+  it("keeps a chunk stored before the size cap inside the retrieval budget", async () => {
+    clearRetrievalCache();
+    await Promise.all([db.sources.clear(), db.chunks.clear()]);
+    await db.sources.add({ id: "big", notebookId, title: "Scan", kind: "pdf", content: huge, chars: huge.length, tokens: estTokens(huge), addedAt: 1 });
+    await db.chunks.add({ id: "big:0", sourceId: "big", notebookId, idx: 0, text: huge, tokens: estTokens(huge) });
+
+    for (const query of ["mitochondria", "summarize this"]) {
+      const res = await groundContext(notebookId, query);
+      expect(res.mode).toBe("retrieved");
+      expect(res.docs).toHaveLength(1);
+      expect(estTokens(res.docs[0].text)).toBeLessThanOrEqual(45_000 + 200);
+    }
+    expect((await groundContext(notebookId, "mitochondria")).docs[0].text).toContain("mitochondria");
   });
 });
 
