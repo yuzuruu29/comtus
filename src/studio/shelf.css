@@ -41,7 +41,7 @@
 .shelf-start-open-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; padding: 0.75rem clamp(1.25rem, 3vw, 3rem); border-top: 1px solid var(--hairline); color: var(--muted); font-size: 0.8125rem; line-height: 1.6; }
 .shelf-start-open { min-height: 44px; padding: 0; border: 0; background: none; color: var(--brass); font: inherit; text-decoration: underline; text-decoration-color: var(--hairline-strong); text-underline-offset: 0.25em; cursor: pointer; }
 .shelf-start-open:hover { text-decoration-color: currentColor; }
-.shelf-resume { display: flex; align-items: center; gap: 2rem; padding: 2rem; border-block: 1px solid var(--hairline-strong); }
+.shelf-resume { display: flex; align-items: center; gap: 2rem; padding: 1.75rem 2rem; border: 1px solid var(--hairline-strong); border-left: 4px solid var(--brass); border-radius: 3px 10px 10px 3px; background: var(--surface); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 70%, var(--brass-pale)), 2px 3px 0 var(--raised), 3px 4px 0 var(--hairline-strong), var(--elev-card); }
 .shelf-resume-mark { display: flex; align-items: center; flex-shrink: 0; padding-right: 2rem; border-right: 1px solid var(--hairline-strong); color: var(--brass); }
 .shelf-resume-copy { flex: 1; min-width: 0; }
 .shelf-resume h2 { margin: 0.5rem 0 0; overflow-wrap: anywhere; font-family: var(--font-read); font-size: 1.625rem; font-weight: 450; line-height: 1.4; letter-spacing: -0.025em; }
@@ -68,9 +68,9 @@
 /* Binding and catalogue number distinguish a notebook from a dashboard tile.
    The binding is a leather hairline with two thread marks, not a painted bar:
    a shelf of brass-framed tiles reads as decoration, not as a library. */
-.notebook-card { --spine: color-mix(in srgb, var(--leather) 55%, var(--ink)); height: 100%; overflow: visible; border-radius: 2px 9px 9px 2px; }
-.notebook-card::before { content: ""; position: absolute; inset-block: 0; inset-inline-start: 1px; z-index: 1; width: 7px; pointer-events: none; background: linear-gradient(var(--spine), var(--spine)) 0 18% / 7px 1px no-repeat, linear-gradient(var(--spine), var(--spine)) 0 82% / 7px 1px no-repeat, linear-gradient(var(--spine), var(--spine)) 0 0 / 1px 100% no-repeat; }
-.notebook-card-open { display: flex; flex-direction: column; align-items: flex-start; width: 100%; height: 100%; min-height: 240px; padding: 1.5rem 1.5rem 1.25rem 1.75rem; border-radius: inherit; text-align: left; cursor: pointer; }
+.notebook-card { --spine: color-mix(in srgb, var(--leather) 55%, var(--ink)); height: 100%; overflow: visible; border-radius: 3px 10px 10px 3px; box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 70%, var(--brass-pale)), 2px 2px 0 var(--surface), 3px 3px 0 var(--hairline-strong), 5px 5px 0 var(--raised), 6px 6px 0 var(--hairline-strong), var(--elev-card); }
+.notebook-card::before { content: ""; position: absolute; inset-block: 0; inset-inline-start: 0; z-index: 1; width: 14px; border-start-start-radius: inherit; border-end-start-radius: inherit; border-right: 1px solid var(--hairline-strong); pointer-events: none; background: linear-gradient(var(--brass), var(--brass)) 0 18% / 14px 1.5px no-repeat, linear-gradient(var(--brass), var(--brass)) 0 82% / 14px 1.5px no-repeat, color-mix(in srgb, var(--leather) 18%, var(--raised)); }
+.notebook-card-open { display: flex; flex-direction: column; align-items: flex-start; width: 100%; height: 100%; min-height: 240px; padding: 1.5rem 1.5rem 1.25rem 2.125rem; border-radius: inherit; text-align: left; cursor: pointer; }
 .notebook-card-index { display: flex; align-items: center; gap: 0.625rem; color: var(--muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
 .notebook-card-title { display: -webkit-box; overflow: hidden; max-width: 100%; margin-top: 1.75rem; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; font-family: var(--font-read); font-size: 1.375rem; font-weight: 450; line-height: 1.4; letter-spacing: -0.02em; transition: color var(--dur-fast) var(--ease-out); }
 .notebook-card-open:hover .notebook-card-title { color: var(--brass); }

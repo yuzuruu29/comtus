@@ -42,7 +42,7 @@ export default function CitationList({
   if (list.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1">
+    <div className="cite-apparatus flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1">
       <Quotes size={ICON.sm} weight="light" className="text-muted" />
       {list.map((c, i) => {
         const key = `${c.sourceId ?? "cite"}-${i}`;

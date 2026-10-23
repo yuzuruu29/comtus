@@ -167,6 +167,52 @@ export function rehypeStreamCursor() {
   };
 }
 
+const CITE_RE = /\[(\d{1,2})\]/g;
+const SKIP_CITE_TAGS = new Set(["code", "pre", "sup", "script", "style"]);
+
+export function rehypeCitationMarks() {
+  return (tree: HastNode) => {
+    markCitations(tree);
+  };
+}
+
+function markCitations(node: HastNode): void {
+  const kids = node.children;
+  if (!kids) return;
+  for (let i = 0; i < kids.length; i += 1) {
+    const child = kids[i];
+    if (child.type === "element") {
+      if (SKIP_CITE_TAGS.has(child.tagName ?? "") || isMath(child)) continue;
+      markCitations(child);
+      continue;
+    }
+    if (child.type !== "text" || !child.value || !child.value.includes("[")) continue;
+    CITE_RE.lastIndex = 0;
+    if (!CITE_RE.test(child.value)) continue;
+    CITE_RE.lastIndex = 0;
+    const parts: HastNode[] = [];
+    let last = 0;
+    for (const match of child.value.matchAll(CITE_RE)) {
+      const idx = match.index ?? 0;
+      if (idx > last) {
+        parts.push({ type: "text", value: child.value.slice(last, idx) });
+      }
+      parts.push({
+        type: "element",
+        tagName: "sup",
+        properties: { className: ["cite-mark"] },
+        children: [{ type: "text", value: match[0] }],
+      });
+      last = idx + match[0].length;
+    }
+    if (last < child.value.length) {
+      parts.push({ type: "text", value: child.value.slice(last) });
+    }
+    kids.splice(i, 1, ...parts);
+    i += parts.length - 1;
+  }
+}
+
 function isMath(node: HastNode): boolean {
   const names = node.properties?.className;
   return Array.isArray(names) && names.some((n) => n === "katex" || n === "katex-display");

@@ -1,7 +1,7 @@
 /* Desk companion shell — the lamp, the dock, dust motes, and milestones.
    Motion is light: flicker, drift. Reduced-motion rests the loops. */
 
-.compad-panel { width: 360px; max-width: 100%; overflow: hidden; border-radius: var(--radius-dialog); color: var(--ink); font-family: var(--font-ui); font-size: 13px; pointer-events: auto; }
+.compad-panel { width: 360px; max-width: 100%; overflow: hidden; border: 1px solid var(--hairline-strong); border-top: 3px solid var(--brass); border-radius: var(--radius-dialog); background: var(--surface); box-shadow: var(--elev-modal); color: var(--ink); font-family: var(--font-ui); font-size: 13px; pointer-events: auto; }
 html[data-motion="full"] .compad-panel { animation: compad-panel-in var(--dur-med) var(--ease-out) backwards; }
 @keyframes compad-panel-in { from { opacity: 0; transform: translateY(6px); } }
 .compad-panel button { cursor: pointer; }

@@ -43,7 +43,7 @@
   min-height: 0;
   flex: 1;
   flex-direction: column;
-  background: color-mix(in srgb, var(--surface) 48%, var(--ground));
+  background: color-mix(in srgb, var(--ground) 64%, transparent);
   container-type: inline-size;
 }
 .source-index-toolbar { display: grid; gap: 0.875rem; padding: 1.25rem 1rem 0.25rem; }
@@ -56,8 +56,10 @@
 .source-index-select { display: grid; flex-shrink: 0; place-items: center; width: 2rem; min-height: 2rem; border-radius: var(--radius-control); color: var(--muted); }
 .source-index-select[aria-pressed="true"] { color: var(--brass); }
 .source-index-select:hover { background: var(--raised); }
-.source-index-list { flex: 1; min-height: 0; overflow-y: auto; padding: 0 1rem 1rem; }
-.source-index-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.375rem; align-items: start; padding: 0.75rem 0; border-top: 1px solid var(--hairline); }
+.source-index-list { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-height: 0; overflow-y: auto; padding: 0.375rem 0.875rem 1rem; }
+.source-index-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.375rem; align-items: start; padding: 0.5rem 0.5rem 0.5rem 0.625rem; border: 1px solid var(--hairline-strong); border-left: 3px solid var(--brass); border-radius: 2px 8px 8px 2px; background: var(--surface); box-shadow: 1px 2px 0 color-mix(in srgb, var(--leather) 12%, transparent); transition: border-color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.source-index-row[data-selected="false"] { border-left-color: var(--hairline-strong); background: color-mix(in srgb, var(--surface) 52%, var(--ground)); opacity: 0.66; box-shadow: none; }
+.source-index-row:hover { border-color: color-mix(in srgb, var(--brass) 45%, var(--hairline-strong)); transform: translateX(1.5px); }
 .source-index-open { display: flex; align-items: flex-start; gap: 0.625rem; min-width: 0; min-height: 3rem; padding: 0.375rem 0.25rem; text-align: left; border-radius: var(--radius-control); }
 .source-index-icon { flex-shrink: 0; padding-top: 0.125rem; color: var(--muted); }
 .source-index-open:hover .source-index-icon { color: var(--brass); }
@@ -124,7 +126,56 @@
 /* An answer follows the reading size, a step under the source it cites:
    Comfortable lands on the 14.5px answers were drawn at. */
 .md-answer {
-  font-size: calc(var(--text-read) * 0.853);
+  font-family: var(--font-read);
+  font-size: var(--text-read);
+  line-height: var(--leading-read);
+}
+
+.user-margin-note {
+  position: relative;
+  padding: 0.375rem 0.75rem 0.5rem 1rem;
+  border-left: 2px solid var(--brass);
+  border-radius: 0 var(--radius-control) var(--radius-control) 0;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--brass) 7%, transparent) 0%,
+    color-mix(in srgb, var(--brass) 2%, transparent) 60%,
+    transparent 100%
+  );
+}
+.user-margin-kicker {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--brass);
+}
+.user-margin-text {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 1.0625rem;
+  font-weight: 520;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.cite-apparatus {
+  position: relative;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+}
+.cite-apparatus::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4.5rem;
+  height: 1px;
+  background: var(--hairline-strong);
 }
 
 /* What the web search did, above the answer it informed. */
@@ -220,12 +271,12 @@
 .md code {
   font-family: var(--font-mono);
   font-size: 0.88em;
-  background: rgba(255, 255, 255, 0.07);
+  background: color-mix(in srgb, var(--ink) 6%, var(--raised));
   padding: 0.2em 0.45em;
   border-radius: var(--radius-control);
 }
 .md pre {
-  background: rgba(11, 15, 26, 0.85);
+  background: color-mix(in srgb, var(--raised) 82%, var(--surface));
   border: 1px solid var(--hairline-strong);
   border-radius: var(--radius-field);
   padding: 1.1em 1.3em;
@@ -342,7 +393,12 @@
 .cite-mark {
   font-variant-numeric: tabular-nums;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 0.72em;
+  line-height: 1;
+  color: var(--brass);
+  vertical-align: super;
+  margin-left: 0.06em;
+  margin-right: 0;
   letter-spacing: 0.02em;
 }
 
@@ -592,7 +648,9 @@
   background: var(--surface);
   border: 1px solid var(--hairline-strong);
   border-radius: var(--radius-field);
-  box-shadow: 0 3px 10px color-mix(in srgb, var(--ink) 7%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 65%, var(--brass-pale)),
+    var(--elev-card);
   transition:
     border-color var(--dur-med) var(--ease-house),
     box-shadow var(--dur-med) var(--ease-house),
@@ -604,7 +662,7 @@
 .composer-shell[data-focused],
 .composer-shell[data-streaming] {
   border-color: var(--brass);
-  box-shadow: 0 0 0 1px var(--brass);
+  box-shadow: 0 0 0 1px var(--brass), 0 8px 28px -6px var(--glow-warm);
 }
 
 .composer-wrap { position: relative; flex-shrink: 0; padding: 0.5rem 1.25rem 0.75rem; }

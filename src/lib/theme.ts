@@ -17,7 +17,7 @@ export function resolveAppTheme(
 export function applyResolvedTheme(resolved: ResolvedTheme): void {
   document.documentElement.dataset.theme = resolved;
   const meta = document.querySelector('meta[name="theme-color"]');
-  meta?.setAttribute("content", resolved === "light" ? "#F5F1E8" : "#0B0F1A");
+  meta?.setAttribute("content", resolved === "light" ? "#F5F1E8" : "#14100C");
   const scheme = document.querySelector('meta[name="color-scheme"]');
   scheme?.setAttribute("content", resolved);
 }

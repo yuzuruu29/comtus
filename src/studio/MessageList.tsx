@@ -20,11 +20,10 @@ function UserBubble({ content }: { content: string }) {
       initial={{ opacity: 0, x: DRIFT_X }}
       animate={{ opacity: 1, x: 0 }}
       transition={SOFT}
-      className="flex justify-end"
+      className="user-margin-note"
     >
-      <div className="max-w-[82%] rounded-[var(--radius-dialog)] bg-ink/[0.05] border border-hairline-strong px-4 py-3 text-body leading-relaxed text-ink shadow-sm">
-        {content}
-      </div>
+      <span className="user-margin-kicker">In the margin</span>
+      <p className="user-margin-text">{content}</p>
     </motion.div>
   );
 }

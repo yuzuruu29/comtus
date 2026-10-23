@@ -51,11 +51,11 @@ Daylight lives on `:root`; Lamplight overrides only what changes.
 
 | Token | Daylight | Lamplight | Role |
 |---|---|---|---|
-| `--ground` | `#F5F1E8` | `#0B0F1A` | page ground — aged paper / midnight |
-| `--surface` | `#FCFAF4` | `#121828` | cards, panes, composer |
-| `--raised` | `#EAE4D6` | `#1A2136` | hover, active rows, chips |
+| `--ground` | `#F5F1E8` | `#14100C` | page ground — aged paper / walnut desk |
+| `--surface` | `#FCFAF4` | `#1D1712` | cards, panes, composer |
+| `--raised` | `#EAE4D6` | `#261E18` | hover, active rows, chips |
 | `--ink` | `#0B132B` | `#F2EDE3` | primary text |
-| `--muted` | `#5A6274` | `#8E96AB` | secondary text, labels |
+| `--muted` | `#5A6274` | `#A59A8A` | secondary text, labels |
 | `--hairline` | `rgba(27,35,52,.12)` | `rgba(242,237,227,.09)` | dividers |
 | `--hairline-strong` | `rgba(27,35,52,.22)` | `rgba(242,237,227,.18)` | borders on controls |
 | `--brass` | `#845C16` | `#E3B04B` | **the lamp** — action, selection, citation |
@@ -63,7 +63,7 @@ Daylight lives on `:root`; Lamplight overrides only what changes.
 | `--brass-pale` | `#E3B04B` | `#F0CE8C` | glow only; decorative, carries no meaning |
 | `--leather` | `#4A2E1B` | `#4A2E1B` | spines, deep shadow, text on a candle fill |
 | `--sage` | `#3F6E48` | `#8FBF98` | correct, verified, due |
-| `--rust` | `#A04D43` | `#D57064` | incorrect, error |
+| `--rust` | `#A04D43` | `#DB7B6F` | incorrect, error |
 | `--candle` | `#EF8328` | `#FF9E43` | milestone flare, due-today fill |
 | `--moon` | `#6B6052` | `#C4B8A5` | reasoning — the thinking drawer, effort chip |
 

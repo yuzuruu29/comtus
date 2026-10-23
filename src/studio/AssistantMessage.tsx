@@ -4,7 +4,7 @@ import remarkGfm from "remark-gfm";
 import { motion } from "motion/react";
 import { BookmarkSimple, Check, Copy, Globe, WarningCircle } from "@phosphor-icons/react";
 import { mathRemarkPlugins, mathRehypePlugins } from "../lib/markdownMath";
-import { closeStreamingMarkdown, rehypeStreamCursor } from "../lib/streamingMarkdown";
+import { closeStreamingMarkdown, rehypeCitationMarks, rehypeStreamCursor } from "../lib/streamingMarkdown";
 import { externalMarkdownComponents } from "./ExternalLink";
 import type { ChatMessage, WebSearchMeta } from "../lib/types";
 import { deriveSessionTitle } from "../lib/sessionText";
@@ -132,7 +132,7 @@ const AssistantMessage = memo(function AssistantMessage({
         <div className="md md-answer text-ink">
           <ReactMarkdown
             remarkPlugins={[remarkGfm, ...mathRemarkPlugins]}
-            rehypePlugins={streaming ? [...mathRehypePlugins, rehypeStreamCursor] : [...mathRehypePlugins]}
+            rehypePlugins={streaming ? [...mathRehypePlugins, rehypeCitationMarks, rehypeStreamCursor] : [...mathRehypePlugins, rehypeCitationMarks]}
             components={externalMarkdownComponents}
           >
             {streaming ? closeStreamingMarkdown(msg.content) : msg.content}

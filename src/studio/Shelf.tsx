@@ -213,7 +213,7 @@ export default function Shelf({
 
   return (
     <DeskShell onSettings={openSettings} onNewNotebook={() => setCreating(true)}>
-      <div className="shelf-page bg-paper-parchment" data-motion={motionMode}>
+      <div className="shelf-page bg-desk-surface" data-motion={motionMode}>
         <a className="shelf-skip-link" href="#shelf-main">Skip to notebooks</a>
         <div className="shelf-content">
           <header className="shelf-header">

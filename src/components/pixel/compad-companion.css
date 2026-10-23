@@ -29,7 +29,7 @@
   bottom: -2%;
   height: 7%;
   border-radius: 50%;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--leather) 34%, transparent), transparent);
+  left: 14%; right: 14%; bottom: -4%; height: 12%; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--brass) 28%, var(--hairline-strong)); background: radial-gradient(closest-side, color-mix(in srgb, var(--leather) 42%, var(--raised)) 55%, color-mix(in srgb, var(--leather) 22%, transparent) 88%, transparent); box-shadow: 0 3px 8px color-mix(in srgb, var(--leather) 32%, transparent);
   pointer-events: none;
   transition: transform var(--dur-med) var(--ease-out), opacity var(--dur-med) var(--ease-out);
 }
@@ -54,7 +54,7 @@
   width: max-content;
   max-width: min(240px, calc(100vw - 32px));
   margin: 0;
-  padding: 8px 12px 9px;
+  padding: 8px 12px 9px; border: 1px solid var(--hairline-strong); border-left: 2px solid var(--brass); background: var(--surface); box-shadow: var(--elev-card);
   border-radius: var(--radius-field);
   color: var(--ink);
   font-family: var(--font-read);

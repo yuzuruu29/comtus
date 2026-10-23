@@ -29,8 +29,8 @@ import FocusTimer from "./FocusTimer";
 
 type MobilePane = "sources" | "chat" | "studio";
 
-const DEFAULT_SOURCES_W = 270;
-const DEFAULT_STUDIO_W = 290;
+const DEFAULT_SOURCES_W = 252;
+const DEFAULT_STUDIO_W = 268;
 const RAIL_W = 48;
 const PANE_WIDTH_VAR = "--pane-width" as const;
 
@@ -193,7 +193,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
         notebookName={desk.notebook?.name || "Course Notebook"}
       >
         <div
-          className="bg-paper-parchment workspace-companion-root relative flex h-full flex-col overflow-hidden text-ink"
+          className="bg-desk-surface workspace-companion-root relative flex h-full flex-col overflow-hidden text-ink"
           style={{ ["--companion-on"]: companionOn ? "1" : "0" } as CSSProperties}
           onDragEnter={(e) => {
             e.preventDefault();
@@ -312,8 +312,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             )}
           </aside>
 
-          <main id="workspace-chat-pane" className="min-w-0 flex-1">
-            <motion.div ref={setDesktopChatTarget} initial={ENTER.initial} animate={ENTER.animate} transition={SOFT} className={`${deskPane} overflow-hidden`} />
+          <main id="workspace-chat-pane" className="desk-sheet-frame min-w-0 flex-1">
+            <motion.div ref={setDesktopChatTarget} initial={ENTER.initial} animate={ENTER.animate} transition={SOFT} className="desk-sheet" />
           </main>
 
           {/* Right Sidebar: Studio (Retractable & Resizable) */}

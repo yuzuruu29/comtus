@@ -79,7 +79,7 @@ export const BEAM_IDLE_S = 5;
 export const BEAM_STREAM_S = 3.4;
 
 /** Bound desk pane — flush to the window, split by hairlines. */
-export const deskPane = "h-full min-h-0 bg-ground";
+export const deskPane = "h-full min-h-0 bg-transparent";
 export const glassPane = deskPane;
 
 /** The user's motion preference, mirrored onto the document root so CSS can

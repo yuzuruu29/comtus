@@ -38,9 +38,9 @@
   --color-candle: var(--candle);
 
   /* Landing-only literals — always Lamplight dark, whatever the theme is. */
-  --color-night: #0b0f1a;
+  --color-night: #14100c;
   --color-parchment: #f2ede3;
-  --color-faded: #8e96ab;
+  --color-faded: #a59a8a;
 
   /* Faces are fixed (spec 5.1): Literata reads, Instrument Sans runs the UI,
      JetBrains Mono carries code and figures, Pixelify is accent chrome only.
