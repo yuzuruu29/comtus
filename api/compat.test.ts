@@ -1,3 +1,4 @@
+import OpenAI from "openai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import handler from "./compat";
 
@@ -41,6 +42,32 @@ describe("compat relay", () => {
       }),
     );
     expect(res.headers.get("access-control-allow-origin")).toBe(origin);
+  });
+
+  it("preflight allows every header the installed SDK sends", async () => {
+    const sent = new Set<string>();
+    const client = new OpenAI({
+      apiKey: "sk-test",
+      baseURL: `${ORIGIN}/api/compat/mistral/v1`,
+      dangerouslyAllowBrowser: true,
+      maxRetries: 0,
+      defaultHeaders: { "X-Title": "Comtus" },
+      fetch: async (_url: unknown, init?: RequestInit) => {
+        new Headers(init?.headers).forEach((_value, name) => sent.add(name));
+        return new Response("{}", { status: 500 });
+      },
+    });
+    const params = { model: "m", messages: [{ role: "user" as const, content: "hi" }] };
+    await client.chat.completions.create(params).catch(() => undefined);
+    await client.chat.completions.create({ ...params, stream: true }).catch(() => undefined);
+    await client.models.list().catch(() => undefined);
+    // Browsers send these without asking (or refuse to let scripts set them).
+    for (const free of ["accept", "user-agent"]) sent.delete(free);
+    expect(sent.size).toBeGreaterThan(3);
+
+    const res = await handler(req("/api/compat/mistral/v1/models", { method: "OPTIONS" }));
+    const allowed = res.headers.get("access-control-allow-headers")?.split(",") ?? [];
+    expect([...sent].filter((name) => !allowed.includes(name))).toEqual([]);
   });
 
   it("404s unknown providers", async () => {

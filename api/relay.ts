@@ -95,12 +95,19 @@ async function withinBudget(req: Request, kind: string, limit: number): Promise<
 }
 
 const metaKey = (id: string) => `relay:${id}:meta`;
-const doneKey = (id: string) => `relay:${id}:done`;
 const partKey = (id: string, part: number) => `relay:${id}:${part}`;
+const partKeys = (id: string, parts: number) => Array.from({ length: parts }, (_, i) => partKey(id, i));
 
 async function readMeta(id: string): Promise<Meta | null> {
   const raw = await redis(["GET", metaKey(id)]);
   return typeof raw === "string" ? (JSON.parse(raw) as Meta) : null;
+}
+
+/** Readiness is counted from the stored parts themselves. A separate
+ *  counter could miss a part whose store succeeded but whose count failed,
+ *  and the retry would then be refused, stranding the transfer. */
+async function storedParts(id: string, meta: Meta): Promise<number> {
+  return Number(await redis(["EXISTS", ...partKeys(id, meta.parts)]));
 }
 
 const intParam = (value: string | null) => (value !== null && /^\d{1,9}$/.test(value) ? Number(value) : NaN);
@@ -148,10 +155,11 @@ export default async function handler(req: Request): Promise<Response> {
         if (text.length > PART_CHARS) return reply(413, { error: "That part is too large." }, origin);
         if (!BASE64URL.test(text)) return reply(400, { error: "Parts are sealed text." }, origin);
         const stored = await redis(["SET", partKey(id, part), text, "EX", TTL_S, "NX"]);
-        if (stored !== "OK") return reply(409, { error: "That part was already sent." }, origin);
-        const done = Number(await redis(["INCR", doneKey(id)]));
-        if (done === 1) await redis(["EXPIRE", doneKey(id), TTL_S]);
-        return reply(200, { received: done, parts: meta.parts }, origin);
+        // A retry of a part that already landed is a success, not a conflict.
+        if (stored !== "OK" && (await redis(["GET", partKey(id, part)])) !== text) {
+          return reply(409, { error: "That part was already sent." }, origin);
+        }
+        return reply(200, { received: await storedParts(id, meta), parts: meta.parts }, origin);
       }
 
       case "GET": {
@@ -162,8 +170,8 @@ export default async function handler(req: Request): Promise<Response> {
         if (!meta) return reply(404, { error: "This code has expired or was already used." }, origin);
         const partParam = params.get("part");
         if (partParam === null) {
-          const done = Number((await redis(["GET", doneKey(id)])) ?? 0);
-          return reply(200, { parts: meta.parts, size: meta.size, ready: done >= meta.parts }, origin);
+          const ready = (await storedParts(id, meta)) >= meta.parts;
+          return reply(200, { parts: meta.parts, size: meta.size, ready }, origin);
         }
         const part = intParam(partParam);
         if (!(part >= 0 && part < meta.parts)) return reply(400, { error: "No such part." }, origin);
@@ -174,8 +182,7 @@ export default async function handler(req: Request): Promise<Response> {
 
       case "DELETE": {
         const meta = await readMeta(id);
-        const parts = Array.from({ length: meta?.parts ?? 0 }, (_, i) => partKey(id, i));
-        await redis(["DEL", metaKey(id), doneKey(id), ...parts]);
+        await redis(["DEL", metaKey(id), ...partKeys(id, meta?.parts ?? 0)]);
         return reply(204, null, origin);
       }
 

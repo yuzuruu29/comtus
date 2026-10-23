@@ -39,11 +39,28 @@ const ALLOWED_ORIGINS = new Set([
   "http://localhost:4173",
 ]);
 
+/** Every header the openai SDK sends from the browser, plus our X-Title
+ *  (compat.test.ts checks this against the installed SDK). */
+const ALLOWED_HEADERS = [
+  "content-type",
+  "authorization",
+  "x-title",
+  "x-stainless-arch",
+  "x-stainless-lang",
+  "x-stainless-os",
+  "x-stainless-package-version",
+  "x-stainless-retry-count",
+  "x-stainless-runtime",
+  "x-stainless-runtime-version",
+  "x-stainless-timeout",
+  "x-stainless-helper-method",
+].join(",");
+
 function corsHeaders(origin: string | null): Record<string, string> {
   return origin && ALLOWED_ORIGINS.has(origin)
     ? {
         "access-control-allow-origin": origin,
-        "access-control-allow-headers": "content-type,authorization,x-title",
+        "access-control-allow-headers": ALLOWED_HEADERS,
         "access-control-allow-methods": "GET,POST,OPTIONS",
         vary: "origin",
       }

@@ -88,13 +88,15 @@ function requestIp(req: IncomingMessage): string {
   );
 }
 
-/** Refuse checkout when the network throttle cannot be checked. */
-async function withinIpThrottle(req: IncomingMessage, secret: string, limitPerHour: number): Promise<boolean> {
+/** Refuse checkout when the network throttle cannot be checked. Each route
+ *  counts on its own key: api/anthropic.ts throttles AI calls under the bare
+ *  `ipthrottle:` key, and sharing it let a busy study session block payment. */
+async function withinIpThrottle(req: IncomingMessage, secret: string, scope: string, limitPerHour: number): Promise<boolean> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token || !secret) throw new Error("throttle backend not configured");
   const bucket = Math.floor(Date.now() / 3600_000);
-  const key = `ipthrottle:${await hmacHex(`${requestIp(req)}:${bucket}`, secret)}`;
+  const key = `ipthrottle:paypal-${scope}:${await hmacHex(`${requestIp(req)}:${bucket}`, secret)}`;
   try {
     const res = await fetch(`${url}/incr/${key}`, { headers: { Authorization: `Bearer ${token}` } });
     const data = (await res.json()) as { result?: number; error?: unknown };
@@ -115,12 +117,13 @@ async function throttleResponse(
   req: IncomingMessage,
   res: ServerResponse,
   origin: string | string[] | undefined,
+  scope: string,
   limit: number,
   limited: string,
   unavailable: string,
 ): Promise<boolean> {
   try {
-    if (await withinIpThrottle(req, process.env.PASS_SIGNING_SECRET ?? "", limit)) return false;
+    if (await withinIpThrottle(req, process.env.PASS_SIGNING_SECRET ?? "", scope, limit)) return false;
     sendJson(res, 429, { error: limited }, origin);
   } catch {
     sendJson(res, 503, { error: unavailable }, origin);
@@ -296,7 +299,7 @@ async function handleCreateOrder(req: IncomingMessage, res: ServerResponse, orig
     return sendJson(res, 503, { error: "Checkout is temporarily unavailable. Please try again later." }, origin);
   }
 
-  if (await throttleResponse(req, res, origin, 30, "Too many checkout attempts. Try again later.", "Checkout is temporarily unavailable. Please try again later.")) return;
+  if (await throttleResponse(req, res, origin, "checkout", 30, "Too many checkout attempts. Try again later.", "Checkout is temporarily unavailable. Please try again later.")) return;
 
   const body = readBody(req);
   if (!body) return sendJson(res, 400, { error: "Invalid JSON body." }, origin);
@@ -380,7 +383,7 @@ async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, ori
     return sendJson(res, 503, { error: "Fulfillment is temporarily unavailable. Payment was not captured." }, origin);
   }
 
-  if (await throttleResponse(req, res, origin, 60, "Too many requests. Try again later.", "Fulfillment is temporarily unavailable. Payment was not captured.")) return;
+  if (await throttleResponse(req, res, origin, "capture", 60, "Too many requests. Try again later.", "Fulfillment is temporarily unavailable. Payment was not captured.")) return;
 
   const body = readBody(req);
   if (!body) return sendJson(res, 400, { error: "Invalid JSON body." }, origin);
@@ -544,7 +547,7 @@ async function handleRecover(req: IncomingMessage, res: ServerResponse, origin?:
   if (!clientSecret || !process.env.PASS_SIGNING_SECRET || !storageConfigured()) {
     return sendJson(res, 503, { error: "Restore is temporarily unavailable." }, origin);
   }
-  if (await throttleResponse(req, res, origin, 60, "Too many requests. Try again later.", "Restore is temporarily unavailable.")) return;
+  if (await throttleResponse(req, res, origin, "recover", 60, "Too many requests. Try again later.", "Restore is temporarily unavailable.")) return;
   const body = readBody(req);
   const orderId = orderIdIn(body?.orderId);
   if (!orderId) {

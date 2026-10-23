@@ -377,11 +377,15 @@ export function ExamRunner({
   gen,
   onExit,
   onOpenGeneration,
+  onActiveChange,
 }: {
   payload: ExamPayload;
   gen?: Generation;
   onExit?: () => void;
   onOpenGeneration?: (gen: Generation) => void;
+  /** True while a sitting has started and not finished, so the host can
+   *  confirm before a dismissal throws the answers and clock away. */
+  onActiveChange?: (active: boolean) => void;
 }) {
   const [run, setRun] = useState<ExamRunSpec>({ key: 0, payload, scope: "full" });
   return (
@@ -392,6 +396,7 @@ export function ExamRunner({
       gen={gen}
       onExit={onExit}
       onOpenGeneration={onOpenGeneration}
+      onActiveChange={onActiveChange}
       onRetake={() => setRun((r) => ({ key: r.key + 1, payload, scope: "full" }))}
       onRetakeMisses={(missed) =>
         setRun((r) => ({ key: r.key + 1, payload: missesExam(payload, missed), scope: "misses" }))
@@ -408,6 +413,7 @@ function ExamSitting({
   onOpenGeneration,
   onRetake,
   onRetakeMisses,
+  onActiveChange,
 }: {
   payload: ExamPayload;
   scope: "full" | "misses";
@@ -416,6 +422,7 @@ function ExamSitting({
   onOpenGeneration?: (gen: Generation) => void;
   onRetake: () => void;
   onRetakeMisses: (missed: QuizQuestion[]) => void;
+  onActiveChange?: (active: boolean) => void;
 }) {
   const cs = useCallSettings();
   const [mode, setMode] = useState<ExamMode | null>(null);
@@ -479,6 +486,12 @@ function ExamSitting({
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [mode, finished]);
+
+  const active = mode !== null && !finished;
+  useEffect(() => {
+    onActiveChange?.(active);
+    return () => onActiveChange?.(false);
+  }, [active, onActiveChange]);
 
   if (!mode) {
     return (

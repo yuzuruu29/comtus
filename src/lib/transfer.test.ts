@@ -35,6 +35,7 @@ function wireRelay() {
           result = Number(store.get(key) ?? 0) + 1;
           store.set(key, String(result));
         } else if (cmd === "EXPIRE") result = 1;
+        else if (cmd === "EXISTS") result = [key, ...args].filter((k) => store.has(k)).length;
         else if (cmd === "DEL") [key, ...args].forEach((k) => store.delete(k));
         return new Response(JSON.stringify({ result }));
       }

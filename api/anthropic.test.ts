@@ -1,4 +1,5 @@
 import { createHmac } from "node:crypto";
+import Anthropic from "@anthropic-ai/sdk";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import handler from "./anthropic";
 
@@ -116,6 +117,32 @@ describe("hosted Anthropic proxy", () => {
     );
     expect(res.status).toBe(204);
     expect(res.headers.get("access-control-allow-origin")).toBeNull();
+  });
+
+  it("preflight allows every header the installed SDK sends", async () => {
+    const sent = new Set<string>();
+    const client = new Anthropic({
+      apiKey: "comtus-pass-v1.test",
+      baseURL: "https://www.comtus-ai.xyz/api/anthropic",
+      dangerouslyAllowBrowser: true,
+      maxRetries: 0,
+      fetch: async (_url: unknown, init?: RequestInit) => {
+        new Headers(init?.headers).forEach((_value, name) => sent.add(name));
+        return new Response("{}", { status: 500 });
+      },
+    });
+    const params = { model: "claude-sonnet-5", max_tokens: 1, messages: [{ role: "user" as const, content: "hi" }] };
+    await client.messages.create(params).catch(() => undefined);
+    await client.messages.stream(params).finalMessage().catch(() => undefined);
+    // Browsers send these without asking (or refuse to let scripts set them).
+    for (const free of ["accept", "user-agent"]) sent.delete(free);
+    expect(sent.size).toBeGreaterThan(3);
+
+    const res = await handler(
+      new Request("http://localhost:3000/api/anthropic", { method: "OPTIONS", headers: { origin: "http://tauri.localhost" } }),
+    );
+    const allowed = res.headers.get("access-control-allow-headers")?.split(",") ?? [];
+    expect([...sent].filter((name) => !allowed.includes(name))).toEqual([]);
   });
 
   it("rejects non-POST methods", async () => {

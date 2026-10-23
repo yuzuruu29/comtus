@@ -15,6 +15,8 @@ import type {
 } from "./types";
 import { saveTextFile } from "./saveFile";
 import { useSettings } from "./settings";
+import { validateQuestionGraph } from "./assessmentContent";
+import { DEFAULT_SESSION_TITLE, deriveSessionTitle } from "./sessionText";
 
 const TABLES = [
   "notebooks",
@@ -105,6 +107,52 @@ type BackupRow = Record<string, unknown> & { id: string; notebookId?: string };
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+const isStr = (value: unknown): value is string => typeof value === "string";
+const isNum = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
+const isStrList = (value: unknown): value is string[] => Array.isArray(value) && value.every(isStr);
+const optional = (value: unknown, check: (value: unknown) => boolean) => value === undefined || check(value);
+
+const QUIZ_FORMATS = new Set(["mcq", "truefalse", "identification", "solution"]);
+const isQuestion = (q: unknown) =>
+  isRecord(q) && isStr(q.id) && QUIZ_FORMATS.has(String(q.format)) && isStr(q.topic) && isStr(q.stem) &&
+  isStrList(q.options) && Number.isInteger(q.answerIndex) && isStr(q.answer) && isStr(q.rationale) &&
+  optional(q.sourceHint, isStr) && optional(q.graph, (graph) => validateQuestionGraph(graph) !== null);
+
+/** The shape each saved-work viewer reads. A row that passes the table
+ *  check but not this would throw the moment it is opened. */
+function validGenerationPayload(kind: unknown, p: Record<string, unknown>): boolean {
+  switch (kind) {
+    case "quiz":
+      return Array.isArray(p.questions) && p.questions.every(isQuestion) && optional(p.config, isRecord);
+    case "exam": {
+      const bp = p.blueprint;
+      return Array.isArray(p.questions) && p.questions.every(isQuestion) &&
+        isRecord(bp) && isStr(bp.title) && isNum(bp.minutes) && bp.minutes > 0 && isNum(bp.totalItems) &&
+        optional(bp.sections, (s) => Array.isArray(s) && s.every((x) => isRecord(x) && isStr(x.topic) && isNum(x.items)));
+    }
+    case "essay-review":
+      return isStr(p.prompt) && isStr(p.rubricName) && isNum(p.overall) && isNum(p.overallMax) && p.overallMax > 0 &&
+        Array.isArray(p.criteria) && p.criteria.every((c) => isRecord(c) && isStr(c.name) && isNum(c.score) && isNum(c.max) && isStr(c.comment)) &&
+        isStrList(p.strengths) && isStrList(p.improvements) && isStr(p.reasoning);
+    case "flashcards":
+      return Array.isArray(p.cards) && p.cards.every((c) => isRecord(c) && isStr(c.id) && isStr(c.front) && isStr(c.back));
+    case "presentation":
+    case "slideshow":
+      // Decks are saved as the model returned them; the viewer tolerates gaps but not wrong types.
+      return optional(p.deckTitle, isStr) && optional(p.deckSubtitle, isStr) &&
+        optional(p.slides, (slides) => Array.isArray(slides) && slides.every((s) =>
+          isRecord(s) && optional(s.title, isStr) && optional(s.subtitle, isStr) && optional(s.notes, isStr) &&
+          optional(s.visualLayoutHint, isStr) && optional(s.bullets, isStrList)));
+    case "note":
+      return isStr(p.content) && optional(p.tags, isStrList);
+    case "audio-overview":
+      return isStr(p.title) && isStr(p.summary) &&
+        Array.isArray(p.script) && p.script.every((t) => isRecord(t) && isStr(t.speaker) && isStr(t.text));
+    default:
+      return isStr(p.markdown);
+  }
+}
+
 /** Validate imported rows before any database writes or typed payload access. */
 export function validateBackupPayload(payload: unknown): asserts payload is BackupPayload {
   if (!isRecord(payload) || payload.app !== "comtus" || !isRecord(payload.data)) {
@@ -148,7 +196,7 @@ export function validateBackupPayload(payload: unknown): asserts payload is Back
       }
       if (table === "generations") {
         if (!["quiz", "exam", "essay-review", "study-guide", "brief", "faq", "timeline", "flashcards", "presentation", "slideshow", "note", "audio-overview"].includes(String(row.kind)) || !isRecord(row.payload)) throw invalid();
-        if (row.kind === "flashcards" && (!Array.isArray(row.payload.cards) || row.payload.cards.some((c) => !isRecord(c) || typeof c.id !== "string" || typeof c.front !== "string" || typeof c.back !== "string"))) throw invalid();
+        if (!validGenerationPayload(row.kind, row.payload)) throw invalid();
       }
       if (table === "attempts" && (!Array.isArray(row.items) || row.items.some((item) => !isRecord(item) || typeof item.questionId !== "string" || typeof item.topic !== "string" || typeof item.credit !== "number" || typeof item.answered !== "boolean"))) throw invalid();
     }
@@ -195,6 +243,38 @@ export async function assertBackupOwnership(payload: BackupPayload, allowCollidi
   }
 }
 
+/** Files from before chat sessions (schema 1) hold messages with no
+ *  session, which no chat view lists. Fold each notebook's into one thread,
+ *  as the v2 database upgrade does. The id is stable, so restoring the same
+ *  file twice reuses the thread instead of stranding the first one. */
+function adoptLegacyMessages(payload: BackupPayload): BackupPayload {
+  const messages = (payload.data?.messages ?? []) as ChatMessage[];
+  if (messages.every((m) => m.sessionId)) return payload;
+  const sessions = new Map<string, ChatSession>();
+  const titledAt = new Map<string, number>();
+  const adopted = messages.map((m) => {
+    if (m.sessionId) return m;
+    const id = `legacy-${m.notebookId}`;
+    const session = sessions.get(id) ?? { id, notebookId: m.notebookId, title: "", createdAt: m.createdAt, updatedAt: m.createdAt };
+    session.createdAt = Math.min(session.createdAt, m.createdAt);
+    session.updatedAt = Math.max(session.updatedAt, m.createdAt);
+    if (m.role === "user" && m.createdAt < (titledAt.get(id) ?? Infinity)) {
+      session.title = deriveSessionTitle(m.content);
+      titledAt.set(id, m.createdAt);
+    }
+    sessions.set(id, session);
+    return { ...m, sessionId: id };
+  });
+  const existing = new Set(((payload.data?.chatSessions ?? []) as ChatSession[]).map((s) => s.id));
+  const added = [...sessions.values()]
+    .filter((s) => !existing.has(s.id))
+    .map((s) => ({ ...s, title: s.title || DEFAULT_SESSION_TITLE }));
+  return {
+    ...payload,
+    data: { ...payload.data, messages: adopted, chatSessions: [...(payload.data?.chatSessions ?? []), ...added] },
+  };
+}
+
 export function parseBackupPayload(text: string): BackupPayload {
   let payload: unknown;
   try {
@@ -203,7 +283,7 @@ export function parseBackupPayload(text: string): BackupPayload {
     throw new Error("That file isn't valid JSON.");
   }
   validateBackupPayload(payload);
-  return payload;
+  return adoptLegacyMessages(payload);
 }
 
 export async function importBackupText(text: string): Promise<number> {

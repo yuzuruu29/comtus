@@ -8,9 +8,9 @@ const database = vi.hoisted(() => {
   type StoredGeneration = {
     id: string;
     notebookId: string;
-    kind: "note";
+    kind: "note" | "exam";
     title: string;
-    payload: { content: string };
+    payload: unknown;
     createdAt: number;
   };
   const rows: StoredGeneration[] = [];
@@ -57,7 +57,9 @@ vi.mock("./generators/QuizFlow", () => ({
 }));
 vi.mock("./generators/ExamFlow", () => ({
   ExamConfigForm: () => null,
-  ExamRunner: () => null,
+  ExamRunner: ({ onActiveChange }: { onActiveChange?: (active: boolean) => void }) => (
+    <button type="button" onClick={() => onActiveChange?.(true)}>Start sitting</button>
+  ),
 }));
 vi.mock("./generators/EssayFlow", () => ({
   EssayConfigForm: () => null,
@@ -136,6 +138,23 @@ describe("StudioPane", () => {
     await waitFor(() => expect(database.restoreGeneration).toHaveBeenCalledWith(note));
     await screen.findByRole("button", { name: "Delete note Keyboard note" });
   }, 15000);
+
+  it("asks before a dismissal discards an exam in progress", async () => {
+    database.rows.push({ id: "exam-1", notebookId: "notebook-1", kind: "exam", title: "Mock board", payload: {}, createdAt: 1_700_000_000_000 });
+    render(<StudioPane notebookId="notebook-1" />);
+    fireEvent.click(await screen.findByRole("button", { name: /^Mock board/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Start sitting" }));
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(await screen.findByRole("dialog", { name: "Leave this sitting?" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Keep going" }));
+    expect(screen.queryByRole("dialog", { name: "Leave this sitting?" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Start sitting" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Leave" }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Start sitting" })).not.toBeInTheDocument());
+  });
 
   it("keeps section labels unique when desktop and mobile panes are both mounted", () => {
     const { container } = render(<><StudioPane notebookId="notebook-1" /><StudioPane notebookId="notebook-1" /></>);

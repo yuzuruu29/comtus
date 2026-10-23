@@ -37,3 +37,22 @@ describe("workspace header", () => {
     await waitFor(() => expect(screen.getByRole("dialog", { name: "Settings" })).toBeInTheDocument());
   });
 });
+
+describe("workspace on a narrow screen", () => {
+  afterEach(() => db.sources.clear());
+
+  // The test environment's matchMedia matches nothing, so this renders the
+  // mobile layout with the desktop tree still mounted behind it.
+  it("opens a cited source once, not once per mounted sources pane", async () => {
+    await db.notebooks.put({ id: "nb1", name: "Pharm", createdAt: 1, updatedAt: 1 });
+    await db.sources.put({ id: "s1", notebookId: "nb1", title: "Lecture", kind: "txt", content: "Beta blockers slow the heart.", chars: 29, tokens: 8, addedAt: 1 });
+    render(
+      <MemoryRouter initialEntries={["/studio/nb1?source=s1"]}>
+        <Workspace notebookId="nb1" />
+      </MemoryRouter>,
+    );
+    await screen.findByRole("dialog", { name: "Lecture" });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getAllByRole("dialog", { name: "Lecture" })).toHaveLength(1);
+  });
+});
