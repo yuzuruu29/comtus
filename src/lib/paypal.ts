@@ -3,7 +3,7 @@
  * New passes carry an included usage budget. Passes already sold carry
  * a request count. The proxy is the source of truth either way.
  */
-import { budgetNanoForPrice, formatUsdFromNano } from "./credits";
+import { budgetNanoForPrice } from "./credits";
 
 export const PAYPAL_CLIENT_ID =
   (import.meta.env.VITE_PAYPAL_CLIENT_ID as string) ||
@@ -29,7 +29,7 @@ export const STUDY_PLANS: StudyPlan[] = [
     amount: 2.99,
     budgetNano: budgetNanoForPrice("2.99"),
     days: 60,
-    desc: "$1.50 of hosted model usage.",
+    desc: "Focused exam prep and chapter review.",
   },
   {
     id: "scholar",
@@ -40,7 +40,7 @@ export const STUDY_PLANS: StudyPlan[] = [
     days: 120,
     badge: "Popular",
     popular: true,
-    desc: "$3.50 of hosted model usage.",
+    desc: "Full-term study sessions, mock exams, and synthesis.",
   },
   {
     id: "mastery",
@@ -49,7 +49,7 @@ export const STUDY_PLANS: StudyPlan[] = [
     amount: 14.99,
     budgetNano: budgetNanoForPrice("14.99"),
     days: 180,
-    desc: "$7.50 of hosted model usage.",
+    desc: "Deep research, thesis work, and intensive board review.",
   },
 ];
 
@@ -78,7 +78,7 @@ export function decodePassInfo(token: string): DecodedPass | null {
 }
 
 export function passSummary(info: DecodedPass): string {
-  if (info.kind === "credits") return `${formatUsdFromNano(info.budgetNano)} of hosted usage included`;
+  if (info.kind === "credits") return `Active pass · ${Math.max(1, Math.ceil((info.expiresAtMs - Date.now()) / 86_400_000))}d remaining`;
   return `${info.requests} hosted requests`;
 }
 

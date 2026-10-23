@@ -119,7 +119,7 @@ export const SettingsScreen: React.FC = () => {
                 >
                   <Cpu size={14} color={selectedModel === 'opus' ? pixelColors.pxBrass : pixelColors.pxMuted} />
                   <Text style={[styles.modelText, selectedModel === 'opus' && styles.modelTextActive]}>
-                    Claude Opus 5
+                    Claude Opus 5.5
                   </Text>
                   <PixelBadge variant="brass" size="sm" label="Default" />
                 </TouchableOpacity>
@@ -133,7 +133,7 @@ export const SettingsScreen: React.FC = () => {
                 >
                   <Cpu size={14} color={selectedModel === 'sonnet' ? pixelColors.pxBrass : pixelColors.pxMuted} />
                   <Text style={[styles.modelText, selectedModel === 'sonnet' && styles.modelTextActive]}>
-                    3.7 Sonnet
+                    Claude Sonnet 5.5
                   </Text>
                 </TouchableOpacity>
               </View>

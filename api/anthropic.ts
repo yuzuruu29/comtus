@@ -87,8 +87,10 @@ const ANTHROPIC_ORIGIN = "https://api.anthropic.com";
 const PASS_PREFIX = "comtus-pass-v1.";
 
 /** Only models with a rate row may be invoked. HOSTED_MODELS may narrow this. */
-const ALLOWED_MODELS = new Set(["claude-opus-5", "claude-sonnet-5"]);
+const ALLOWED_MODELS = new Set(["claude-opus-5-5", "claude-sonnet-5-5", "claude-opus-5", "claude-sonnet-5"]);
 const MODEL_RATES = {
+  "claude-opus-5-5": { input: 5000, cacheWrite5m: 6250, cacheWrite1h: 10000, cacheRead: 500, output: 25000 },
+  "claude-sonnet-5-5": { input: 2000, cacheWrite5m: 2500, cacheWrite1h: 4000, cacheRead: 200, output: 10000 },
   "claude-opus-5": { input: 5000, cacheWrite5m: 6250, cacheWrite1h: 10000, cacheRead: 500, output: 25000 },
   "claude-sonnet-5": { input: 2000, cacheWrite5m: 2500, cacheWrite1h: 4000, cacheRead: 200, output: 10000 },
 } as const;

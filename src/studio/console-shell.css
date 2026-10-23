@@ -66,11 +66,11 @@
 }
 
 @media (max-width: 639px) {
-  .workspace-header { min-height: calc(76px + var(--sat)); gap: 4px; padding-inline: 8px; }
+  .workspace-header { min-height: calc(52px + var(--sat)); padding: calc(var(--sat) + 4px) 8px 4px; gap: 4px; }
   .workspace-back { padding: 0; min-width: 44px; border: 0; }
   .workspace-back span { display: none; }
   .workspace-title { font-size: var(--text-heading); }
-  .workspace-location { font-size: var(--text-label); }
+  .workspace-location { display: none; }
   .workspace-actions { gap: 0; }
 }
 

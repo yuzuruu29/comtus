@@ -24,6 +24,7 @@ import { BorderBeam } from "./fx";
 import { useSettings } from "../lib/settings";
 import {
   EFFORTS,
+  MODELS,
   COMPAT_PRESETS,
   validateConnection,
   listCompatModels,
@@ -450,7 +451,7 @@ export default function SettingsModal({
                 <Crown size={ICON.md} weight={settingsMode === "smarter" ? "fill" : "regular"} className="text-brass" />
                 <span>Smarter Models</span>
                 <span className="rounded-[var(--radius-pill)] bg-brass/20 border border-brass/35 px-1.5 py-0.2 font-mono text-[8.5px] uppercase tracking-wider text-brass font-bold">
-                  Opus 5
+                  Opus 5.5
                 </span>
               </button>
             </div>
@@ -956,7 +957,7 @@ export default function SettingsModal({
                               </span>
                             </div>
                             <div className="text-[11.5px] text-muted">
-                              Powered by Claude Opus 5 & Sonnet 5 reasoning models
+                              Powered by Claude Opus 5.5 & Sonnet 5.5 reasoning models
                             </div>
                           </div>
                         </div>
@@ -968,7 +969,7 @@ export default function SettingsModal({
 
                       <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                         <span className="text-[11.5px] text-muted">
-                          Pass Code: <code className="font-mono text-brass">{s.activePassCode ? `${s.activePassCode.slice(0, 10)}…` : "Active"}</code>
+                          Active Model: <span className="font-mono text-brass">{draft.anthropicModel === "claude-sonnet-5-5" ? "Claude Sonnet 5.5" : "Claude Opus 5.5"}</span>
                         </span>
                         <button
                           type="button"
@@ -992,7 +993,7 @@ export default function SettingsModal({
                       <div className="flex items-center gap-2">
                         <Crown size={ICON.lg} className="text-brass shrink-0" />
                         <span className="font-display text-[15px] font-[450] text-ink">
-                          Smarter Models (Claude Opus 5 & Sonnet 5)
+                          Smarter Models (Claude Opus 5.5 & Sonnet 5.5)
                         </span>
                       </div>
                       <span className="self-start sm:self-auto rounded-[var(--radius-pill)] border border-hairline bg-ink/[0.04] px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted">
@@ -1001,7 +1002,7 @@ export default function SettingsModal({
                     </div>
 
                     <p className="text-[12.5px] leading-relaxed text-muted">
-                      A pass is prepaid hosted usage. Each reply spends the tokens it actually uses. PayPal issues the pass as soon as the payment clears.
+                      Unlock hosted Claude Opus 5.5 and Sonnet 5.5 with 1M context for deep synthesis, mock exams, and slide generation. Instant activation via PayPal with no API setup or recurring subscription.
                     </p>
 
                     {/* Pricing Grid */}
@@ -1017,7 +1018,7 @@ export default function SettingsModal({
                               key={plan.id}
                               type="button"
                               onClick={() => setSelectedPlan(plan)}
-                              className={`text-left rounded-[var(--radius-dialog)] border p-3 flex flex-col justify-between transition-all active:scale-[0.98] ${
+                              className={`text-left rounded-[var(--radius-dialog)] border p-2.5 sm:p-3 flex flex-col justify-between transition-all active:scale-[0.98] ${
                                 isPlanSelected
                                   ? "border-brass/70 bg-brass/[0.12] shadow-[0_0_20px_rgba(227,176,75,0.15)] ring-1 ring-brass/40"
                                   : "border-hairline bg-ink/[0.03] hover:border-hairline-strong"
@@ -1035,14 +1036,14 @@ export default function SettingsModal({
                                   )}
                                 </div>
 
-                                <div className="mt-1 flex items-baseline gap-1.5">
+                                <div className="mt-1 flex items-baseline justify-between gap-1.5">
                                   <span className="font-mono text-brass font-bold text-[14px]">
-                                    ${plan.price}
+                                    ${plan.price} <span className="font-mono text-[10px] font-normal text-muted">/ {plan.days}d</span>
                                   </span>
                                 </div>
 
-                                <div className="mt-1.5 font-mono text-[10px] text-muted">{plan.days} days</div>
-                                <p className="mt-1.5 text-[11.5px] leading-snug text-muted">{plan.desc}</p>
+
+                                <div className="mt-1 text-[11.5px] leading-snug text-muted">{plan.desc}</div>
                               </div>
                               {isPlanSelected && (
                                 <div className="mt-2 text-right font-mono text-[10px] text-brass font-medium">
@@ -1057,14 +1058,14 @@ export default function SettingsModal({
 
                     {/* PayPal Smart Checkout */}
                     <div className="rounded-[var(--radius-dialog)] border border-hairline bg-ground/80 p-3.5 space-y-2.5">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                         <div className="flex items-center gap-2 text-[12.5px] text-ink font-medium">
                           <CreditCard size={ICON.md} className="text-brass shrink-0" />
                           <span>
                             Pay with PayPal: {selectedPlan.name} (${selectedPlan.price} USD)
                           </span>
                         </div>
-                        <span className="font-mono text-[10px] text-brass">{selectedPlan.desc} · {selectedPlan.days} days</span>
+                        <span className="font-mono text-[10px] text-brass">{selectedPlan.name} · {selectedPlan.days} days</span>
                       </div>
                       <PayPalCheckout
                         plan={selectedPlan}
@@ -1082,16 +1083,54 @@ export default function SettingsModal({
                 );
               })()}
 
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="field-label">Claude 5.5 model</div>
+                  <span className="font-mono text-label text-muted">1M context window</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {MODELS.map((m) => {
+                    const active = draft.anthropicModel === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => {
+                          set({ provider: "anthropic", anthropicModel: m.id });
+                          s.update({ anthropicModel: m.id });
+                        }}
+                        className={`flex items-center justify-between rounded-[var(--radius-dialog)] border p-3 text-left transition-all active:scale-[0.98] ${
+                          active
+                            ? "border-brass/65 bg-brass/[0.12] text-ink ring-1 ring-brass/35"
+                            : "border-hairline bg-ink/[0.02] text-muted hover:border-hairline-strong hover:text-ink"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-body text-ink">Claude {m.label}</span>
+                            <span className="rounded bg-brass/20 border border-brass/30 px-1.5 py-0.5 font-mono text-label text-brass">
+                              {m.ctx}
+                            </span>
+                          </div>
+                          <div className="mt-0.5 text-label text-muted">{m.note}</div>
+                        </div>
+                        {active && <Check size={ICON.sm} className="text-brass shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Pass Activation Code Box */}
               <Field
-                label="Have a Claude Access Pass Code?"
-                hint="Paste the comtus-pass-v1… token issued with your PayPal payment."
+                label="Access Pass or Anthropic API Key"
+                hint="Paste an access pass from another device or your own Anthropic API key."
               >
                 <div className="flex gap-2">
                   <input
                     value={draft.anthropicKey}
                     onChange={(e) => set({ anthropicKey: e.target.value })}
-                    placeholder="comtus-pass-v1.…"
+                    placeholder="Paste access pass or sk-ant-…"
                     className={inputCls + " font-mono text-[13px] flex-1"}
                     spellCheck={false}
                   />
@@ -1211,7 +1250,7 @@ export default function SettingsModal({
           </Field>
 
           <Field label="Provider Preset">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {(
                 [
                   ["openrouter", "OpenRouter"],

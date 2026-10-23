@@ -376,7 +376,11 @@ export interface AudioOverviewPayload {
  *  OpenAI itself…). */
 export type ProviderId = "anthropic" | "openai-compatible";
 
-export type AnthropicModelId = "claude-opus-5" | "claude-sonnet-5";
+export type AnthropicModelId =
+  | "claude-opus-5-5"
+  | "claude-sonnet-5-5"
+  | "claude-opus-5"
+  | "claude-sonnet-5";
 export type Effort = "low" | "medium" | "high" | "xhigh";
 
 export interface StoredKey {

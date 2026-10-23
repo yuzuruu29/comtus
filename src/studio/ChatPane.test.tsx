@@ -161,7 +161,7 @@ it("scrolls a loaded conversation to its latest message", async () => {
   await database.db.messages.put({ id: "saved-message", notebookId: notebook.id, sessionId: "thread-1", role: "user", content: "Continue our reading", createdAt: 1 });
   render(<SharedChat />);
   await waitFor(() => expect(screen.getByLabelText("Main transcript")).toHaveTextContent("Continue our reading"));
-  expect(screen.getByLabelText("Main transcript").scrollTop).toBe(900);
+  await waitFor(() => expect(screen.getByLabelText("Main transcript").scrollTop).toBe(900));
 });
 
 it.each(["stop", "thread", "notebook"] as const)("rejects late callbacks and final answers after %s changes request ownership", async (change) => {

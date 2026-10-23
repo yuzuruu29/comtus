@@ -270,7 +270,7 @@ export default function DeskLife({
           resizable
           think={batteryThink}
           face={batteryFace}
-          avoidSelector=".composer-shell, #mobile-bottom-nav, #workspace-sources-pane, #workspace-chat-pane, #workspace-chat-pane-mobile, .workspace-header"
+          avoidSelector=".composer-shell, #mobile-bottom-nav, #workspace-sources-pane, #workspace-chat-pane, .workspace-header"
           restingOffset={restingOffset}
           onMenu={() => setCopilotOpen((v) => !v)}
           menuOpen={copilotOpen}
@@ -287,7 +287,7 @@ export default function DeskLife({
         />
       )}
       {/* Clear of the sources footer on a desk and of the pane tabs on a phone. */}
-      <div className="pointer-events-auto fixed bottom-[calc(5.5rem+var(--sab))] left-4 z-[57] lg:bottom-[4.5rem]">
+      <div className="pointer-events-auto fixed top-[calc(3.75rem+var(--sat))] left-4 z-[57] lg:top-auto lg:bottom-[4.5rem]">
         <Toast
           open={Boolean(toast)}
           onClose={() => setToast(null)}

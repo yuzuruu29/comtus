@@ -319,7 +319,7 @@ export function PresentationConfigForm({
 
   const generate = async () => {
     if (!isAnthropic) {
-      setError("PPT & Slideshow Maker is exclusively available on Anthropic Claude (Opus 5 & Sonnet 5).");
+      setError("PPT & Slideshow Maker is exclusively available on Anthropic Claude (Opus 5.5 & Sonnet 5.5).");
       return;
     }
     setError("");
@@ -393,10 +393,10 @@ JSON shape:
             </span>
           </div>
           <p className="text-[13px] leading-relaxed text-muted">
-            The <strong>PPT & Slideshow Maker</strong> requires the deep architectural synthesis and structured reasoning of <strong>Claude Opus 5 & Sonnet 5</strong> to produce production-grade slide decks and speaker scripts.
+            The <strong>PPT & Slideshow Maker</strong> requires the deep architectural synthesis and structured reasoning of <strong>Claude Opus 5.5 & Sonnet 5.5</strong> to produce production-grade slide decks and speaker scripts.
           </p>
           <div className="rounded-[var(--radius-dialog)] border border-hairline bg-ground/70 p-3 text-[12px] text-brass flex items-center justify-between">
-            <span>Powered by our hosted Anthropic key · PayPal pass from $2.99</span>
+            <span>Available with a Study Pass or Anthropic API key · From $2.99</span>
             {onOpenSettings && (
               <button
                 onClick={onOpenSettings}
@@ -418,7 +418,7 @@ JSON shape:
     <div className="space-y-5">
       <div className="flex items-center gap-2 font-mono text-[11px] text-brass">
         <Crown size={ICON.sm} className="text-brass" />
-        <span>Powered by Claude Opus 5 & Sonnet 5</span>
+        <span>Powered by Claude Opus 5.5 & Sonnet 5.5</span>
       </div>
 
       <div>

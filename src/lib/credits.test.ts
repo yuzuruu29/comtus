@@ -20,6 +20,7 @@ describe("hosted credit cost", () => {
 
   it("treats a combined cache-creation count as a 5-minute write", () => {
     expect(costNano({ cache_creation_input_tokens: 10 }, "claude-opus-5")).toBe(10 * 6250);
+    expect(costNano({ cache_creation_input_tokens: 10 }, "claude-opus-5-5")).toBe(10 * 6250);
   });
 
   it("rejects a model with no rate", () => {
@@ -28,6 +29,7 @@ describe("hosted credit cost", () => {
 
   it("reserves input chars plus the full output cap", () => {
     expect(reserveNano(8, 2, "claude-sonnet-5")).toBe(2 * 2000 + 2 * 10000);
+    expect(reserveNano(8, 2, "claude-sonnet-5-5")).toBe(2 * 2000 + 2 * 10000);
   });
 
   it("sells half the sticker price as included usage", () => {

@@ -155,7 +155,7 @@ export function Dialog({
             aria-labelledby={titleId}
             tabIndex={-1}
           >
-            <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
+            <div className="flex items-center justify-between border-b border-hairline px-4 py-3 sm:px-6 sm:py-4">
               <h2 id={titleId} className="font-display text-heading font-[450] text-ink">{title}</h2>
               <button
                 onClick={onClose}
@@ -165,7 +165,7 @@ export function Dialog({
                 <X size={ICON.lg} weight="light" />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>

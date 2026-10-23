@@ -45,5 +45,11 @@ describe("migrateSettings", () => {
     expect(kept).toMatchObject({ sendKey: "mod-enter", leading: "airy" });
     const junk = migrateSettings({ sendKey: "space", leading: 3 }, 14);
     expect(junk).toMatchObject({ sendKey: "enter", leading: "standard" });
+    expect(migrateSettings({ anthropicModel: "claude-opus-5" }, 15)).toMatchObject({
+      anthropicModel: "claude-opus-5-5",
+    });
+    expect(migrateSettings({ anthropicModel: "claude-sonnet-5" }, 15)).toMatchObject({
+      anthropicModel: "claude-sonnet-5-5",
+    });
   });
 });

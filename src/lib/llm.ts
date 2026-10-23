@@ -26,17 +26,17 @@ export const MODELS: {
   badge: string;
 }[] = [
   {
-    id: "claude-opus-5",
-    label: "Opus 5",
+    id: "claude-opus-5-5",
+    label: "Opus 5.5",
     note: "Deepest reasoning · complex synthesis",
-    ctx: "200k ctx",
+    ctx: "1M ctx",
     badge: "Deepest",
   },
   {
-    id: "claude-sonnet-5",
-    label: "Sonnet 5",
+    id: "claude-sonnet-5-5",
+    label: "Sonnet 5.5",
     note: "Faster, lighter · swift revisions",
-    ctx: "200k ctx",
+    ctx: "1M ctx",
     badge: "Fast",
   },
 ];
@@ -228,7 +228,7 @@ function hostedSystem(apiKey: string, text: string): string | Anthropic.TextBloc
  *  mid-word like the old `.slice(0, 16)` did. */
 export function modelLabelFor(provider: ProviderId, model: string): string {
   if (provider === "anthropic")
-    return MODELS.find((m) => m.id === model)?.label ?? model;
+    return MODELS.find((m) => m.id === model)?.label ?? (model === "claude-opus-5" ? "Opus 5.5" : model === "claude-sonnet-5" ? "Sonnet 5.5" : model);
   // OpenRouter's router id picks whichever free model is available; the
   // model menu lists it under this name.
   if (model === "openrouter/free") return "Auto Free Router";
@@ -1022,7 +1022,7 @@ export async function validateConnection(
     if (cs.provider === "anthropic") {
       const client = getAnthropic(cs);
       await client.messages.create({
-        model: cs.model || "claude-sonnet-5",
+        model: cs.model || "claude-sonnet-5-5",
         max_tokens: 4,
         messages: [{ role: "user", content: "ping" }],
       });

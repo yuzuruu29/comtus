@@ -110,12 +110,20 @@ export function migrateSettings(persisted: unknown, version: number): Partial<Se
     leading: isReadingLeading(old.leading) ? old.leading : DEFAULT_LEADING,
     sendKey: old.sendKey === "mod-enter" ? "mod-enter" : "enter",
     lastBackupAt: old.lastBackupAt ?? 0,
+    ...(old.anthropicModel
+      ? {
+          anthropicModel:
+            old.anthropicModel === "claude-sonnet-5" || old.anthropicModel === "claude-sonnet-5-5"
+              ? "claude-sonnet-5-5"
+              : "claude-opus-5-5",
+        }
+      : {}),
   };
   if (version < 2) {
     return {
       ...base,
       anthropicKey: apiKey ?? "",
-      anthropicModel: model === "claude-sonnet-5" ? "claude-sonnet-5" : "claude-opus-5",
+      anthropicModel: model === "claude-sonnet-5" || model === "claude-sonnet-5-5" ? "claude-sonnet-5-5" : "claude-opus-5-5",
     };
   }
   return base;
@@ -128,7 +136,7 @@ export const useSettings = create<SettingsState>()(
       provider: "openai-compatible",
       anthropicKey: "",
       anthropicBaseUrl: "",
-      anthropicModel: "claude-opus-5",
+      anthropicModel: "claude-opus-5-5",
       compatKey: "",
       compatBaseUrl: "https://openrouter.ai/api/v1",
       compatModel: "openrouter/free",
@@ -220,7 +228,7 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: "comtus-settings",
-      version: 15,
+      version: 16,
       migrate: migrateSettings,
     },
   ),
@@ -238,7 +246,7 @@ export function useCallSettings(): CallSettings {
           provider: "anthropic" as const,
           apiKey: s.anthropicKey,
           baseUrl: s.anthropicBaseUrl,
-          model: s.anthropicModel,
+          model: s.anthropicModel === "claude-sonnet-5" ? "claude-sonnet-5-5" : s.anthropicModel === "claude-opus-5" ? "claude-opus-5-5" : s.anthropicModel,
           effort: s.effort,
         };
       }

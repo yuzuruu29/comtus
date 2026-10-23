@@ -111,7 +111,7 @@ export default function FreeLimitWarningModal({
               </span>
             </div>
             <p className="mt-1 text-[12px] text-muted leading-relaxed">
-              A pass is prepaid usage, metered by the tokens a reply actually uses. Sprint starts at <strong>$2.99</strong>.
+              Instant access to Claude Opus 5.5 & Sonnet 5.5 with no daily free-tier queues. Study passes start at <strong>$2.99</strong>.
             </p>
           </div>
           <button
