@@ -146,11 +146,23 @@ export default defineConfig({
     chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
-        manualChunks: {
-          "vendor-motion": ["motion/react"],
-          "vendor-ai": ["@anthropic-ai/sdk", "openai"],
-          "vendor-markdown": ["react-markdown", "remark-gfm"],
-          "vendor-icons": ["@phosphor-icons/react"],
+        /* Function form: object-form manualChunks creates facade chunks that
+           can attract shared runtime modules — Vite's preload helper once
+           landed inside vendor-ai, statically linking the 334 KB AI SDK
+           chunk to the entry and preloading it on the landing page. */
+        manualChunks(id: string) {
+          /* Vite's preload helper is a virtual module ("\x00vite/preload-helper").
+             The CJS AI SDKs contain dynamic requires, so without this the
+             helper gets absorbed into vendor-ai — and because the entry also
+             needs it for route lazy-loading, the whole SDK chunk becomes a
+             static entry dependency, preloaded on the landing page. A tiny
+             neutral chunk keeps it out. */
+          if (id.includes("preload-helper")) return "runtime-preload";
+          if (!id.includes("node_modules")) return;
+          if (/@anthropic-ai[\\/]sdk/.test(id) || /node_modules[\\/]openai[\\/]/.test(id)) return "vendor-ai";
+          if (id.includes("motion")) return "vendor-motion";
+          if (id.includes("react-markdown") || id.includes("remark-gfm")) return "vendor-markdown";
+          if (id.includes("@phosphor-icons")) return "vendor-icons";
         },
       },
     },

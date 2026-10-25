@@ -1,7 +1,5 @@
 import "./polyfills";
-import * as pdfjs from "pdfjs-dist";
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { estTokens } from "./retrieval";
 import type { SourceKind } from "./types";
 import type { VisionImage } from "./llm";
@@ -9,7 +7,20 @@ import { uid } from "./db";
 import { loadChunk } from "./lazyChunk";
 import { chunkText } from "./chunking";
 
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+/* pdfjs is ~1 MB with its worker; it loads the first time a PDF is opened,
+   not with the studio. One module-level promise serves every import. */
+let pdfjsPromise: Promise<typeof import("pdfjs-dist")> | null = null;
+function loadPdfjs(): Promise<typeof import("pdfjs-dist")> {
+  pdfjsPromise ??= (async () => {
+    const [lib, worker] = await Promise.all([
+      import("pdfjs-dist"),
+      import("pdfjs-dist/build/pdf.worker.min.mjs?url"),
+    ]);
+    lib.GlobalWorkerOptions.workerSrc = worker.default;
+    return lib;
+  })();
+  return pdfjsPromise;
+}
 
 export interface ExtractedDoc {
   title: string;
@@ -148,6 +159,7 @@ for this image.
   }
 
   if (ext === "pdf" || file.type === "application/pdf") {
+    const pdfjs = await loadPdfjs();
     const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
     const pages = await pdfPageTexts(pdf);
     const read = await transcribeScannedPages(pdf, pages, file.name, name, opts, raster);
