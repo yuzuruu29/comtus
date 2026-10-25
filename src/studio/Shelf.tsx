@@ -22,6 +22,7 @@ import { exportNotebook, openNotebookText, readNotebookFileNative } from "../lib
 import type { Notebook } from "../lib/types";
 import DeskShell from "./DeskShell";
 import SettingsModal, { type SettingsTab } from "./SettingsModal";
+import FirstRunSetup from "../desk/FirstRunSetup";
 import NotebookCard, { type NotebookCardData } from "./NotebookCard";
 import NewNotebookDialog from "./NewNotebookDialog";
 import ReviewDueStrip from "./ReviewDueStrip";
@@ -53,6 +54,7 @@ export default function Shelf({
   const [kickstartError, setKickstartError] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("settings");
+  const [setupOpen, setSetupOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [loadError, setLoadError] = useState("");
@@ -427,6 +429,9 @@ export default function Shelf({
                 <Button variant="ghost" onClick={() => openSettings("models")}>
                   Connect a model
                 </Button>
+                <button type="button" className="shelf-start-open" onClick={() => setSetupOpen(true)}>
+                  or use a free local model (Ollama)
+                </button>
               </aside>
             )}
             <footer className="shelf-footer">
@@ -489,6 +494,7 @@ export default function Shelf({
         </Dialog>
 
         <SettingsModal open={settingsOpen} initialTab={settingsTab} onClose={() => setSettingsOpen(false)} />
+        <FirstRunSetup open={setupOpen} onClose={() => setSetupOpen(false)} />
       </div>
     </DeskShell>
   );

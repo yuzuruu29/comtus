@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import {
+  BookOpen,
   DotsThreeVertical,
   DeviceMobile,
   DownloadSimple,
@@ -37,16 +38,17 @@ interface NotebookWithCount extends Notebook {
 }
 
 export default function DeskHome({
-  hasKey: _hasKey,
+  needsSetup,
+  onSetup,
   onOpenResume,
   onOpenWork,
   onNew: _onNew,
   onSettings,
 }: {
-  hasKey: boolean;
+  needsSetup: boolean;
+  onSetup: () => void;
   resume: Notebook | null;
   modelLabel: string;
-  effortLabel: string;
   onOpenResume: (id: string) => void;
   onOpenWork: (notebookId: string, generationId: string) => void;
   onNew: () => void;
@@ -439,6 +441,27 @@ export default function DeskHome({
 
         <ReviewDueStrip onReview={onOpenWork} />
 
+        {needsSetup && (
+          <div className="mt-4 flex flex-col items-start justify-between gap-3 rounded-[var(--radius-dialog)] border border-brass/25 bg-brass/[0.05] px-4 py-3.5 sm:flex-row sm:items-center">
+            <p className="text-body leading-relaxed text-muted">
+              <strong className="text-ink">No model connected yet.</strong> A free local model keeps
+              every answer on this machine.
+            </p>
+            <div className="flex shrink-0 gap-2">
+              <button type="button" onClick={onSetup} className={btnLamp}>
+                Set up a local model
+              </button>
+              <button
+                type="button"
+                onClick={onSettings}
+                className="rounded-[var(--radius-control)] border border-hairline px-3.5 py-2 text-label text-muted transition-colors hover:border-hairline-strong hover:text-ink"
+              >
+                Connect online
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Section Heading */}
         <div className="mt-8 mb-5 flex items-baseline justify-between">
           <h2 className="font-display text-[1.45rem] font-[450] text-ink">
@@ -457,7 +480,9 @@ export default function DeskHome({
         )}
 
         {/* Grid View Mode */}
-        {viewMode === "grid" ? (
+        {notebooks.length === 0 && !loadError ? (
+          <StartHero onCreate={openCreateModal} onOpenFile={pickFile} />
+        ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* 1st Card: + Create new notebook — same family as studio shelf. */}
             <div className="anim-rise h-full" style={{ ["--d" as string]: staggerDelay(0) }}>
@@ -667,8 +692,7 @@ export default function DeskHome({
           if (!createPending) setCreateModalOpen(false);
         }}
         title="Create new notebook"
-      >
-        <div className="space-y-5">
+      >        <div className="space-y-5">
           <Field label="Notebook name" hint="e.g. Comparison of Android 15 and iOS 18, Cellular Biology, etc.">
             <input
               data-autofocus
@@ -775,5 +799,72 @@ export default function DeskHome({
         />
       )}
     </main>
+  );
+}
+
+/** The empty-desk welcome: what a notebook is for, before the first one
+    exists. Mirrors the web shelf's start section in desk clothes. */
+function StartHero({ onCreate, onOpenFile }: { onCreate: () => void; onOpenFile: () => void }) {
+  return (
+    <section
+      aria-labelledby="desk-start-title"
+      className="grid gap-8 rounded-[var(--radius-dialog)] border border-hairline bg-surface/40 p-7 sm:p-9 lg:grid-cols-[1.15fr_1fr] lg:gap-12"
+    >
+      <div>
+        <span className="font-mono text-label tracking-[0.14em] text-brass">
+          A notebook of your own
+        </span>
+        <h2 id="desk-start-title" className="mt-3 font-display text-[clamp(1.6rem,3vw,2.2rem)] font-[450] leading-tight text-ink">
+          What are you working on?
+        </h2>
+        <p className="mt-3 max-w-md text-body leading-relaxed text-muted">
+          A course. An exam. A question that will not leave you alone. Give it a notebook, and keep
+          the reading, the questions, and the practice in one place.
+        </p>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <button type="button" onClick={onCreate} className={btnLamp}>
+            <span className="inline-flex items-center gap-2">
+              <Plus size={ICON.md} weight="bold" aria-hidden="true" />
+              New notebook
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={onOpenFile}
+            className="inline-flex items-center gap-2 rounded-[var(--radius-control)] border border-hairline px-3.5 py-2 text-body text-muted transition-colors hover:border-hairline-strong hover:text-ink"
+          >
+            <FolderOpen size={ICON.md} aria-hidden="true" />
+            Open a notebook file
+          </button>
+        </div>
+        <p className="mt-4 text-label text-muted">Start with a name. Add the material as you go.</p>
+      </div>
+      <div className="rounded-[var(--radius-dialog)] border border-hairline bg-ground/60 p-5">
+        <div className="flex items-center gap-2 text-label text-muted">
+          <BookOpen size={ICON.lg} aria-hidden="true" />
+          <span>Inside your notebook</span>
+        </div>
+        <ol className="mt-4 grid gap-4">
+          <li>
+            <h3 className="text-body font-semibold text-ink">Add your sources</h3>
+            <p className="mt-1 text-body leading-relaxed text-muted">
+              Documents, links, or your own notes. Drag them anywhere in the window.
+            </p>
+          </li>
+          <li>
+            <h3 className="text-body font-semibold text-ink">Talk it through</h3>
+            <p className="mt-1 text-body leading-relaxed text-muted">
+              Ask questions and follow answers back to the passage they came from.
+            </p>
+          </li>
+          <li>
+            <h3 className="text-body font-semibold text-ink">Make it stick</h3>
+            <p className="mt-1 text-body leading-relaxed text-muted">
+              Turn the material into quizzes, flashcards, and a study plan.
+            </p>
+          </li>
+        </ol>
+      </div>
+    </section>
   );
 }

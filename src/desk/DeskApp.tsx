@@ -1,18 +1,20 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { GearSix } from "@phosphor-icons/react";
+import { DeviceMobile, GearSix } from "@phosphor-icons/react";
 import { createNotebook, db } from "../lib/db";
 import { exportNotebook } from "../lib/backup";
 import type { Notebook as NotebookRow } from "../lib/types";
 import { useCallSettings, useSettings } from "../lib/settings";
-import { effortLabelFor, modelLabelFor } from "../lib/llm";
+import { modelLabelFor } from "../lib/llm";
 import { isTauri } from "../lib/desktop";
 import ComtusLogo from "../components/brand/ComtusLogo";
 import { ByokBadge, ProBadge } from "../components/brand/BrandControls";
 import DeskShell from "../studio/DeskShell";
 import SettingsModal from "../studio/SettingsModal";
 import ModelPickerMenu from "../studio/ModelPickerMenu";
+import FocusTimer from "../studio/FocusTimer";
+import { SendToDeviceDialog } from "../studio/DeviceTransfer";
 import CaptionButtons from "../studio/Titlebar";
 import { LampPulse, Modal, btnGhost } from "../studio/ui";
 import { ENTER, SOFT } from "../studio/fx";
@@ -37,7 +39,6 @@ export default function DeskApp() {
 
   const desk = useNotebookDesk(notebookId);
   const cs = useCallSettings();
-  const hasKey = useSettings((s) => s.hasKey());
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
@@ -159,7 +160,6 @@ export default function DeskApp() {
   }, [navigate, notebookId]);
 
   const modelLabel = modelLabelFor(cs.provider, cs.model);
-  const effortLabel = effortLabelFor(cs.effort);
 
   return (
     <DeskShell
@@ -303,10 +303,10 @@ export default function DeskApp() {
                 className="flex min-h-0 flex-1"
               >
                 <DeskHome
-                  hasKey={hasKey}
+                  needsSetup={isStock}
+                  onSetup={() => setSetupOpen(true)}
                   resume={resume}
                   modelLabel={modelLabel}
-                  effortLabel={effortLabel}
                   onOpenResume={openNotebook}
                   onOpenWork={openWork}
                   onNew={() => void newNotebook()}
@@ -319,7 +319,7 @@ export default function DeskApp() {
         </div>
 
         <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-        {tauri && <FirstRunSetup open={setupOpen} onClose={() => setSetupOpen(false)} />}
+        <FirstRunSetup open={setupOpen} onClose={() => setSetupOpen(false)} />
       </div>
     </DeskShell>
   );
@@ -346,6 +346,7 @@ function AppHeader({
 }) {
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [stats, setStats] = useState<{ sources: number; tokens: number; gens: number } | null>(null);
+  const [sending, setSending] = useState(false);
 
   const isPro = useSettings((s) => Boolean(s.isPro && s.planTier !== "free"));
 
@@ -391,6 +392,7 @@ function AppHeader({
           </>
         )}
         <div className="no-drag ml-auto flex shrink-0 items-center gap-1.5 pr-1">
+          <FocusTimer />
           <MilestonesButton className="hidden sm:inline-flex" />
           {notebook && (
             <>
@@ -399,6 +401,13 @@ function AppHeader({
                 className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2.5 py-1.5 text-[12px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
               >
                 Analytics
+              </button>
+              <button
+                onClick={() => setSending(true)}
+                className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2.5 py-1.5 text-label text-muted hover:bg-ink/5 hover:text-ink sm:flex"
+              >
+                <DeviceMobile size={ICON.sm} aria-hidden="true" />
+                Send
               </button>
               <button
                 onClick={() => void handleShare()}
@@ -476,6 +485,10 @@ function AppHeader({
             </div>
           </div>
         </Modal>
+      )}
+      {/* Send this notebook to a phone or another computer */}
+      {notebook && sending && (
+        <SendToDeviceDialog notebook={notebook} onClose={() => setSending(false)} />
       )}
     </>
   );

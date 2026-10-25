@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Shelf from "./Shelf";
 import Workspace from "./Workspace";
 import DeskApp from "../desk/DeskApp";
-import { isDeskShell } from "../lib/desktop";
+import { isDeskShell, isStandalone, isTauri } from "../lib/desktop";
+import { useBreakpoint } from "../lib/useBreakpoint";
 import { useSettings } from "../lib/settings";
 import { studioNotebookIdFromPath } from "./studioPath";
 import "./studio.css";
@@ -23,6 +24,7 @@ export default function StudioApp() {
     [navigate],
   );
   const hasKey = useSettings((s) => s.hasKey());
+  const bp = useBreakpoint();
 
   useEffect(() => {
     document.title = "Comtus — Studio";
@@ -32,8 +34,12 @@ export default function StudioApp() {
   }, []);
 
   // The desktop app is its own product surface: library rail + desk home,
-  // not the web studio tree. The browser keeps the shelf + workspace.
-  if (isDeskShell()) {
+  // not the web studio tree. The browser keeps the shelf + workspace. A
+  // PWA installed on a phone is the one installed shell the desk surface
+  // fits badly — its panes assume a window — so it gets the responsive
+  // web workspace with mobile tabs instead.
+  const phoneInstalledPwa = isStandalone() && !isTauri() && bp === "sm";
+  if (isDeskShell() && !phoneInstalledPwa) {
     return <DeskApp />;
   }
 

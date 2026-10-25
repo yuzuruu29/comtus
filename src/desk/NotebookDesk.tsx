@@ -1,22 +1,25 @@
-import { useCallback, useEffect, useRef, useState, type ComponentType } from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import { motion } from "motion/react";
 import { Books, Notebook } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
-import { ENTER, SPRING, SOFT, deskPane } from "../studio/fx";
+import { ENTER, SOFT, deskPane } from "../studio/fx";
 import SourcesPane from "../studio/SourcesPane";
 import ChatPane from "../studio/ChatPane";
 import StudioPane from "../studio/StudioPane";
 import { panesFor, type LayoutMode } from "../studio/layout";
+import { usePaneResize } from "../studio/usePaneResize";
 import { useMediaQuery } from "../lib/useMediaQuery";
 import { ICON } from "../ui/iconScale";
 
 const SOURCES_W = 260;
 const STUDIO_W = 280;
 const RAIL_W = 48;
+const PANE_WIDTH_VAR = "--pane-width" as const;
 
 /** The notebook surface of the desk: sources · chat · studio under the
     app-wide chrome. Desktop-only — no mobile tabs, no back-to-shelf link;
-    the library rail owns navigation. */
+    the library rail owns navigation. Panes resize exactly like the web
+    workspace, and share its saved widths. */
 export default function NotebookDesk({
   notebookId,
   notebook,
@@ -75,6 +78,31 @@ export default function NotebookDesk({
     setLayout(compact ? "reading" : panes.studio ? "standard" : "reading");
   }, [compact, panes.studio, setLayout]);
 
+  const sourcesResize = usePaneResize({
+    side: "left",
+    storageKey: "comtus_sources_width",
+    cssVariable: PANE_WIDTH_VAR,
+    controlsId: "desk-sources-content",
+    label: "Resize sources sidebar",
+    minWidth: 180,
+    maxWidth: 550,
+    defaultWidth: SOURCES_W,
+    collapseThreshold: 140,
+    onCollapse: () => setLayout(panes.studio ? "writing" : "focus"),
+  });
+  const studioResize = usePaneResize({
+    side: "right",
+    storageKey: "comtus_studio_width",
+    cssVariable: PANE_WIDTH_VAR,
+    controlsId: "desk-studio-content",
+    label: "Resize studio sidebar",
+    minWidth: 200,
+    maxWidth: 550,
+    defaultWidth: STUDIO_W,
+    collapseThreshold: 150,
+    onCollapse: () => setLayout(panes.sources ? "reading" : "focus"),
+  });
+
   // Translate desk-level import requests into pane ticks. The seen-ref
   // keeps a stale signal from re-firing when switching between notebooks.
   const [importTick, setImportTick] = useState(0);
@@ -89,15 +117,18 @@ export default function NotebookDesk({
 
   return (
     <div className="flex min-h-0 flex-1">
-      <motion.aside
+      <aside
+        ref={sourcesResize.paneRef}
         aria-label="Sources"
-        initial={false}
-        animate={{ width: panes.sources ? SOURCES_W : RAIL_W }}
-        transition={SPRING}
-        className="relative shrink-0 overflow-hidden border-r desk-split will-change-[width] [backface-visibility:hidden]"
+        data-resizing={sourcesResize.isDragging ? "true" : undefined}
+        style={{
+          [PANE_WIDTH_VAR]: `${panes.sources ? sourcesResize.width : RAIL_W}px`,
+          width: `var(${PANE_WIDTH_VAR})`,
+        } as CSSProperties}
+        className="relative shrink-0 overflow-hidden border-r desk-split transition-[width] duration-slow ease-[var(--ease-out)] data-[resizing=true]:transition-none motion-reduce:transition-none will-change-[width] [backface-visibility:hidden]"
       >
         {panes.sources ? (
-          <div className={`${deskPane} flex flex-col`}>
+          <div id="desk-sources-content" className={`${deskPane} flex flex-col`}>
             <SourcesPane
               notebookId={notebookId}
               version={sourcesVersion}
@@ -124,7 +155,16 @@ export default function NotebookDesk({
             />
           </div>
         )}
-      </motion.aside>
+        {panes.sources && (
+          <div
+            {...sourcesResize.separatorProps}
+            title="Drag to resize. Arrow keys adjust. Double-click resets."
+            className="group absolute right-0 top-0 bottom-0 z-30 -mr-1.5 flex w-3 cursor-col-resize select-none items-center justify-center transition-colors hover:opacity-100 focus-visible:bg-brass/[0.06] focus-visible:outline-none"
+          >
+            <div className="h-8 w-1 rounded-[var(--radius-pill)] bg-hairline/80 shadow-sm transition-all duration-med group-hover:h-14 group-hover:w-1.5 group-hover:bg-brass group-active:h-20 group-active:bg-brass group-focus-visible:h-14 group-focus-visible:w-1.5 group-focus-visible:bg-brass group-focus-visible:shadow-[0_0_14px_rgba(227,176,75,0.42)] group-data-[collapse-ready=true]:h-20 group-data-[collapse-ready=true]:w-1.5 group-data-[collapse-ready=true]:bg-brass" />
+          </div>
+        )}
+      </aside>
 
       <main className="min-w-0 flex-1">
         <motion.div
@@ -149,15 +189,18 @@ export default function NotebookDesk({
         </motion.div>
       </main>
 
-      <motion.aside
+      <aside
+        ref={studioResize.paneRef}
         aria-label="Studio"
-        initial={false}
-        animate={{ width: panes.studio ? STUDIO_W : RAIL_W }}
-        transition={SPRING}
-        className="relative shrink-0 overflow-hidden border-l desk-split will-change-[width] [backface-visibility:hidden]"
+        data-resizing={studioResize.isDragging ? "true" : undefined}
+        style={{
+          [PANE_WIDTH_VAR]: `${panes.studio ? studioResize.width : RAIL_W}px`,
+          width: `var(${PANE_WIDTH_VAR})`,
+        } as CSSProperties}
+        className="relative shrink-0 overflow-hidden border-l desk-split transition-[width] duration-slow ease-[var(--ease-out)] data-[resizing=true]:transition-none motion-reduce:transition-none will-change-[width] [backface-visibility:hidden]"
       >
         {panes.studio ? (
-          <div className={`${deskPane} flex flex-col`}>
+          <div id="desk-studio-content" className={`${deskPane} flex flex-col`}>
             <StudioPane
               notebookId={notebookId}
               onCollapse={() => setLayout(panes.sources ? "reading" : "focus")}
@@ -174,7 +217,16 @@ export default function NotebookDesk({
             />
           </div>
         )}
-      </motion.aside>
+        {panes.studio && (
+          <div
+            {...studioResize.separatorProps}
+            title="Drag to resize. Arrow keys adjust. Double-click resets."
+            className="group absolute left-0 top-0 bottom-0 z-30 -ml-1.5 flex w-3 cursor-col-resize select-none items-center justify-center transition-colors hover:opacity-100 focus-visible:bg-brass/[0.06] focus-visible:outline-none"
+          >
+            <div className="h-8 w-1 rounded-[var(--radius-pill)] bg-hairline/80 shadow-sm transition-all duration-med group-hover:h-14 group-hover:w-1.5 group-hover:bg-brass group-active:h-20 group-active:bg-brass group-focus-visible:h-14 group-focus-visible:w-1.5 group-focus-visible:bg-brass group-focus-visible:shadow-[0_0_14px_rgba(227,176,75,0.42)] group-data-[collapse-ready=true]:h-20 group-data-[collapse-ready=true]:w-1.5 group-data-[collapse-ready=true]:bg-brass" />
+          </div>
+        )}
+      </aside>
     </div>
   );
 }
