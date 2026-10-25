@@ -140,6 +140,7 @@ jobs:
       - name: Build site-hosted updater manifest
         run: |
           repo="${{ vars.PUBLIC_RELEASES_REPO || 'yuzuruu29/comtus-releases' }}"
+          mkdir -p public/desktop
           node scripts/build-site-manifest.mjs \
             --artifacts update-input \
             --assets assets \
