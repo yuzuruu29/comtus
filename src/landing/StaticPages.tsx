@@ -3,6 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import Nav from "./Nav";
 import Footer from "./Footer";
 import { usePublicPageEntry } from "./usePublicPageEntry";
+import { usePageMeta } from "../lib/usePageMeta";
 import "./landing.css";
 import { BookOpen, Compass, Envelope, FileText, Shield, Sparkle } from "@phosphor-icons/react";
 import { ICON } from "../ui/iconScale";
@@ -16,6 +17,7 @@ interface StaticPageLayoutProps {
 
 export function StaticPageLayout({ title, subtitle, icon: Icon = BookOpen, children }: StaticPageLayoutProps) {
   const titleRef = usePublicPageEntry();
+  usePageMeta(`Comtus — ${title}`, subtitle);
 
   return (
     <div className="landing-site">

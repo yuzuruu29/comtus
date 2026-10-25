@@ -8,4 +8,4 @@ Allow: /contact
 Allow: /study-companion
 Disallow: /api/
 
-Sitemap: https://comtus-ai.vercel.app/sitemap.xml
+Sitemap: https://www.comtus-ai.xyz/sitemap.xml

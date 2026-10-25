@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { STUDY_PLANS } from "../lib/paypal";
 import PayPalCheckout from "../studio/PayPalCheckout";
+import { usePageMeta } from "../lib/usePageMeta";
 import { Check, Copy, ShieldCheck } from "@phosphor-icons/react";
 import { ICON } from "../ui/iconScale";
 
@@ -14,6 +15,10 @@ export default function HostedCheckout() {
   const [passToken, setPassToken] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  usePageMeta(
+    "Smarter Models checkout — Comtus",
+    "Top up hosted Claude Opus 5.5 and Sonnet 5.5 access with a one-time PayPal pass.",
+  );
 
   async function copyPass(): Promise<void> {
     if (!passToken) return;
