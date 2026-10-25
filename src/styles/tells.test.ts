@@ -108,9 +108,10 @@ describe("tell: retired hype vocabulary", () => {
  *  1 above now owns that. Target 0. Lower this whenever you remove one. */
 const UPPERCASE_CEILING = 35;
 
-/** 48 uses of the middle-dot joiner. Most are a genuine third fact in a list
- *  where a second line or a pill would read better. Target 0. */
-const MIDDOT_CEILING = 48;
+/** 47 uses of the middle-dot joiner. Most are a genuine third fact in a list
+ *  where a second line or a pill would read better. Target 0. The desk header's
+ *  model button became the shared model picker, which removed one. */
+const MIDDOT_CEILING = 47;
 
 function count(rel: string, needle: string): number {
   return read(rel).split(needle).length - 1;

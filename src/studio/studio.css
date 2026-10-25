@@ -686,6 +686,7 @@
 
 /* Model menu: the same paper popover as the source and thinking menus. */
 .model-menu { position: absolute; bottom: calc(100% + 0.5rem); left: 0; z-index: 180; display: flex; flex-direction: column; width: min(20rem, calc(100vw - 2rem)); max-height: min(26rem, 60vh); border: 1px solid var(--hairline-strong); border-radius: var(--radius-field); background: var(--surface); box-shadow: var(--elev-modal); color: var(--ink); overflow: hidden; }
+.model-menu--below { bottom: auto; top: calc(100% + 0.5rem); left: auto; right: 0; }
 .model-menu-list { flex: 1; min-height: 0; overflow-y: auto; padding: 0.25rem; }
 .model-group + .model-group { margin-top: 0.25rem; padding-top: 0.25rem; border-top: 1px solid var(--hairline); }
 .model-group-title { padding: 0.5rem 0.625rem 0.25rem; font-size: var(--text-label); color: var(--muted); }

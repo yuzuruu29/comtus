@@ -52,6 +52,9 @@ interface SettingsState {
   leading: ReadingLeading;
   sendKey: SendKey;
   lastBackupAt: number;
+  /** The desk's first-run local-model guide was completed or dismissed; the
+      home strip keeps offering setup while this is false and no model is set. */
+  deskSetupDone: boolean;
   setProvider: (p: ProviderId) => void;
   update: (patch: Partial<SettingsState>) => void;
   addRecentModel: (modelId: string) => void;
@@ -63,6 +66,9 @@ interface SettingsState {
   consumeTokens: (amount: number) => void;
   hasProPlan: () => boolean;
   hasKey: () => boolean;
+  /** Untouched install state: the stock OpenRouter free default with no key,
+      no stored keys, and no pass. The desk's first-run guide keys off this. */
+  isStockConfig: () => boolean;
 }
 
 const RETIRED_SIGN_IN = new Set(["claude-oauth", "codex"]);
@@ -162,6 +168,7 @@ export const useSettings = create<SettingsState>()(
       reading: DEFAULT_READING,
       leading: DEFAULT_LEADING,
       sendKey: "enter",
+      deskSetupDone: false,
       lastBackupAt: 0,
       setProvider: (provider) => set({ provider }),
       update: (patch) => set(patch),
@@ -224,6 +231,17 @@ export const useSettings = create<SettingsState>()(
         const s = get();
         if (s.provider === "anthropic") return s.anthropicKey.trim().length > 10;
         return s.compatBaseUrl.trim().length > 8 && s.compatModel.trim().length > 0;
+      },
+      isStockConfig: () => {
+        const s = get();
+        return (
+          s.provider === "openai-compatible" &&
+          !s.compatKey.trim() &&
+          s.storedKeys.length === 0 &&
+          !s.isPro &&
+          (s.compatBaseUrl.trim() === "https://openrouter.ai/api/v1" || !s.compatBaseUrl.trim()) &&
+          s.compatModel.trim() === "openrouter/free"
+        );
       },
     }),
     {

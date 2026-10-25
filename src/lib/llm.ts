@@ -205,7 +205,7 @@ export interface CallSettings {
 /* Hosted Smarter Models: pass tokens authenticate against our edge proxy
    (api/anthropic.ts) — the real Anthropic key lives only on the server.
    Tauri desktop builds override the origin via VITE_API_ORIGIN. */
-const API_ORIGIN =
+export const API_ORIGIN =
   (import.meta.env.VITE_API_ORIGIN as string) ||
   (typeof window !== "undefined" ? window.location.origin : "");
 

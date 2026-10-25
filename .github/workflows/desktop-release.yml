@@ -119,6 +119,12 @@ jobs:
         run: |
           mkdir -p assets
           gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --dir assets
+          # Version-stripped copies so the website's download links never
+          # churn with the release version.
+          cp assets/Comtus_*_x64-setup.exe assets/Comtus_x64-setup.exe
+          cp assets/Comtus_*_aarch64.dmg assets/Comtus_aarch64.dmg
+          cp assets/Comtus_*_x64.dmg assets/Comtus_x64.dmg
+          ls assets
 
       # Installed apps request latest.json from Vercel. The binaries live on a
       # public releases repo because this repo is private and its asset URLs 404.
@@ -137,7 +143,7 @@ jobs:
           node scripts/build-site-manifest.mjs \
             --artifacts update-input \
             --assets assets \
-            --out desktop-releases/latest.json \
+            --out public/desktop/latest.json \
             --config src-tauri/tauri.conf.json \
             --site-base "https://github.com/${repo}/releases/download/${GITHUB_REF_NAME}"
 
@@ -145,13 +151,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "$GITHUB_REF_NAME" desktop-releases/latest.json --clobber --repo "$GITHUB_REPOSITORY"
+          gh release upload "$GITHUB_REF_NAME" public/desktop/latest.json --clobber --repo "$GITHUB_REPOSITORY"
           gh release edit "$GITHUB_REF_NAME" --draft=false --latest --repo "$GITHUB_REPOSITORY"
 
       - name: Commit hosted updater manifest
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add desktop-releases/latest.json
+          git add public/desktop/latest.json
           git diff --cached --quiet || git commit -m "chore: publish desktop updater $GITHUB_REF_NAME"
           git push origin HEAD:${{ github.event.repository.default_branch }}

@@ -21,8 +21,8 @@ src-tauri/gen
 .pnpm-store/
 
 # Installers ship from the public releases repo. Only the updater manifest is served by Vercel.
-desktop-releases/*
-!desktop-releases/latest.json
+public/desktop/*
+!public/desktop/latest.json
 # Ad renders
 minimax-ad-assets/
 # Export tests used to drop PDFs here

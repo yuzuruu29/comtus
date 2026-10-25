@@ -19,9 +19,13 @@ import { ICON } from "../ui/iconScale";
 export default function ModelPickerMenu({
   modelLabel,
   onOpenSettings,
+  placement = "above",
 }: {
   modelLabel?: string;
   onOpenSettings?: () => void;
+  /** Which way the menu opens. The composer sits low, so it opens upward;
+      the desk header opens downward. */
+  placement?: "above" | "below";
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -92,7 +96,7 @@ export default function ModelPickerMenu({
             transition={SOFT}
             role="listbox"
             aria-label="Choose a model"
-            className="model-menu"
+            className={`model-menu ${placement === "below" ? "model-menu--below" : ""}`}
           >
             <div className="model-menu-list">
               {isPro && (

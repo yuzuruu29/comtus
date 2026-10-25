@@ -118,8 +118,8 @@ it("marks the section being read in the navigation", () => {
   });
   try {
     render(<MemoryRouter><LandingPage /></MemoryRouter>);
-    const observed = observers.find((entry) => entry.targets.length === 3);
-    expect(observed?.targets.map((target) => target.id)).toEqual(["how-it-works", "model-access", "faq"]);
+    const observed = observers.find((entry) => entry.targets.length === 4);
+    expect(observed?.targets.map((target) => target.id)).toEqual(["how-it-works", "model-access", "desktop", "faq"]);
 
     const enter = (id: string, isIntersecting: boolean) =>
       act(() => observed!.callback([{ target: document.getElementById(id)!, isIntersecting } as unknown as IntersectionObserverEntry], {} as IntersectionObserver));
@@ -139,6 +139,29 @@ it("marks the section being read in the navigation", () => {
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+it("offers the desktop app with release downloads and the Ollama first step", () => {
+  render(<MemoryRouter><LandingPage /></MemoryRouter>);
+  expect(screen.getByRole("heading", { level: 2, name: /The desk, installed/ })).toBeInTheDocument();
+
+  const section = within(document.getElementById("desktop")!);
+  expect(section.getByRole("link", { name: "Windows (64-bit installer)" })).toHaveAttribute(
+    "href",
+    "https://github.com/yuzuruu29/comtus-releases/releases/latest/download/Comtus_x64-setup.exe",
+  );
+  expect(section.getByRole("link", { name: "macOS (Apple silicon)" })).toHaveAttribute(
+    "href",
+    "https://github.com/yuzuruu29/comtus-releases/releases/latest/download/Comtus_aarch64.dmg",
+  );
+
+  expect(section.getAllByText("Install Comtus").length).toBeGreaterThan(0);
+  expect(section.getByText("Bring home Ollama")).toBeInTheDocument();
+  expect(section.getByRole("link", { name: "ollama.com/download" })).toHaveAttribute(
+    "href",
+    "https://ollama.com/download",
+  );
+  expect(section.getByText(/one-time PayPal top-up/)).toBeInTheDocument();
 });
 
 it("only animates the sample once the visitor has asked for something", () => {

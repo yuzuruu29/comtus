@@ -292,6 +292,32 @@ html[data-theme="dark"] .landing-nightfall { background: var(--ground); }
 .landing-setup-legacy { display: flex; align-items: center; gap: 12px; padding: 20px; background: var(--surface); color: var(--ink); font-family: var(--font-ui); font-size: 14px; }
 .landing-setup-legacy > :last-child { margin-left: auto; color: var(--muted); font-size: 12px; }
 
+/* The installed desk: download card, the Ollama first run, and the hosted top-up aside. */
+.landing-desktop-heading > p { max-width: 460px; margin-top: 24px; color: var(--muted); font-size: 15px; line-height: 1.8; }
+.landing-desktop-body { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 80px; align-items: start; margin-top: 54px; }
+.landing-desktop-card { display: grid; gap: 14px; justify-items: start; padding: 28px; border: 1px solid var(--hairline-strong); background: var(--surface); box-shadow: var(--elev-card); }
+.landing-desktop-card h3 { font-family: var(--font-read); font-size: 22px; font-weight: 480; letter-spacing: -.03em; }
+.landing-desktop-card > p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+.landing-desktop-card .btn { margin-top: 4px; }
+.landing-desktop-alternates { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 12.5px; }
+.landing-desktop-alternates a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; transition: color var(--dur-fast) var(--ease-house); }
+.landing-desktop-alternates a:hover { color: var(--ink); }
+.landing-desktop-footnote { color: var(--muted); font-size: 12px; line-height: 1.6; }
+.landing-desktop-steps { display: grid; gap: 22px; margin: 6px 0 0; list-style: decimal; padding-left: 21px; }
+.landing-desktop-steps li { padding-left: 6px; }
+.landing-desktop-steps li::marker { color: var(--brass); font-family: var(--font-mono); font-size: 11px; }
+.landing-desktop-steps li > span { font-size: 13.5px; font-weight: 600; }
+.landing-desktop-steps li p { margin-top: 3px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.landing-desktop-steps a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--brass); text-underline-offset: 3px; }
+.landing-desktop-smarter { max-width: 62ch; margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--hairline); color: var(--muted); font-size: 13px; line-height: 1.8; }
+.landing-desktop-smarter strong { color: var(--ink); font-weight: 600; }
+@media (max-width: 1100px) {
+  .landing-desktop-body { gap: 48px; }
+}
+@media (max-width: 940px) {
+  .landing-desktop-body { grid-template-columns: 1fr; gap: 44px; }
+}
+
 /* Entrance, scroll and hover motion lives in landing-motion.css: everything above is the finished, static page. */
 .landing-home:not([data-motion="full"]) .landing-open-desk svg { transition: none; transform: none; }
 

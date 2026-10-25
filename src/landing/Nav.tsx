@@ -9,6 +9,7 @@ import { ICON } from "../ui/iconScale";
 const LINKS = [
   { label: "How it works", hash: "#how-it-works" },
   { label: "Model access", hash: "#model-access" },
+  { label: "Desktop app", hash: "#desktop" },
   { label: "Questions", hash: "#faq" },
 ];
 

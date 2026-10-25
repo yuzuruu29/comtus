@@ -8,6 +8,7 @@ import Nav from "./Nav";
 import Footer from "./Footer";
 import OnboardingModal from "./OnboardingModal";
 import StudyFieldGuide from "./StudyFieldGuide";
+import DesktopSection from "./DesktopSection";
 import { usePublicPageEntry } from "./usePublicPageEntry";
 import { useSmoothScroll } from "./useSmoothScroll";
 import "./landing.css";
@@ -294,6 +295,8 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <DesktopSection />
+
         <section id="faq" className="landing-section landing-container landing-faq" aria-labelledby="landing-faq-title">
           <div className="landing-section-heading" data-landing-reveal><h2 id="landing-faq-title">Good questions.<br /><em>Clear answers.</em></h2><p>Need a hand getting started? <Link to="/study-companion" className="landing-text-link">Read the study guide</Link> or <button type="button" className="landing-text-button" onClick={() => setOnboardingOpen(true)}>set up your desk</button>.</p></div>
           <div className="landing-faq-list">
@@ -302,6 +305,7 @@ export default function LandingPage() {
             <details data-landing-reveal><summary>How do I check an answer?<CaretDown size={ICON.lg} aria-hidden="true" /></summary><p>Follow an answer’s citations to the supporting text in your sources. AI can still make mistakes, so check important claims against the original material. Your source is always part of the study process.</p></details>
             <details data-landing-reveal><summary>Can I use it for exam preparation?<CaretDown size={ICON.lg} aria-hidden="true" /></summary><p>The desk includes quizzes, mock exams, flashcards, and study guides. Build practice from your own review materials and use the answer explanations to revisit difficult topics.</p></details>
             <details data-landing-reveal><summary>Will my notebooks appear on another device?<CaretDown size={ICON.lg} aria-hidden="true" /></summary><p>Notebooks are stored on the device and browser where you create them. Export a backup to keep a separate copy. Clearing browser storage can remove your local study data.</p></details>
+            <details data-landing-reveal><summary>Is there an app to install?<CaretDown size={ICON.lg} aria-hidden="true" /></summary><p>Yes. Comtus Desktop for Windows and macOS is a download in the desktop section above. A setup guide inside the app connects Ollama so the model runs on your own machine, and hosted Claude access stays an optional top-up.</p></details>
           </div>
         </section>
         {/* The page ends at night: the closing and the footer take the Lamplight

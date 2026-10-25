@@ -23,6 +23,7 @@ import { Modal, Field, inputCls, btnLamp, btnGhost, ErrorNote, LampPulse } from 
 import { BorderBeam } from "./fx";
 import { useSettings } from "../lib/settings";
 import {
+  API_ORIGIN,
   EFFORTS,
   MODELS,
   COMPAT_PRESETS,
@@ -35,6 +36,7 @@ import {
 import type { ProviderId, StoredKey } from "../lib/types";
 import { STUDY_PLANS, decodePassInfo, passSummary, planTierForPass, type StudyPlan } from "../lib/paypal";
 import PayPalCheckout from "./PayPalCheckout";
+import ExternalLink from "./ExternalLink";
 import { isTauri } from "../lib/desktop";
 import { requestUpdateCheck } from "./useUpdater";
 import { startOpenRouterOAuth } from "../lib/openrouterAuth";
@@ -1067,17 +1069,34 @@ export default function SettingsModal({
                         </div>
                         <span className="font-mono text-[10px] text-brass">{selectedPlan.name} · {selectedPlan.days} days</span>
                       </div>
-                      <PayPalCheckout
-                        plan={selectedPlan}
-                        onSuccess={(passToken) => {
-                          // The pass is minted server-side after PayPal capture
-                          // verification — the browser only activates what it
-                          // received. Its quota/expiry come from the token itself.
-                          const info = decodePassInfo(passToken);
-                          s.activateProPass(passToken, info ? planTierForPass(info) : selectedPlan.id);
-                          set({ anthropicKey: passToken });
-                        }}
-                      />
+                      {isTauri() ? (
+                        /* The desktop CSP is script-src 'self', so the PayPal
+                           SDK cannot run in-app; the hosted checkout page in a
+                           real browser completes payment, and the pass comes
+                           back through the paste field below. */
+                        <div className="space-y-2.5">
+                          <p className="text-[12.5px] leading-relaxed text-muted">
+                            In the desktop app, PayPal opens in your browser window. Complete the
+                            payment there, then paste the access pass below. Your notebooks and keys
+                            stay on this device throughout.
+                          </p>
+                          <ExternalLink href={`${API_ORIGIN}/checkout`} className={btnLamp}>
+                            Top up in your browser
+                          </ExternalLink>
+                        </div>
+                      ) : (
+                        <PayPalCheckout
+                          plan={selectedPlan}
+                          onSuccess={(passToken) => {
+                            // The pass is minted server-side after PayPal capture
+                            // verification — the browser only activates what it
+                            // received. Its quota/expiry come from the token itself.
+                            const info = decodePassInfo(passToken);
+                            s.activateProPass(passToken, info ? planTierForPass(info) : selectedPlan.id);
+                            set({ anthropicKey: passToken });
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
                 );

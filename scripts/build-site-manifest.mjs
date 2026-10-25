@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Build the site-hosted Tauri updater manifest (desktop-releases/latest.json)
+ * Build the site-hosted Tauri updater manifest (public/desktop/latest.json)
  * from CI artifacts + downloaded release assets.
  *
  * WHY THIS EXISTS
@@ -21,7 +21,7 @@
  *   node scripts/build-site-manifest.mjs
  *     --artifacts "dir containing updater-TARGET subdirectories"
  *     --assets   "dir of downloaded release assets"
- *     --out      desktop-releases/latest.json
+ *     --out      public/desktop/latest.json
  *     --config   src-tauri/tauri.conf.json
  *     --site-base https://comtus-ai.vercel.app/desktop
  */

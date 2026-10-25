@@ -12,6 +12,7 @@ import ComtusLogo from "../components/brand/ComtusLogo";
 import { ByokBadge, ProBadge } from "../components/brand/BrandControls";
 import DeskShell from "../studio/DeskShell";
 import SettingsModal from "../studio/SettingsModal";
+import ModelPickerMenu from "../studio/ModelPickerMenu";
 import CaptionButtons from "../studio/Titlebar";
 import { LampPulse, Modal, btnGhost } from "../studio/ui";
 import { ENTER, SOFT } from "../studio/fx";
@@ -21,6 +22,7 @@ import MilestonesButton from "../studio/companion/MilestonesButton";
 import LibraryRail from "./LibraryRail";
 import DeskHome from "./DeskHome";
 import NotebookDesk from "./NotebookDesk";
+import FirstRunSetup from "./FirstRunSetup";
 import { ICON } from "../ui/iconScale";
 
 /** Comtus for desktop — a standalone product surface. The library is a
@@ -38,6 +40,7 @@ export default function DeskApp() {
   const hasKey = useSettings((s) => s.hasKey());
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(false);
   const [freshId, setFreshId] = useState<string | null>(null);
   const [importRequest, setImportRequest] = useState<{
     notebookId: string;
@@ -103,6 +106,14 @@ export default function DeskApp() {
       return () => window.clearTimeout(t);
     }
   }, [freshId, notebookId]);
+
+  // First-run local-model guide: offered once, and only to a native desk
+  // still on its stock configuration.
+  const isStock = useSettings((s) => s.isStockConfig());
+  const deskSetupDone = useSettings((s) => s.deskSetupDone);
+  useEffect(() => {
+    if (tauri && isStock && !deskSetupDone) setSetupOpen(true);
+  }, [tauri, isStock, deskSetupDone]);
 
   const newNotebook = useCallback(async (): Promise<string> => {
     const nb = await createNotebook("Untitled");
@@ -186,7 +197,6 @@ export default function DeskApp() {
           nameRef={nameRef}
           onRename={(name) => void desk.rename(name)}
           modelLabel={modelLabel}
-          effortLabel={effortLabel}
           onHome={goHome}
           onSettings={() => setSettingsOpen(true)}
         />
@@ -309,6 +319,7 @@ export default function DeskApp() {
         </div>
 
         <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+        {tauri && <FirstRunSetup open={setupOpen} onClose={() => setSetupOpen(false)} />}
       </div>
     </DeskShell>
   );
@@ -322,7 +333,6 @@ function AppHeader({
   nameRef,
   onRename,
   modelLabel,
-  effortLabel,
   onHome,
   onSettings,
 }: {
@@ -331,7 +341,6 @@ function AppHeader({
   nameRef: RefObject<HTMLInputElement | null>;
   onRename: (name: string) => void;
   modelLabel: string;
-  effortLabel: string;
   onHome: () => void;
   onSettings: () => void;
 }) {
@@ -400,12 +409,9 @@ function AppHeader({
             </>
           )}
 
-          <button
-            onClick={onSettings}
-            className="hidden items-center rounded-[var(--radius-control)] px-2.5 py-1.5 text-[11.5px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
-          >
-            {modelLabel} · {effortLabel}
-          </button>
+          <div className="hidden sm:block">
+            <ModelPickerMenu modelLabel={modelLabel} onOpenSettings={onSettings} placement="below" />
+          </div>
           <button
             onClick={onSettings}
             className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"

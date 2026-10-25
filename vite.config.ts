@@ -1,4 +1,4 @@
-import { cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -127,25 +127,8 @@ function stampSwVersion(): Plugin {
   };
 }
 
-/** Desktop installers are release artifacts, not app assets — they live in
- *  desktop-releases/ (outside public/) so Tauri never bakes them into the
- *  app binary; site builds copy them into dist/desktop. Tauri builds run
- *  `vite build --mode tauri`, which skips this plugin. */
-function copyDesktopReleases(): Plugin {
-  return {
-    name: "copy-desktop-releases",
-    apply: (_, env) => env.mode !== "tauri" && !process.env.TAURI_ENV_PLATFORM,
-    closeBundle() {
-      const root = import.meta.dirname ?? process.cwd();
-      const src = resolve(root, "desktop-releases");
-      if (!existsSync(src)) return;
-      cpSync(src, resolve(root, "dist", "desktop"), { recursive: true });
-    },
-  };
-}
-
 export default defineConfig({
-  plugins: [react(), tailwindcss(), compatRelay(), stampSwVersion(), copyDesktopReleases()],
+  plugins: [react(), tailwindcss(), compatRelay(), stampSwVersion()],
   server: {
     // Tauri's devUrl and the browser smoke suite both depend on this exact port.
     host: "127.0.0.1",
