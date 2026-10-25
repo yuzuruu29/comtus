@@ -80,7 +80,10 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
-    ]
+    ],
+    "overrides": {
+      "zod": "^4.6.6"
+    }
   },
   "packageManager": "pnpm@11.1.2"
 }
