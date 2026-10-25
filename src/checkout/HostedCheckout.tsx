@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { STUDY_PLANS } from "../lib/paypal";
 import PayPalCheckout from "../studio/PayPalCheckout";
 import { usePageMeta } from "../lib/usePageMeta";
+import { trackEvent } from "../lib/analytics";
 import { Check, Copy, ShieldCheck } from "@phosphor-icons/react";
 import { ICON } from "../ui/iconScale";
 
@@ -19,6 +20,9 @@ export default function HostedCheckout() {
     "Smarter Models checkout — Comtus",
     "Top up hosted Claude Opus 5.5 and Sonnet 5.5 access with a one-time PayPal pass.",
   );
+  useEffect(() => {
+    trackEvent("checkout_opened", { plan: requested?.id ?? "scholar" });
+  }, [requested?.id]);
 
   async function copyPass(): Promise<void> {
     if (!passToken) return;
@@ -90,6 +94,7 @@ export default function HostedCheckout() {
               setPassToken(token);
               setOrderId(paidOrderId);
               setCopied(false);
+              trackEvent("pass_purchased", { plan: plan.id });
             }}
           />
 

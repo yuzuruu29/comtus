@@ -3,7 +3,7 @@
  * New passes carry an included usage budget. Passes already sold carry
  * a request count. The proxy is the source of truth either way.
  */
-import { budgetNanoForPrice } from "./credits";
+import { budgetNanoForPrice, formatUsdFromNano } from "./credits";
 
 /* A PayPal client id is public by design (the browser needs it to load the
    buttons); the env var stays the source of truth, and this production
@@ -81,7 +81,10 @@ export function decodePassInfo(token: string): DecodedPass | null {
 }
 
 export function passSummary(info: DecodedPass): string {
-  if (info.kind === "credits") return `Active pass · ${Math.max(1, Math.ceil((info.expiresAtMs - Date.now()) / 86_400_000))}d remaining`;
+  if (info.kind === "credits") {
+    const days = Math.max(1, Math.ceil((info.expiresAtMs - Date.now()) / 86_400_000));
+    return `Active pass · ${formatUsdFromNano(info.budgetNano)} hosted usage · ${days}d remaining`;
+  }
   return `${info.requests} hosted requests`;
 }
 

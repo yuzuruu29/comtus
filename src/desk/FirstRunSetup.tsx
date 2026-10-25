@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Copy, Question } from "@phosphor-icons/react";
 import { useSettings } from "../lib/settings";
 import { OLLAMA_BASE_URL, RECOMMENDED_MODEL, pickOllamaModel, probeOllama } from "../lib/ollama";
+import { trackEvent } from "../lib/analytics";
 import ExternalLink from "../studio/ExternalLink";
 import { Modal, btnGhost, btnLamp } from "../studio/ui";
 import { ICON } from "../ui/iconScale";
@@ -53,11 +54,13 @@ export default function FirstRunSetup({
       compatKey: "",
       deskSetupDone: true,
     });
+    trackEvent("setup_wizard_completed", { outcome: "local" });
     setPhase("done");
   };
 
   const skip = () => {
     s.update({ deskSetupDone: true });
+    trackEvent("setup_wizard_completed", { outcome: "skipped" });
     onClose();
   };
 
