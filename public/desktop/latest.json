@@ -1,0 +1,31 @@
+{
+  "version": "0.3.2",
+  "notes": "Installable desktop builds — macOS (.dmg) and Windows (.exe). See the assets below.",
+  "pub_date": "2026-10-25T19:56:42.698Z",
+  "platforms": {
+    "darwin-aarch64": {
+      "signature": "ZFc1MGNuVnpkR1ZrSUdOdmJXMWxiblE2SUhOcFoyNWhkSFZ5WlNCbWNtOXRJSFJoZFhKcElITmxZM0psZENCclpYa0tVbFZVTUVOcVdFZGlOaTlRYldKSmEyMUdiVzFyYlM5QlFucE1RVFZLUnl0TGExaHllRXhhVTNaek0yTnZSV292YkhGQ2JEVnVWVXBoZGxaVWFuSm9RMkZJZDNwcllXRklZWGhtUlVGd01rWnZUMHN3YUVZcmRta3lhM1pqV0ZOamRXY3dQUXAwY25WemRHVmtJR052YlcxbGJuUTZJSFJwYldWemRHRnRjRG94TnpreU9UVTNOamd4Q1dacGJHVTZRMjl0ZEhWekxtRndjQzUwWVhJdVozb0tTbUYwTkRSUFNFZE9RV2xIZURoalpqTlBNbEJFUkdOak1YQktOMjg1VUVKSWQyMHlhMnBoZUhaQ2QxcFBiVmd4WVU5MGJUQkZVV1ozUkZsMFdYWnFiMlpMU0hoelJGY3dOVU5tY0M4eldrdFNLekJoUW1jOVBRbz0=",
+      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.2/Comtus_aarch64.app.tar.gz"
+    },
+    "darwin-aarch64-app": {
+      "signature": "ZFc1MGNuVnpkR1ZrSUdOdmJXMWxiblE2SUhOcFoyNWhkSFZ5WlNCbWNtOXRJSFJoZFhKcElITmxZM0psZENCclpYa0tVbFZVTUVOcVdFZGlOaTlRYldKSmEyMUdiVzFyYlM5QlFucE1RVFZLUnl0TGExaHllRXhhVTNaek0yTnZSV292YkhGQ2JEVnVWVXBoZGxaVWFuSm9RMkZJZDNwcllXRklZWGhtUlVGd01rWnZUMHN3YUVZcmRta3lhM1pqV0ZOamRXY3dQUXAwY25WemRHVmtJR052YlcxbGJuUTZJSFJwYldWemRHRnRjRG94TnpreU9UVTNOamd4Q1dacGJHVTZRMjl0ZEhWekxtRndjQzUwWVhJdVozb0tTbUYwTkRSUFNFZE9RV2xIZURoalpqTlBNbEJFUkdOak1YQktOMjg1VUVKSWQyMHlhMnBoZUhaQ2QxcFBiVmd4WVU5MGJUQkZVV1ozUkZsMFdYWnFiMlpMU0hoelJGY3dOVU5tY0M4eldrdFNLekJoUW1jOVBRbz0=",
+      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.2/Comtus_aarch64.app.tar.gz"
+    },
+    "darwin-x86_64": {
+      "signature": "ZFc1MGNuVnpkR1ZrSUdOdmJXMWxiblE2SUhOcFoyNWhkSFZ5WlNCbWNtOXRJSFJoZFhKcElITmxZM0psZENCclpYa0tVbFZVTUVOcVdFZGlOaTlRYldFNWRqaGhNSEJIUlhCbU1pdFBUVUp1V0dSWFZVVlRhWHBOZUVaSWRUWnNhVVJYY1cxVWRteE9VMk01V1hOU1JYUXdjM015UTNCeFQwMXdlV00yYTJad2NteDNUbUV2ZVhGYWNWazBTbGREVDNaNlkzYzRQUXAwY25WemRHVmtJR052YlcxbGJuUTZJSFJwYldWemRHRnRjRG94TnpreU9UVTNOekk1Q1dacGJHVTZRMjl0ZEhWekxtRndjQzUwWVhJdVozb0tPWGRvTVRkeVdrNDFORUZLYkU1eVpFVTNjVmRNVFc1eFpFbEdTbkkxTTNsQ2IzVlNOakpFYW1FM01XSk1kRGd6VVhwWFZtSXZZbTFQTm05WmVuZDNLekZtWjFGSmJYZDFkMlZyY0RsWlpUTjRRV2xFUkVFOVBRbz0=",
+      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.2/Comtus_x64.app.tar.gz"
+    },
+    "darwin-x86_64-app": {
+      "signature": "ZFc1MGNuVnpkR1ZrSUdOdmJXMWxiblE2SUhOcFoyNWhkSFZ5WlNCbWNtOXRJSFJoZFhKcElITmxZM0psZENCclpYa0tVbFZVTUVOcVdFZGlOaTlRYldFNWRqaGhNSEJIUlhCbU1pdFBUVUp1V0dSWFZVVlRhWHBOZUVaSWRUWnNhVVJYY1cxVWRteE9VMk01V1hOU1JYUXdjM015UTNCeFQwMXdlV00yYTJad2NteDNUbUV2ZVhGYWNWazBTbGREVDNaNlkzYzRQUXAwY25WemRHVmtJR052YlcxbGJuUTZJSFJwYldWemRHRnRjRG94TnpreU9UVTNOekk1Q1dacGJHVTZRMjl0ZEhWekxtRndjQzUwWVhJdVozb0tPWGRvTVRkeVdrNDFORUZLYkU1eVpFVTNjVmRNVFc1eFpFbEdTbkkxTTNsQ2IzVlNOakpFYW1FM01XSk1kRGd6VVhwWFZtSXZZbTFQTm05WmVuZDNLekZtWjFGSmJYZDFkMlZyY0RsWlpUTjRRV2xFUkVFOVBRbz0=",
+      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.2/Comtus_x64.app.tar.gz"
+    },
+    "windows-x86_64": {
+      "signature": "ZFc1MGNuVnpkR1ZrSUdOdmJXMWxiblE2SUhOcFoyNWhkSFZ5WlNCbWNtOXRJSFJoZFhKcElITmxZM0psZENCclpYa0tVbFZVTUVOcVdFZGlOaTlRYlZwME1URXZZa0pOZUZrclRpc3ZZVVZLVEd0Nk9VbFNPVUZzYUZnM04xTk9TME5zY0hCeFEzWktOMkZFTVhwd0x6TkhTMGQ0ZVRSM1VtSnNaR2RvY3pJck9FOUVVMmtyV0hkNmRFdFNhVlJIY2xjeFdXZHpQUXAwY25WemRHVmtJR052YlcxbGJuUTZJSFJwYldWemRHRnRjRG94TnpreU9UVTRNVGs1Q1dacGJHVTZRMjl0ZEhWelh6QXVNeTR5WDNnMk5DMXpaWFIxY0M1bGVHVUthazFpVkhSMVJXWnRlbGROY0hJNFRXRlVhVWxVVVhwU1VubzNTRmxzVGpocGEwZ3piR2szUXpKNloxUXljR0p1Y1hwd2FHTlZiMjV6U0ZCVE0wZ3lUbTloTUVoUVJ5OUZUVGRUY1ZGTFlUWlBNWFl4UW5jOVBRbz0=",
+      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.2/Comtus_0.3.2_x64-setup.exe"
+    },
+    "windows-x86_64-nsis": {
+      "signature": "ZFc1MGNuVnpkR1ZrSUdOdmJXMWxiblE2SUhOcFoyNWhkSFZ5WlNCbWNtOXRJSFJoZFhKcElITmxZM0psZENCclpYa0tVbFZVTUVOcVdFZGlOaTlRYlZwME1URXZZa0pOZUZrclRpc3ZZVVZLVEd0Nk9VbFNPVUZzYUZnM04xTk9TME5zY0hCeFEzWktOMkZFTVhwd0x6TkhTMGQ0ZVRSM1VtSnNaR2RvY3pJck9FOUVVMmtyV0hkNmRFdFNhVlJIY2xjeFdXZHpQUXAwY25WemRHVmtJR052YlcxbGJuUTZJSFJwYldWemRHRnRjRG94TnpreU9UVTRNVGs1Q1dacGJHVTZRMjl0ZEhWelh6QXVNeTR5WDNnMk5DMXpaWFIxY0M1bGVHVUthazFpVkhSMVJXWnRlbGROY0hJNFRXRlVhVWxVVVhwU1VubzNTRmxzVGpocGEwZ3piR2szUXpKNloxUXljR0p1Y1hwd2FHTlZiMjV6U0ZCVE0wZ3lUbTloTUVoUVJ5OUZUVGRUY1ZGTFlUWlBNWFl4UW5jOVBRbz0=",
+      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.2/Comtus_0.3.2_x64-setup.exe"
+    }
+  }
+}
