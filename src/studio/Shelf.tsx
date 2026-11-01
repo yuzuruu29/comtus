@@ -332,7 +332,7 @@ export default function Shelf({
               </section>
             ) : (
               <>
-                {latestNotebook && (
+                {latestNotebook && notebooks.length > 1 && !searchQuery.trim() && (
                   <section className="shelf-resume" aria-label="Continue studying">
                     <div className="shelf-resume-mark" aria-hidden="true"><BookOpen size={ICON.xl} weight="light" /></div>
                     <div className="shelf-resume-copy">
@@ -357,30 +357,34 @@ export default function Shelf({
                       <h2 id="shelf-collection-title">All notebooks <span>{notebooks.length}</span></h2>
                       <p>Most recently updated first</p>
                     </div>
-                    <div className="shelf-search">
-                      <MagnifyingGlass size={ICON.lg} aria-hidden="true" />
-                      <Input
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search notebooks"
-                        aria-label="Search notebooks"
-                      />
-                      {searchQuery && (
-                        <IconButton aria-label="Clear search" className="shelf-search-clear" onClick={() => setSearchQuery("")}>
-                          <X size={ICON.md} aria-hidden="true" />
-                        </IconButton>
-                      )}
-                    </div>
+                    {(notebooks.length > 1 || Boolean(searchQuery.trim())) && (
+                      <div className="shelf-search">
+                        <MagnifyingGlass size={ICON.lg} aria-hidden="true" />
+                        <Input
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Search notebooks"
+                          aria-label="Search notebooks"
+                        />
+                        {searchQuery && (
+                          <IconButton aria-label="Clear search" className="shelf-search-clear" onClick={() => setSearchQuery("")}>
+                            <X size={ICON.md} aria-hidden="true" />
+                          </IconButton>
+                        )}
+                      </div>
+                    )}
                     <SearchNotebooksButton />
-                    <Segmented
-                      aria-label="View"
-                      value={viewMode}
-                      onChange={setViewMode}
-                      options={[
-                        { value: "grid", label: "Grid", icon: <SquaresFour size={ICON.lg} aria-hidden="true" /> },
-                        { value: "list", label: "List", icon: <ListDashes size={ICON.lg} aria-hidden="true" /> },
-                      ]}
-                    />
+                    {(notebooks.length > 1 || Boolean(searchQuery.trim())) && (
+                      <Segmented
+                        aria-label="View"
+                        value={viewMode}
+                        onChange={setViewMode}
+                        options={[
+                          { value: "grid", label: "Grid", icon: <SquaresFour size={ICON.lg} aria-hidden="true" /> },
+                          { value: "list", label: "List", icon: <ListDashes size={ICON.lg} aria-hidden="true" /> },
+                        ]}
+                      />
+                    )}
                   </div>
 
                   {searchQuery.trim() && (

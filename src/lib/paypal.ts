@@ -5,12 +5,7 @@
  */
 import { budgetNanoForPrice, formatUsdFromNano } from "./credits";
 
-/* A PayPal client id is public by design (the browser needs it to load the
-   buttons); the env var stays the source of truth, and this production
-   fallback only keeps checkout alive when a deploy misses it. */
-export const PAYPAL_CLIENT_ID =
-  (import.meta.env.VITE_PAYPAL_CLIENT_ID as string) ||
-  "BAAynutt7UG_TKFyejl9ht8OGDrlSrLtTkw7CY9sJtz88QPBBojk7Zq98tasmx4g2rhtyl4XaDTPpStcNY";
+export const PAYPAL_CLIENT_ID = (import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined)?.trim() || "";
 
 export interface StudyPlan {
   id: "sprint" | "scholar" | "mastery";

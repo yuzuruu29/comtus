@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { modelLabelFor } from "../lib/llm";
 import { effortToStep, stepFromTrackX, stepToEffort } from "./composerControls";
 
 describe("effortToStep / stepToEffort", () => {
@@ -48,5 +49,16 @@ describe("stepFromTrackX", () => {
 
   it("returns the default step when the track has no width", () => {
     expect(stepFromTrackX({ clientX: 0, left: 0, width: 0 })).toBe(2);
+  });
+});
+
+describe("modelLabelFor", () => {
+  it("formats curated Claude and compatible model ids without mangled version digits", () => {
+    expect(modelLabelFor("anthropic", "claude-sonnet-5-5")).toBe("Sonnet 5.5");
+    expect(modelLabelFor("openai-compatible", "claude-sonnet-5-5")).toBe("Sonnet 5.5");
+    expect(modelLabelFor("openai-compatible", "anthropic/claude-opus-5-5")).toBe("Opus 5.5");
+    expect(modelLabelFor("openai-compatible", "openrouter/free")).toBe("Auto Free Router");
+    expect(modelLabelFor("openai-compatible", "dots-studio/dots-3-note-preview:free")).toBe("Dots 3 Note Preview");
+    expect(modelLabelFor("openai-compatible", "llama-3.3-70b-versatile")).toBe("Llama 3.3 70B Versatile");
   });
 });

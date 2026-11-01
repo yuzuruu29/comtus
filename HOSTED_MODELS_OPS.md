@@ -47,7 +47,9 @@ Browser (pass token only) ──▶ /api/anthropic (Vercel Edge)
 | `ANTHROPIC_HOSTED_KEY` | yes | The hosted-tier Anthropic key. **Rotate this on a schedule.** |
 | `PASS_SIGNING_SECRET` | yes | HMAC secret shared by issuance + proxy. Must match `.env.local`. |
 | `PAYPAL_CLIENT_SECRET` | yes | Server-side order create/capture. Checkout fails closed without it. |
-| `PAYPAL_CLIENT_ID` | no | Defaults to the public web SDK id. |
+| `PAYPAL_CLIENT_ID` | yes | PayPal REST app client ID. Server routes fail closed without it. |
+| `VITE_PAYPAL_CLIENT_ID` | yes | Public browser SDK client ID (must match `PAYPAL_CLIENT_ID`; baked in at build time). |
+| `PAYPAL_WEBHOOK_ID` | yes | PayPal webhook ID for verifying refund and dispute notifications. |
 | `PAYPAL_API_BASE` | no | Default live `https://api-m.paypal.com`; point at sandbox for testing. |
 | `UPSTASH_REDIS_REST_URL` | yes | Per-pass + per-IP quota counters — the proxy refuses traffic without them. Pass counters expire 30 days after their pass. Also holds device transfers (below). |
 | `UPSTASH_REDIS_REST_TOKEN` | yes | Same. |

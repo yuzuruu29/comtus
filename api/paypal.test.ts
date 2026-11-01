@@ -87,6 +87,7 @@ function stubPaymentFetch(provider: typeof fetch, storage?: (command: unknown[])
 
 beforeEach(() => {
   process.env.PASS_SIGNING_SECRET = SECRET;
+  process.env.PAYPAL_CLIENT_ID = "client-id";
   process.env.PAYPAL_CLIENT_SECRET = "secret";
   process.env.UPSTASH_REDIS_REST_URL = "https://redis.example";
   process.env.UPSTASH_REDIS_REST_TOKEN = "redis-token";
@@ -106,7 +107,7 @@ describe("PayPal checkout", () => {
 
   it("create-order: returns orderId from PayPal for valid plan", async () => {
     process.env.PAYPAL_CLIENT_SECRET = "secret";
-    process.env.PAYPAL_CLIENT_ID = "BAAynutt7UG_TKFyejl9ht8OGDrlSrLtTkw7CY9sJtz88QPBBojk7Zq98tasmx4g2rhtyl4XaDTPpStcNY";
+    process.env.PAYPAL_CLIENT_ID = "client-id";
     const fetchMock = vi.fn(async (input: string | URL | Request) => {
       const u = String(input instanceof Request ? input.url : input);
       if (u.includes("/oauth2/token")) {
@@ -160,7 +161,7 @@ describe("PayPal checkout", () => {
     try {
       process.env.PASS_SIGNING_SECRET = SECRET;
       process.env.PAYPAL_CLIENT_SECRET = "secret";
-      process.env.PAYPAL_CLIENT_ID = "BAAynutt7UG_TKFyejl9ht8OGDrlSrLtTkw7CY9sJtz88QPBBojk7Zq98tasmx4g2rhtyl4XaDTPpStcNY";
+      process.env.PAYPAL_CLIENT_ID = "client-id";
       const fetchMock = vi.fn(async (input: string | URL | Request) => {
         const u = String(input instanceof Request ? input.url : input);
         if (u.includes("/oauth2/token")) {
@@ -456,11 +457,20 @@ describe("PayPal fulfillment safeguards", () => {
     expect(denied).toEqual(expect.arrayContaining([jti("ORDER123"), jti("ORDER999")]));
   });
 
-  it.each(["PASS_SIGNING_SECRET", "UPSTASH_REDIS_REST_TOKEN"])('does not create a chargeable order without %s', async (key) => {
+  it.each(["PAYPAL_CLIENT_ID", "PASS_SIGNING_SECRET", "UPSTASH_REDIS_REST_TOKEN"])('does not create a chargeable order without %s', async (key) => {
     delete process.env[key];
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     expect((await call(paypalReq("create-order", { planId: "scholar" }))).status).toBe(503);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each(["capture-order", "recover", "webhook"])("returns 503 on %s without PAYPAL_CLIENT_ID", async (route) => {
+    process.env.PAYPAL_WEBHOOK_ID = "WH-1";
+    delete process.env.PAYPAL_CLIENT_ID;
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    expect((await call(paypalReq(route, { orderId: "ORDER123", planId: "scholar" }))).status).toBe(503);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

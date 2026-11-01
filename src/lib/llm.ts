@@ -226,16 +226,22 @@ function hostedSystem(apiKey: string, text: string): string | Anthropic.TextBloc
 /** Human label for the active model across every provider — curated
  *  catalogue labels first, prettified ids as fallback. Never truncates
  *  mid-word like the old `.slice(0, 16)` did. */
-export function modelLabelFor(provider: ProviderId, model: string): string {
-  if (provider === "anthropic")
-    return MODELS.find((m) => m.id === model)?.label ?? (model === "claude-opus-5" ? "Opus 5.5" : model === "claude-sonnet-5" ? "Sonnet 5.5" : model);
-  // OpenRouter's router id picks whichever free model is available; the
-  // model menu lists it under this name.
+export function modelLabelFor(_provider: ProviderId, model: string): string {
   if (model === "openrouter/free") return "Auto Free Router";
-  const short = model.split("/").pop() ?? model;
-  const words = short.replace(/:free$/i, "").replace(/[-_]+/g, " ").trim();
-  if (!words) return model;
-  const pretty = words[0].toUpperCase() + words.slice(1);
+  const short = (model.split("/").pop() ?? model).replace(/:free$/i, "");
+  const curated = MODELS.find((m) => m.id === model || m.id === short);
+  if (curated) return curated.label;
+  if (short === "claude-opus-5") return "Opus 5.5";
+  if (short === "claude-sonnet-5") return "Sonnet 5.5";
+  const versioned = short.replace(/(?<=\b\d)-(?=\d\b)/g, ".");
+  const tokens = versioned.split(/[-_]+/).filter(Boolean);
+  if (tokens.length === 0) return model;
+  const pretty = tokens
+    .map((tok) => {
+      if (/^\d+(\.\d+)?[bkm]$/i.test(tok) || /^(?:r\d+|v\d+|gpt|llm|vl)$/i.test(tok)) return tok.toUpperCase();
+      return tok[0].toUpperCase() + tok.slice(1);
+    })
+    .join(" ");
   return pretty.length > 28 ? `${pretty.slice(0, 27).trimEnd()}…` : pretty;
 }
 

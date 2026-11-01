@@ -109,7 +109,11 @@ html[data-theme="dark"] .bg-desk-surface::before {
 
 @media (min-width: 1024px) {
   .desk-sheet-frame {
-    padding: 0.5rem 0.625rem 0.625rem;
+    padding: 0 0.625rem 0.5rem;
+  }
+  .desk-sheet {
+    border-top: 0;
+    border-radius: 0 0 6px 6px;
   }
 }
 

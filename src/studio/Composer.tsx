@@ -105,7 +105,7 @@ export default function Composer({
     const el = taRef.current;
     if (!el) return;
     el.style.height = "0px";
-    el.style.height = `${Math.min(Math.max(el.scrollHeight, 36), 160)}px`;
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, 28), 160)}px`;
   }, [input]);
 
   return (

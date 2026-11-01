@@ -30,38 +30,36 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 1.5rem 1rem;
-  /* Compad's lane. The scroll area itself ends above it, so at any scroll
-     position the companion has its own corner instead of resting on tools
-     that pass underneath. */
-  margin-bottom: var(--companion-lane, 0px);
+  padding: 1.125rem 1rem calc(1.25rem + var(--companion-lane, 0px));
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ink) 14%, transparent) transparent;
   container-type: inline-size;
 }
 
 .study-tools-intro {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.875rem;
 }
 
 .study-tools-intro h3 {
   max-width: 22ch;
   font-family: var(--font-read);
   font-size: var(--text-title);
-  line-height: 1.3;
+  line-height: 1.25;
   font-weight: 450;
   letter-spacing: -0.015em;
 }
 
 .study-tools-intro p {
-  margin-top: 8px;
+  margin-top: 6px;
   color: var(--muted);
   font-size: var(--text-label);
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .practice-tools {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4375rem;
   counter-reset: tool-index;
 }
 
@@ -72,8 +70,8 @@
   justify-content: start;
   gap: 0.625rem;
   width: 100%;
-  min-height: 4.125rem;
-  padding: 0.75rem 2.25rem 0.75rem 0.625rem;
+  min-height: 3.75rem;
+  padding: 0.625rem 2.25rem 0.625rem 0.625rem;
   border: 1px solid var(--hairline-strong);
   border-radius: 3px 8px 8px 3px;
   background: var(--surface);
@@ -88,7 +86,7 @@
 .practice-tool.btn::after {
   content: "0" counter(tool-index);
   position: absolute;
-  top: 0.55rem;
+  top: 0.5rem;
   right: 0.65rem;
   font-family: var(--font-mono);
   font-size: 0.6875rem;
@@ -97,7 +95,7 @@
   pointer-events: none;
 }
 
-.practice-tool-primary.btn { min-height: 4.5rem; border-left: 3px solid var(--brass); }
+.practice-tool-primary.btn { min-height: 4rem; border-left: 3px solid var(--brass); }
 .practice-tool-primary .practice-tool-copy strong { font-family: var(--font-read); font-size: var(--text-heading); font-weight: 500; }
 .practice-tool-primary .practice-tool-icon { color: var(--brass); }
 

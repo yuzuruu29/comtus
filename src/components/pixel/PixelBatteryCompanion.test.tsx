@@ -250,6 +250,11 @@ describe("PixelBatteryCompanion", () => {
     expect(observe).toHaveBeenCalledTimes(1);
     await act(async () => { composer.remove(); });
     expect(unobserve).toHaveBeenCalledWith(composer);
+    const rested = computeBottomRightRestingPos(
+      { width: parseFloat(companion.style.width), height: parseFloat(companion.style.height) },
+      { width: window.innerWidth, height: window.innerHeight },
+    );
+    expect(parseFloat(companion.style.top)).toBeCloseTo(rested.top, 0);
     unmount();
     expect(disconnect).toHaveBeenCalledTimes(1);
   });

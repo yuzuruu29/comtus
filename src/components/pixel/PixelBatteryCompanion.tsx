@@ -378,7 +378,12 @@ export function PixelBatteryCompanion({
     const handleLayoutChange = () => {
       const previous = positionRef.current;
       if (!previous || pointerRef.current || (freePlacement && manuallyPlacedRef.current)) return;
-      moveTo(nudgeOutOfRects(previous, { width: spriteW, height: spriteH }, getAvoidRects(), getViewport()));
+      const dims = { width: spriteW, height: spriteH };
+      const currentViewport = getViewport();
+      const base = manuallyPlacedRef.current
+        ? previous
+        : computeBottomRightRestingPos(dims, currentViewport, restingOffset);
+      moveTo(nudgeOutOfRects(base, dims, getAvoidRects(), currentViewport));
     };
 
     const resizeObserver = avoidSelector && typeof ResizeObserver !== "undefined"
@@ -415,7 +420,7 @@ export function PixelBatteryCompanion({
       resizeObserver?.disconnect();
       document.removeEventListener("transitionend", handleLayoutChange);
     };
-  }, [spriteW, spriteH, avoidRects, avoidSelector, getAvoidRects, freePlacement, moveTo]);
+  }, [spriteW, spriteH, avoidRects, avoidSelector, getAvoidRects, freePlacement, moveTo, restingOffset]);
 
   useLayoutEffect(() => {
     if (!menuOpen || !menuRef.current) return;

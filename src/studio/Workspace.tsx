@@ -489,7 +489,6 @@ function WorkspaceHeader({
         </Link>
 
         <div className="workspace-heading">
-          <span className="workspace-location">Comtus / Study notebook</span>
           <input
             defaultValue={notebook?.name}
             key={notebook?.name}
@@ -502,19 +501,34 @@ function WorkspaceHeader({
 
         <div className="no-drag workspace-actions">
           <FocusTimer />
-          <IconButton
-            onClick={onToggleSources}
-            title={panes.sources ? "Retract Sources Sidebar" : "Expand Sources Sidebar"}
-            aria-label="Toggle sources sidebar"
-            aria-pressed={panes.sources}
-            className={`no-drag workspace-pane-toggle ${
-              panes.sources
-                ? "text-brass bg-brass/10 hover:bg-brass/20"
-                : "text-muted hover:bg-ink/5 hover:text-ink"
-            }`}
-          >
-            <SidebarSimple size={ICON.md} weight={panes.sources ? "fill" : "light"} />
-          </IconButton>
+          <div className="workspace-pane-group">
+            <IconButton
+              onClick={onToggleSources}
+              title={panes.sources ? "Retract Sources Sidebar" : "Expand Sources Sidebar"}
+              aria-label="Toggle sources sidebar"
+              aria-pressed={panes.sources}
+              className={`no-drag workspace-pane-toggle ${
+                panes.sources
+                  ? "text-ink bg-ink/[0.05] hover:bg-ink/[0.08]"
+                  : "text-muted hover:bg-ink/5 hover:text-ink"
+              }`}
+            >
+              <SidebarSimple size={ICON.md} weight={panes.sources ? "regular" : "light"} />
+            </IconButton>
+            <IconButton
+              onClick={onToggleStudio}
+              title={panes.studio ? "Retract Studio Sidebar" : "Expand Studio Sidebar"}
+              aria-label="Toggle studio sidebar"
+              aria-pressed={panes.studio}
+              className={`no-drag workspace-pane-toggle ${
+                panes.studio
+                  ? "text-ink bg-ink/[0.05] hover:bg-ink/[0.08]"
+                  : "text-muted hover:bg-ink/5 hover:text-ink"
+              }`}
+            >
+              <SidebarSimple size={ICON.md} weight={panes.studio ? "regular" : "light"} className="scale-x-[-1]" />
+            </IconButton>
+          </div>
 
           <Menu
             align="end"
@@ -534,19 +548,6 @@ function WorkspaceHeader({
             aria-label="Settings"
           >
             <GearSix size={ICON.xl} aria-hidden="true" />
-          </IconButton>
-          <IconButton
-            onClick={onToggleStudio}
-            title={panes.studio ? "Retract Studio Sidebar" : "Expand Studio Sidebar"}
-            aria-label="Toggle studio sidebar"
-            aria-pressed={panes.studio}
-            className={`no-drag workspace-pane-toggle ${
-              panes.studio
-                ? "text-brass bg-brass/10 hover:bg-brass/20"
-                : "text-muted hover:bg-ink/5 hover:text-ink"
-            }`}
-          >
-            <SidebarSimple size={ICON.md} weight={panes.studio ? "fill" : "light"} className="scale-x-[-1]" />
           </IconButton>
         </div>
         <CaptionButtons />

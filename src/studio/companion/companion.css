@@ -243,7 +243,7 @@ html[data-motion="full"] .milestone-meter::after {
 .milestone-toast {
   position: relative;
   display: flex;
-  max-width: min(340px, calc(100vw - 2rem));
+  max-width: min(296px, calc(100vw - 2rem));
   align-items: center;
   gap: 12px;
   overflow: hidden;

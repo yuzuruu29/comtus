@@ -2,12 +2,12 @@
   width: 100%;
   max-width: 48rem;
   margin-inline: auto;
-  padding: 1.75rem clamp(1.25rem, 3vw, 3rem) 2rem;
+  padding: 1.25rem clamp(1.25rem, 3vw, 2.75rem) 1.5rem;
 }
 
 .chat-welcome {
   max-width: 34rem;
-  margin: clamp(1rem, 3vh, 2.5rem) auto 1.5rem;
+  margin: clamp(0.75rem, 2.5vh, 2rem) auto 1.25rem;
   font-family: var(--font-ui);
 }
 

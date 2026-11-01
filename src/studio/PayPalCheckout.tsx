@@ -62,6 +62,10 @@ export default function PayPalCheckout({
   // Load PayPal SDK script
   useEffect(() => {
     if (native) return;
+    if (!PAYPAL_CLIENT_ID) {
+      setError("Checkout is temporarily unavailable. Please try again later.");
+      return;
+    }
     if (window.paypal) {
       setSdkReady(true);
       return;

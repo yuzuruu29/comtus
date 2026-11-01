@@ -63,6 +63,14 @@ function json(status: number, body: Record<string, unknown>, origin?: string | n
   });
 }
 
+function cleanEnv(value: string | undefined): string {
+  return (value ?? "").trim().replace(/^["']|["']$/g, "").trim();
+}
+
+function cleanRedisUrl(): string {
+  return cleanEnv(process.env.UPSTASH_REDIS_REST_URL).replace(/\/+$/, "");
+}
+
 async function hmacHex(input: string, secret: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
@@ -79,8 +87,8 @@ async function hmacHex(input: string, secret: string): Promise<string> {
 
 /** Refuse hosted spending when the network throttle cannot be checked. */
 async function withinIpThrottle(req: Request, secret: string, limitPerHour: number): Promise<boolean> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = cleanRedisUrl();
+  const token = cleanEnv(process.env.UPSTASH_REDIS_REST_TOKEN);
   if (!url || !token || !secret) throw new Error("throttle backend not configured");
   const ip =
     req.headers.get("x-real-ip") ||
@@ -189,7 +197,7 @@ function b64urlDecode(s: string): string {
 async function hmac(payloadB64: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(process.env.PASS_SIGNING_SECRET ?? ""),
+    new TextEncoder().encode(cleanEnv(process.env.PASS_SIGNING_SECRET)),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -235,8 +243,8 @@ const COUNTER_GRACE_S = 30 * 86400;
 /** Per-pass request count. Fails CLOSED: without a working counter the
     proxy refuses to spend Anthropic money it cannot bound. */
 async function withinQuota(pass: PassPayload): Promise<boolean> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = cleanRedisUrl();
+  const token = cleanEnv(process.env.UPSTASH_REDIS_REST_TOKEN);
   if (!url || !token) throw new Error("quota backend not configured");
   const auth = { headers: { Authorization: `Bearer ${token}` } };
   const res = await fetch(`${url}/incr/pass:${pass.j}`, auth);
@@ -249,23 +257,23 @@ async function withinQuota(pass: PassPayload): Promise<boolean> {
   return result <= (pass.q ?? 0);
 }
 
-/** Hands back a request Anthropic refused or never served — failed calls
+/** Hands back a request Anthropic refused or never served - failed calls
     are not billed, so they shouldn't spend the buyer's pass either.
     Best effort: a lost refund errs toward the buyer paying one request. */
 async function refundQuota(jti: string): Promise<void> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = cleanRedisUrl();
+  const token = cleanEnv(process.env.UPSTASH_REDIS_REST_TOKEN);
   if (!url || !token) return;
   try {
     await fetch(`${url}/decr/pass:${jti}`, { headers: { Authorization: `Bearer ${token}` } });
   } catch {
-    /* counted once — acceptable */
+    /* counted once - acceptable */
   }
 }
 
 async function redisResult(path: string): Promise<unknown> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = cleanRedisUrl();
+  const token = cleanEnv(process.env.UPSTASH_REDIS_REST_TOKEN);
   if (!url || !token) throw new Error("quota backend not configured");
   const res = await fetch(`${url}${path}`, { headers: { Authorization: `Bearer ${token}` } });
   const data = (await res.json()) as { result?: unknown; error?: unknown };
@@ -299,7 +307,7 @@ async function decrBy(key: string, amount: number): Promise<void> {
 
 function allowedModel(model: string): boolean {
   if (!ALLOWED_MODELS.has(model) || !(model in MODEL_RATES)) return false;
-  const env = process.env.HOSTED_MODELS;
+  const env = cleanEnv(process.env.HOSTED_MODELS);
   if (!env) return true;
   const narrowed = new Set(env.split(",").map((item) => item.trim()).filter(Boolean));
   return narrowed.has(model);
@@ -314,19 +322,52 @@ function pickBody(raw: Record<string, unknown>): Record<string, unknown> {
 }
 
 /** Count images, documents and multilingual text with the provider's tokenizer. */
-async function countInputTokens(body: Record<string, unknown>, key: string): Promise<number> {
-  const counted = await fetch(`${ANTHROPIC_ORIGIN}/v1/messages/count_tokens`, {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: body.model, system: body.system, messages: body.messages, thinking: body.thinking }),
-    signal: AbortSignal.timeout(15_000),
-    redirect: "error",
-  });
-  const data = await counted.json() as { input_tokens?: unknown };
-  if (!counted.ok || typeof data.input_tokens !== "number" || !Number.isSafeInteger(data.input_tokens) || data.input_tokens < 0) {
-    throw new Error("input token count unavailable");
+async function countInputTokens(
+  body: Record<string, unknown>,
+  key: string,
+  origin: string | null,
+): Promise<{ ok: true; tokens: number } | { ok: false; response: Response }> {
+  let counted: Response;
+  try {
+    counted = await fetch(`${ANTHROPIC_ORIGIN}/v1/messages/count_tokens`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model: body.model, system: body.system, messages: body.messages, thinking: body.thinking }),
+      signal: AbortSignal.timeout(15_000),
+      redirect: "error",
+    });
+  } catch (e) {
+    console.error("anthropic count_tokens unreachable:", e instanceof Error ? e.message : e);
+    return {
+      ok: false,
+      response: json(502, { error: "Claude could not be reached. This request was not counted against your pass." }, origin),
+    };
   }
-  return data.input_tokens;
+  if (!counted.ok) {
+    if (counted.status === 401 || counted.status === 403) {
+      console.error("anthropic hosted key rejected during count_tokens:", counted.status);
+      return {
+        ok: false,
+        response: json(503, { error: "Hosted models are temporarily unavailable. This request was not counted against your pass." }, origin),
+      };
+    }
+    return { ok: false, response: passthrough(counted, counted.body, origin) };
+  }
+  try {
+    const data = (await counted.json()) as { input_tokens?: unknown };
+    if (typeof data.input_tokens !== "number" || !Number.isSafeInteger(data.input_tokens) || data.input_tokens < 0) {
+      return {
+        ok: false,
+        response: json(503, { error: "Hosted models are temporarily unavailable. This request was not counted against your pass." }, origin),
+      };
+    }
+    return { ok: true, tokens: data.input_tokens };
+  } catch {
+    return {
+      ok: false,
+      response: json(503, { error: "Hosted models are temporarily unavailable. This request was not counted against your pass." }, origin),
+    };
+  }
 }
 
 function absorbUsage(usage: TokenUsage, event: { type?: string; message?: { usage?: TokenUsage }; usage?: TokenUsage }): TokenUsage {
@@ -376,13 +417,13 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
   if (req.method === "OPTIONS") return json(204, {}, origin);
   if (req.method !== "POST") return json(405, { error: "POST only" }, origin);
 
-  if (process.env.HOSTED_PROXY_OFF === "1") {
+  if (cleanEnv(process.env.HOSTED_PROXY_OFF) === "1") {
     return json(503, { error: "Hosted models are paused for maintenance." }, origin);
   }
 
-  const secret = process.env.PASS_SIGNING_SECRET ?? "";
-  const key = process.env.ANTHROPIC_HOSTED_KEY ?? "";
-  if (!secret || !key || !process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+  const secret = cleanEnv(process.env.PASS_SIGNING_SECRET);
+  const key = cleanEnv(process.env.ANTHROPIC_HOSTED_KEY);
+  if (!secret || !key || !cleanRedisUrl() || !cleanEnv(process.env.UPSTASH_REDIS_REST_TOKEN)) {
     return json(
       503,
       { error: "Hosted models are temporarily unavailable. Please retry shortly or contact support." },
@@ -390,7 +431,7 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
     );
   }
 
-  const auth = req.headers.get("x-api-key") ?? "";
+  const auth = (req.headers.get("x-api-key") ?? "").trim();
   const pass = await verifyPass(auth);
   if (!pass) {
     return json(
@@ -405,7 +446,7 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
       return json(429, { error: "Too many requests from this network. Try again later." }, origin);
     }
   } catch {
-    return json(503, { error: "Usage tracking is briefly unavailable — please retry in a moment." }, origin);
+    return json(503, { error: "Usage tracking is briefly unavailable - please retry in a moment." }, origin);
   }
 
   const incoming = new URL(req.url);
@@ -446,23 +487,35 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
       : ceiling;
 
   const creditKey = `credit:${pass.j}`;
-  let reserved = 0;
   try {
     if (await isDenied(pass.j)) {
       return json(401, { error: "This pass has been revoked." }, origin);
     }
+  } catch (e) {
+    console.error("quota backend error:", e instanceof Error ? e.message : e);
+    return json(503, { error: "Usage tracking is briefly unavailable - please retry in a moment." }, origin);
+  }
+
+  let inputTokens = 0;
+  if (credit) {
+    const counted = await countInputTokens(body, key, origin);
+    if (!counted.ok) return counted.response;
+    inputTokens = counted.tokens;
+    if (inputTokens > INPUT_TOKEN_CAP) {
+      return json(
+        413,
+        { error: "This notebook is too large for a hosted pass. Use your own key for a larger notebook." },
+        origin,
+      );
+    }
+  }
+
+  let reserved = 0;
+  try {
     if (credit) {
-      const tokens = await countInputTokens(body, key);
-      if (tokens > INPUT_TOKEN_CAP) {
-        return json(
-          413,
-          { error: "This notebook is too large for a hosted pass. Use your own key for a larger notebook." },
-          origin,
-        );
-      }
       // Token counts are estimates. Include headroom and the highest cache-write rate;
       // assuming English chars/4 or a cache discount lets parallel calls overspend.
-      const paddedTokens = Math.ceil(tokens * 110 / 100) + 1024;
+      const paddedTokens = Math.ceil(inputTokens * 110 / 100) + 1024;
       reserved = costNano({ cache_creation: { ephemeral_1h_input_tokens: paddedTokens }, output_tokens: body.max_tokens as number }, body.model);
       const used = await incrBy(creditKey, reserved, pass.e + COUNTER_GRACE_S);
       if (used > (pass.c ?? 0)) {
@@ -481,7 +534,7 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
     }
   } catch (e) {
     console.error("quota backend error:", e instanceof Error ? e.message : e);
-    return json(503, { error: "Usage tracking is briefly unavailable — please retry in a moment." }, origin);
+    return json(503, { error: "Usage tracking is briefly unavailable - please retry in a moment." }, origin);
   }
 
   const release = async () => {
@@ -513,6 +566,14 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
 
   if (!upstream.ok) {
     await release();
+    if (upstream.status === 401 || upstream.status === 403) {
+      console.error("anthropic hosted key rejected:", upstream.status);
+      return json(
+        503,
+        { error: "Hosted models are temporarily unavailable. This request was not counted against your pass." },
+        origin,
+      );
+    }
     return passthrough(upstream, upstream.body, origin);
   }
 

@@ -457,4 +457,49 @@ describe("hosted Anthropic proxy", () => {
     expect(response.status).toBe(200);
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/decrby/"))).toBe(false);
   });
+
+  it("strips wrapping quotes and trailing newlines from server env vars", async () => {
+    withProxyEnv();
+    process.env.PASS_SIGNING_SECRET = `"${SECRET}"\r\n`;
+    process.env.ANTHROPIC_HOSTED_KEY = '  "sk-ant-hosted-secret"\r\n';
+    process.env.UPSTASH_REDIS_REST_URL = `${UPSTASH}/\n`;
+    process.env.UPSTASH_REDIS_REST_TOKEN = ' "upstash-token"\n';
+    const fetchMock = creditFetch();
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await handler(proxyReq({ model: "claude-sonnet-5-5" }, `  ${signPass({ j: "trimmed", v: 2, c: 5_000_000_000 })}\n`));
+    expect(response.status).toBe(200);
+    const msgCall = fetchMock.mock.calls.find(([url]) => String(url) === "https://api.anthropic.com/v1/messages");
+    expect((msgCall?.[1]?.headers as Record<string, string>)?.["x-api-key"]).toBe("sk-ant-hosted-secret");
+  });
+
+  it("returns 502 instead of a Redis 503 when count_tokens fails to connect", async () => {
+    withProxyEnv();
+    const base = creditFetch();
+    const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input).endsWith("/count_tokens")) throw new TypeError("Invalid header value");
+      return base(input, init);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await handler(proxyReq({ model: "claude-sonnet-5-5" }, signPass({ j: "neterr", v: 2, c: 5_000_000_000 })));
+    expect(response.status).toBe(502);
+    expect(await response.json()).toMatchObject({
+      error: "Claude could not be reached. This request was not counted against your pass.",
+    });
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/incrby/credit:"))).toBe(false);
+  });
+
+  it("returns 503 instead of blaming the buyer pass when Anthropic rejects the server key", async () => {
+    withProxyEnv();
+    const base = creditFetch({
+      upstream: new Response('{"error":{"type":"authentication_error"}}', { status: 401, headers: { "content-type": "application/json" } }),
+    });
+    vi.stubGlobal("fetch", base);
+    const response = await handler(proxyReq({ model: "claude-sonnet-5-5" }, signPass({ j: "srvkey", v: 2, c: 5_000_000_000 })));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({
+      error: "Hosted models are temporarily unavailable. This request was not counted against your pass.",
+    });
+    const reserved = reservedFrom(base);
+    expect(base.mock.calls.some(([url]) => String(url).endsWith(`/decrby/credit:srvkey/${reserved}`))).toBe(true);
+  });
 });

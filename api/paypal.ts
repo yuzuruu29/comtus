@@ -88,12 +88,28 @@ function requestIp(req: IncomingMessage): string {
   );
 }
 
+function cleanEnv(raw: string | undefined): string {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  if (
+    trimmed.length >= 2 &&
+    ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'")))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
+function cleanRedisUrl(raw: string | undefined): string {
+  return cleanEnv(raw).replace(/\/+$/, "");
+}
+
 /** Refuse checkout when the network throttle cannot be checked. Each route
  *  counts on its own key: api/anthropic.ts throttles AI calls under the bare
  *  `ipthrottle:` key, and sharing it let a busy study session block payment. */
 async function withinIpThrottle(req: IncomingMessage, secret: string, scope: string, limitPerHour: number): Promise<boolean> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = cleanRedisUrl(process.env.UPSTASH_REDIS_REST_URL);
+  const token = cleanEnv(process.env.UPSTASH_REDIS_REST_TOKEN);
   if (!url || !token || !secret) throw new Error("throttle backend not configured");
   const bucket = Math.floor(Date.now() / 3600_000);
   const key = `ipthrottle:paypal-${scope}:${await hmacHex(`${requestIp(req)}:${bucket}`, secret)}`;
@@ -123,7 +139,7 @@ async function throttleResponse(
   unavailable: string,
 ): Promise<boolean> {
   try {
-    if (await withinIpThrottle(req, process.env.PASS_SIGNING_SECRET ?? "", scope, limit)) return false;
+    if (await withinIpThrottle(req, cleanEnv(process.env.PASS_SIGNING_SECRET), scope, limit)) return false;
     sendJson(res, 429, { error: limited }, origin);
   } catch {
     sendJson(res, 503, { error: unavailable }, origin);
@@ -154,7 +170,7 @@ function planById(id: unknown): ServerPlan | undefined {
 }
 
 function storageConfigured(): boolean {
-  return !!process.env.UPSTASH_REDIS_REST_URL && !!process.env.UPSTASH_REDIS_REST_TOKEN;
+  return Boolean(cleanRedisUrl(process.env.UPSTASH_REDIS_REST_URL) && cleanEnv(process.env.UPSTASH_REDIS_REST_TOKEN));
 }
 
 interface PassPayload {
@@ -188,8 +204,8 @@ async function deterministicJti(orderId: string, secret: string): Promise<string
 }
 
 async function redisCommand(command: unknown[]): Promise<unknown> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = cleanRedisUrl(process.env.UPSTASH_REDIS_REST_URL);
+  const token = cleanEnv(process.env.UPSTASH_REDIS_REST_TOKEN);
   if (!url || !token) throw new Error("Pass storage is not configured");
   const res = await fetch(url, {
     method: "POST",
@@ -211,7 +227,7 @@ async function readStoredPass(orderId: string): Promise<string | null> {
 }
 
 async function passDenied(orderId: string): Promise<boolean> {
-  const j = await deterministicJti(orderId, process.env.PASS_SIGNING_SECRET ?? "");
+  const j = await deterministicJti(orderId, cleanEnv(process.env.PASS_SIGNING_SECRET));
   const result = await redisCommand(["GET", `passdeny:${j}`]);
   if (result !== null && result !== "1") throw new Error("Invalid pass revocation state");
   return result === "1";
@@ -219,7 +235,7 @@ async function passDenied(orderId: string): Promise<boolean> {
 
 /** The order and capture time fix both the usage identity and expiry across retries. */
 async function issuePassForOrder(plan: ServerPlan, orderId: string, paidAtMs: number): Promise<string> {
-  const secret = process.env.PASS_SIGNING_SECRET ?? "";
+  const secret = cleanEnv(process.env.PASS_SIGNING_SECRET);
   if (!secret) throw new Error("PASS_SIGNING_SECRET is not configured");
   const stored = await readStoredPass(orderId);
   if (stored) return stored;
@@ -244,12 +260,12 @@ async function issuePassForOrder(plan: ServerPlan, orderId: string, paidAtMs: nu
 
 /* ── PayPal client ──────────────────────────────────────── */
 
-const PAYPAL_BASE = process.env.PAYPAL_API_BASE || "https://api-m.paypal.com";
-const PAYPAL_CLIENT_ID_FALLBACK =
-  "BAAynutt7UG_TKFyejl9ht8OGDrlSrLtTkw7CY9sJtz88QPBBojk7Zq98tasmx4g2rhtyl4XaDTPpStcNY";
+function paypalBase(): string {
+  return cleanRedisUrl(process.env.PAYPAL_API_BASE) || "https://api-m.paypal.com";
+}
 
 async function paypalOauthToken(id: string, secret: string): Promise<string> {
-  const res = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
+  const res = await fetch(`${paypalBase()}/v1/oauth2/token`, {
     method: "POST",
     headers: {
       Authorization: `Basic ${btoa(`${id}:${secret}`)}`,
@@ -272,7 +288,7 @@ async function paypal(
   opts: { body?: unknown; requestId?: string } = {},
 ): Promise<{ status: number; data: Json }> {
   const { body, requestId } = opts;
-  const res = await fetch(`${PAYPAL_BASE}${path}`, {
+  const res = await fetch(`${paypalBase()}${path}`, {
     method,
     headers: {
       Authorization: `Bearer ${token}`,
@@ -293,9 +309,9 @@ async function paypal(
 /* ── create-order ───────────────────────────────────────── */
 
 async function handleCreateOrder(req: IncomingMessage, res: ServerResponse, origin?: string | string[]): Promise<void> {
-  const clientId = process.env.PAYPAL_CLIENT_ID || PAYPAL_CLIENT_ID_FALLBACK;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-  if (!clientSecret || !process.env.PASS_SIGNING_SECRET || !storageConfigured()) {
+  const clientId = cleanEnv(process.env.PAYPAL_CLIENT_ID);
+  const clientSecret = cleanEnv(process.env.PAYPAL_CLIENT_SECRET);
+  if (!clientId || !clientSecret || !cleanEnv(process.env.PASS_SIGNING_SECRET) || !storageConfigured()) {
     return sendJson(res, 503, { error: "Checkout is temporarily unavailable. Please try again later." }, origin);
   }
 
@@ -309,7 +325,7 @@ async function handleCreateOrder(req: IncomingMessage, res: ServerResponse, orig
 
   try {
     const token = await paypalOauthToken(clientId, clientSecret);
-    const r = await fetch(`${PAYPAL_BASE}/v2/checkout/orders`, {
+    const r = await fetch(`${paypalBase()}/v2/checkout/orders`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -377,9 +393,9 @@ function verifiedPaidAt(order: OrderShape, plan: ServerPlan): number | null {
 }
 
 async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, origin?: string | string[]): Promise<void> {
-  const clientId = process.env.PAYPAL_CLIENT_ID || PAYPAL_CLIENT_ID_FALLBACK;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-  if (!clientSecret || !process.env.PASS_SIGNING_SECRET || !storageConfigured()) {
+  const clientId = cleanEnv(process.env.PAYPAL_CLIENT_ID);
+  const clientSecret = cleanEnv(process.env.PAYPAL_CLIENT_SECRET);
+  if (!clientId || !clientSecret || !cleanEnv(process.env.PASS_SIGNING_SECRET) || !storageConfigured()) {
     return sendJson(res, 503, { error: "Fulfillment is temporarily unavailable. Payment was not captured." }, origin);
   }
 
@@ -466,7 +482,7 @@ function relatedIds(resource: Json | undefined): Json | null {
 }
 
 async function denyPass(orderId: string): Promise<void> {
-  const secret = process.env.PASS_SIGNING_SECRET ?? "";
+  const secret = cleanEnv(process.env.PASS_SIGNING_SECRET);
   if (!secret) throw new Error("PASS_SIGNING_SECRET is not configured");
   const j = await deterministicJti(orderId, secret);
   const saved = await redisCommand(["SET", `passdeny:${j}`, "1", "EX", 400 * 86400]);
@@ -474,10 +490,10 @@ async function denyPass(orderId: string): Promise<void> {
 }
 
 async function handleWebhook(req: IncomingMessage, res: ServerResponse, origin?: string | string[]): Promise<void> {
-  const webhookId = process.env.PAYPAL_WEBHOOK_ID;
-  const clientId = process.env.PAYPAL_CLIENT_ID || PAYPAL_CLIENT_ID_FALLBACK;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-  if (!webhookId || !clientSecret || !process.env.PASS_SIGNING_SECRET || !storageConfigured()) {
+  const webhookId = cleanEnv(process.env.PAYPAL_WEBHOOK_ID);
+  const clientId = cleanEnv(process.env.PAYPAL_CLIENT_ID);
+  const clientSecret = cleanEnv(process.env.PAYPAL_CLIENT_SECRET);
+  if (!webhookId || !clientId || !clientSecret || !cleanEnv(process.env.PASS_SIGNING_SECRET) || !storageConfigured()) {
     return sendJson(res, 503, { error: "Webhook is not configured." }, origin);
   }
   const event = readBody(req);
@@ -542,9 +558,9 @@ async function handleWebhook(req: IncomingMessage, res: ServerResponse, origin?:
 }
 
 async function handleRecover(req: IncomingMessage, res: ServerResponse, origin?: string | string[]): Promise<void> {
-  const clientId = process.env.PAYPAL_CLIENT_ID || PAYPAL_CLIENT_ID_FALLBACK;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-  if (!clientSecret || !process.env.PASS_SIGNING_SECRET || !storageConfigured()) {
+  const clientId = cleanEnv(process.env.PAYPAL_CLIENT_ID);
+  const clientSecret = cleanEnv(process.env.PAYPAL_CLIENT_SECRET);
+  if (!clientId || !clientSecret || !cleanEnv(process.env.PASS_SIGNING_SECRET) || !storageConfigured()) {
     return sendJson(res, 503, { error: "Restore is temporarily unavailable." }, origin);
   }
   if (await throttleResponse(req, res, origin, "recover", 60, "Too many requests. Try again later.", "Restore is temporarily unavailable.")) return;

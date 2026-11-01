@@ -49,4 +49,17 @@ describe("HostedCheckout", () => {
     expect(screen.getByText("PayPal order id: ORDER-77")).toBeInTheDocument();
     expect(screen.getByText(/Keep the order id/i)).toBeInTheDocument();
   });
+
+  it("shows unavailable state without loading the SDK when VITE_PAYPAL_CLIENT_ID is empty", async () => {
+    vi.stubEnv("VITE_PAYPAL_CLIENT_ID", "");
+    vi.resetModules();
+    const { default: RealPayPalCheckout } = await vi.importActual<typeof import("../studio/PayPalCheckout")>(
+      "../studio/PayPalCheckout",
+    );
+    const { STUDY_PLANS } = await import("../lib/paypal");
+    render(<RealPayPalCheckout plan={STUDY_PLANS[0]} onSuccess={() => {}} />);
+    expect(screen.getByText(/Checkout is temporarily unavailable/i)).toBeInTheDocument();
+    expect(document.getElementById("paypal-sdk-script")).toBeNull();
+    vi.unstubAllEnvs();
+  });
 });
