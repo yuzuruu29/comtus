@@ -126,9 +126,9 @@ export default function MessageList({
               onOpenSettings && <Button onClick={onOpenSettings}>Choose a model</Button>
             ) : (
               <>
-                {/* Secondary: on a desk the sources pane beside it holds the primary Add source. */}
-                {onAddSources && <Button variant="secondary" icon={<Plus size={ICON.md} aria-hidden="true" />} onClick={onAddSources}>Add your first source</Button>}
-                <p className="chat-welcome-hint">PDFs, notes, or a web page. Start with one.</p>
+                {/* chat-welcome.css hides this while the sources pane beside it shows its own Add source. */}
+                {onAddSources && <Button variant="secondary" className="chat-welcome-add" icon={<Plus size={ICON.md} aria-hidden="true" />} onClick={onAddSources}>Add your first source</Button>}
+                <p className="chat-welcome-hint">Add a PDF, your notes, or a web page from Sources. Start with one.</p>
               </>
             )}
           </section>

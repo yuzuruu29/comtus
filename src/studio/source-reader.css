@@ -407,6 +407,47 @@ html[data-theme="dark"] .reader-mark:hover {
   line-height: 1.5;
 }
 
+/* ── Docked beside the chat ─────────────────────────────── */
+
+/* On a wide desk the reader is a sheet of its own, a little wider than the
+   conversation beside it. The column bounds the height, so the dialog's
+   62vh cap comes off and the text scrolls to the sheet's foot. */
+.workspace-reader {
+  flex: 1.15 1 0;
+  min-width: 0;
+}
+
+.reader-dock {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.reader-dock-head h2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reader-dock .reader-head {
+  margin: 0;
+  padding: 0.75rem 1.5rem 0.875rem;
+}
+
+.reader-dock .reader-body {
+  max-height: none;
+  padding: 0.25rem 1.5rem 1.5rem;
+}
+
+.reader-dock .reader-foot {
+  margin: 0;
+  padding-inline: 1.5rem;
+}
+
+.reader-dock .reader-notice:not(:empty) {
+  padding-block: 0.625rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reader-toolbar[data-placed],
   .reader-editor[data-placed] {

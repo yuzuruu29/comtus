@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import { Cards, ChatCircleText, Highlighter, NotePencil, Trash, X } from "@phosphor-icons/react";
-import { Button, Dialog, Segmented, Textarea } from "../ui";
+import { Button, Dialog, IconButton, Segmented, Textarea } from "../ui";
 import type { Highlight, Source } from "../lib/types";
 import { createCustomNote } from "../lib/db";
 import {
@@ -42,12 +42,15 @@ type View = "read" | "marks";
 export default function SourceReader({
   source,
   startChar,
+  docked = false,
   onClose,
   onAsk,
   onHighlightsChanged,
 }: {
   source: Source;
   startChar?: number;
+  /** Sits as a column beside the chat instead of a dialog over it. */
+  docked?: boolean;
   onClose: () => void;
   /** Hands a quoted passage to the chat composer. */
   onAsk?: (prompt: string) => void;
@@ -194,7 +197,8 @@ export default function SourceReader({
   const askAbout = (passage: string) => {
     if (!onAsk) return;
     onAsk(passagePrompt(source.title, passage));
-    onClose();
+    // Docked, the page stays open beside the answer it is about to get.
+    if (!docked) onClose();
   };
 
   const placeEditor = useCallback(
@@ -374,8 +378,26 @@ export default function SourceReader({
     return false;
   };
 
-  return (
-    <Dialog open onClose={onClose} onEscape={onEscape} title={source.title} wide>
+  // Docked there is no dialog to own Escape: it first drops a selection or a
+  // note, and closes the reader only while focus is inside it, so Escape in
+  // the composer beside it never shuts the page.
+  const dockRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!docked) return;
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (onEscape()) event.preventDefault();
+      else if (dockRef.current?.contains(document.activeElement)) {
+        event.preventDefault();
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  });
+
+  const contents = (
+    <>
       <div className="reader-head">
         <div className="reader-meta">
           {SOURCE_KIND_NAMES[source.kind] ?? source.kind} · {sourceSize(source)}
@@ -549,10 +571,37 @@ export default function SourceReader({
         <p role="status" className="reader-notice">
           {notice}
         </p>
-        <Button variant="ghost" onClick={onClose} icon={<X size={ICON.sm} weight="light" />}>
-          Close
-        </Button>
+        {!docked && (
+          <Button variant="ghost" onClick={onClose} icon={<X size={ICON.sm} weight="light" />}>
+            Close
+          </Button>
+        )}
       </div>
+    </>
+  );
+
+  if (docked) {
+    return (
+      <section ref={dockRef} className="reader-dock" aria-labelledby="reader-dock-title">
+        <div className="pane-head reader-dock-head">
+          <div className="pane-head-title">
+            <span className="pane-index" aria-hidden="true">01</span>
+            <h2 id="reader-dock-title">{source.title}</h2>
+          </div>
+          <div className="pane-head-actions">
+            <IconButton size="sm" aria-label="Close the reader" title="Close the reader" onClick={onClose}>
+              <X size={ICON.md} aria-hidden="true" />
+            </IconButton>
+          </div>
+        </div>
+        {contents}
+      </section>
+    );
+  }
+
+  return (
+    <Dialog open onClose={onClose} onEscape={onEscape} title={source.title} wide>
+      {contents}
     </Dialog>
   );
 }

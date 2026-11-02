@@ -44,6 +44,12 @@
 }
 
 .chat-welcome-hint { margin-top: 0.875rem; color: var(--muted); font-size: var(--text-label); }
+/* On a desk with the sources pane open, its Add source is the one way in;
+   a second button here only splits the choice. */
+@media (min-width: 1024px) {
+  .workspace-companion-root:has(#workspace-sources-content) .chat-welcome-add { display: none; }
+  .workspace-companion-root:has(#workspace-sources-content) .chat-welcome-hint { margin-top: 0; }
+}
 
 .chat-starters { display: grid; max-width: 29rem; }
 .chat-starters button {
