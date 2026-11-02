@@ -11,9 +11,9 @@ export interface StudyPlan {
   id: "sprint" | "scholar" | "mastery";
   name: string;
   price: string;
+  regularPrice: string;
   amount: number;
   budgetNano: number;
-  days: number;
   badge?: string;
   popular?: boolean;
   desc: string;
@@ -23,37 +23,37 @@ export const STUDY_PLANS: StudyPlan[] = [
   {
     id: "sprint",
     name: "Sprint Pass",
-    price: "2.99",
-    amount: 2.99,
-    budgetNano: budgetNanoForPrice("2.99"),
-    days: 60,
+    price: "5.00",
+    regularPrice: "8.33",
+    amount: 5,
+    budgetNano: budgetNanoForPrice("5.00"),
     desc: "Focused exam prep and chapter review.",
   },
   {
     id: "scholar",
     name: "Scholar Pass",
-    price: "6.99",
-    amount: 6.99,
-    budgetNano: budgetNanoForPrice("6.99"),
-    days: 120,
+    price: "20.00",
+    regularPrice: "33.33",
+    amount: 20,
+    budgetNano: budgetNanoForPrice("20.00"),
     badge: "Popular",
     popular: true,
-    desc: "Full-term study sessions, mock exams, and synthesis.",
+    desc: "Study sessions, mock exams, and synthesis.",
   },
   {
     id: "mastery",
     name: "Mastery Pass",
-    price: "14.99",
-    amount: 14.99,
-    budgetNano: budgetNanoForPrice("14.99"),
-    days: 180,
+    price: "60.00",
+    regularPrice: "100.00",
+    amount: 60,
+    budgetNano: budgetNanoForPrice("60.00"),
     desc: "Deep research, thesis work, and intensive board review.",
   },
 ];
 
 export type DecodedPass =
   | { kind: "requests"; requests: number; expiresAtMs: number }
-  | { kind: "credits"; budgetNano: number; expiresAtMs: number };
+  | { kind: "credits"; budgetNano: number; expiresAtMs: number | null };
 
 /** Read the quota baked into a comtus-pass-v1 token. Display only — no signature check. */
 export function decodePassInfo(token: string): DecodedPass | null {
@@ -65,6 +65,7 @@ export function decodePassInfo(token: string): DecodedPass | null {
   try {
     const b64 = rest.slice(0, dot).replace(/-/g, "+").replace(/_/g, "/");
     const payload = JSON.parse(atob(b64)) as { v?: unknown; q?: unknown; c?: unknown; e?: unknown };
+    if (payload.v === 3 && typeof payload.c === "number" && payload.e === undefined) return { kind: "credits", budgetNano: payload.c, expiresAtMs: null };
     if (typeof payload.e !== "number") return null;
     const expiresAtMs = payload.e * 1000;
     if (payload.v === 2 && typeof payload.c === "number") return { kind: "credits", budgetNano: payload.c, expiresAtMs };
@@ -77,6 +78,7 @@ export function decodePassInfo(token: string): DecodedPass | null {
 
 export function passSummary(info: DecodedPass): string {
   if (info.kind === "credits") {
+    if (info.expiresAtMs === null) return `Active pass · ${formatUsdFromNano(info.budgetNano)} hosted usage · no expiry`;
     const days = Math.max(1, Math.ceil((info.expiresAtMs - Date.now()) / 86_400_000));
     return `Active pass · ${formatUsdFromNano(info.budgetNano)} hosted usage · ${days}d remaining`;
   }
@@ -90,6 +92,7 @@ export function planTierForPass(info: DecodedPass): StudyPlan["id"] {
     if (info.requests >= 200) return "scholar";
     return "sprint";
   }
+  if (info.budgetNano === budgetNanoForPrice("20.00")) return "scholar";
   if (info.budgetNano >= budgetNanoForPrice("14.99")) return "mastery";
   if (info.budgetNano >= budgetNanoForPrice("6.99")) return "scholar";
   return "sprint";

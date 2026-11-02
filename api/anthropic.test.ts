@@ -55,6 +55,19 @@ function reservedFrom(fetchMock: ReturnType<typeof creditFetch>): number {
   return Number(hit?.split("/").pop());
 }
 
+it("keeps non-expiring credit counters without an expiry and enforces their budget", async () => {
+  process.env.PASS_SIGNING_SECRET = SECRET;
+  process.env.UPSTASH_REDIS_REST_URL = UPSTASH;
+  process.env.UPSTASH_REDIS_REST_TOKEN = "token";
+  process.env.ANTHROPIC_HOSTED_KEY = HOSTED_KEY;
+  const fetchMock = creditFetch({ incrByResult: 9_000_000_000 });
+  vi.stubGlobal("fetch", fetchMock);
+  const pass = signPass({ j: "lasting", v: 3, c: 1000, e: undefined });
+  const res = await handler(proxyReq({ model: "claude-sonnet-5", max_tokens: 100, messages: [{ role: "user", content: "hi" }] }, pass));
+  expect(res.status).toBe(402);
+  expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/expireat/credit:lasting/"))).toBe(false);
+});
+
 function mockFetch(opts: { incrResult?: number; upstream?: Response } = {}) {
   return vi.fn(async (input: string | URL | Request, _init?: RequestInit) => {
     void _init;

@@ -101,7 +101,7 @@ export function PrivacyPage() {
         <p>
           Comtus (&ldquo;we&rdquo;, &ldquo;the service&rdquo;) is an AI study workspace operated from the Philippines.
           For questions about privacy or your personal data, contact{' '}
-          <a href="mailto:support@comtus-ai.xyz" className="text-brass hover:underline">support@comtus-ai.xyz</a>.
+          <a href="mailto:uzzy_dev@mail.grokbot.com" className="text-brass hover:underline">uzzy_dev@mail.grokbot.com</a>.
           This notice is aligned with the Philippine Data Privacy Act of 2012 (RA 10173) and its Implementing Rules.
         </p>
 
@@ -120,7 +120,7 @@ export function PrivacyPage() {
             <strong>Model requests:</strong> when you chat, generate quizzes/exams, check solutions, or use voice features, the relevant text (your question, conversation context, and text extracted from sources in the active notebook) is transmitted to the AI provider you selected so it can generate a response.
           </li>
           <li>
-            <strong>Hosted-pass telemetry:</strong> if you purchase a Smarter Models pass, we store only the minimum needed to operate it: a pass identifier, the usage it has spent, its expiry, and your PayPal order id. Hosted usage is metered by token cost. A refund or dispute disables that pass. We do not store your name, address, or card details — those live with PayPal.
+            <strong>Hosted-pass telemetry:</strong> if you purchase a Smarter Models pass, we store only the minimum needed to operate it: a pass identifier, the usage it has spent, any expiry, your PayPal order id, and a keyed hash of your PayPal payer ID for promotion eligibility. Hosted usage is metered by token cost. A refund or dispute disables that pass. We do not store your name, address, or card details — those live with PayPal.
           </li>
           <li>
             <strong>Analytics:</strong> aggregate, non-identifying product analytics are collected via Vercel Analytics (page views and visits).
@@ -160,7 +160,7 @@ export function PrivacyPage() {
           7. Retention
         </h2>
         <p>
-          Local study data persists until you delete notebooks yourself or run the full purge described below. Server-side pass counters persist until the pass expires, after which they serve only audit/accounting purposes. PayPal retains transaction records per its own policies and applicable law.
+          Local study data persists until you delete notebooks yourself or run the full purge described below. Server-side usage counters are retained to enforce pass budgets; older passes may expire. PayPal retains transaction records per its own policies and applicable law.
         </p>
 
         <h2 className="pt-4">
@@ -168,7 +168,7 @@ export function PrivacyPage() {
         </h2>
         <p>
           You have the rights to be informed, to access, to correct, to erase, to object, and to data portability with respect to your personal data. Because your study data lives locally, you can exercise access, portability, and erasure yourself at any time: export your notebooks in standard Markdown, JSON, PDF, or PowerPoint formats, or execute a complete, irreversible on-device purge with a single click in Settings. For anything else — including questions about server-side pass records or payments — email{' '}
-          <a href="mailto:support@comtus-ai.xyz" className="text-brass hover:underline">support@comtus-ai.xyz</a>{' '}
+          <a href="mailto:uzzy_dev@mail.grokbot.com" className="text-brass hover:underline">uzzy_dev@mail.grokbot.com</a>{' '}
           and we will respond within a reasonable period.
         </p>
 
@@ -200,7 +200,7 @@ export function TermsPage() {
       <div className="space-y-6">
         <p className="text-[13px] text-muted">
           Effective 13 October 2026. Comtus is operated from the Philippines. Privacy questions go to{' '}
-          <a href="mailto:support@comtus-ai.xyz" className="text-brass hover:underline">support@comtus-ai.xyz</a>.
+          <a href="mailto:uzzy_dev@mail.grokbot.com" className="text-brass hover:underline">uzzy_dev@mail.grokbot.com</a>.
         </p>
         <h2>
           1. Educational Purpose
@@ -229,13 +229,16 @@ export function TermsPage() {
         <p>
           Smarter Models passes are sold in US dollars and processed by PayPal. When PayPal confirms your payment, your access pass is issued automatically. Passes sold from 13 October 2026 include a prepaid budget of hosted model usage, and each reply spends the tokens it actually uses. Passes sold earlier keep the request count they were sold with. A lost pass can be restored with the PayPal order id. Passes are personal credentials: sharing, reselling, or automating access with a pass is prohibited and may lead to suspension of the pass without refund.
         </p>
+        <p>
+          The first-purchase offer applies once per identifiable PayPal payer to purchases under the new pricing; older purchases do not disqualify buyers. Refunds and disputes do not reset eligibility. PayPal may show the regular price before eligibility is checked; review the final amount before confirming payment.
+        </p>
 
         <h2 className="pt-4">
           5. Refunds, Disputes & Taxes
         </h2>
         <p>
           If a pass does not work as described, contact{' '}
-          <a href="mailto:support@comtus-ai.xyz" className="text-brass hover:underline">support@comtus-ai.xyz</a>{' '}
+          <a href="mailto:uzzy_dev@mail.grokbot.com" className="text-brass hover:underline">uzzy_dev@mail.grokbot.com</a>{' '}
           within 14 days of purchase and we will refund passes that have seen little or no usage, or restore lost quota caused by a fault on our side. A PayPal refund or dispute disables the pass. Refund requests outside this window are considered case by case. Prices exclude any taxes, bank fees, or currency-conversion charges your payment provider may apply; you are responsible for those.
         </p>
 
@@ -320,7 +323,7 @@ export function ContactPage() {
             Community & Support
           </span>
           <p>
-            Email: <a href="mailto:support@comtus-ai.xyz" className="text-brass hover:underline">support@comtus-ai.xyz</a>
+            Email: <a href="mailto:uzzy_dev@mail.grokbot.com" className="text-brass hover:underline">uzzy_dev@mail.grokbot.com</a>
           </p>
           <p>
             We typically reply within 1–2 business days. For payment issues, include your PayPal order id (shown in the app right after checkout).

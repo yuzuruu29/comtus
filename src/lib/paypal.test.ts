@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodePassInfo, passSummary } from "./paypal";
+import { decodePassInfo, passSummary, planTierForPass } from "./paypal";
 
 function v2Token(budgetNano: number, expiresInDays: number): string {
   const payload = { v: 2, c: budgetNano, e: Math.floor(Date.now() / 1000) + expiresInDays * 86_400 };
@@ -7,6 +7,12 @@ function v2Token(budgetNano: number, expiresInDays: number): string {
 }
 
 describe("decodePassInfo", () => {
+  it("reads a non-expiring credit pass", () => {
+    const payload = btoa(JSON.stringify({ v: 3, c: 2_500_000_000 }));
+    const info = decodePassInfo(`comtus-pass-v1.${payload}.sig`);
+    expect(info).toEqual({ kind: "credits", budgetNano: 2_500_000_000, expiresAtMs: null });
+    expect(info && passSummary(info)).toContain("no expiry");
+  });
   it("reads the credit budget from a version-2 pass", () => {
     const info = decodePassInfo(v2Token(3_495_000_000, 120));
     expect(info).toEqual({ kind: "credits", budgetNano: 3_495_000_000, expiresAtMs: expect.any(Number) });
@@ -25,6 +31,10 @@ describe("decodePassInfo", () => {
 });
 
 describe("passSummary", () => {
+  it.each([[2_500_000_000, "sprint"], [10_000_000_000, "scholar"], [30_000_000_000, "mastery"], [3_495_000_000, "scholar"], [7_495_000_000, "mastery"]] as const)(
+    "recognizes current and historical pass budgets",
+    (budgetNano, tier) => expect(planTierForPass({ kind: "credits", budgetNano, expiresAtMs: 0 })).toBe(tier),
+  );
   it("names the included budget and remaining days for credit passes", () => {
     const info = decodePassInfo(v2Token(3_495_000_000, 120));
     expect(info && passSummary(info)).toBe("Active pass · $3.50 hosted usage · 120d remaining");

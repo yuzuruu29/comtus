@@ -179,7 +179,7 @@ export function reserveNano(inputChars: number, maxTokens: number, model: string
 
 interface PassPayload {
   j: string;
-  e: number;
+  e?: number;
   n?: string;
   /** Version-1 request quota. Absent on credit passes. */
   q?: number;
@@ -225,8 +225,8 @@ async function verifyPass(token: string): Promise<PassPayload | null> {
   try {
     const payload = JSON.parse(b64urlDecode(payloadB64)) as PassPayload;
     if (!payload || typeof payload.j !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(payload.j) ||
-        !Number.isSafeInteger(payload.e) || payload.e * 1000 <= Date.now()) return null;
-    if (payload.v === 2) {
+        (payload.v === 3 ? payload.e !== undefined : !Number.isSafeInteger(payload.e) || payload.e! * 1000 <= Date.now())) return null;
+    if (payload.v === 2 || payload.v === 3) {
       if (!Number.isSafeInteger(payload.c) || payload.c! <= 0) return null;
       return payload;
     }
@@ -252,7 +252,7 @@ async function withinQuota(pass: PassPayload): Promise<boolean> {
   if (!res.ok || typeof result !== "number" || !Number.isSafeInteger(result) || result < 1) throw new Error("quota counter unreadable");
   if (result === 1) {
     // First use: let the counter expire after the pass does.
-    await fetch(`${url}/expireat/pass:${pass.j}/${pass.e + COUNTER_GRACE_S}`, auth).catch(() => undefined);
+    await fetch(`${url}/expireat/pass:${pass.j}/${pass.e! + COUNTER_GRACE_S}`, auth).catch(() => undefined);
   }
   return result <= (pass.q ?? 0);
 }
@@ -476,7 +476,7 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
     return json(400, { error: "Request body must be JSON." }, origin);
   }
   const body = pickBody(rawBody);
-  const credit = pass.v === 2;
+  const credit = pass.v === 2 || pass.v === 3;
   if (typeof body.model !== "string" || !allowedModel(body.model)) {
     return json(403, { error: "Model not included in your pass." }, origin);
   }
@@ -517,7 +517,7 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
       // assuming English chars/4 or a cache discount lets parallel calls overspend.
       const paddedTokens = Math.ceil(inputTokens * 110 / 100) + 1024;
       reserved = costNano({ cache_creation: { ephemeral_1h_input_tokens: paddedTokens }, output_tokens: body.max_tokens as number }, body.model);
-      const used = await incrBy(creditKey, reserved, pass.e + COUNTER_GRACE_S);
+      const used = await incrBy(creditKey, reserved, pass.e === undefined ? undefined : pass.e + COUNTER_GRACE_S);
       if (used > (pass.c ?? 0)) {
         await decrBy(creditKey, reserved);
         return json(

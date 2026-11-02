@@ -66,6 +66,7 @@ function paypalReq(path: string, body: unknown): ReqInit {
 
 function stubPaymentFetch(provider: typeof fetch, storage?: (command: unknown[]) => Response): void {
   const values = new Map<string, string>();
+  const expiring = new Set<string>();
   vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
     const url = String(input instanceof Request ? input.url : input);
     if (url.startsWith("https://redis.example/")) return Response.json({ result: 2 });
@@ -74,9 +75,49 @@ function stubPaymentFetch(provider: typeof fetch, storage?: (command: unknown[])
       if (storage) return storage(command);
       const key = String(command[1]);
       if (command[0] === "GET") return Response.json({ result: values.get(key) ?? null });
+      if (command[0] === "TTL") return Response.json({ result: values.has(key) ? (expiring.has(key) ? 10800 : -1) : -2 });
+      if (command[0] === "EVAL") {
+        const script = String(command[1]);
+        const evalKey = String(command[3]);
+        const orderId = String(command[4]);
+        if (command[2] === 2) {
+          const marker = String(command[4]);
+          const owner = String(command[5]);
+          if (values.has(evalKey)) return Response.json({ result: 0 });
+          values.set(evalKey, owner);
+          expiring.add(evalKey);
+          const prior = values.has(marker);
+          values.set(marker, "1");
+          return Response.json({ result: prior ? 2 : 1 });
+        }
+        if (command[2] === 4) {
+          const claimKey = String(command[4]);
+          const marker = String(command[5]);
+          const terminal = String(command[6]);
+          if (values.get(evalKey) !== String(command[7]) || values.get(claimKey) !== String(command[8])) return Response.json({ result: 0 });
+          values.delete(claimKey);
+          values.delete(marker);
+          values.set(terminal, "1");
+          return Response.json({ result: 1 });
+        }
+        if (script.includes("not redis.call('GET'")) {
+          if (!values.has(evalKey)) { values.set(evalKey, orderId); return Response.json({ result: 1 }); }
+          return Response.json({ result: expiring.has(evalKey) ? 0 : 1 });
+        }
+        if (values.get(evalKey) !== orderId) return Response.json({ result: 0 });
+        if (script.includes("PERSIST")) { expiring.delete(evalKey); return Response.json({ result: 1 }); }
+        if (script.includes("DEL")) {
+          if (script.includes("TTL") && !expiring.has(evalKey)) return Response.json({ result: 0 });
+          values.delete(evalKey);
+          expiring.delete(evalKey);
+          return Response.json({ result: 1 });
+        }
+        throw new Error("Unexpected Redis script");
+      }
       if (command[0] === "SET") {
         if (command.includes("NX") && values.has(key)) return Response.json({ result: null });
         values.set(key, String(command[2]));
+        if (command.includes("EX")) expiring.add(key); else expiring.delete(key);
         return Response.json({ result: "OK" });
       }
       throw new Error("Unexpected Redis command");
@@ -99,6 +140,203 @@ afterEach(() => {
 });
 
 describe("PayPal checkout", () => {
+  it("reserves the first-purchase offer for only one simultaneous order", async () => {
+    const orders: Record<string, { status: string; payer: { payer_id: string }; purchase_units: Array<{ custom_id: string; amount: { value: string; currency_code: string } }> }> = {};
+    for (const id of ["ORDER111", "ORDER222"]) orders[id] = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }] };
+    stubPaymentFetch(vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/oauth2/token")) return Response.json({ access_token: "t" });
+      const id = url.split("/").pop()!;
+      if (init?.method === "PATCH") {
+        orders[id].purchase_units[0].custom_id = "comtus-promo:sprint";
+        orders[id].purchase_units[0].amount.value = "5.00";
+        return new Response(null, { status: 204 });
+      }
+      return Response.json(orders[id]);
+    }));
+    const responses = await Promise.all(["ORDER111", "ORDER222"].map((orderId) => call(paypalReq("prepare-order", { orderId, planId: "sprint" }))));
+    expect(responses.map((response) => response.status).sort()).toEqual([200, 409]);
+    const review = responses.find((response) => response.status === 200)!.json() as { price: string; discounted: boolean };
+    expect(review).toMatchObject({ price: "5.00", discounted: true });
+  });
+
+  it("offers the regular price when PayPal supplies no payer ID", async () => {
+    stubPaymentFetch(providerForOrder({ status: "APPROVED", purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }] }));
+    const response = await call(paypalReq("prepare-order", { orderId: "ORDER123", planId: "sprint" }));
+    expect(response.status).toBe(200);
+    expect(response.json()).toMatchObject({ price: "8.33", discounted: false });
+  });
+  it("releases a reservation and asks to restart after PayPal rejects the price update", async () => {
+    const order = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }] };
+    let patches = 0;
+    stubPaymentFetch(vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/oauth2/token")) return Response.json({ access_token: "t" });
+      if (init?.method === "PATCH") {
+        patches++;
+        if (patches === 1) return Response.json({ details: [{ issue: "AMOUNT_NOT_PATCHABLE" }] }, { status: 422 });
+        order.purchase_units[0].custom_id = "comtus-promo:sprint";
+        order.purchase_units[0].amount.value = "5.00";
+        return new Response(null, { status: 204 });
+      }
+      return Response.json(order);
+    }));
+    const first = await call(paypalReq("prepare-order", { orderId: "ORDER111", planId: "sprint" }));
+    expect(first.json()).toMatchObject({ restartCheckout: true });
+    const second = await call(paypalReq("prepare-order", { orderId: "ORDER222", planId: "sprint" }));
+    expect(second.json()).toMatchObject({ discounted: true, price: "5.00" });
+  });
+  it("releases an offer when PayPal confirms the failed order is voided", async () => {
+    const orders: Record<string, { status: string; payer: { payer_id: string }; purchase_units: Array<{ custom_id: string; amount: { value: string; currency_code: string } }> }> = {};
+    for (const id of ["ORDER111", "ORDER222"]) orders[id] = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }] };
+    stubPaymentFetch(vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/oauth2/token")) return Response.json({ access_token: "t" });
+      const parts = url.split("/");
+      const id = parts.at(-1) === "capture" ? parts.at(-2)! : parts.at(-1)!;
+      if (init?.method === "PATCH") {
+        orders[id].purchase_units[0].custom_id = "comtus-promo:sprint";
+        orders[id].purchase_units[0].amount.value = "5.00";
+        return new Response(null, { status: 204 });
+      }
+      if (parts.at(-1) === "capture") {
+        orders[id].status = "VOIDED";
+        return Response.json({ details: [{ issue: "ORDER_CANCELED" }] }, { status: 422 });
+      }
+      return Response.json(orders[id]);
+    }));
+    const first = await call(paypalReq("prepare-order", { orderId: "ORDER111", planId: "sprint" }));
+    const { reviewToken } = first.json() as { reviewToken: string };
+    expect((await call(paypalReq("capture-order", { orderId: "ORDER111", planId: "sprint", reviewToken }))).status).toBe(502);
+    const second = await call(paypalReq("prepare-order", { orderId: "ORDER222", planId: "sprint" }));
+    expect(second.status).toBe(200);
+    expect(second.json()).toMatchObject({ price: "5.00", discounted: true });
+  });
+
+  it("releases the offer after a definitive decline even if the order remains approved", async () => {
+    const orders: Record<string, { status: string; payer: { payer_id: string }; purchase_units: Array<{ custom_id: string; amount: { value: string; currency_code: string } }> }> = {};
+    for (const id of ["ORDER111", "ORDER222"]) orders[id] = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }] };
+    stubPaymentFetch(vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/oauth2/token")) return Response.json({ access_token: "t" });
+      const parts = url.split("/");
+      const id = parts.at(-1) === "capture" ? parts.at(-2)! : parts.at(-1)!;
+      if (init?.method === "PATCH") { orders[id].purchase_units[0].custom_id = "comtus-promo:sprint"; orders[id].purchase_units[0].amount.value = "5.00"; return new Response(null, { status: 204 }); }
+      if (parts.at(-1) === "capture") return Response.json({ details: [{ issue: "INSTRUMENT_DECLINED" }] }, { status: 422 });
+      return Response.json(orders[id]);
+    }));
+    const first = await call(paypalReq("prepare-order", { orderId: "ORDER111", planId: "sprint" }));
+    const { reviewToken } = first.json() as { reviewToken: string };
+    const result = await call(paypalReq("capture-order", { orderId: "ORDER111", planId: "sprint", reviewToken }));
+    expect(result.json()).toMatchObject({ restartCheckout: true });
+    const second = await call(paypalReq("prepare-order", { orderId: "ORDER222", planId: "sprint" }));
+    expect(second.json()).toMatchObject({ price: "5.00", discounted: true });
+    expect((await call(paypalReq("capture-order", { orderId: "ORDER111", planId: "sprint", reviewToken }))).status).toBe(409);
+  });
+
+  it("keeps the offer reserved if a capture outcome is uncertain", async () => {
+    const order = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }] };
+    let captures = 0;
+    stubPaymentFetch(vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/oauth2/token")) return Response.json({ access_token: "t" });
+      if (init?.method === "PATCH") { order.purchase_units[0].custom_id = "comtus-promo:sprint"; order.purchase_units[0].amount.value = "5.00"; return new Response(null, { status: 204 }); }
+      if (url.endsWith("/capture")) {
+        captures++;
+        if (captures === 1) throw new Error("connection lost");
+        return Response.json({ details: [{ issue: "INSTRUMENT_DECLINED" }] }, { status: 422 });
+      }
+      return Response.json(order);
+    }));
+    const first = await call(paypalReq("prepare-order", { orderId: "ORDER111", planId: "sprint" }));
+    const { reviewToken } = first.json() as { reviewToken: string };
+    expect((await call(paypalReq("capture-order", { orderId: "ORDER111", planId: "sprint", reviewToken }))).status).toBe(502);
+    const retry = await call(paypalReq("capture-order", { orderId: "ORDER111", planId: "sprint", reviewToken }));
+    expect(retry.json()).not.toHaveProperty("restartCheckout");
+    order.purchase_units[0].custom_id = "comtus:sprint";
+    order.purchase_units[0].amount.value = "8.33";
+    const second = await call(paypalReq("prepare-order", { orderId: "ORDER222", planId: "sprint" }));
+    expect(second.json()).toMatchObject({ price: "8.33", discounted: false });
+  });
+
+  it("serializes simultaneous captures before releasing a declined offer", async () => {
+    const order = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }] };
+    let unblock!: () => void;
+    let captureStarted!: () => void;
+    const gate = new Promise<void>((resolve) => { unblock = resolve; });
+    const started = new Promise<void>((resolve) => { captureStarted = resolve; });
+    let captures = 0;
+    stubPaymentFetch(vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/oauth2/token")) return Response.json({ access_token: "t" });
+      if (init?.method === "PATCH") { order.purchase_units[0].custom_id = "comtus-promo:sprint"; order.purchase_units[0].amount.value = "5.00"; return new Response(null, { status: 204 }); }
+      if (url.endsWith("/capture")) { captures++; captureStarted(); await gate; return Response.json({ details: [{ issue: "INSTRUMENT_DECLINED" }] }, { status: 422 }); }
+      return Response.json(order);
+    }));
+    const prepared = await call(paypalReq("prepare-order", { orderId: "ORDER111", planId: "sprint" }));
+    const { reviewToken } = prepared.json() as { reviewToken: string };
+    const body = { orderId: "ORDER111", planId: "sprint", reviewToken };
+    const first = call(paypalReq("capture-order", body));
+    await started;
+    const second = await call(paypalReq("capture-order", body));
+    expect(second.status).toBe(409);
+    expect(captures).toBe(1);
+    unblock();
+    expect((await first).json()).toMatchObject({ restartCheckout: true });
+  });
+  it.each([
+    ["sprint", "8.33", "5.00", 2_500_000_000],
+    ["scholar", "33.33", "20.00", 10_000_000_000],
+    ["mastery", "100.00", "60.00", 30_000_000_000],
+  ])("reviews, discounts and fulfills the non-expiring %s plan", async (planId, regular, price, budget) => {
+    const paidAt = "2026-06-01T10:00:00Z";
+    const order = {
+      status: "APPROVED",
+      payer: { payer_id: "BUYER123" },
+      purchase_units: [{
+        custom_id: `comtus:${planId}`,
+        amount: { value: regular, currency_code: "USD" },
+        payments: { captures: [{ status: "COMPLETED", amount: { value: price, currency_code: "USD" }, create_time: paidAt }] },
+      }],
+    };
+    let createdAmount: unknown;
+    stubPaymentFetch(vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/oauth2/token")) return Response.json({ access_token: "t" });
+      if (url.endsWith("/v2/checkout/orders")) {
+        createdAmount = JSON.parse(String(init?.body)).purchase_units[0].amount;
+        return Response.json({ id: "ORDER123" }, { status: 201 });
+      }
+      if (init?.method === "PATCH") {
+        order.purchase_units[0].amount.value = price;
+        order.purchase_units[0].custom_id = `comtus-promo:${planId}`;
+        return new Response(null, { status: 204 });
+      }
+      if (url.endsWith("/capture")) {
+        order.status = "COMPLETED";
+        return Response.json({}, { status: 201 });
+      }
+      return Response.json(order);
+    }));
+    expect((await call(paypalReq("create-order", { planId }))).status).toBe(200);
+    expect(createdAmount).toEqual({ currency_code: "USD", value: regular });
+    expect((await call(paypalReq("capture-order", { orderId: "ORDER123", planId }))).status).toBe(400);
+    const prepared = await call(paypalReq("prepare-order", { orderId: "ORDER123", planId }));
+    expect(prepared.status).toBe(200);
+    const review = prepared.json() as { price: string; discounted: boolean; reviewToken: string };
+    expect(review).toMatchObject({ price, discounted: true });
+    const captured = await call(paypalReq("capture-order", { orderId: "ORDER123", planId, reviewToken: review.reviewToken }));
+    expect(captured.status).toBe(200);
+    const data = captured.json() as { passToken: string; budgetNano: number; expiresDays: number };
+    expect(data.budgetNano).toBe(budget);
+    expect(data.expiresDays).toBeNull();
+    const payload = JSON.parse(Buffer.from(data.passToken.split(".")[1], "base64url").toString()) as { v: number; e?: number };
+    expect(payload.v).toBe(3);
+    expect(payload.e).toBeUndefined();
+    const restored = await call(paypalReq("recover", { orderId: "ORDER123" }));
+    expect((restored.json() as { passToken: string }).passToken).toBe(data.passToken);
+  });
+
   it("create-order: rejects missing secret and unknown plans", async () => {
     delete process.env.PAYPAL_CLIENT_SECRET;
     const res = await call(paypalReq("create-order", { planId: "schlor" }));
@@ -614,6 +852,6 @@ describe("PayPal fulfillment safeguards", () => {
       headers: webhookHeaders,
     });
     expect(response.status).toBe(200);
-    expect(commands).toContainEqual(["SET", `passdeny:${createHmac("sha256", SECRET).update("jti:ORDER123").digest("hex").slice(0, 12)}`, "1", "EX", 400 * 86400]);
+    expect(commands).toContainEqual(["SET", `passdeny:${createHmac("sha256", SECRET).update("jti:ORDER123").digest("hex").slice(0, 12)}`, "1"]);
   });
 });

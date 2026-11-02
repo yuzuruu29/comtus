@@ -31,6 +31,11 @@ describe("HostedCheckout", () => {
     for (const name of ["Sprint Pass", "Scholar Pass", "Mastery Pass"]) {
       expect(screen.getByRole("button", { name: new RegExp(name) })).toBeInTheDocument();
     }
+    for (const price of ["5.00", "20.00", "60.00"]) {
+      expect(screen.getAllByText(new RegExp(`\\$${price.replace(".", "\\.")} first purchase`)).length).toBeGreaterThan(0);
+    }
+    expect(screen.getByText(/Usage does not expire\. One-time payment, no automatic renewal/)).toBeInTheDocument();
+    expect(screen.getByText(/\$10\.00 hosted usage included/)).toBeInTheDocument();
     expect(document.title).toBe("Smarter Models checkout — Comtus");
   });
 

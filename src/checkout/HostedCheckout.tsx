@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { STUDY_PLANS } from "../lib/paypal";
+import { formatUsdFromNano } from "../lib/credits";
 import PayPalCheckout from "../studio/PayPalCheckout";
 import { usePageMeta } from "../lib/usePageMeta";
 import { trackEvent } from "../lib/analytics";
@@ -75,7 +76,7 @@ export default function HostedCheckout() {
                 }`}
               >
                 <span className="block text-[12px] font-medium">{candidate.name}</span>
-                <span className="mt-1 block font-mono text-[11px]">${candidate.price}</span>
+                <span className="mt-1 block font-mono text-[11px]">${candidate.price} first purchase; ${candidate.regularPrice} regular</span>
               </button>
             ))}
           </div>
@@ -83,9 +84,11 @@ export default function HostedCheckout() {
           <div className="my-6 border-y border-hairline py-4">
             <div className="flex items-baseline justify-between gap-4">
               <span className="font-display text-title">{plan.name}</span>
-              <span className="font-mono text-title text-brass">${plan.price}</span>
+              <span className="font-mono text-title text-brass">${plan.price} first purchase</span>
             </div>
-            <p className="mt-1 text-[12px] text-muted">{plan.desc} · {plan.days} days</p>
+            <p className="mt-1 text-[12px] text-muted">{plan.desc} · Usage does not expire. One-time payment, no automatic renewal.</p>
+            <p className="mt-1 text-body text-muted">{formatUsdFromNano(plan.budgetNano)} hosted usage included.</p>
+            <p className="mt-1 text-body text-muted">About 40% off your first eligible PayPal purchase. Regular price ${plan.regularPrice}. The final amount is shown for review before payment.</p>
           </div>
 
           <PayPalCheckout

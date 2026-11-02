@@ -156,14 +156,25 @@ interface ServerPlan {
   currency: "USD";
   /** Included Anthropic usage in nano-USD (sticker price / 2). */
   budgetNano: number;
-  days: number;
+  days: number | null;
+  promo?: boolean;
 }
 
 const SERVER_PLANS: Record<string, ServerPlan> = {
-  sprint: { id: "sprint", name: "Sprint Pass", price: "2.99", currency: "USD", budgetNano: 1_495_000_000, days: 60 },
-  scholar: { id: "scholar", name: "Scholar Pass", price: "6.99", currency: "USD", budgetNano: 3_495_000_000, days: 120 },
-  mastery: { id: "mastery", name: "Mastery Pass", price: "14.99", currency: "USD", budgetNano: 7_495_000_000, days: 180 },
+  sprint: { id: "sprint", name: "Sprint Pass", price: "8.33", currency: "USD", budgetNano: 2_500_000_000, days: null },
+  scholar: { id: "scholar", name: "Scholar Pass", price: "33.33", currency: "USD", budgetNano: 10_000_000_000, days: null },
+  mastery: { id: "mastery", name: "Mastery Pass", price: "100.00", currency: "USD", budgetNano: 30_000_000_000, days: null },
 };
+
+const PROMO_PRICES: Record<string, string> = { sprint: "5.00", scholar: "20.00", mastery: "60.00" };
+const PROMO_PLANS = Object.values(SERVER_PLANS).map((plan) => ({ ...plan, price: PROMO_PRICES[plan.id], promo: true }));
+
+// Existing orders retain the price, budget and validity they were sold with.
+const LEGACY_PLANS: ServerPlan[] = [
+  { id: "sprint", name: "Sprint Pass", price: "2.99", currency: "USD", budgetNano: 1_495_000_000, days: 60 },
+  { id: "scholar", name: "Scholar Pass", price: "6.99", currency: "USD", budgetNano: 3_495_000_000, days: 120 },
+  { id: "mastery", name: "Mastery Pass", price: "14.99", currency: "USD", budgetNano: 7_495_000_000, days: 180 },
+];
 
 function planById(id: unknown): ServerPlan | undefined {
   return Object.values(SERVER_PLANS).find((plan) => plan.id === id);
@@ -174,10 +185,10 @@ function storageConfigured(): boolean {
 }
 
 interface PassPayload {
-  v: 2;
+  v: 2 | 3;
   j: string;
   c: number;
-  e: number;
+  e?: number;
   n?: string;
 }
 
@@ -241,16 +252,16 @@ async function issuePassForOrder(plan: ServerPlan, orderId: string, paidAtMs: nu
   if (stored) return stored;
   const j = await deterministicJti(orderId, secret);
   const payload: PassPayload = {
-    v: 2,
+    v: plan.days === null ? 3 : 2,
     j,
     c: plan.budgetNano,
-    e: Math.floor(paidAtMs / 1000) + plan.days * 86400,
+    ...(plan.days === null ? {} : { e: Math.floor(paidAtMs / 1000) + plan.days * 86400 }),
     n: plan.name,
   };
   const payloadB64 = b64url(JSON.stringify(payload));
   const sig = await signPayload(payloadB64, secret);
   const token = `comtus-pass-v1.${payloadB64}.${sig}`;
-  const saved = await redisCommand(["SET", `passpayload:${orderId}`, token, "EX", plan.days * 86400 + 30 * 86400, "NX"]);
+  const saved = await redisCommand(["SET", `passpayload:${orderId}`, token, ...(plan.days === null ? [] : ["EX", plan.days * 86400 + 30 * 86400]), "NX"]);
   if (saved === "OK") return token;
   if (saved !== null) throw new Error("Pass persistence failed");
   const winner = await readStoredPass(orderId);
@@ -344,7 +355,7 @@ async function handleCreateOrder(req: IncomingMessage, res: ServerResponse, orig
         application_context: {
           brand_name: "Comtus",
           shipping_preference: "NO_SHIPPING",
-          user_action: "PAY_NOW",
+          user_action: "CONTINUE",
         },
       }),
     });
@@ -364,6 +375,7 @@ async function handleCreateOrder(req: IncomingMessage, res: ServerResponse, orig
 
 interface OrderShape {
   status?: string;
+  payer?: { payer_id?: string };
   purchase_units?: Array<{
     custom_id?: string;
     description?: string;
@@ -376,8 +388,76 @@ function orderMatchesPlan(order: OrderShape, plan: ServerPlan): boolean {
   if (!Array.isArray(order.purchase_units) || order.purchase_units.length !== 1) return false;
   const unit = order.purchase_units[0];
   return unit?.amount?.value === plan.price && unit?.amount?.currency_code === plan.currency &&
-    (unit.custom_id === `comtus:${plan.id}` ||
-      (unit.custom_id === undefined && unit.description === `Comtus ${plan.name} — hosted model usage`));
+    (unit.custom_id === `${plan.promo ? "comtus-promo" : "comtus"}:${plan.id}` ||
+      (!plan.promo && unit.custom_id === undefined && unit.description === `Comtus ${plan.name} — hosted model usage`));
+}
+
+async function promoClaimKey(payerId: unknown): Promise<string | null> {
+  if (typeof payerId !== "string" || !/^[A-Za-z0-9]{1,64}$/.test(payerId)) return null;
+  return `firstbuy:${await hmacHex(`firstbuy:${payerId}`, cleanEnv(process.env.PASS_SIGNING_SECRET))}`;
+}
+
+async function handlePrepareOrder(req: IncomingMessage, res: ServerResponse, origin?: string | string[]): Promise<void> {
+  const clientId = cleanEnv(process.env.PAYPAL_CLIENT_ID);
+  const clientSecret = cleanEnv(process.env.PAYPAL_CLIENT_SECRET);
+  if (!clientId || !clientSecret || !cleanEnv(process.env.PASS_SIGNING_SECRET) || !storageConfigured()) {
+    return sendJson(res, 503, { error: "Checkout is temporarily unavailable." }, origin);
+  }
+  if (await throttleResponse(req, res, origin, "prepare", 60, "Too many requests. Try again later.", "Checkout is temporarily unavailable.")) return;
+  const body = readBody(req);
+  const orderId = orderIdIn(body?.orderId);
+  const plan = planById(body?.planId);
+  if (!orderId || !plan) return sendJson(res, 400, { error: "Missing or invalid order reference." }, origin);
+  try {
+    if (await redisCommand(["GET", `captureterminal:${orderId}`]) !== null) return sendJson(res, 409, { error: "This checkout ended after a declined payment. Start a new checkout.", restartCheckout: true }, origin);
+    const token = await paypalOauthToken(clientId, clientSecret);
+    const loaded = await paypal(`/v2/checkout/orders/${orderId}`, "GET", token);
+    if (loaded.status !== 200) return sendJson(res, 502, { error: "Could not verify the order with PayPal." }, origin);
+    let order = loaded.data as OrderShape;
+    const promo = PROMO_PLANS.find((candidate) => candidate.id === plan.id)!;
+    if (order.status !== "APPROVED" || (!orderMatchesPlan(order, plan) && !orderMatchesPlan(order, promo))) {
+      return sendJson(res, 409, { error: "This order cannot be prepared for payment." }, origin);
+    }
+    const key = await promoClaimKey(order.payer?.payer_id);
+    let selected = plan;
+    if (key) {
+      const claimed = await redisCommand(["SET", key, orderId, "EX", 3 * 3600, "NX"]);
+      if (claimed !== "OK" && claimed !== null) throw new Error("Promotion reservation failed");
+      const owner = claimed === "OK" ? orderId : await redisCommand(["GET", key]);
+      if (owner === orderId) selected = promo;
+      else {
+        const ttl = await redisCommand(["TTL", key]);
+        if (ttl !== -1) return sendJson(res, 409, { error: "Another first-purchase checkout is in progress. Complete it or try again after the reservation expires." }, origin);
+      }
+    }
+    if (orderMatchesPlan(order, promo) && selected !== promo) return sendJson(res, 409, { error: "Promotion reservation could not be verified." }, origin);
+    if (selected === promo && !orderMatchesPlan(order, promo)) {
+      const r = await fetch(`${paypalBase()}/v2/checkout/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" },
+        body: JSON.stringify([
+          { op: "replace", path: "/purchase_units/@reference_id=='default'/amount", value: { currency_code: "USD", value: promo.price } },
+          { op: "replace", path: "/purchase_units/@reference_id=='default'/custom_id", value: `comtus-promo:${plan.id}` },
+        ]),
+      });
+      if (!r.ok) {
+        if (r.status >= 400 && r.status < 500 && key) {
+          const released = await redisCommand(["EVAL", "if redis.call('GET', KEYS[1]) == ARGV[1] and redis.call('TTL', KEYS[1]) >= 0 then return redis.call('DEL', KEYS[1]) else return 0 end", 1, key, orderId]);
+          if (released === 1) return sendJson(res, 409, { error: "PayPal could not apply the offer. Start a new checkout and choose another payment method.", restartCheckout: true }, origin);
+        }
+        return sendJson(res, 502, { error: "PayPal could not apply the offer. No payment was captured." }, origin);
+      }
+      const updated = await paypal(`/v2/checkout/orders/${orderId}`, "GET", token);
+      if (updated.status !== 200) return sendJson(res, 502, { error: "Could not confirm the final price." }, origin);
+      order = updated.data as OrderShape;
+      if (order.status !== "APPROVED" || !orderMatchesPlan(order, promo)) return sendJson(res, 409, { error: "Could not confirm the final price." }, origin);
+    }
+    const reviewToken = await hmacHex(`review:${orderId}:${selected.id}:${selected.price}`, cleanEnv(process.env.PASS_SIGNING_SECRET));
+    return sendJson(res, 200, { price: selected.price, discounted: selected.promo === true, reviewToken }, origin);
+  } catch (e) {
+    console.error("prepare-order error:", e instanceof Error ? e.message : e);
+    return sendJson(res, 502, { error: "Could not prepare the final price. No payment was captured." }, origin);
+  }
 }
 
 /** An order's COMPLETED status alone does not prove a full, settled capture. */
@@ -405,11 +485,13 @@ async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, ori
   if (!body) return sendJson(res, 400, { error: "Invalid JSON body." }, origin);
 
   const orderId = orderIdIn(body.orderId);
-  const plan = planById(body.planId);
-  if (!orderId || !plan) {
+  const selectedPlan = planById(body.planId);
+  if (!orderId || !selectedPlan) {
     return sendJson(res, 400, { error: "Missing or invalid order reference." }, origin);
   }
 
+  let captureLock: { key: string; owner: string } | null = null;
+  let firstCaptureAttempt = false;
   try {
     if (await passDenied(orderId)) return sendJson(res, 401, { error: "This pass has been revoked." }, origin);
     const token = await paypalOauthToken(clientId, clientSecret);
@@ -421,14 +503,41 @@ async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, ori
     }
     let order = initial.data as OrderShape;
 
-    if (!orderMatchesPlan(order, plan)) {
-      console.error(`capture-order amount mismatch: order ${orderId} vs plan ${plan.id}`);
+    const plan = [selectedPlan, ...PROMO_PLANS.filter((candidate) => candidate.id === selectedPlan.id), ...LEGACY_PLANS.filter((candidate) => candidate.id === selectedPlan.id)]
+      .find((candidate) => orderMatchesPlan(order, candidate));
+    if (!plan) {
+      console.error(`capture-order amount mismatch: order ${orderId} vs plan ${selectedPlan.id}`);
       return sendJson(res, 400, { error: "This order does not match the selected plan." }, origin);
     }
     if (order.status !== "APPROVED" && order.status !== "COMPLETED") {
       return sendJson(res, 409, { error: "The order is not approved for capture yet." }, origin);
     }
-
+    if (plan.days === null) {
+      const expected = await hmacHex(`review:${orderId}:${plan.id}:${plan.price}`, cleanEnv(process.env.PASS_SIGNING_SECRET));
+      if (body.reviewToken !== expected) return sendJson(res, 400, { error: "Review the final price before confirming payment." }, origin);
+      if (plan.promo) {
+        const key = await promoClaimKey(order.payer?.payer_id);
+        if (!key) return sendJson(res, 409, { error: "Promotion reservation could not be verified." }, origin);
+        if (await redisCommand(["GET", `captureterminal:${orderId}`]) !== null) return sendJson(res, 409, { error: "This checkout ended after a declined payment. Start a new checkout.", restartCheckout: true }, origin);
+        if (order.status !== "COMPLETED") {
+          const owner = crypto.randomUUID();
+          const lockKey = `capturelock:${orderId}`;
+          const acquired = await redisCommand(["EVAL", "if redis.call('SET', KEYS[1], ARGV[1], 'NX', 'EX', 300) then local prior = redis.call('GET', KEYS[2]); redis.call('SET', KEYS[2], '1'); if prior then return 2 else return 1 end else return 0 end", 2, lockKey, `captureuncertain:${orderId}`, owner]);
+          if (acquired !== 1 && acquired !== 2) return sendJson(res, 409, { error: "This payment is already being checked. Please retry shortly." }, origin);
+          captureLock = { key: lockKey, owner };
+          firstCaptureAttempt = acquired === 1;
+        }
+        // Make the claim permanent before capture so a slow or uncertain capture cannot grant a second offer.
+        const held = await redisCommand(["EVAL", "if redis.call('GET', KEYS[1]) == ARGV[1] then redis.call('PERSIST', KEYS[1]); return 1 else return 0 end", 1, key, orderId]);
+        if (held !== 1) return sendJson(res, 409, { error: "Promotion reservation expired. Please start checkout again." }, origin);
+      } else {
+        const key = await promoClaimKey(order.payer?.payer_id);
+        if (key) {
+          const held = await redisCommand(["EVAL", "if not redis.call('GET', KEYS[1]) then redis.call('SET', KEYS[1], ARGV[1]); return 1 elseif redis.call('TTL', KEYS[1]) == -1 then return 1 else return 0 end", 1, key, orderId]);
+          if (held !== 1) return sendJson(res, 409, { error: "Another first-purchase checkout is in progress. Complete it before making another purchase." }, origin);
+        }
+      }
+    }
     if (order.status !== "COMPLETED") {
       const cap = await paypal(`/v2/checkout/orders/${orderId}/capture`, "POST", token, {
         requestId: `comtus-capture-${orderId}`,
@@ -437,6 +546,17 @@ async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, ori
         cap.status === 422 && (cap.data.details as Array<{ issue?: string }> | undefined)?.some((d) => d.issue === "ORDER_ALREADY_CAPTURED");
       if (cap.status !== 201 && cap.status !== 200 && !alreadyCaptured) {
         console.error("PayPal capture failed:", cap.status, JSON.stringify(cap.data).slice(0, 300));
+        if (plan.promo) {
+          const checked = await paypal(`/v2/checkout/orders/${orderId}`, "GET", token);
+          const key = await promoClaimKey(order.payer?.payer_id);
+          if (checked.status === 200 && (checked.data as OrderShape).status === "VOIDED" && key) {
+            await redisCommand(["EVAL", "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end", 1, key, orderId]);
+          } else if (cap.status === 422 && firstCaptureAttempt && captureLock && key && checked.status === 200 && (checked.data as OrderShape).status === "APPROVED" &&
+            Array.isArray(cap.data.details) && cap.data.details.length === 1 && (cap.data.details[0] as { issue?: string }).issue === "INSTRUMENT_DECLINED") {
+            const released = await redisCommand(["EVAL", "if redis.call('GET', KEYS[1]) == ARGV[1] and redis.call('GET', KEYS[2]) == ARGV[2] then redis.call('DEL', KEYS[2], KEYS[3]); redis.call('SET', KEYS[4], '1'); return 1 else return 0 end", 4, captureLock.key, key, `captureuncertain:${orderId}`, `captureterminal:${orderId}`, captureLock.owner, orderId]);
+            if (released === 1) return sendJson(res, 409, { error: "PayPal declined the payment. Start a new checkout to choose another payment method.", restartCheckout: true }, origin);
+          }
+        }
         return sendJson(res, 502, { error: "Payment capture failed. If you were charged, contact support." }, origin);
       }
       const recheck = await paypal(`/v2/checkout/orders/${orderId}`, "GET", token);
@@ -463,6 +583,14 @@ async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, ori
   } catch (e) {
     console.error("capture-order error:", e instanceof Error ? e.message : e);
     return sendJson(res, 502, { error: "Fulfillment failed. If you were charged, contact support." }, origin);
+  } finally {
+    if (captureLock) {
+      try {
+        await redisCommand(["EVAL", "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end", 1, captureLock.key, captureLock.owner]);
+      } catch (e) {
+        console.error("capture lock release failed:", e instanceof Error ? e.message : e);
+      }
+    }
   }
 }
 
@@ -485,7 +613,7 @@ async function denyPass(orderId: string): Promise<void> {
   const secret = cleanEnv(process.env.PASS_SIGNING_SECRET);
   if (!secret) throw new Error("PASS_SIGNING_SECRET is not configured");
   const j = await deterministicJti(orderId, secret);
-  const saved = await redisCommand(["SET", `passdeny:${j}`, "1", "EX", 400 * 86400]);
+  const saved = await redisCommand(["SET", `passdeny:${j}`, "1"]);
   if (saved !== "OK") throw new Error("Pass revocation failed");
 }
 
@@ -575,7 +703,7 @@ async function handleRecover(req: IncomingMessage, res: ServerResponse, origin?:
     if (loaded.status === 404) return sendJson(res, 404, { error: "Order not found." }, origin);
     if (loaded.status !== 200) return sendJson(res, 502, { error: "Could not verify the order with PayPal." }, origin);
     const order = loaded.data as OrderShape;
-    const plan = Object.values(SERVER_PLANS).find((candidate) => orderMatchesPlan(order, candidate));
+    const plan = [...Object.values(SERVER_PLANS), ...PROMO_PLANS, ...LEGACY_PLANS].find((candidate) => orderMatchesPlan(order, candidate));
     const paidAtMs = plan ? verifiedPaidAt(order, plan) : null;
     if (!plan || paidAtMs === null) {
       return sendJson(res, 409, { error: "That order is not a completed Comtus pass." }, origin);
@@ -608,6 +736,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     .replace(/^\/api\/paypal\/?/, "");
 
   if (p.endsWith("create-order")) return handleCreateOrder(req, res, origin);
+  if (p.endsWith("prepare-order")) return handlePrepareOrder(req, res, origin);
   if (p.endsWith("capture-order")) return handleCaptureOrder(req, res, origin);
   if (p.endsWith("recover")) return handleRecover(req, res, origin);
   if (p.endsWith("webhook")) return handleWebhook(req, res, origin);

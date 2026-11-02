@@ -35,6 +35,7 @@ import {
 } from "../lib/llm";
 import type { ProviderId, StoredKey } from "../lib/types";
 import { STUDY_PLANS, decodePassInfo, passSummary, planTierForPass, type StudyPlan } from "../lib/paypal";
+import { formatUsdFromNano } from "../lib/credits";
 import PayPalCheckout from "./PayPalCheckout";
 import ExternalLink from "./ExternalLink";
 import RecoverPass from "./RecoverPass";
@@ -1008,6 +1009,7 @@ export default function SettingsModal({
                     <p className="text-[12.5px] leading-relaxed text-muted">
                       Unlock hosted Claude Opus 5.5 and Sonnet 5.5 with 1M context for deep synthesis, mock exams, and slide generation. Instant activation via PayPal with no API setup or recurring subscription.
                     </p>
+                    <p className="text-body text-muted">About 40% off your first eligible PayPal purchase. Review the final price before payment.</p>
 
                     {/* Pricing Grid */}
                     <div>
@@ -1042,12 +1044,13 @@ export default function SettingsModal({
 
                                 <div className="mt-1 flex items-baseline justify-between gap-1.5">
                                   <span className="font-mono text-brass font-bold text-[14px]">
-                                    ${plan.price} <span className="font-mono text-[10px] font-normal text-muted">/ {plan.days}d</span>
+                                    ${plan.price} <span className="font-mono text-[10px] font-normal text-muted">first purchase; ${plan.regularPrice} regular</span>
                                   </span>
                                 </div>
 
 
                                 <div className="mt-1 text-[11.5px] leading-snug text-muted">{plan.desc}</div>
+                                <div className="mt-1 text-body text-muted">{formatUsdFromNano(plan.budgetNano)} hosted usage included</div>
                               </div>
                               {isPlanSelected && (
                                 <div className="mt-2 text-right font-mono text-[10px] text-brass font-medium">
@@ -1066,10 +1069,10 @@ export default function SettingsModal({
                         <div className="flex items-center gap-2 text-[12.5px] text-ink font-medium">
                           <CreditCard size={ICON.md} className="text-brass shrink-0" />
                           <span>
-                            Pay with PayPal: {selectedPlan.name} (${selectedPlan.price} USD)
+                            Pay with PayPal: {selectedPlan.name} (up to ${selectedPlan.regularPrice} USD)
                           </span>
                         </div>
-                        <span className="font-mono text-[10px] text-brass">{selectedPlan.name} · {selectedPlan.days} days</span>
+                        <span className="font-mono text-[10px] text-brass">{selectedPlan.name} · no expiry</span>
                       </div>
                       {isTauri() ? (
                         /* The desktop CSP is script-src 'self', so the PayPal

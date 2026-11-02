@@ -1,10 +1,37 @@
 import { useEffect, useRef, useState } from "react";
 
 import { PAYPAL_CLIENT_ID, type StudyPlan } from "../lib/paypal";
+import { formatUsdFromNano } from "../lib/credits";
 import { isTauri } from "../lib/desktop";
 import ExternalLink from "./ExternalLink";
 import { CheckCircle, CircleNotch, WarningCircle } from "@phosphor-icons/react";
 import { ICON } from "../ui/iconScale";
+
+type ApprovedOrder = { orderId: string; planId: string; planName: string; budgetNano: number };
+type ReviewedOrder = ApprovedOrder & { price: string; discounted: boolean; reviewToken: string };
+const CHECKOUT_STORAGE_KEY = "comtus-pending-checkout";
+
+function readPendingCheckout(): { approved: ApprovedOrder; review: ReviewedOrder | null } | null {
+  try {
+    const data = JSON.parse(sessionStorage.getItem(CHECKOUT_STORAGE_KEY) ?? "null");
+    const approved = data?.approved;
+    if (!approved || typeof approved.orderId !== "string" || typeof approved.planId !== "string" || typeof approved.planName !== "string" || typeof approved.budgetNano !== "number") return null;
+    const review = data.review;
+    if (review && (typeof review.price !== "string" || typeof review.discounted !== "boolean" || typeof review.reviewToken !== "string")) return { approved, review: null };
+    return { approved, review: review ? { ...approved, price: review.price, discounted: review.discounted, reviewToken: review.reviewToken } : null };
+  } catch {
+    return null;
+  }
+}
+
+function savePendingCheckout(approved: ApprovedOrder | null, review: ReviewedOrder | null): void {
+  try {
+    if (approved) sessionStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify({ approved, review }));
+    else sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
+  } catch {
+    // The order ID remains visible even when browser storage is unavailable.
+  }
+}
 
 /**
  * PayPal checkout. Money logic lives server-side: order creation uses
@@ -34,14 +61,18 @@ declare global {
   }
 }
 
+class CheckoutError extends Error {
+  constructor(message: string, readonly restartCheckout: boolean) { super(message); }
+}
+
   async function postJson<T>(path: string, body: unknown): Promise<T> {
     const res = await fetch(path, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
-    const data = (await res.json().catch(() => ({}))) as T & { error?: string };
-    if (!res.ok) throw new Error(data.error || "Something went wrong. Please try again.");
+    const data = (await res.json().catch(() => ({}))) as T & { error?: string; restartCheckout?: boolean };
+    if (!res.ok) throw new CheckoutError(data.error || "Something went wrong. Please try again.", data.restartCheckout === true);
     return data;
   }
 
@@ -58,6 +89,29 @@ export default function PayPalCheckout({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
+  const [pending] = useState(readPendingCheckout);
+  const [approved, setApproved] = useState<ApprovedOrder | null>(pending?.approved ?? null);
+  const [review, setReview] = useState<ReviewedOrder | null>(pending?.review ?? null);
+
+  async function prepareOrder(order: ApprovedOrder): Promise<void> {
+    setLoading(true);
+    setError("");
+    try {
+      const prepared = await postJson<{ price: string; discounted: boolean; reviewToken: string }>("/api/paypal/prepare-order", order);
+      const next = { ...prepared, ...order };
+      savePendingCheckout(order, next);
+      setReview(next);
+    } catch (err) {
+      if (err instanceof CheckoutError && err.restartCheckout) {
+        savePendingCheckout(null, null);
+        setApproved(null);
+        setReview(null);
+      }
+      setError(err instanceof Error ? err.message : "Could not prepare the final price.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   // Load PayPal SDK script
   useEffect(() => {
@@ -80,7 +134,7 @@ export default function PayPalCheckout({
 
     const script = document.createElement("script");
     script.id = scriptId;
-    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD&intent=capture`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD&intent=capture&commit=false`;
     script.async = true;
     script.onload = () => setSdkReady(true);
     script.onerror = () => setError("Failed to load PayPal checkout SDK. Check internet connection.");
@@ -113,21 +167,10 @@ export default function PayPalCheckout({
             return orderId;
           },
           onApprove: async (data) => {
-            setLoading(true);
-            try {
-              // Capture happens on the server, which verifies the amount
-              // against PayPal's records and issues the pass instantly.
-              const { passToken } = await postJson<{ passToken: string }>(
-                "/api/paypal/capture-order",
-                { orderId: data.orderID, planId: plan.id },
-              );
-              setSuccess(data.orderID);
-              onSuccess(passToken, data.orderID);
-            } catch (err) {
-              setError(err instanceof Error ? err.message : "Payment capture failed.");
-            } finally {
-              setLoading(false);
-            }
+            const order = { orderId: data.orderID, planId: plan.id, planName: plan.name, budgetNano: plan.budgetNano };
+            savePendingCheckout(order, null);
+            setApproved(order);
+            await prepareOrder(order);
           },
           onError: (err) => {
             setError(err instanceof Error ? err.message : "PayPal transaction error.");
@@ -138,6 +181,29 @@ export default function PayPalCheckout({
       setError(e instanceof Error ? e.message : "Failed to initialize PayPal button.");
     }
   }, [native, sdkReady, plan, onSuccess]);
+
+  async function confirmPayment(): Promise<void> {
+    if (!review || loading) return;
+    setLoading(true);
+    setError("");
+    try {
+      const { passToken } = await postJson<{ passToken: string }>("/api/paypal/capture-order", review);
+      setSuccess(review.orderId);
+      onSuccess(passToken, review.orderId);
+      savePendingCheckout(null, null);
+      setApproved(null);
+      setReview(null);
+    } catch (err) {
+      if (err instanceof CheckoutError && err.restartCheckout) {
+        savePendingCheckout(null, null);
+        setApproved(null);
+        setReview(null);
+      }
+      setError(err instanceof Error ? err.message : "Payment capture failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   if (native) {
     const website = import.meta.env.VITE_API_ORIGIN || "https://comtus-ai.vercel.app";
@@ -189,7 +255,17 @@ export default function PayPalCheckout({
         </div>
       )}
 
-      <div ref={containerRef} className="min-h-[38px] w-full" />
+      {approved && (
+        <div className="rounded-[var(--radius-field)] border border-brass/30 p-3 text-body text-ink">
+          <p>PayPal order ID: {approved.orderId}. Keep this ID to restore your pass if payment is interrupted.</p>
+          {review && <p>{review.planName} final price: <strong>${review.price} USD</strong>{review.discounted ? "; first-purchase offer applied" : "; regular price"}.</p>}
+          {review && <p>{formatUsdFromNano(review.budgetNano)} hosted usage included. Usage does not expire.</p>}
+          <button type="button" disabled={loading} onClick={() => void (review ? confirmPayment() : prepareOrder(approved))} className="mt-2 rounded-[var(--radius-control)] border border-brass/40 px-3 py-2 text-brass disabled:opacity-50">
+            {review ? "Confirm payment" : "Retry price review"}
+          </button>
+        </div>
+      )}
+      <div ref={containerRef} className={`min-h-[38px] w-full ${approved ? "hidden" : ""}`} />
     </div>
   );
 }

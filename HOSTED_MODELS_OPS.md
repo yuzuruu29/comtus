@@ -9,13 +9,13 @@ time, no manual step.
 ```
 Browser ──▶ /api/paypal/create-order  (server-owned prices)
         ◀── orderId; buyer approves in PayPal popup
+Browser ──▶ /api/paypal/prepare-order (checks payer eligibility and final price)
+        ◀── final price; buyer reviews and confirms
 Browser ──▶ /api/paypal/capture-order
               ├─ re-verifies status/amount against PayPal's API
               ├─ captures server-side
               ├─ captures with PayPal-Request-Id comtus-capture-<orderId> (retry-safe)
-              └─ mints deterministic comtus-pass-v1 token (idempotent per order;
-                 expiry counts from the capture time, so re-submitting an
-                 old order returns the same pass instead of extending it)
+              └─ mints deterministic comtus-pass-v1 token (idempotent per order)
 Browser (pass token only) ──▶ /api/anthropic (Vercel Edge)
                                 ├─ verify HMAC signature + expiry
                                 ├─ per-pass + per-IP quotas via Upstash (fail closed)
@@ -30,7 +30,8 @@ Browser (pass token only) ──▶ /api/anthropic (Vercel Edge)
 - The Anthropic key exists **only** as a Vercel env var. Nothing in the
   client bundle, nothing in git.
 - Pass tokens are `comtus-pass-v1.<payload>.<hmac>`. A version-2 payload
-  carries an included usage budget (`c`, nano-USD). A payload with `q` and
+  carries an included usage budget (`c`, nano-USD) and expires; version 3
+  carries a non-expiring budget. A payload with `q` and
   no `v` is a request-count pass already sold, and it still counts requests.
   A refund or dispute sets `passdeny:<jti>`. The order id restores the same token.
 - Users' own `sk-ant-` keys still go direct from their browser (their key,
@@ -51,7 +52,7 @@ Browser (pass token only) ──▶ /api/anthropic (Vercel Edge)
 | `VITE_PAYPAL_CLIENT_ID` | yes | Public browser SDK client ID (must match `PAYPAL_CLIENT_ID`; baked in at build time). |
 | `PAYPAL_WEBHOOK_ID` | yes | PayPal webhook ID for verifying refund and dispute notifications. |
 | `PAYPAL_API_BASE` | no | Default live `https://api-m.paypal.com`; point at sandbox for testing. |
-| `UPSTASH_REDIS_REST_URL` | yes | Per-pass + per-IP quota counters — the proxy refuses traffic without them. Pass counters expire 30 days after their pass. Also holds device transfers (below). |
+| `UPSTASH_REDIS_REST_URL` | yes | Per-pass + per-IP quota counters — the proxy refuses traffic without them. Legacy pass counters expire 30 days after their pass; non-expiring pass counters do not expire. Also holds device transfers (below). |
 | `UPSTASH_REDIS_REST_TOKEN` | yes | Same. |
 | `HOSTED_PROXY_OFF` | no | `1` = global kill switch (503 for all proxied calls). |
 
@@ -71,6 +72,28 @@ node scripts/issue-pass.mjs --plan mastery --note "Mark"
 Then have the buyer paste the printed `comtus-pass-v1.…` token in
 Settings → Smarter Models.
 
+For first-purchase offers, Redis stores a keyed hash of the PayPal payer ID
+in `firstbuy:<hash>`, never the raw ID. An unconfirmed reservation expires
+after three hours. Before capture, it becomes permanent; a PayPal-confirmed
+decline releases it only when no earlier capture attempt is uncertain. The
+order-specific capture lock expires after five minutes, while an uncertain
+capture marker persists. Refunds do not restore offer eligibility. For an
+interrupted payment, use the buyer's order ID to check PayPal and retry the
+same order or restore a completed pass. Do not clear an uncertain claim
+unless the PayPal order outcome is definitively established.
+
+## Sandbox verification
+
+`api/paypal.sandbox.test.ts` is opt-in via `COMTUS_SANDBOX_CHECK=1` and
+refuses a non-sandbox PayPal API base. The order-creation test uses the
+configured Redis endpoint for an expiring rate-limit key; choose that endpoint
+deliberately and use a test-only signing secret. To verify an approved sandbox
+order, set `COMTUS_SANDBOX_APPROVED_ORDER` and run only the test named
+`applies the first-purchase offer`; that test uses an in-memory Redis stub.
+The approved-order test must use a separate sandbox personal buyer and
+captures sandbox funds. Verify the Redis scripts independently and never
+interpret mocked Redis results as a live Redis integration check.
+
 ## Rotating the Anthropic key
 
 1. Create a new key in the Anthropic console (keep the spend limit low).
@@ -81,8 +104,10 @@ No client change or pass re-issue needed — passes are independent of the key.
 
 ## Rotating the signing secret
 
-Only if it leaks (it lives in `.env.local` and Vercel only). Update both,
-then re-issue passes to active buyers.
+Only if it leaks (it lives in `.env.local` and Vercel only). Rotation also
+changes pass identities and first-purchase hashes. Plan migration of usage
+counters, revocations, and offer claims before switching; re-issuing passes
+alone would reset usage and eligibility.
 
 ## Desktop (Tauri) builds
 
