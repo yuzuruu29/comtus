@@ -107,6 +107,8 @@ export default function SourcesPane({
   dropFiles,
   dropRequestId,
   onDropConsumed,
+  addRequest,
+  onAddRequestConsumed,
   onAsk,
 }: {
   notebookId: string;
@@ -120,10 +122,14 @@ export default function SourcesPane({
   dropFiles?: FileList | null;
   dropRequestId?: number;
   onDropConsumed?: () => void;
+  /** Non-zero asks this pane to open its Add source menu. */
+  addRequest?: number;
+  onAddRequestConsumed?: () => void;
   /** Sends a quoted passage from the reader to the chat composer. */
   onAsk?: (prompt: string) => void;
 }) {
   const [sources, setSources] = useState<Source[]>([]);
+  const [sourcesLoaded, setSourcesLoaded] = useState(false);
   const [query, setQuery] = useState("");
   const [marks, setMarks] = useState<Map<string, number>>(new Map());
   const [importing, setImporting] = useState<{ done: number; total: number; current: string } | null>(
@@ -156,6 +162,7 @@ export default function SourcesPane({
   const refresh = useCallback(async () => {
     const list = await db.sources.where("notebookId").equals(notebookId).sortBy("addedAt");
     setSources(list);
+    setSourcesLoaded(true);
     setMarks(await highlightCounts(notebookId).catch(() => new Map<string, number>()));
     const pruned = pruneFocus(notebookId, list.map((s) => s.id));
     setFocused(pruned);
@@ -248,6 +255,16 @@ export default function SourcesPane({
       cancelled = true;
     };
   }, [importTick]);
+
+  // A request from elsewhere on the desk (the chat's "Add your first source") opens this pane's menu once.
+  // It waits for the first load: before it, `sources` is empty, so the empty-state menu would open and then
+  // unmount when the toolbar menu replaces it.
+  const [menuRequest, setMenuRequest] = useState(0);
+  useEffect(() => {
+    if (!addRequest || !sourcesLoaded) return;
+    setMenuRequest((value) => value + 1);
+    onAddRequestConsumed?.();
+  }, [addRequest, sourcesLoaded, onAddRequestConsumed]);
 
   useEffect(() => {
     if (!dropFiles || dropFiles.length === 0) {
@@ -351,6 +368,7 @@ const visibleSources = sources.filter((source) => source.title.toLocaleLowerCase
             onPickFiles={openPicker}
             onPasteText={() => setPasteOpen(true)}
             onWebAddress={() => setUrlOpen(true)}
+            openRequest={menuRequest}
           />
           <label className="source-index-search">
             <MagnifyingGlass size={ICON.md} aria-hidden="true" />
@@ -509,6 +527,7 @@ const visibleSources = sources.filter((source) => source.title.toLocaleLowerCase
                 onPickFiles={openPicker}
                 onPasteText={() => setPasteOpen(true)}
                 onWebAddress={() => setUrlOpen(true)}
+                openRequest={menuRequest}
               />
             <span className="source-index-format">PDF, documents, images & text</span>
           </section>

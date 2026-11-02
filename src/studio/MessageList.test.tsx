@@ -31,3 +31,28 @@ it("offers source import before source-based starters, and opens a grounded star
   fireEvent.click(screen.getByRole("button", { name: "Choose a model" }));
   expect(onOpenSettings).toHaveBeenCalledOnce();
 });
+
+it("offers to ask an unanswered question again, and AI Models when the key is the problem", () => {
+  const onRetry = vi.fn();
+  const onOpenSettings = vi.fn();
+  const question = { id: "q", notebookId: "nb", sessionId: "s", role: "user" as const, content: "Why osmosis?", createdAt: 1 };
+  const props = {
+    notebook: { id: "nb", name: "Ecology", createdAt: 1, updatedAt: 1 },
+    sourceCount: 1, messages: [question], settledId: null, streaming: null, smoothedText: "", activeSessionId: "s",
+    thinkingOpen: false, onToggleThinking: vi.fn(), onCite: vi.fn(), onSaveToNote: vi.fn(),
+    onSend: vi.fn(), onRetry, onOpenSettings, scrollRef: createRef<HTMLDivElement>(), onScroll: vi.fn(),
+    error: "", searchBanner: null, leave: "instant" as const,
+  };
+  const { rerender } = render(<MessageList {...props} />);
+  expect(screen.getByText("No answer came back for this question.")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Ask again" }));
+  expect(onRetry).toHaveBeenCalledWith("Why osmosis?");
+
+  rerender(<MessageList {...props} busy />);
+  expect(screen.queryByRole("button", { name: "Ask again" })).not.toBeInTheDocument();
+
+  rerender(<MessageList {...props} error="The API key was rejected." errorNeedsModel />);
+  fireEvent.click(screen.getByRole("button", { name: "Open AI Models" }));
+  expect(onOpenSettings).toHaveBeenCalledOnce();
+  expect(screen.getAllByRole("button", { name: "Ask again" })).toHaveLength(1);
+});

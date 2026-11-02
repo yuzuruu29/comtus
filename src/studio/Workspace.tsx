@@ -56,6 +56,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   const [mobileChatTarget, setMobileChatTarget] = useState<HTMLElement | null>(null);
   const [chatFocusRequest, setChatFocusRequest] = useState(0);
   const focusChat = useCallback(() => { setMobilePane("chat"); setChatFocusRequest((request) => request + 1); }, []);
+  const [addSourceRequest, setAddSourceRequest] = useState(0);
+  const consumeAddSource = useCallback(() => setAddSourceRequest(0), []);
 
   // `?work=<generationId>` opens a saved item (e.g. a deck due for review)
   // in the studio pane. Only the visible StudioPane receives it: the hidden
@@ -181,8 +183,9 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
         modelLabel={modelLabel}
         onOpenSettings={() => openSettings("models")}
         onAddSources={() => {
-          if (desktop) desk.setLayout(panes.studio ? "standard" : "reading");
+          if (desktop) { if (!panes.sources) desk.setLayout(panes.studio ? "standard" : "reading"); }
           else setMobilePane("sources");
+          setAddSourceRequest((request) => request + 1);
         }}
         surfaceTarget={desktop ? desktopChatTarget : mobilePane === "chat" ? mobileChatTarget : null}
         focusRequest={chatFocusRequest}
@@ -293,6 +296,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   onImportTriggered={desk.consumeImport}
                   dropFiles={desktop ? desk.dropFiles : null}
                   onDropConsumed={() => desk.setDropFiles(null)}
+                  addRequest={desktop ? addSourceRequest : 0}
+                  onAddRequestConsumed={consumeAddSource}
                   onAsk={askInChat}
                 />
               </div>
@@ -380,6 +385,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   onImportTriggered={desk.consumeImport}
                   dropFiles={desktop ? null : desk.dropFiles}
                   onDropConsumed={() => desk.setDropFiles(null)}
+                  addRequest={desktop ? 0 : addSourceRequest}
+                  onAddRequestConsumed={consumeAddSource}
                   onAsk={askInChat}
                 />
               </div>

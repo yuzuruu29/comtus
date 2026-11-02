@@ -14,7 +14,7 @@ import {
 } from "../lib/db";
 import type { ChatMessage, ChatSession, Notebook, WebSearchMeta } from "../lib/types";
 import { deriveSessionTitle } from "../lib/sessionText";
-import { streamChat, friendlyError, isAbort } from "../lib/llm";
+import { streamChat, friendlyError, isAbort, isAuthError } from "../lib/llm";
 import type { ChatReply } from "../lib/llm";
 import { useSmoothText } from "../lib/useSmoothText";
 import { useSettings, useCallSettings } from "../lib/settings";
@@ -87,6 +87,8 @@ export default function ChatPane({
   } | null>(null);
   const [thinkingOpen, setThinkingOpen] = useState(true);
   const [error, setError] = useState("");
+  // The error text that a model or key change would fix; the banner offers AI Models only while it is the one showing.
+  const [modelError, setModelError] = useState("");
   const [searchBanner, setSearchBanner] = useState<WebSearchMeta | null>(null);
   const [toastNoteSaved, setToastNoteSaved] = useState(false);
   const [dismissedFollowUps, setDismissedFollowUps] = useState(false);
@@ -366,11 +368,19 @@ export default function ChatPane({
   const toggleThinking = useCallback(() => setThinkingOpen((v) => !v), []);
 
   const send = useCallback(
-    async (raw?: string) => {
+    async (raw?: string, retryLast = false) => {
       const question = (raw ?? input).trim();
       if (!question || !notebook || requestRef.current) return;
       if (!sessionReady) { setError("Your conversation is still opening. Try again in a moment."); return; }
-      if (!hasKey()) { setError("Choose a model or add your API key in AI Models to chat."); return; }
+      if (!hasKey()) {
+        const text = "Choose a model or add your API key in AI Models to chat.";
+        setError(text);
+        setModelError(text);
+        return;
+      }
+      // Asking an unanswered question again reuses its saved margin note instead of writing a second one.
+      const last = messages[messages.length - 1];
+      const reuse = retryLast && last?.role === "user" && last.sessionId === activeId && last.content.trim() === question ? last : null;
 
       const request: ChatRequest = { controller: new AbortController(), notebookId: notebook.id, token: loadToken.current };
       requestRef.current = request;
@@ -394,10 +404,12 @@ export default function ChatPane({
           rememberActive(notebook.id, created.id);
         }
 
-        const userMsg: ChatMessage = { id: uid(), notebookId: notebook.id, sessionId, role: "user", content: question, createdAt: Date.now() };
-        await saveMessage(userMsg);
-        if (!requestIsCurrent(request)) return;
-        const history = [...messages, userMsg];
+        const userMsg: ChatMessage = reuse ?? { id: uid(), notebookId: notebook.id, sessionId, role: "user", content: question, createdAt: Date.now() };
+        if (!reuse) {
+          await saveMessage(userMsg);
+          if (!requestIsCurrent(request)) return;
+        }
+        const history = reuse ? messages : [...messages, userMsg];
         setMessages(history);
         setInput((draft) => draft.trim() === question ? "" : draft);
         setDismissedFollowUps(false);
@@ -455,7 +467,9 @@ export default function ChatPane({
         setPreparing(false);
         setInput((current) => current || question);
         if (!isAbort(err)) {
-          setError(friendlyError(err));
+          const text = friendlyError(err);
+          setError(text);
+          if (isAuthError(err)) setModelError(text);
           if (searchMetaRef.current) setSearchBanner(searchMetaRef.current);
         }
       }
@@ -518,12 +532,15 @@ export default function ChatPane({
         onCite={onNavigateSources}
         onSaveToNote={(title, text) => void handleSaveToNote(title, text)}
         onSend={(prompt) => void send(prompt)}
+        onRetry={(prompt) => void send(prompt, true)}
+        busy={preparing}
         onAddSources={onAddSources}
         hasModel={hasKey()}
         onOpenSettings={onOpenSettings}
         scrollRef={scrollRef}
         onScroll={onScroll}
         error={error}
+        errorNeedsModel={error !== "" && error === modelError}
         searchBanner={searchBanner}
         leave={streamEndRef.current === "commit" ? "instant" : "fade"}
       />

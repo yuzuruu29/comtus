@@ -11,15 +11,18 @@ export default function AddSourceMenu({
   onPickFiles,
   onPasteText,
   onWebAddress,
+  openRequest,
 }: {
   disabled?: boolean;
   onPickFiles: () => void;
   onPasteText: () => void;
   onWebAddress: () => void;
+  openRequest?: number;
 }) {
   return (
     <Menu
       aria-label="Add source"
+      openRequest={openRequest}
       trigger={
         <Button variant="primary" icon={<Plus size={ICON.md} weight="bold" />} disabled={disabled}>
           Add source
