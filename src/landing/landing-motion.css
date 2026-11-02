@@ -162,7 +162,9 @@ html[data-motion="full"] .landing-document-header > :nth-child(3) {
      sized by the heading and not by the window, so the last word is always
      finished once the heading is fully on screen, on any display. Only on a
      wide measure: a phrase that wraps would be revealed down both lines at once. */
-  .landing-home[data-motion="full"] :is(.landing-section-heading, .field-guide-heading, .landing-closing) {
+  /* The heading line itself is the timeline, not the block around it: a block that also holds a
+     paragraph and a button left half a word written while the heading sat in full view. */
+  .landing-home[data-motion="full"] :is(.landing-section h2, .field-guide-heading h2, .landing-closing-inner > p) {
     view-timeline: --landing-heading block;
   }
   @media (min-width: 761px) {

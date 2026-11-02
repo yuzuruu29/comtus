@@ -290,7 +290,7 @@ export default function LandingPage() {
             {connectionError && <p className="landing-connection-error" role="alert">{connectionError}</p>}
           </div>
           <div className="landing-access-notes">
-            <div data-landing-reveal><h3>Choose how you connect.</h3><p>Connect your OpenRouter account, or add an existing provider key at the desk under <strong>AI Models</strong>. Free model availability and usage limits are set by the provider. Optional hosted access is also available there.</p></div>
+            <div data-landing-reveal><h3>Choose how you connect.</h3><p>Connect your OpenRouter account, or add an existing provider key at the desk under <strong>AI{" "}Models</strong>. Free model availability and usage limits are set by the provider. Optional hosted access is also available there.</p></div>
             <div data-landing-reveal><h3>Your notebook lives on your device.</h3><p>Comtus keeps your notebooks and imported material in local browser storage. When you use an AI feature, your question and relevant source text are sent to the model provider you choose.</p><Link to="/privacy" className="landing-text-link">Read how your data is handled</Link></div>
           </div>
         </section>

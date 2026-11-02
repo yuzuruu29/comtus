@@ -24,12 +24,13 @@
 .shelf-intro-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.625rem; }
 .shelf-new { flex-shrink: 0; }
 .shelf-start { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--hairline-strong); border-bottom: 1px solid var(--hairline-strong); }
-.shelf-start-copy { padding: clamp(1.5rem, 4vw, 3rem); }
+/* The copy and the page sit on the shelf's own column edges, the same lines as the title above. */
+.shelf-start-copy { padding: clamp(1.5rem, 4vw, 3rem) clamp(1.5rem, 4vw, 3rem) clamp(1.5rem, 4vw, 3rem) 0; }
 .shelf-start h2 { margin: 2rem 0 0; font-family: var(--font-read); font-size: var(--text-display); font-weight: 450; line-height: 1.3; letter-spacing: -0.04em; }
 .shelf-start h2 em { font-weight: 450; }
 .shelf-start-copy p { max-width: 36ch; margin-block: 1rem 1.5rem; color: var(--muted); font-size: 0.9375rem; line-height: 1.75; }
 .shelf-start-note { display: block; margin-top: 0.875rem; }
-.shelf-start-page { position: relative; margin: 1.5rem 1.5rem 1.5rem 0; padding: 1.75rem 2rem 1rem 2.5rem; border-left: 3px double var(--hairline-strong); background: var(--surface); box-shadow: 3px 3px 0 var(--raised), 5px 5px 0 var(--hairline); }
+.shelf-start-page { position: relative; margin: 1.5rem 5px 1.5rem 0; padding: 1.75rem 2rem 1rem 2.5rem; border-left: 3px double var(--hairline-strong); background: var(--surface); box-shadow: 3px 3px 0 var(--raised), 5px 5px 0 var(--hairline); }
 .shelf-page-heading { display: flex; align-items: center; gap: 0.75rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--hairline-strong); font-family: var(--font-read); font-size: 1.125rem; }
 .shelf-page-heading svg { color: var(--brass); }
 .shelf-start-steps { counter-reset: study-step; margin: 0; padding: 0; list-style: none; }
@@ -38,7 +39,7 @@
 .shelf-start-steps h3 { margin: 0 0 0.3rem; font-size: 0.9375rem; font-weight: 600; }
 .shelf-start-steps p { max-width: 34ch; margin: 0; color: var(--muted); font-size: 0.8125rem; line-height: 1.6; }
 .shelf-page-foot { margin: 1rem 0 0; color: var(--muted); font-family: var(--font-read); font-size: 0.75rem; font-style: italic; }
-.shelf-start-open-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; padding: 0.75rem clamp(1.25rem, 3vw, 3rem); border-top: 1px solid var(--hairline); color: var(--muted); font-size: 0.8125rem; line-height: 1.6; }
+.shelf-start-open-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; padding: 0.75rem 0; border-top: 1px solid var(--hairline); color: var(--muted); font-size: 0.8125rem; line-height: 1.6; }
 .shelf-start-open { min-height: 44px; padding: 0; border: 0; background: none; color: var(--brass); font: inherit; text-decoration: underline; text-decoration-color: var(--hairline-strong); text-underline-offset: 0.25em; cursor: pointer; }
 .shelf-start-open:hover { text-decoration-color: currentColor; }
 .shelf-resume { display: flex; align-items: center; gap: 2rem; padding: 1.75rem 2rem; border: 1px solid var(--hairline-strong); border-left: 4px solid var(--brass); border-radius: 3px 10px 10px 3px; background: var(--surface); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 70%, var(--brass-pale)), 2px 3px 0 var(--raised), 3px 4px 0 var(--hairline-strong), var(--elev-card); }
@@ -117,7 +118,8 @@
   .shelf-intro { align-items: flex-start; flex-direction: column; gap: 1.25rem; }
   .shelf-start { grid-template-columns: 1fr; }
   .shelf-start h2 { margin-top: 1.25rem; }
-  .shelf-start-page { margin: 0 1.5rem 1.5rem; }
+  .shelf-start-copy { padding-right: 0; }
+  .shelf-start-page { margin: 0 5px 1.5rem 0; }
   .shelf-start-copy p { max-width: 48ch; }
   .shelf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .shelf-resume { flex-wrap: wrap; gap: 1.25rem; padding: 1.5rem; }
@@ -131,9 +133,9 @@
   .shelf-nav a:last-child { display: none; }
   .shelf-intro { align-items: flex-start; flex-direction: column; gap: 1.25rem; padding-block: 2rem 1.5rem; }
   .shelf-intro-actions { display: grid; width: 100%; grid-template-columns: auto minmax(0, 1fr); }
-  .shelf-start-copy { padding: 1.5rem; }
-  .shelf-start-page { margin-inline: 1rem; padding: 1.5rem; }
-  .shelf-start-open-row { gap: 0 0.5rem; padding: 0.75rem 1.25rem; }
+  .shelf-start-copy { padding: 1.5rem 0; }
+  .shelf-start-page { padding: 1.5rem; }
+  .shelf-start-open-row { gap: 0 0.5rem; }
   .shelf-start-open-row > span:first-of-type { flex-basis: calc(100% - 2rem); }
   .shelf-resume { display: block; padding: 1.5rem; }
   .shelf-resume-mark { display: none; }

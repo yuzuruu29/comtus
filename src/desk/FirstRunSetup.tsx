@@ -178,7 +178,7 @@ export default function FirstRunSetup({
             <Question size={ICON.sm} aria-hidden="true" />
             <span>
               Prefer Claude Opus 5.5 or Sonnet 5.5? Hosted access is a one-time PayPal top-up under
-              Settings, then Smarter Models.
+              AI Models, then Smarter Models.
             </span>
           </p>
         )}

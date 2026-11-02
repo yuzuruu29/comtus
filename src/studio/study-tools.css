@@ -95,7 +95,8 @@
   pointer-events: none;
 }
 
-.practice-tool-primary.btn { min-height: 4rem; border-left: 3px solid var(--brass); }
+/* The brass rule is 2px wider than the sibling borders; the padding gives it back so the icons stay on one line. */
+.practice-tool-primary.btn { min-height: 4rem; border-left: 3px solid var(--brass); padding-left: calc(0.625rem - 2px); }
 .practice-tool-primary .practice-tool-copy strong { font-family: var(--font-read); font-size: var(--text-heading); font-weight: 500; }
 .practice-tool-primary .practice-tool-icon { color: var(--brass); }
 

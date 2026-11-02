@@ -165,6 +165,13 @@ html[data-shell] body {
   transition: background-color var(--dur-med) var(--ease-house), color var(--dur-med) var(--ease-house);
 }
 
+/* Setting, not decoration: headings break into even lines and prose never strands a
+   single word on its last line. Layered, so any surface can still opt out. */
+@layer base {
+  :is(h1, h2, h3, h4, legend) { text-wrap: balance; }
+  :is(p, li, dd, figcaption, blockquote, summary) { text-wrap: pretty; }
+}
+
 /* The Tailwind utility owns the family. This rule only asks the variable
    font for optical sizing; it must never set font-family here. */
 .font-display {
