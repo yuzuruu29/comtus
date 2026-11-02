@@ -123,19 +123,28 @@ describe("SourceReader", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("docked, closes on Escape only while focus is inside it", () => {
+  it("docked, closes on Escape only while focus is inside it", async () => {
     const onClose = vi.fn();
     render(
       <>
         <input aria-label="Composer" />
-        <SourceReader docked source={source} onClose={onClose} />
+        <SourceReader docked source={source} onClose={onClose} onAsk={() => {}} />
       </>,
     );
+    const start = content.indexOf("Ribosomes");
+    await selectSource(start, start + "Ribosomes".length, false);
+    await screen.findByRole("button", { name: "Ask" });
     screen.getByLabelText("Composer").focus();
     fireEvent.keyDown(document.activeElement!, { key: "Escape" });
     expect(onClose).not.toHaveBeenCalled();
+    // Escape in the composer leaves the reader's selection alone too.
+    expect(screen.getByRole("button", { name: "Ask" })).toBeInTheDocument();
 
+    // Inside the reader, Escape first drops the selection, then closes.
     screen.getByRole("button", { name: "Close the reader" }).focus();
+    fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+    expect(screen.queryByRole("button", { name: "Ask" })).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
     fireEvent.keyDown(document.activeElement!, { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(1);
   });

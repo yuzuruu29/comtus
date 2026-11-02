@@ -378,19 +378,18 @@ export default function SourceReader({
     return false;
   };
 
-  // Docked there is no dialog to own Escape: it first drops a selection or a
-  // note, and closes the reader only while focus is inside it, so Escape in
-  // the composer beside it never shuts the page.
+  // Docked there is no dialog to own Escape. It acts only while focus is
+  // inside the reader, so Escape in the composer beside it leaves the page and
+  // its selection alone; there it first drops a selection or a note, then
+  // closes the reader.
   const dockRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!docked) return;
     const onKey = (event: globalThis.KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented) return;
-      if (onEscape()) event.preventDefault();
-      else if (dockRef.current?.contains(document.activeElement)) {
-        event.preventDefault();
-        onClose();
-      }
+      if (!dockRef.current?.contains(document.activeElement)) return;
+      event.preventDefault();
+      if (!onEscape()) onClose();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);

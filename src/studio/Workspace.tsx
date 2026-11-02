@@ -93,7 +93,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
     if (!pendingWork) return;
     if (!desktop) setMobilePane("studio");
     else if (!panes.studio) setLayout(panes.sources ? "standard" : "writing");
-  }, [desktop, panes.sources, panes.studio, pendingWork, setLayout]);
+    else if (readerDocked) setStudioWhileReading(true);
+  }, [desktop, panes.sources, panes.studio, pendingWork, readerDocked, setLayout]);
   // Search deep links, file picks and drops land on the pane that handles
   // them on mobile.
   const pendingChat = desk.pendingChatId;
@@ -384,8 +385,11 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             } as CSSProperties}
             className="relative shrink-0 overflow-visible border-l desk-split transition-[width] duration-slow ease-[var(--ease-out)] data-[resizing=true]:transition-none motion-reduce:transition-none will-change-[width] [backface-visibility:hidden]"
           >
-            {studioShown ? (
-              <div id="workspace-studio-content" className={`${deskPane} flex flex-col anim-fade anim-fade--fast`}>
+            {/* While the docked reader borrows the column, the tools stay
+                mounted but hidden, so an unsaved note or a study set in
+                progress is still there when they come back. */}
+            {panes.studio && (
+              <div id="workspace-studio-content" hidden={!studioShown} className={`${deskPane} flex flex-col anim-fade anim-fade--fast`}>
                 <StudioPane
                   notebookId={notebookId}
                   onCollapse={collapseStudio}
@@ -393,7 +397,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   onPendingGenerationConsumed={clearPendingWork}
                 />
               </div>
-            ) : (
+            )}
+            {!studioShown && (
               <div className="anim-fade flex h-full flex-col items-center pt-3" style={{ ["--d"]: "60ms" } as CSSProperties}>
                 <RailButton
                   icon={Books}
