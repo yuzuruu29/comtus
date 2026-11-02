@@ -17,7 +17,7 @@ vi.mock("../lib/settings", () => ({
   useSettings: (select: (value: { hasKey: () => boolean; motionMode: string }) => unknown) => select({ hasKey: () => connection.ready, motionMode: "none" }),
   useCallSettings: () => ({ provider: "openrouter", model: "selected-study-model", apiKey: "test-only" }),
 }));
-vi.mock("../lib/llm", () => ({ streamChat: vi.fn(), friendlyError: (error: Error) => error.message, isAbort: (error: Error) => error.name === "AbortError" }));
+vi.mock("../lib/llm", () => ({ streamChat: vi.fn(), friendlyError: (error: Error) => error.message, isAbort: (error: Error) => error.name === "AbortError", isAuthError: () => false }));
 vi.mock("../lib/useSmoothText", () => ({ useSmoothText: (text: string) => ({ text, caughtUp: true, flush: () => {} }) }));
 vi.mock("./useVoiceInput", () => ({ useVoiceInput: () => ({ state: "idle", active: false, interim: "", error: "", elapsed: 0, toggle: () => {} }) }));
 vi.mock("./focus", () => ({ loadFocus: () => ["source-1"] }));

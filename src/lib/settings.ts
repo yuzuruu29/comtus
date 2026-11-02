@@ -73,6 +73,26 @@ interface SettingsState {
 
 const RETIRED_SIGN_IN = new Set(["claude-oauth", "codex"]);
 
+/** A local or private-network endpoint (Ollama, LM Studio, a LAN box) that serves without a key. */
+export function isKeylessEndpoint(baseUrl: string): boolean {
+  let host: string;
+  try {
+    host = new URL(baseUrl).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  return (
+    host === "localhost" ||
+    host.endsWith(".localhost") ||
+    host.endsWith(".local") ||
+    host === "[::1]" ||
+    /^127\./.test(host) ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+  );
+}
+
 /** Persist migration. Version 15 drops Claude and ChatGPT subscription
  *  sign-in; anyone still on those providers lands on OpenRouter-compatible. */
 export function migrateSettings(persisted: unknown, version: number): Partial<SettingsState> {
@@ -230,7 +250,10 @@ export const useSettings = create<SettingsState>()(
       hasKey: () => {
         const s = get();
         if (s.provider === "anthropic") return s.anthropicKey.trim().length > 10;
-        return s.compatBaseUrl.trim().length > 8 && s.compatModel.trim().length > 0;
+        const base = s.compatBaseUrl.trim();
+        if (base.length <= 8 || !s.compatModel.trim()) return false;
+        // Cloud endpoints (OpenRouter included) refuse keyless calls; only a model on this machine or network runs without one.
+        return s.compatKey.trim().length > 0 || isKeylessEndpoint(base);
       },
       isStockConfig: () => {
         const s = get();

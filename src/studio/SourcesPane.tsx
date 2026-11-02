@@ -107,6 +107,8 @@ export default function SourcesPane({
   dropFiles,
   dropRequestId,
   onDropConsumed,
+  addRequest,
+  onAddRequestConsumed,
   onAsk,
 }: {
   notebookId: string;
@@ -120,6 +122,9 @@ export default function SourcesPane({
   dropFiles?: FileList | null;
   dropRequestId?: number;
   onDropConsumed?: () => void;
+  /** Non-zero asks this pane to open its Add source menu. */
+  addRequest?: number;
+  onAddRequestConsumed?: () => void;
   /** Sends a quoted passage from the reader to the chat composer. */
   onAsk?: (prompt: string) => void;
 }) {
@@ -249,6 +254,14 @@ export default function SourcesPane({
     };
   }, [importTick]);
 
+  // A request from elsewhere on the desk (the chat's "Add your first source") opens this pane's menu once.
+  const [menuRequest, setMenuRequest] = useState(0);
+  useEffect(() => {
+    if (!addRequest) return;
+    setMenuRequest((value) => value + 1);
+    onAddRequestConsumed?.();
+  }, [addRequest, onAddRequestConsumed]);
+
   useEffect(() => {
     if (!dropFiles || dropFiles.length === 0) {
       seenDropSignal.current = null;
@@ -351,6 +364,7 @@ const visibleSources = sources.filter((source) => source.title.toLocaleLowerCase
             onPickFiles={openPicker}
             onPasteText={() => setPasteOpen(true)}
             onWebAddress={() => setUrlOpen(true)}
+            openRequest={menuRequest}
           />
           <label className="source-index-search">
             <MagnifyingGlass size={ICON.md} aria-hidden="true" />
@@ -509,6 +523,7 @@ const visibleSources = sources.filter((source) => source.title.toLocaleLowerCase
                 onPickFiles={openPicker}
                 onPasteText={() => setPasteOpen(true)}
                 onWebAddress={() => setUrlOpen(true)}
+                openRequest={menuRequest}
               />
             <span className="source-index-format">PDF, documents, images & text</span>
           </section>

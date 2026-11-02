@@ -25,16 +25,27 @@ export function Menu({
   trigger,
   items,
   align = "start",
+  openRequest = 0,
   "aria-label": ariaLabel,
 }: {
   trigger: MenuTrigger;
   items: MenuItem[];
   align?: "start" | "end";
+  /** Opens the menu from elsewhere each time it changes; the value it mounts with is ignored. */
+  openRequest?: number;
   "aria-label": string;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const openAtEnd = useRef(false);
+  const handledRequest = useRef(openRequest);
+
+  useEffect(() => {
+    if (!openRequest || openRequest === handledRequest.current) return;
+    handledRequest.current = openRequest;
+    openAtEnd.current = false;
+    setOpen(true);
+  }, [openRequest]);
 
   useEffect(() => {
     if (!open) return;

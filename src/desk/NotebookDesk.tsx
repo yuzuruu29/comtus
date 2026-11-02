@@ -74,9 +74,12 @@ export default function NotebookDesk({
   // pane. Standard favors Sources; Studio remains one click away.
   const panes = panesFor(layout, compact);
 
+  const [addSourceRequest, setAddSourceRequest] = useState(0);
+  const consumeAddSource = useCallback(() => setAddSourceRequest(0), []);
   const onAddSources = useCallback(() => {
-    setLayout(compact ? "reading" : panes.studio ? "standard" : "reading");
-  }, [compact, panes.studio, setLayout]);
+    if (!panes.sources) setLayout(compact ? "reading" : panes.studio ? "standard" : "reading");
+    setAddSourceRequest((request) => request + 1);
+  }, [compact, panes.sources, panes.studio, setLayout]);
 
   const sourcesResize = usePaneResize({
     side: "left",
@@ -143,6 +146,8 @@ export default function NotebookDesk({
               onDropConsumed={() => {
                 if (dropRequest) onDropConsumed(dropRequest.id);
               }}
+              addRequest={addSourceRequest}
+              onAddRequestConsumed={consumeAddSource}
               onAsk={onAsk}
             />
           </div>

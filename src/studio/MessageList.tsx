@@ -43,12 +43,15 @@ export default function MessageList({
   onCite,
   onSaveToNote,
   onSend,
+  onRetry,
+  busy = false,
   onAddSources,
   hasModel = true,
   onOpenSettings,
   scrollRef,
   onScroll,
   error,
+  errorNeedsModel = false,
   searchBanner,
   leave,
 }: {
@@ -69,15 +72,24 @@ export default function MessageList({
   onCite: (sourceId: string, startChar?: number) => void;
   onSaveToNote: (title: string, content: string) => void;
   onSend: (prompt: string) => void;
+  /** Ask the last, unanswered question again without writing it twice. */
+  onRetry?: (prompt: string) => void;
+  /** A question is being prepared, so an unanswered last note is not a dead end yet. */
+  busy?: boolean;
   onAddSources?: () => void;
   hasModel?: boolean;
   onOpenSettings?: () => void;
   scrollRef: RefObject<HTMLDivElement | null>;
   onScroll: () => void;
   error: string;
+  errorNeedsModel?: boolean;
   searchBanner: WebSearchMeta | null;
   leave: "instant" | "fade";
 }) {
+  const last = messages[messages.length - 1];
+  const unanswered = !streaming && !busy && last?.role === "user" ? last : null;
+  const showModels = errorNeedsModel && onOpenSettings;
+  const showRetry = unanswered && onRetry;
   return (
     <div
       ref={scrollRef}
@@ -166,21 +178,33 @@ export default function MessageList({
           </AnimatePresence>
         </div>
 
-        {(error || searchBanner) && (
+        {(error || searchBanner || showRetry) && (
           <div className="mt-6 space-y-3">
             {searchBanner && <SearchStatusStrip meta={searchBanner} />}
             <AnimatePresence>
               {error && (
                 <motion.div
                   role="alert"
-                  className="anim-rise flex items-start gap-3 rounded-[var(--radius-dialog)] border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] text-rust"
+                  className="anim-rise flex flex-wrap items-start gap-3 rounded-[var(--radius-dialog)] border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] text-rust"
                   exit={{ opacity: 0, transition: EXIT }}
                 >
                   <WarningCircle size={ICON.md} className="mt-0.5 shrink-0" />
-                  <span>{error}</span>
+                  <span className="min-w-0 flex-1">{error}</span>
+                  {(showModels || showRetry) && (
+                    <span className="flex shrink-0 gap-2">
+                      {showModels && <Button size="sm" onClick={onOpenSettings}>Open AI Models</Button>}
+                      {showRetry && <Button size="sm" variant="secondary" onClick={() => onRetry(unanswered.content)}>Ask again</Button>}
+                    </span>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
+            {!error && showRetry && (
+              <div className="flex flex-wrap items-center gap-3 px-1 text-label text-muted">
+                <span className="min-w-0 flex-1">No answer came back for this question.</span>
+                <Button size="sm" variant="secondary" onClick={() => onRetry(unanswered.content)}>Ask again</Button>
+              </div>
+            )}
           </div>
         )}
       </div>

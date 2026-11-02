@@ -290,13 +290,16 @@ export function isAbort(err: unknown): boolean {
   );
 }
 
+export function isAuthError(err: unknown): boolean {
+  return err instanceof Anthropic.AuthenticationError || err instanceof OpenAI.AuthenticationError;
+}
+
 export function friendlyError(err: unknown): string {
   if (isAbort(err)) return "Stopped.";
-  const auth = err instanceof Anthropic.AuthenticationError || err instanceof OpenAI.AuthenticationError;
-  if (auth) {
+  if (isAuthError(err)) {
     if (storedKeyIsHostedPass())
       return "This pass was rejected — it may be expired or mistyped. Paste the token from your PayPal email.";
-    return "The API key was rejected. Check it in Settings — the lamp can't light without it.";
+    return "The API key was rejected. Check it in AI Models — the lamp can't light without it.";
   }
   const rate = err instanceof Anthropic.RateLimitError || err instanceof OpenAI.RateLimitError;
   const is429 = (err instanceof Anthropic.APIError || err instanceof OpenAI.APIError) && err.status === 429;
