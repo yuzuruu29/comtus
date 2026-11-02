@@ -11,7 +11,7 @@ import { isTauri } from "../lib/desktop";
 import ComtusLogo from "../components/brand/ComtusLogo";
 import { ByokBadge, ProBadge } from "../components/brand/BrandControls";
 import DeskShell from "../studio/DeskShell";
-import SettingsModal from "../studio/SettingsModal";
+import SettingsModal, { type SettingsTab } from "../studio/SettingsModal";
 import ModelPickerMenu from "../studio/ModelPickerMenu";
 import FocusTimer from "../studio/FocusTimer";
 import { SendToDeviceDialog } from "../studio/DeviceTransfer";
@@ -41,6 +41,7 @@ export default function DeskApp() {
   const cs = useCallSettings();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("settings");
   const [setupOpen, setSetupOpen] = useState(false);
   const [freshId, setFreshId] = useState<string | null>(null);
   const [importRequest, setImportRequest] = useState<{
@@ -259,7 +260,10 @@ export default function DeskApp() {
                     onQuoteConsumed={desk.clearChatQuote}
                     onGenerationConsumed={clearPendingWork}
                     modelLabel={modelLabelFor(cs.provider, cs.model)}
-                    onOpenSettings={() => setSettingsOpen(true)}
+                    onOpenSettings={() => {
+                      setSettingsTab("models");
+                      setSettingsOpen(true);
+                    }}
                   />
                 ) : desk.loadState === "error" ? (
                   <div
@@ -318,7 +322,14 @@ export default function DeskApp() {
           </AnimatePresence>
         </div>
 
-        <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+        <SettingsModal
+          open={settingsOpen}
+          initialTab={settingsTab}
+          onClose={() => {
+            setSettingsOpen(false);
+            setSettingsTab("settings");
+          }}
+        />
         <FirstRunSetup open={setupOpen} onClose={() => setSetupOpen(false)} />
       </div>
     </DeskShell>

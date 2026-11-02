@@ -86,4 +86,19 @@ describe("SourcesPane", () => {
     fireEvent.change(screen.getByRole("searchbox", { name: "Find a source" }), { target: { value: "" } });
     expect(screen.getByRole("button", { name: "Toggle inclusion of Ecology notes" })).toHaveAttribute("aria-pressed", "false");
   });
+
+  it("an add request on a freshly mounted pane keeps the menu open once existing sources load", async () => {
+    renderPane();
+    await addPastedSource("My Notes");
+    cleanup();
+
+    const consumed = vi.fn();
+    render(
+      <SourcesPane notebookId="nb1" version={0} onChanged={() => {}} addRequest={1} onAddRequestConsumed={consumed} />,
+    );
+
+    await screen.findByText("My Notes");
+    expect(await screen.findByRole("menuitem", { name: "Paste text" })).toBeInTheDocument();
+    expect(consumed).toHaveBeenCalledTimes(1);
+  });
 });
