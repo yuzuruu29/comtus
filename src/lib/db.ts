@@ -311,13 +311,15 @@ export async function updateCustomNote(
 }
 
 export async function deleteGeneration(id: string): Promise<Generation | undefined> {
-  return db.transaction("rw", [db.generations, db.notebooks], async () => {
+  const deleted = await db.transaction("rw", [db.generations, db.notebooks], async () => {
     const existing = await db.generations.get(id);
     if (!existing) return undefined;
     await db.generations.delete(id);
     await db.notebooks.update(existing.notebookId, { updatedAt: Date.now() });
     return existing;
   });
+  if (deleted) notifyWorkSaved(deleted.notebookId);
+  return deleted;
 }
 
 export async function restoreGeneration(generation: Generation): Promise<void> {
@@ -326,4 +328,5 @@ export async function restoreGeneration(generation: Generation): Promise<void> {
     await db.notebooks.update(generation.notebookId, { updatedAt: Date.now() });
   });
   notifyDeskActivity();
+  notifyWorkSaved(generation.notebookId);
 }

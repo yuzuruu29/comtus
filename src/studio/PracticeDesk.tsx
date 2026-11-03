@@ -87,7 +87,12 @@ export default function PracticeDesk({
     return () => window.removeEventListener(WORK_SAVED, onSaved);
   }, [notebookId, refresh]);
 
-  const included = useMemo(() => sources.filter((s) => !excluded.has(s.id)), [excluded, sources]);
+  // With one source left there is nothing to choose and the picker hides, so
+  // an exclusion left over from a deleted neighbour must not apply.
+  const included = useMemo(
+    () => (sources.length > 1 ? sources.filter((s) => !excluded.has(s.id)) : sources),
+    [excluded, sources],
+  );
   // Undefined means "the whole notebook", which also covers sources the list
   // has not loaded yet.
   const sourceIds = included.length === sources.length ? undefined : included.map((s) => s.id);
@@ -111,7 +116,12 @@ export default function PracticeDesk({
 
   const openFlow = (flow: Flow, extra: Omit<Extract<Stage, { type: "setup" }>, "type" | "flow"> = {}) =>
     go({ type: "setup", flow, ...extra });
-  const open = (gen: Generation) => go({ type: "open", gen });
+  // The item already on the sheet stays as it is: "leaving" it for itself
+  // would keep its answers but forget that a sitting is in progress.
+  const open = (gen: Generation) => {
+    if (stage.type === "open" && stage.gen.id === gen.id) return;
+    go({ type: "open", gen });
+  };
 
   const activeFlow = stage.type === "setup" ? stage.flow : null;
   const activeKind = stage.type === "setup" ? stage.aidKind : stage.type === "open" ? stage.gen.kind : undefined;
