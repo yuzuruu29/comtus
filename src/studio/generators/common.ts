@@ -20,8 +20,10 @@ export interface SourceBlock {
 export async function buildSourceBlock(
   notebookId: string,
   query: string,
+  /** Only these sources; undefined uses the whole notebook. */
+  sourceIds?: string[],
 ): Promise<SourceBlock> {
-  const { docs, mode } = await groundContext(notebookId, query);
+  const { docs, mode } = await groundContext(notebookId, query, sourceIds);
   const titles = docs.map((d) => d.source.title);
   let block = "";
   let truncated = false;

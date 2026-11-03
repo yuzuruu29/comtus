@@ -130,10 +130,12 @@ export const EXAM_PRESETS: { id: string; name: string; blurb: string; blueprint:
 
 export function ExamConfigForm({
   notebookId,
+  sourceIds,
   onDone,
   onCancel,
 }: {
   notebookId: string;
+  sourceIds?: string[];
   onDone: (gen: Generation) => void;
   onCancel: () => void;
 }) {
@@ -160,7 +162,7 @@ export function ExamConfigForm({
     try {
       if (total < 5) throw new Error("A blueprint needs at least 5 items.");
       const scope = blueprint.sections.map((s) => s.topic).join("; ");
-      const src = await buildSourceBlock(notebookId, scope);
+      const src = await buildSourceBlock(notebookId, scope, sourceIds);
       if (!src.titles.length) throw new Error("Add at least one source first.");
       setStatus(`Writing ${total} items across ${blueprint.sections.length} sections…`);
       const questions = await generateJSON<QuizQuestion[]>({

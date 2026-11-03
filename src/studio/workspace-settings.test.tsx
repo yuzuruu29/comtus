@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import "@testing-library/jest-dom/vitest";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MemoryRouter, useNavigate } from "react-router-dom";
+import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
 import { db } from "../lib/db";
 import Workspace from "./Workspace";
 
@@ -35,6 +35,34 @@ describe("workspace header", () => {
     );
     fireEvent.click(await screen.findByRole("button", { name: "Settings" }));
     await waitFor(() => expect(screen.getByRole("dialog", { name: "Settings" })).toBeInTheDocument());
+  });
+
+  it("switches between Understand, Chat and Practice, keeping the mode in the URL", async () => {
+    await db.notebooks.put({ id: "nb1", name: "Pharm", createdAt: 1, updatedAt: 1 });
+    function Where() {
+      const { pathname, search } = useLocation();
+      return <output data-testid="where">{pathname + search}</output>;
+    }
+    render(
+      <MemoryRouter initialEntries={["/studio/nb1"]}>
+        <Workspace notebookId="nb1" />
+        <Where />
+      </MemoryRouter>,
+    );
+    const modes = await screen.findByRole("group", { name: "Notebook mode" });
+
+    fireEvent.click(within(modes).getByRole("button", { name: "Practice" }));
+    expect(await screen.findByText("Practice what you read.")).toBeVisible();
+    expect(screen.getByTestId("where")).toHaveTextContent("/studio/nb1?mode=practice");
+
+    fireEvent.click(within(modes).getByRole("button", { name: "Chat" }));
+    await waitFor(() => expect(screen.getByText("Practice what you read.")).not.toBeVisible());
+    expect(document.getElementById("workspace-sources-pane")!.hidden).toBe(true);
+    expect(screen.getByTestId("where")).toHaveTextContent("/studio/nb1?mode=chat");
+
+    fireEvent.click(within(modes).getByRole("button", { name: "Understand" }));
+    await waitFor(() => expect(document.getElementById("workspace-sources-pane")!.hidden).toBe(false));
+    expect(screen.getByTestId("where").textContent).toBe("/studio/nb1");
   });
 });
 

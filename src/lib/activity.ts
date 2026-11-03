@@ -33,9 +33,9 @@ export function cueCompad(cue: CompadCue): void {
 
 export const WORK_SAVED = "comtus:work-saved";
 
-/** Saved work in a notebook changed somewhere other than the studio pane
- *  (a note from chat or the reader, a deck from quiz misses), so the
- *  studio's list re-reads. */
+/** Saved work in a notebook was added, removed or restored (a note from chat
+ *  or the reader, a deck from quiz misses, a delete in the study tools), so
+ *  every list of it re-reads: the study tools pane and Practice's recent work. */
 export function notifyWorkSaved(notebookId: string): void {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent<string>(WORK_SAVED, { detail: notebookId }));

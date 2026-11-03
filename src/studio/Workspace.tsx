@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Books, CaretLeft, ChartBar, ChatCircle, DeviceMobile, DotsThree, DownloadSimple, GearSix, Notebook, SidebarSimple } from "@phosphor-icons/react";
+import { BookOpenText, Books, CaretLeft, ChartBar, ChatCircle, DeviceMobile, DotsThree, DownloadSimple, GearSix, ListChecks, Notebook, SidebarSimple } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow, Source } from "../lib/types";
 import { useCallSettings, useSettings } from "../lib/settings";
 import { modelLabelFor } from "../lib/llm";
@@ -27,8 +27,24 @@ import ConsoleShell from "./ConsoleShell";
 import { SendToDeviceDialog } from "./DeviceTransfer";
 import { ICON } from "../ui/iconScale";
 import FocusTimer from "./FocusTimer";
+import PracticeDesk from "./PracticeDesk";
 
 type MobilePane = "sources" | "chat" | "studio";
+
+/** Understand is the full desk: sources, the reader, chat and the study tools.
+ *  Chat gives the conversation the whole desk; Practice runs the study tools
+ *  on it. The mode lives in the URL, so a reload or a shared link keeps it. */
+type DeskMode = "understand" | "chat" | "practice";
+
+const DESK_MODES: { id: DeskMode; label: string; icon: typeof ChatCircle }[] = [
+  { id: "understand", label: "Understand", icon: BookOpenText },
+  { id: "chat", label: "Chat", icon: ChatCircle },
+  { id: "practice", label: "Practice", icon: ListChecks },
+];
+
+function deskModeFrom(value: string | null): DeskMode {
+  return value === "chat" || value === "practice" ? value : "understand";
+}
 
 const DEFAULT_SOURCES_W = 252;
 const DEFAULT_STUDIO_W = 268;
@@ -51,6 +67,28 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
     setSettingsOpen(true);
   }, []);
   const [mobilePane, setMobilePane] = useState<MobilePane>("chat");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mode = deskModeFrom(searchParams.get("mode"));
+  const setMode = useCallback(
+    (next: DeskMode) => {
+      setSearchParams(
+        (params) => {
+          const nextParams = new URLSearchParams(params);
+          if (next === "understand") nextParams.delete("mode");
+          else nextParams.set("mode", next);
+          return nextParams;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+  const chatOnly = mode === "chat";
+  // Practice mounts on first use, then stays: a sitting in progress survives
+  // a look at the sources or a question in chat.
+  const [practiceMounted, setPracticeMounted] = useState(mode === "practice");
+  if (mode === "practice" && !practiceMounted) setPracticeMounted(true);
+  const shownMobilePane: MobilePane = chatOnly ? "chat" : mobilePane;
   const panes = panesFor(desk.layout);
   const desktop = useMediaQuery("(min-width: 1024px)");
   // From 1280px an opened source docks beside the chat, so the page and the
@@ -80,14 +118,17 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   const [desktopChatTarget, setDesktopChatTarget] = useState<HTMLElement | null>(null);
   const [mobileChatTarget, setMobileChatTarget] = useState<HTMLElement | null>(null);
   const [chatFocusRequest, setChatFocusRequest] = useState(0);
-  const focusChat = useCallback(() => { setMobilePane("chat"); setChatFocusRequest((request) => request + 1); }, []);
+  const focusChat = useCallback(() => {
+    if (mode === "practice") setMode("chat");
+    setMobilePane("chat");
+    setChatFocusRequest((request) => request + 1);
+  }, [mode, setMode]);
   const [addSourceRequest, setAddSourceRequest] = useState(0);
   const consumeAddSource = useCallback(() => setAddSourceRequest(0), []);
 
   // `?work=<generationId>` opens a saved item (e.g. a deck due for review)
   // in the studio pane. Only the visible StudioPane receives it: the hidden
   // desktop tree stays mounted on mobile, and its dialogs would portal out.
-  const [searchParams, setSearchParams] = useSearchParams();
   const pendingWork = searchParams.get("work");
   useEffect(() => {
     if (!pendingWork) return;
@@ -105,6 +146,11 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
     if (pendingSource || pendingFiles) setMobilePane("sources");
     else if (pendingChat) setMobilePane("chat");
   }, [desktop, pendingChat, pendingFiles, pendingSource]);
+  // A citation, a source link or a dropped file needs the sources, which
+  // only Understand shows.
+  useEffect(() => {
+    if ((pendingSource || pendingFiles) && mode !== "understand") setMode("understand");
+  }, [mode, pendingFiles, pendingSource, setMode]);
 
   const clearPendingWork = useCallback(() => {
     setSearchParams(
@@ -213,11 +259,12 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
         modelLabel={modelLabel}
         onOpenSettings={() => openSettings("models")}
         onAddSources={() => {
+          if (mode !== "understand") setMode("understand");
           if (desktop) { if (!panes.sources) desk.setLayout(panes.studio ? "standard" : "reading"); }
           else setMobilePane("sources");
           setAddSourceRequest((request) => request + 1);
         }}
-        surfaceTarget={desktop ? desktopChatTarget : mobilePane === "chat" ? mobileChatTarget : null}
+        surfaceTarget={desktop ? desktopChatTarget : shownMobilePane === "chat" ? mobileChatTarget : null}
         focusRequest={chatFocusRequest}
         pendingSessionId={desk.pendingChatId}
         onPendingSessionConsumed={desk.clearPendingChat}
@@ -292,17 +339,22 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
         <WorkspaceHeader
           notebook={desk.notebook}
           panes={{ sources: panes.sources, studio: studioShown }}
+          mode={mode}
+          onMode={setMode}
           onToggleSources={toggleSources}
           onToggleStudio={toggleStudio}
           onRename={(name) => void desk.rename(name)}
           onSettings={openSettings}
         />
 
-        <div className="relative z-10 hidden min-h-0 flex-1 lg:flex">
-          {/* Left Sidebar: Sources (Retractable & Resizable) */}
+        <div className="relative z-10 hidden min-h-0 flex-1 lg:flex" hidden={mode === "practice"}>
+          {/* Left Sidebar: Sources (Retractable & Resizable). Chat mode
+              hides the side panes instead of unmounting them, so a draft
+              note or a study set in progress is still there afterwards. */}
           <aside
             ref={sourcesResize.paneRef}
             id="workspace-sources-pane"
+            hidden={chatOnly}
             data-resizing={sourcesResize.isDragging ? "true" : undefined}
             style={{
               [PANE_WIDTH_VAR]: `${panes.sources ? sourcesResize.width : RAIL_W}px`,
@@ -355,7 +407,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           </aside>
 
           {readerDocked && reading && (
-            <div id="workspace-reader-pane" className="desk-sheet-frame workspace-reader anim-fade anim-fade--fast">
+            <div id="workspace-reader-pane" hidden={chatOnly} className="desk-sheet-frame workspace-reader anim-fade anim-fade--fast">
               <div className="desk-sheet">
                 <SourceReader
                   key={`${reading.source.id}:${reading.startChar ?? ""}`}
@@ -378,6 +430,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           <aside
             ref={studioResize.paneRef}
             id="workspace-studio-pane"
+            hidden={chatOnly}
             data-resizing={studioResize.isDragging ? "true" : undefined}
             style={{
               [PANE_WIDTH_VAR]: `${studioShown ? studioResize.width : RAIL_W}px`,
@@ -425,12 +478,22 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           </aside>
         </div>
 
-        <div className="relative z-10 flex min-h-0 flex-1 flex-col lg:hidden">
+        {practiceMounted && (
+          <div className="relative z-10 flex min-h-0 flex-1 flex-col" hidden={mode !== "practice"}>
+            <PracticeDesk
+              notebookId={notebookId}
+              sourcesVersion={desk.sourcesVersion}
+              onOpenSettings={() => openSettings("models")}
+            />
+          </div>
+        )}
+
+        <div className={`relative z-10 flex min-h-0 flex-col lg:hidden ${mode === "practice" ? "" : "flex-1"}`}>
           {/* Flex column, not block: the panes size themselves with flex-1,
               which is ignored under a plain block parent — the studio and
               sources panes silently lost all scrolling on mobile. */}
-          <div className="flex min-h-0 flex-1 flex-col">
-            {mobilePane === "sources" && (
+          <div className="flex min-h-0 flex-1 flex-col" hidden={mode === "practice"}>
+            {shownMobilePane === "sources" && (
               <div key={mobilePane} className={paneWrapperClass}>
                 <SourcesPane
                   notebookId={notebookId}
@@ -448,10 +511,10 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 />
               </div>
             )}
-            {mobilePane === "chat" && (
-              <div key={mobilePane} id="workspace-chat-pane-mobile" ref={setMobileChatTarget} className={paneWrapperClass} />
+            {shownMobilePane === "chat" && (
+              <div key="chat" id="workspace-chat-pane-mobile" ref={setMobileChatTarget} className={paneWrapperClass} />
             )}
-            {mobilePane === "studio" && (
+            {shownMobilePane === "studio" && (
               <div key={mobilePane} className={paneWrapperClass}>
                 <StudioPane
                   notebookId={notebookId}
@@ -471,25 +534,36 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 ["sources", Notebook, "Sources"],
                 ["chat", ChatCircle, "Chat"],
                 ["studio", Books, "Study tools"],
+                ["practice", ListChecks, "Practice"],
               ] as const
-            ).map(([id, Icon, label]) => (
+            ).map(([id, Icon, label]) => {
+              const current = mode === "practice" ? "practice" : shownMobilePane;
+              return (
               <button
                 key={id}
-                onClick={() => setMobilePane(id)}
-                aria-pressed={mobilePane === id}
+                onClick={() => {
+                  if (id === "practice") {
+                    setMode("practice");
+                    return;
+                  }
+                  if (mode !== "understand") setMode("understand");
+                  setMobilePane(id);
+                }}
+                aria-pressed={current === id}
                 className="workspace-mobile-tab"
               >
-                {mobilePane === id && (
+                {current === id && (
                   <motion.span
                     layoutId="mobile-tab-pill"
                     transition={SPRING}
                     className="workspace-mobile-indicator"
                   />
                 )}
-                <Icon size={ICON.xl} weight={mobilePane === id ? "fill" : "light"} className="relative z-10" />
+                <Icon size={ICON.xl} weight={current === id ? "fill" : "light"} className="relative z-10" />
                 <span className="relative z-10">{label}</span>
               </button>
-            ))}
+              );
+            })}
           </nav>
         </div>
 
@@ -513,6 +587,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
 function WorkspaceHeader({
   notebook,
   panes,
+  mode,
+  onMode,
   onToggleSources,
   onToggleStudio,
   onRename,
@@ -520,6 +596,8 @@ function WorkspaceHeader({
 }: {
   notebook: NotebookRow | null;
   panes: { sources: boolean; studio: boolean };
+  mode: DeskMode;
+  onMode: (mode: DeskMode) => void;
   onToggleSources: () => void;
   onToggleStudio: () => void;
   onRename: (name: string) => void;
@@ -573,9 +651,24 @@ function WorkspaceHeader({
           />
         </div>
 
+        <div role="group" aria-label="Notebook mode" className="no-drag workspace-modes">
+          {DESK_MODES.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={mode === id}
+              onClick={() => onMode(id)}
+              className="workspace-mode"
+            >
+              <Icon size={ICON.md} weight={mode === id ? "fill" : "regular"} aria-hidden="true" />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+
         <div className="no-drag workspace-actions">
           <FocusTimer />
-          <div className="workspace-pane-group">
+          <div className="workspace-pane-group" hidden={mode !== "understand"}>
             <IconButton
               onClick={onToggleSources}
               title={panes.sources ? "Retract Sources Sidebar" : "Expand Sources Sidebar"}
