@@ -272,7 +272,7 @@ const sent = await evalJs(`
     ta.dispatchEvent(new Event("input", { bubbles: true }));
     await new Promise((r) => setTimeout(r, 300));
     const held = ta.value;
-    const sendBtn = [...document.querySelectorAll('button[aria-label="Send"]')].find((b) => !b.disabled);
+    const sendBtn = [...document.querySelectorAll('button[aria-label="Send message"]')].find((b) => !b.disabled);
     if (!sendBtn) return "send-disabled-or-missing, textarea=" + JSON.stringify(held);
     sendBtn.click();
     return "ok:" + held;
@@ -355,7 +355,7 @@ const deskSent = await evalJs(`
     setter.call(ta, "Summarize the method.");
     ta.dispatchEvent(new Event("input", { bubbles: true }));
     await new Promise((r) => setTimeout(r, 300));
-    const sendBtn = [...document.querySelectorAll('button[aria-label="Send"]')].find((b) => !b.disabled);
+    const sendBtn = [...document.querySelectorAll('button[aria-label="Send message"]')].find((b) => !b.disabled);
     if (!sendBtn) return false;
     sendBtn.click();
     return true;

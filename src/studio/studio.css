@@ -12,8 +12,6 @@
   border-bottom: 1px solid var(--hairline);
 }
 
-.pane-index { color: var(--muted); font-family: var(--font-mono); font-size: var(--text-label); }
-
 .pane-head-title {
   display: flex;
   align-items: center;

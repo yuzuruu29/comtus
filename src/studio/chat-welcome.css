@@ -54,7 +54,7 @@
 .chat-starters { display: grid; max-width: 29rem; }
 .chat-starters button {
   display: grid;
-  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: 0.75rem;
   min-height: 3rem;
@@ -67,8 +67,6 @@
 }
 .chat-starters button:first-child { border-top: 1px solid var(--hairline); }
 .chat-starters button:hover { color: var(--brass); }
-.chat-starter-index { color: var(--muted); font-family: var(--font-mono); font-size: var(--text-label); }
-.chat-starters button > svg { color: var(--brass); }
 
 @media (max-width: 639px) {
   /* The composer's mobile inset plus its border and draft padding (studio.css), so both share a text edge. */

@@ -11,7 +11,6 @@ export interface NotebookCardData extends Notebook {
 
 export default function NotebookCard({
   notebook,
-  number,
   onOpen,
   onRename,
   onExport,
@@ -19,7 +18,6 @@ export default function NotebookCard({
   onDelete,
 }: {
   notebook: NotebookCardData;
-  number?: number;
   onOpen: (id: string) => void;
   onRename: (notebook: Notebook) => void;
   onExport: (notebook: Notebook) => void;
@@ -36,7 +34,7 @@ export default function NotebookCard({
         aria-label={`Open ${notebook.name}`}
         className="notebook-card-open"
       >
-        <span className="notebook-card-index" aria-hidden="true"><NotebookIcon size={ICON.lg} weight="light" /> {number ? String(number).padStart(2, "0") : "Notebook"}</span>
+        <span className="notebook-card-index" aria-hidden="true"><NotebookIcon size={ICON.lg} weight="light" /></span>
         <span className="notebook-card-title">
           {notebook.name}
         </span>

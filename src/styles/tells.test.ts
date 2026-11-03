@@ -108,10 +108,10 @@ describe("tell: retired hype vocabulary", () => {
  *  why that line is prose. Do not add another. */
 const UPPERCASE_CEILING = 1;
 
-/** 39 uses of the middle-dot joiner. Most are a genuine third fact in a list
+/** 38 uses of the middle-dot joiner. Most are a genuine third fact in a list
  *  where a second line or a pill would read better. Target 0. The quiz and
  *  exam item headers now set item, topic and kind as separate spans. */
-const MIDDOT_CEILING = 39;
+const MIDDOT_CEILING = 38;
 
 function count(rel: string, needle: string): number {
   return read(rel).split(needle).length - 1;

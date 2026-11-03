@@ -86,14 +86,6 @@ html[data-motion="full"] .chat-starters button {
 .chat-starters button:nth-child(3) { --n: 2; }
 .chat-starters button:nth-child(4) { --n: 3; }
 
-/* The starter's index slides a step toward the question it opens. */
-.chat-starter-index {
-  transition: transform var(--dur-med) var(--ease-out), color var(--dur-fast);
-}
-.chat-starters button:is(:hover, :focus-visible) .chat-starter-index {
-  color: var(--brass);
-  transform: translateX(4px);
-}
 
 /* ── Study tools ────────────────────────────────────────────────────── */
 

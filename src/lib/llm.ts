@@ -637,35 +637,40 @@ async function streamCompatible(
     }
     if (typeof delta.content === "string" && delta.content) {
       text += delta.content;
-      args.onText?.(delta.content, text);
+      args.onText?.(delta.content, numberTextCitations(text, docs).text);
     }
   }
 
   // No citation API here — mine the inline [Title] mentions instead.
-  return { text, thinking, citations: extractTextCitations(text, docs) };
+  const cited = numberTextCitations(text, docs);
+  return { text: cited.text, thinking, citations: cited.citations };
 }
 
-/** Match [Title] mentions in the answer against known source titles. */
-export function extractTextCitations(text: string, docs: GroundingDoc[]): Citation[] {
-  const out: Citation[] = [];
-  const seen = new Set<number>();
-  const re = /\[([^\[\]\n]{2,80})\]/g;
-  for (const match of text.matchAll(re)) {
-    const mention = match[1].trim();
-    const idx = docs.findIndex(
-      (d) => d.source.title.toLowerCase() === mention.toLowerCase(),
-    );
-    if (idx === -1 || seen.has(idx)) continue;
-    seen.add(idx);
-    out.push({
-      documentIndex: idx,
-      sourceId: docs[idx].source.id,
-      sourceTitle: docs[idx].source.title,
-      citedText: "",
-      url: webPageUrl(docs[idx]),
-    });
-  }
-  return out;
+/** Match [Title] mentions in the answer against known source titles and
+ *  rewrite each as [n], the footnote number the answer renders as a mark;
+ *  n follows first mention, the same order as the footnote list. */
+export function numberTextCitations(text: string, docs: GroundingDoc[]): { text: string; citations: Citation[] } {
+  const citations: Citation[] = [];
+  const numberOf = new Map<number, number>();
+  const numbered = text.replace(/\[([^\[\]\n]{2,80})\]/g, (whole, inner: string) => {
+    const mention = inner.trim().toLowerCase();
+    const idx = docs.findIndex((d) => d.source.title.toLowerCase() === mention);
+    if (idx === -1) return whole;
+    let n = numberOf.get(idx);
+    if (n === undefined) {
+      citations.push({
+        documentIndex: idx,
+        sourceId: docs[idx].source.id,
+        sourceTitle: docs[idx].source.title,
+        citedText: "",
+        url: webPageUrl(docs[idx]),
+      });
+      n = citations.length;
+      numberOf.set(idx, n);
+    }
+    return `[${n}]`;
+  });
+  return { text: numbered, citations };
 }
 
 /** Web search results are grounding-only and never saved as sources, so a

@@ -115,9 +115,8 @@ export default function MessageList({
             </p>
             {sourceCount > 0 && hasModel ? (
               <div className="chat-starters" aria-label="Ways to begin">
-                {STARTERS.map(({ label, prompt }, index) => (
+                {STARTERS.map(({ label, prompt }) => (
                   <button key={label} type="button" onClick={() => onSend(prompt)}>
-                    <span className="chat-starter-index" aria-hidden="true">0{index + 1}</span>
                     <span>{label}</span>
                   </button>
                 ))}

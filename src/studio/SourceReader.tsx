@@ -584,7 +584,6 @@ export default function SourceReader({
       <section ref={dockRef} className="reader-dock" aria-labelledby="reader-dock-title">
         <div className="pane-head reader-dock-head">
           <div className="pane-head-title">
-            <span className="pane-index" aria-hidden="true">01</span>
             <h2 id="reader-dock-title">{source.title}</h2>
           </div>
           <div className="pane-head-actions">

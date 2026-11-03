@@ -60,18 +60,16 @@
   display: flex;
   flex-direction: column;
   gap: 0.4375rem;
-  counter-reset: tool-index;
 }
 
 .practice-tool.btn {
   position: relative;
-  counter-increment: tool-index;
   display: flex;
   justify-content: start;
   gap: 0.625rem;
   width: 100%;
   min-height: 3.75rem;
-  padding: 0.625rem 2.25rem 0.625rem 0.625rem;
+  padding: 0.625rem;
   border: 1px solid var(--hairline-strong);
   border-radius: 3px 8px 8px 3px;
   background: var(--surface);
@@ -81,18 +79,6 @@
     inset 0 1px 0 color-mix(in srgb, var(--surface) 70%, var(--brass-pale)),
     1px 2px 0 color-mix(in srgb, var(--leather) 12%, transparent);
   transform: none;
-}
-
-.practice-tool.btn::after {
-  content: "0" counter(tool-index);
-  position: absolute;
-  top: 0.5rem;
-  right: 0.65rem;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  color: var(--muted);
-  opacity: 0.75;
-  pointer-events: none;
 }
 
 /* The brass rule is 2px wider than the sibling borders; the padding gives it back so the icons stay on one line. */

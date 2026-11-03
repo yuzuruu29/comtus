@@ -173,20 +173,28 @@ export function nudgeOutOfRects(
     ...rects.flatMap((rect) => [rect.left - dimensions.width - gap, rect.right + gap])];
   const tops = [bounded.top, padding, viewport.height - dimensions.height - padding,
     ...rects.flatMap((rect) => [rect.top - dimensions.height - gap, rect.bottom + gap])];
+  // The nearest free spot wins. On a crowded screen with none free, the spot
+  // that covers the least of the work does, rather than wherever it started.
   let next = bounded;
-  let distance = Infinity;
+  let best = { covered: Infinity, distance: Infinity };
   for (const left of lefts) {
     for (const top of tops) {
       const candidate = clampCoordinates({ left, top }, dimensions, viewport, padding);
-      if (rects.some((rect) => rectsIntersect(candidate, dimensions, rect))) continue;
-      const delta = Math.hypot(candidate.left - bounded.left, candidate.top - bounded.top);
-      if (delta < distance) {
+      const covered = rects.reduce((sum, rect) => sum + overlapArea(candidate, dimensions, rect), 0);
+      const distance = Math.hypot(candidate.left - bounded.left, candidate.top - bounded.top);
+      if (covered < best.covered || (covered === best.covered && distance < best.distance)) {
         next = candidate;
-        distance = delta;
+        best = { covered, distance };
       }
     }
   }
   return next;
+}
+
+function overlapArea(pos: BatteryPosition, dims: { width: number; height: number }, rect: BatteryAvoidRect): number {
+  const w = Math.min(pos.left + dims.width, rect.right) - Math.max(pos.left, rect.left);
+  const h = Math.min(pos.top + dims.height, rect.bottom) - Math.max(pos.top, rect.top);
+  return w > 0 && h > 0 ? w * h : 0;
 }
 
 /** Computes default bottom-right resting position */
