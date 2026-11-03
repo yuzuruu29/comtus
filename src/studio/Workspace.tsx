@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSP
 import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { BookOpenText, Books, CaretLeft, ChartBar, ChatCircle, DeviceMobile, DotsThree, DownloadSimple, GearSix, ListChecks, Notebook, SidebarSimple } from "@phosphor-icons/react";
-import type { Notebook as NotebookRow, Source } from "../lib/types";
+import type { Generation, Notebook as NotebookRow, Source } from "../lib/types";
 import { useCallSettings, useSettings } from "../lib/settings";
 import { modelLabelFor } from "../lib/llm";
 import { detectPlatform, isTauri } from "../lib/desktop";
@@ -88,6 +88,24 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   // a look at the sources or a question in chat.
   const [practiceMounted, setPracticeMounted] = useState(mode === "practice");
   if (mode === "practice" && !practiceMounted) setPracticeMounted(true);
+  const [practiceRequest, setPracticeRequest] = useState<{ gen: Generation } | null>(null);
+  // One URL update: setSearchParams does not queue, so a separate call to
+  // drop `?work=` would read the old params and undo the mode change.
+  const openPractice = useCallback(
+    (gen?: Generation) => {
+      setSearchParams(
+        (params) => {
+          const next = new URLSearchParams(params);
+          next.set("mode", "practice");
+          next.delete("work");
+          return next;
+        },
+        { replace: true },
+      );
+      if (gen) setPracticeRequest({ gen });
+    },
+    [setSearchParams],
+  );
   const shownMobilePane: MobilePane = chatOnly ? "chat" : mobilePane;
   const panes = panesFor(desk.layout);
   const desktop = useMediaQuery("(min-width: 1024px)");
@@ -448,6 +466,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   onCollapse={collapseStudio}
                   pendingGenerationId={desktop ? pendingWork : null}
                   onPendingGenerationConsumed={clearPendingWork}
+                  onOpenPractice={openPractice}
                 />
               </div>
             )}
@@ -455,7 +474,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               <div className="anim-fade flex h-full flex-col items-center pt-3" style={{ ["--d"]: "60ms" } as CSSProperties}>
                 <RailButton
                   icon={Books}
-                  label="Study tools"
+                  label="Notes & guides"
                   side="right"
                   onClick={() => (readerDocked && panes.studio ? setStudioWhileReading(true) : desk.setLayout(panes.sources ? "standard" : "writing"))}
                 />
@@ -484,6 +503,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               notebookId={notebookId}
               sourcesVersion={desk.sourcesVersion}
               onOpenSettings={() => openSettings("models")}
+              openRequest={practiceRequest}
             />
           </div>
         )}
@@ -520,6 +540,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   notebookId={notebookId}
                   pendingGenerationId={desktop ? null : pendingWork}
                   onPendingGenerationConsumed={clearPendingWork}
+                  onOpenPractice={openPractice}
                 />
               </div>
             )}
@@ -533,7 +554,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               [
                 ["sources", Notebook, "Sources"],
                 ["chat", ChatCircle, "Chat"],
-                ["studio", Books, "Study tools"],
+                ["studio", Books, "Saved"],
                 ["practice", ListChecks, "Practice"],
               ] as const
             ).map(([id, Icon, label]) => {

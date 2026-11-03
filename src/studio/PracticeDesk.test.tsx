@@ -97,6 +97,15 @@ describe("PracticeDesk", () => {
     expect(await screen.findByRole("dialog", { name: "Leave this sitting?" })).toBeInTheDocument();
   });
 
+  it("opens work sent over from Understand", async () => {
+    const { rerender } = render(<PracticeDesk notebookId="nb1" sourcesVersion={0} openRequest={{ gen: quiz }} />);
+    expect(await screen.findByText("Question 1")).toBeInTheDocument();
+
+    // A second request while answers are in asks first, like any other move.
+    rerender(<PracticeDesk notebookId="nb1" sourcesVersion={0} openRequest={{ gen: { ...quiz, id: "g2", title: "Another" } }} />);
+    expect(await screen.findByRole("dialog", { name: "Leave this sitting?" })).toBeInTheDocument();
+  });
+
   it("asks before putting away a sitting in progress", async () => {
     await db.generations.put(quiz);
     render(<PracticeDesk notebookId="nb1" sourcesVersion={0} />);

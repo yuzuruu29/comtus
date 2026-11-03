@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { CaretDown, PenNib, Presentation, X } from "@phosphor-icons/react";
+import { PenNib, X } from "@phosphor-icons/react";
 import { db } from "../lib/db";
 import { latestAttempts } from "../lib/attempts";
 import { WORK_SAVED } from "../lib/activity";
@@ -11,7 +11,7 @@ import ExportMenu from "./ExportMenu";
 import ExamPlan from "./ExamPlan";
 import StudyStanding from "./StudyStanding";
 import { fmtScore } from "./generators/common";
-import { ArtifactView, DOCUMENT_TOOLS, FLOW_TITLES, FlowForm, PRACTICE_TOOLS, type Flow } from "./practiceFlows";
+import { ArtifactView, FLOW_TITLES, FlowForm, PRACTICE_KINDS, PRACTICE_TOOLS, type Flow } from "./practiceFlows";
 import "./study-tools.css";
 import "./practice-desk.css";
 
@@ -21,12 +21,18 @@ type Stage =
   | { type: "open"; gen: Generation };
 
 const RECENT_SHOWN = 6;
-const PRACTICE_KINDS = new Set<GenerationKind>(["quiz", "exam", "flashcards"]);
+
+/* Reading aids and slides stay in Understand; essay feedback is practice. */
+const RAIL_TOOLS: typeof PRACTICE_TOOLS = [
+  ...PRACTICE_TOOLS,
+  { flow: "essay", icon: PenNib, name: "Essay coach", line: "Feedback on your writing" },
+];
 
 const RECENT_LABELS: Partial<Record<GenerationKind, string>> = {
   quiz: "Quiz",
   exam: "Mock exam",
   flashcards: "Flashcards",
+  "essay-review": "Essay feedback",
 };
 
 /**
@@ -39,10 +45,13 @@ export default function PracticeDesk({
   notebookId,
   sourcesVersion,
   onOpenSettings,
+  openRequest = null,
 }: {
   notebookId: string;
   sourcesVersion: number;
   onOpenSettings?: () => void;
+  /** Saved work sent over from Understand. A new object is a new request. */
+  openRequest?: { gen: Generation } | null;
 }) {
   const sourcesNoteId = useId();
   const recentId = useId();
@@ -123,6 +132,12 @@ export default function PracticeDesk({
     go({ type: "open", gen });
   };
 
+  const [seenRequest, setSeenRequest] = useState<typeof openRequest>(null);
+  if (openRequest !== seenRequest) {
+    setSeenRequest(openRequest);
+    if (openRequest) open(openRequest.gen);
+  }
+
   const activeFlow = stage.type === "setup" ? stage.flow : null;
   const activeKind = stage.type === "setup" ? stage.aidKind : stage.type === "open" ? stage.gen.kind : undefined;
 
@@ -139,7 +154,7 @@ export default function PracticeDesk({
       <aside className="practice-rail scroll-thin" aria-label="Practice tools">
         <h2 className="practice-rail-title">Practice with</h2>
         <div className="practice-rail-tools">
-          {PRACTICE_TOOLS.map((tool) => (
+          {RAIL_TOOLS.map((tool) => (
             <button
               key={tool.flow}
               type="button"
@@ -156,35 +171,6 @@ export default function PracticeDesk({
             </button>
           ))}
         </div>
-
-        <details className="practice-rail-more">
-          <summary>
-            More ways to study
-            <CaretDown size={ICON.sm} aria-hidden="true" />
-          </summary>
-          <div className="practice-rail-more-list">
-            {DOCUMENT_TOOLS.map((tool) => (
-              <Button
-                key={tool.kind}
-                variant="ghost"
-                size="sm"
-                aria-current={activeFlow === "aids" && activeKind === tool.kind ? "true" : undefined}
-                onClick={() => openFlow("aids", { aidKind: tool.kind })}
-              >
-                <tool.icon size={ICON.md} aria-hidden="true" />
-                {tool.name}
-              </Button>
-            ))}
-            <Button variant="ghost" size="sm" onClick={() => openFlow("essay")}>
-              <PenNib size={ICON.md} aria-hidden="true" />
-              Essay coach
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => openFlow("presentation")}>
-              <Presentation size={ICON.md} aria-hidden="true" />
-              Slides & deck
-            </Button>
-          </div>
-        </details>
 
         {sources.length > 1 && (
           <fieldset className="practice-sources" aria-describedby={included.length === 0 ? sourcesNoteId : undefined}>

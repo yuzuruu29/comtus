@@ -54,6 +54,9 @@ export const PRACTICE_TOOLS: {
   { flow: "exam", icon: GraduationCap, name: "Mock exam", line: "Practice under time pressure" },
 ];
 
+/** Saved work that belongs to Practice: it opens there, not in a dialog. */
+export const PRACTICE_KINDS = new Set<GenerationKind>(["quiz", "exam", "flashcards", "essay-review"]);
+
 export const FLOW_TITLES: Record<Flow, string> = {
   quiz: "Quiz",
   exam: "Mock exam",
