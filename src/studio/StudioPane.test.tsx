@@ -118,6 +118,23 @@ describe("StudioPane", () => {
     expect(screen.getByText("Configure study-guide")).toBeInTheDocument();
   });
 
+  it("keeps notes and guides beside a Practice desk and sends practice work there", async () => {
+    const exam = { id: "exam-1", notebookId: "notebook-1", kind: "exam" as const, title: "Midterm", payload: {}, createdAt: 2 };
+    database.rows.push(exam);
+    const onOpenPractice = vi.fn();
+    render(<StudioPane notebookId="notebook-1" onOpenPractice={onOpenPractice} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /^Midterm/ }));
+    expect(onOpenPractice).toHaveBeenCalledWith(exam);
+    expect(screen.queryByRole("dialog", { name: "Midterm" })).not.toBeInTheDocument();
+
+    expect(screen.getByRole("heading", { name: "Notes & guides" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Practice quiz/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Study guide" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /Test yourself in Practice/ }));
+    expect(onOpenPractice).toHaveBeenLastCalledWith();
+  });
+
   it("offers a focused Undo action and restores the exact deleted generation", async () => {
     render(<StudioPane notebookId="notebook-1" />);
 

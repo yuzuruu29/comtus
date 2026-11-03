@@ -4,6 +4,7 @@ import {
   ArrowCounterClockwise,
   CaretDown,
   FileText,
+  ListChecks,
   NotePencil,
   PencilSimple,
   PenNib,
@@ -27,7 +28,15 @@ import { DRIFT_X, EXIT, RISE_2, SOFT } from "./fx";
 import { Toast } from "./Toast";
 import { timeAgo, Modal, Field, inputCls, btnLamp, btnGhost } from "./ui";
 import ExportMenu from "./ExportMenu";
-import { ArtifactView, DOCUMENT_TOOLS, FLOW_TITLES, FlowForm, PRACTICE_TOOLS, type Flow } from "./practiceFlows";
+import {
+  ArtifactView,
+  DOCUMENT_TOOLS,
+  FLOW_TITLES,
+  FlowForm,
+  PRACTICE_KINDS,
+  PRACTICE_TOOLS,
+  type Flow,
+} from "./practiceFlows";
 import { useDesk } from "./DeskContext";
 import StudyStanding from "./StudyStanding";
 import ExamPlan from "./ExamPlan";
@@ -77,11 +86,15 @@ export default function StudioPane({
   onCollapse,
   pendingGenerationId,
   onPendingGenerationConsumed,
+  onOpenPractice,
 }: {
   notebookId: string;
   onCollapse?: () => void;
   pendingGenerationId?: string | null;
   onPendingGenerationConsumed?: () => void;
+  /** Set where a Practice desk exists: the pane then keeps notes and reading
+   *  aids, and quizzes, decks and exams move to Practice. */
+  onOpenPractice?: (generation?: Generation) => void;
 }) {
   const desk = useDesk();
   const createStudyId = useId();
@@ -138,7 +151,10 @@ export default function StudioPane({
     void db.generations
       .get(pendingGenerationId)
       .then((generation) => {
-        if (current && generation?.notebookId === notebookId) setViewing(generation);
+        if (current && generation?.notebookId === notebookId) {
+          if (onOpenPractice && PRACTICE_KINDS.has(generation.kind)) onOpenPractice(generation);
+          else setViewing(generation);
+        }
         if (current) onPendingGenerationConsumed?.();
       })
       .catch(() => {
@@ -147,7 +163,11 @@ export default function StudioPane({
     return () => {
       current = false;
     };
-  }, [notebookId, onPendingGenerationConsumed, pendingGenerationId]);
+  }, [notebookId, onOpenPractice, onPendingGenerationConsumed, pendingGenerationId]);
+
+  /** With a Practice desk beside it, practice work opens there. */
+  const openSaved = (generation: Generation) =>
+    onOpenPractice && PRACTICE_KINDS.has(generation.kind) ? onOpenPractice(generation) : setViewing(generation);
 
   const openQuiz = (scope = "") => {
     setQuizScope(scope);
@@ -237,7 +257,7 @@ export default function StudioPane({
     <div className="study-tools">
       <div className="pane-head">
         <div className="pane-head-title">
-          <h2>Study tools</h2>
+          <h2>{onOpenPractice ? "Notes & guides" : "Study tools"}</h2>
         </div>
         <div className="pane-head-actions">
           {onCollapse && (
@@ -254,6 +274,32 @@ export default function StudioPane({
       </div>
 
       <div className="study-tools-body scroll-thin">
+        {onOpenPractice ? (
+        <section aria-labelledby={createStudyId}>
+          <div className="study-tools-intro">
+            <h3 id={createStudyId}>Make something to read.</h3>
+            <p>Guides and summaries written from your sources.</p>
+          </div>
+          <div className="study-tools-secondary">
+            {DOCUMENT_TOOLS.map((tool) => (
+              <Button key={tool.kind} variant="ghost" size="sm" onClick={() => openAid(tool.kind)}>
+                <tool.icon size={ICON.md} aria-hidden="true" />
+                {tool.name}
+              </Button>
+            ))}
+            <Button variant="ghost" size="sm" onClick={() => setFlow("presentation")}>
+              <Presentation size={ICON.md} aria-hidden="true" />Slides & deck
+            </Button>
+          </div>
+          <Button variant="secondary" className="practice-tool rule-bookmark" onClick={() => onOpenPractice()}>
+            <span className="practice-tool-icon"><ListChecks size={ICON.xl} aria-hidden="true" /></span>
+            <span className="practice-tool-copy">
+              <strong>Test yourself in Practice</strong>
+              <span>Quizzes, flashcards, mock exams and essay feedback</span>
+            </span>
+          </Button>
+        </section>
+        ) : (
         <section aria-labelledby={createStudyId}>
           <div className="study-tools-intro">
             <h3 id={createStudyId}>Put it into practice.</h3>
@@ -296,6 +342,7 @@ export default function StudioPane({
             </div>
           </details>
         </section>
+        )}
 
         <section className="study-saved" aria-labelledby={savedWorkId}>
           <div className="study-saved-heading">
@@ -356,7 +403,7 @@ export default function StudioPane({
                           if (isNote) {
                             openEditNote(g);
                           } else {
-                            setViewing(g);
+                            openSaved(g);
                           }
                         }}
                         className="study-saved-open"
@@ -415,15 +462,18 @@ export default function StudioPane({
           </div>
         </section>
 
-        <ExamPlan
-          notebookId={notebookId}
-          version={historyVersion}
-          onOpenDeck={openGeneration}
-          onPractice={(topic) => openQuiz(topic ?? "")}
-          onMockExam={() => setFlow("exam")}
-        />
-
-        <StudyStanding notebookId={notebookId} version={historyVersion} onPractice={openQuiz} />
+        {!onOpenPractice && (
+          <>
+            <ExamPlan
+              notebookId={notebookId}
+              version={historyVersion}
+              onOpenDeck={openGeneration}
+              onPractice={(topic) => openQuiz(topic ?? "")}
+              onMockExam={() => setFlow("exam")}
+            />
+            <StudyStanding notebookId={notebookId} version={historyVersion} onPractice={openQuiz} />
+          </>
+        )}
       </div>
 
       {/* Keyed by notice id: a second delete while one is open remounts the
