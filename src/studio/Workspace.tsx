@@ -89,12 +89,22 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   const [practiceMounted, setPracticeMounted] = useState(mode === "practice");
   if (mode === "practice" && !practiceMounted) setPracticeMounted(true);
   const [practiceRequest, setPracticeRequest] = useState<{ gen: Generation } | null>(null);
+  // One URL update: setSearchParams does not queue, so a separate call to
+  // drop `?work=` would read the old params and undo the mode change.
   const openPractice = useCallback(
     (gen?: Generation) => {
-      setMode("practice");
+      setSearchParams(
+        (params) => {
+          const next = new URLSearchParams(params);
+          next.set("mode", "practice");
+          next.delete("work");
+          return next;
+        },
+        { replace: true },
+      );
       if (gen) setPracticeRequest({ gen });
     },
-    [setMode],
+    [setSearchParams],
   );
   const shownMobilePane: MobilePane = chatOnly ? "chat" : mobilePane;
   const panes = panesFor(desk.layout);

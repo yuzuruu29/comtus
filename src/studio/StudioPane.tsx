@@ -151,11 +151,14 @@ export default function StudioPane({
     void db.generations
       .get(pendingGenerationId)
       .then((generation) => {
-        if (current && generation?.notebookId === notebookId) {
-          if (onOpenPractice && PRACTICE_KINDS.has(generation.kind)) onOpenPractice(generation);
-          else setViewing(generation);
+        if (!current) return;
+        // Handing off to Practice consumes the link in the same URL update.
+        if (generation?.notebookId === notebookId && onOpenPractice && PRACTICE_KINDS.has(generation.kind)) {
+          onOpenPractice(generation);
+          return;
         }
-        if (current) onPendingGenerationConsumed?.();
+        if (generation?.notebookId === notebookId) setViewing(generation);
+        onPendingGenerationConsumed?.();
       })
       .catch(() => {
         if (current) onPendingGenerationConsumed?.();

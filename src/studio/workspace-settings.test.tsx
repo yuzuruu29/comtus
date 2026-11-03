@@ -17,6 +17,7 @@ vi.mock("motion/react", async (importOriginal) => {
 });
 vi.mock("./ConsoleShell", () => ({ default: ({ children }: { children: ReactNode }) => <>{children}</> }));
 vi.mock("./companion/DeskLife", () => ({ default: () => null }));
+vi.mock("./generators/QuizFlow", () => ({ QuizConfigForm: () => null, QuizTaker: () => <p>Question 1</p> }));
 
 // fake-indexeddb is shared across every test file in the worker, so seeded
 // notebooks leak into later files and change what the shelf renders.
@@ -63,6 +64,24 @@ describe("workspace header", () => {
     fireEvent.click(within(modes).getByRole("button", { name: "Understand" }));
     await waitFor(() => expect(document.getElementById("workspace-sources-pane")!.hidden).toBe(false));
     expect(screen.getByTestId("where").textContent).toBe("/studio/nb1");
+  });
+
+  it("opens a saved-work link to a quiz in Practice", async () => {
+    await db.notebooks.put({ id: "nb1", name: "Pharm", createdAt: 1, updatedAt: 1 });
+    await db.generations.put({ id: "quiz-1", notebookId: "nb1", kind: "quiz", title: "Tonicity quiz", payload: { questions: [] }, createdAt: 1 });
+    function Where() {
+      const { pathname, search } = useLocation();
+      return <output data-testid="where">{pathname + search}</output>;
+    }
+    render(
+      <MemoryRouter initialEntries={["/studio/nb1?work=quiz-1"]}>
+        <Workspace notebookId="nb1" />
+        <Where />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screen.getByTestId("where").textContent).toBe("/studio/nb1?mode=practice"));
+    expect(await screen.findByRole("heading", { name: "Tonicity quiz", level: 1 })).toBeVisible();
+    await db.generations.clear();
   });
 });
 
