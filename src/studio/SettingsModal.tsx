@@ -34,8 +34,7 @@ import {
   type CallSettings,
 } from "../lib/llm";
 import type { ProviderId, StoredKey } from "../lib/types";
-import { STUDY_PLANS, decodePassInfo, passSummary, planTierForPass, type StudyPlan } from "../lib/paypal";
-import { formatUsdFromNano } from "../lib/credits";
+import { FIRST_TOPUP_OFFER, STUDY_PLANS, decodePassInfo, passSummary, planTierForPass, type StudyPlan } from "../lib/paypal";
 import PayPalCheckout from "./PayPalCheckout";
 import ExternalLink from "./ExternalLink";
 import RecoverPass from "./RecoverPass";
@@ -1009,7 +1008,7 @@ export default function SettingsModal({
                     <p className="text-small leading-relaxed text-muted">
                       Unlock hosted Claude Opus 5.5 and Sonnet 5.5 with 1M context for deep synthesis, mock exams, and slide generation. Instant activation via PayPal with no API setup or recurring subscription.
                     </p>
-                    <p className="text-body text-muted">About 40% off your first eligible PayPal purchase. Review the final price before payment.</p>
+                    <p className="text-body text-ink">{FIRST_TOPUP_OFFER}</p>
 
                     {/* Pricing Grid */}
                     <div>
@@ -1043,14 +1042,13 @@ export default function SettingsModal({
                                 </div>
 
                                 <div className="mt-1 flex items-baseline justify-between gap-1.5">
-                                  <span className="font-mono text-brass font-bold text-body">
-                                    ${plan.price} <span className="text-label font-normal text-muted">first purchase; ${plan.regularPrice} regular</span>
+                                  <span className="tabular-nums text-brass font-semibold text-body">
+                                    ${plan.price} <s className="text-label font-normal text-muted">${plan.regularPrice}</s>
                                   </span>
                                 </div>
-
+                                <div className="text-label text-muted">First top-up, then ${plan.regularPrice}</div>
 
                                 <div className="mt-1 text-label leading-snug text-muted">{plan.desc}</div>
-                                <div className="mt-1 text-body text-muted">{formatUsdFromNano(plan.budgetNano)} hosted usage included</div>
                               </div>
                               {isPlanSelected && (
                                 <div className="mt-2 text-right text-label text-brass font-medium">
@@ -1069,7 +1067,7 @@ export default function SettingsModal({
                         <div className="flex items-center gap-2 text-small text-ink font-medium">
                           <CreditCard size={ICON.md} className="text-brass shrink-0" />
                           <span>
-                            Pay with PayPal: {selectedPlan.name} (up to ${selectedPlan.regularPrice} USD)
+                            Pay with PayPal: {selectedPlan.name}
                           </span>
                         </div>
                         <span className="text-label text-brass">{selectedPlan.name}, no expiry</span>

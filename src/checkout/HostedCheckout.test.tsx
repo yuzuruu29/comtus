@@ -31,11 +31,12 @@ describe("HostedCheckout", () => {
     for (const name of ["Sprint Pass", "Scholar Pass", "Mastery Pass"]) {
       expect(screen.getByRole("button", { name: new RegExp(name) })).toBeInTheDocument();
     }
-    for (const price of ["5.00", "20.00", "60.00"]) {
-      expect(screen.getAllByText(new RegExp(`\\$${price.replace(".", "\\.")} first purchase`)).length).toBeGreaterThan(0);
+    for (const [first, regular] of [["5.00", "10.00"], ["20.00", "40.00"], ["60.00", "120.00"]]) {
+      expect(screen.getByText(`$${first} first top-up, then $${regular}`)).toBeInTheDocument();
     }
-    expect(screen.getByText(/Usage does not expire\. One-time payment, no automatic renewal/)).toBeInTheDocument();
-    expect(screen.getByText(/\$10\.00 hosted usage included/)).toBeInTheDocument();
+    expect(screen.getByText(/The pass never expires\. One-time payment, no automatic renewal/)).toBeInTheDocument();
+    expect(screen.getByText("Your first top-up is 50% off. Every top-up after that is the regular price.")).toBeInTheDocument();
+    expect(screen.queryByText(/hosted usage/)).toBeNull();
     expect(document.title).toBe("Smarter Models checkout — Comtus");
   });
 

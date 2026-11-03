@@ -35,9 +35,9 @@ describe("passSummary", () => {
     "recognizes current and historical pass budgets",
     (budgetNano, tier) => expect(planTierForPass({ kind: "credits", budgetNano, expiresAtMs: 0 })).toBe(tier),
   );
-  it("names the included budget and remaining days for credit passes", () => {
+  it("shows remaining days for credit passes without a dollar figure", () => {
     const info = decodePassInfo(v2Token(3_495_000_000, 120));
-    expect(info && passSummary(info)).toBe("Active pass · $3.50 hosted usage · 120d remaining");
+    expect(info && passSummary(info)).toBe("Active pass · 120d remaining");
   });
 
   it("keeps request wording for legacy passes", () => {

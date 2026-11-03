@@ -142,7 +142,7 @@ afterEach(() => {
 describe("PayPal checkout", () => {
   it("reserves the first-purchase offer for only one simultaneous order", async () => {
     const orders: Record<string, { status: string; payer: { payer_id: string }; purchase_units: Array<{ custom_id: string; amount: { value: string; currency_code: string } }> }> = {};
-    for (const id of ["ORDER111", "ORDER222"]) orders[id] = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }] };
+    for (const id of ["ORDER111", "ORDER222"]) orders[id] = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "10.00", currency_code: "USD" } }] };
     stubPaymentFetch(vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input instanceof Request ? input.url : input);
       if (url.includes("/oauth2/token")) return Response.json({ access_token: "t" });
@@ -161,13 +161,13 @@ describe("PayPal checkout", () => {
   });
 
   it("offers the regular price when PayPal supplies no payer ID", async () => {
-    stubPaymentFetch(providerForOrder({ status: "APPROVED", purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }] }));
+    stubPaymentFetch(providerForOrder({ status: "APPROVED", purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "10.00", currency_code: "USD" } }] }));
     const response = await call(paypalReq("prepare-order", { orderId: "ORDER123", planId: "sprint" }));
     expect(response.status).toBe(200);
-    expect(response.json()).toMatchObject({ price: "8.33", discounted: false });
+    expect(response.json()).toMatchObject({ price: "10.00", discounted: false });
   });
   it("releases a reservation and asks to restart after PayPal rejects the price update", async () => {
-    const order = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }] };
+    const order = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "10.00", currency_code: "USD" } }] };
     let patches = 0;
     stubPaymentFetch(vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input instanceof Request ? input.url : input);
@@ -188,7 +188,7 @@ describe("PayPal checkout", () => {
   });
   it("releases an offer when PayPal confirms the failed order is voided", async () => {
     const orders: Record<string, { status: string; payer: { payer_id: string }; purchase_units: Array<{ custom_id: string; amount: { value: string; currency_code: string } }> }> = {};
-    for (const id of ["ORDER111", "ORDER222"]) orders[id] = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }] };
+    for (const id of ["ORDER111", "ORDER222"]) orders[id] = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "10.00", currency_code: "USD" } }] };
     stubPaymentFetch(vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input instanceof Request ? input.url : input);
       if (url.includes("/oauth2/token")) return Response.json({ access_token: "t" });
@@ -215,7 +215,7 @@ describe("PayPal checkout", () => {
 
   it("releases the offer after a definitive decline even if the order remains approved", async () => {
     const orders: Record<string, { status: string; payer: { payer_id: string }; purchase_units: Array<{ custom_id: string; amount: { value: string; currency_code: string } }> }> = {};
-    for (const id of ["ORDER111", "ORDER222"]) orders[id] = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }] };
+    for (const id of ["ORDER111", "ORDER222"]) orders[id] = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "10.00", currency_code: "USD" } }] };
     stubPaymentFetch(vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input instanceof Request ? input.url : input);
       if (url.includes("/oauth2/token")) return Response.json({ access_token: "t" });
@@ -235,7 +235,7 @@ describe("PayPal checkout", () => {
   });
 
   it("keeps the offer reserved if a capture outcome is uncertain", async () => {
-    const order = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }] };
+    const order = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "10.00", currency_code: "USD" } }] };
     let captures = 0;
     stubPaymentFetch(vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input instanceof Request ? input.url : input);
@@ -254,13 +254,13 @@ describe("PayPal checkout", () => {
     const retry = await call(paypalReq("capture-order", { orderId: "ORDER111", planId: "sprint", reviewToken }));
     expect(retry.json()).not.toHaveProperty("restartCheckout");
     order.purchase_units[0].custom_id = "comtus:sprint";
-    order.purchase_units[0].amount.value = "8.33";
+    order.purchase_units[0].amount.value = "10.00";
     const second = await call(paypalReq("prepare-order", { orderId: "ORDER222", planId: "sprint" }));
-    expect(second.json()).toMatchObject({ price: "8.33", discounted: false });
+    expect(second.json()).toMatchObject({ price: "10.00", discounted: false });
   });
 
   it("serializes simultaneous captures before releasing a declined offer", async () => {
-    const order = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }] };
+    const order = { status: "APPROVED", payer: { payer_id: "BUYER123" }, purchase_units: [{ custom_id: "comtus:sprint", amount: { value: "10.00", currency_code: "USD" } }] };
     let unblock!: () => void;
     let captureStarted!: () => void;
     const gate = new Promise<void>((resolve) => { unblock = resolve; });
@@ -285,9 +285,9 @@ describe("PayPal checkout", () => {
     expect((await first).json()).toMatchObject({ restartCheckout: true });
   });
   it.each([
-    ["sprint", "8.33", "5.00", 2_500_000_000],
-    ["scholar", "33.33", "20.00", 10_000_000_000],
-    ["mastery", "100.00", "60.00", 30_000_000_000],
+    ["sprint", "10.00", "5.00", 2_500_000_000],
+    ["scholar", "40.00", "20.00", 10_000_000_000],
+    ["mastery", "120.00", "60.00", 30_000_000_000],
   ])("reviews, discounts and fulfills the non-expiring %s plan", async (planId, regular, price, budget) => {
     const paidAt = "2026-06-01T10:00:00Z";
     const order = {
@@ -604,6 +604,31 @@ describe("PayPal checkout", () => {
     const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString()) as { v: number; c: number };
     expect(payload.v).toBe(2);
     expect(payload.c).toBe(3_495_000_000);
+  });
+
+  it("restores a pass bought at the earlier $8.33 regular price", async () => {
+    process.env.PASS_SIGNING_SECRET = SECRET;
+    process.env.PAYPAL_CLIENT_SECRET = "secret";
+    stubPaymentFetch(
+      vi.fn(async (input: string | URL | Request) => {
+        const u = String(input instanceof Request ? input.url : input);
+        if (u.includes("/oauth2/token")) return Response.json({ access_token: "t" });
+        if (u.includes("/v2/checkout/orders/ORDER123")) {
+          return Response.json({
+            status: "COMPLETED",
+            purchase_units: [{
+              custom_id: "comtus:sprint",
+              amount: { value: "8.33", currency_code: "USD" },
+              payments: { captures: [{ status: "COMPLETED", amount: { value: "8.33", currency_code: "USD" }, create_time: "2026-10-20T10:00:00Z" }] },
+            }],
+          });
+        }
+        return Response.json({ result: null });
+      }),
+    );
+    const res = await call(paypalReq("recover", { orderId: "ORDER123" }));
+    expect(res.status).toBe(200);
+    expect(res.json()).toMatchObject({ budgetNano: 2_500_000_000 });
   });
 });
 

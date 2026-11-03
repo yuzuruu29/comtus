@@ -111,7 +111,7 @@ export default function FreeLimitWarningModal({
               </span>
             </div>
             <p className="mt-1 text-small text-muted leading-relaxed">
-              Instant access to Claude Opus 5.5 & Sonnet 5.5 with no daily free-tier queues. First-purchase passes start at <strong>$5</strong> for eligible PayPal buyers.
+              Instant access to Claude Opus 5.5 & Sonnet 5.5 with no daily free-tier queues. Passes start at <strong>$5</strong> for your first top-up (50% off).
             </p>
           </div>
           <button

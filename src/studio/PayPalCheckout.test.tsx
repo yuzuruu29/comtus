@@ -26,9 +26,12 @@ it("requires review of the final amount before capturing payment", async () => {
   vi.stubGlobal("fetch", fetchMock);
   const onSuccess = vi.fn();
   render(<PayPalCheckout plan={STUDY_PLANS[0]} onSuccess={onSuccess} />);
+  expect(screen.getByText(/PayPal may show \$10\.00 first/)).toBeInTheDocument();
   await waitFor(() => expect(approve).toBeDefined());
   await act(async () => { await approve!({ orderID: "ORDER123" }); });
   expect(screen.getByText(/final price:/)).toHaveTextContent("Sprint Pass final price: $5.00 USD");
+  expect(screen.getByText(/50% first top-up discount applied/)).toBeInTheDocument();
+  expect(screen.queryByText(/PayPal may show/)).toBeNull();
   expect(screen.getByText(/ORDER123/)).toBeInTheDocument();
   expect(fetchMock).toHaveBeenCalledTimes(1);
   cleanup();
@@ -37,6 +40,17 @@ it("requires review of the final amount before capturing payment", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Confirm payment" }));
   await waitFor(() => expect(onSuccess).toHaveBeenCalledWith("pass", "ORDER123"));
   expect(fetchMock).toHaveBeenCalledTimes(2);
+});
+
+it("says when the regular price applies because the discount was used", async () => {
+  let approve: ((data: { orderID: string }) => Promise<void>) | undefined;
+  window.paypal = { Buttons: (config) => { approve = config.onApprove; return { render: async () => {} }; } };
+  vi.stubGlobal("fetch", vi.fn(async () => Response.json({ price: "10.00", discounted: false, reviewToken: "review-token" })));
+  render(<PayPalCheckout plan={STUDY_PLANS[0]} onSuccess={vi.fn()} />);
+  await waitFor(() => expect(approve).toBeDefined());
+  await act(async () => { await approve!({ orderID: "ORDER456" }); });
+  expect(screen.getByText(/final price:/)).toHaveTextContent("Sprint Pass final price: $10.00 USD");
+  expect(screen.getByText(/already used its first top-up discount/)).toBeInTheDocument();
 });
 
 it("keeps the order reference and permits a retry after an interrupted capture", async () => {

@@ -523,7 +523,7 @@ async function handleAnthropicProxy(req: Request, origin: string | null): Promis
         return json(
           402,
           {
-            error: "This pass does not have enough hosted usage left for this reply.",
+            error: "This pass doesn't have enough Claude use left for this reply. Try a shorter request, or top up to continue.",
             remaining: Math.max(0, (pass.c ?? 0) - (used - reserved)),
           },
           origin,

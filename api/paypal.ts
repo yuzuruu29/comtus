@@ -154,23 +154,28 @@ interface ServerPlan {
   name: string;
   price: string;
   currency: "USD";
-  /** Included Anthropic usage in nano-USD (sticker price / 2). */
+  /** Included Anthropic usage in nano-USD (first top-up price / 2), the same at either price. */
   budgetNano: number;
   days: number | null;
   promo?: boolean;
 }
 
 const SERVER_PLANS: Record<string, ServerPlan> = {
-  sprint: { id: "sprint", name: "Sprint Pass", price: "8.33", currency: "USD", budgetNano: 2_500_000_000, days: null },
-  scholar: { id: "scholar", name: "Scholar Pass", price: "33.33", currency: "USD", budgetNano: 10_000_000_000, days: null },
-  mastery: { id: "mastery", name: "Mastery Pass", price: "100.00", currency: "USD", budgetNano: 30_000_000_000, days: null },
+  sprint: { id: "sprint", name: "Sprint Pass", price: "10.00", currency: "USD", budgetNano: 2_500_000_000, days: null },
+  scholar: { id: "scholar", name: "Scholar Pass", price: "40.00", currency: "USD", budgetNano: 10_000_000_000, days: null },
+  mastery: { id: "mastery", name: "Mastery Pass", price: "120.00", currency: "USD", budgetNano: 30_000_000_000, days: null },
 };
 
+// The first top-up per PayPal payer is half the regular price.
 const PROMO_PRICES: Record<string, string> = { sprint: "5.00", scholar: "20.00", mastery: "60.00" };
 const PROMO_PLANS = Object.values(SERVER_PLANS).map((plan) => ({ ...plan, price: PROMO_PRICES[plan.id], promo: true }));
 
 // Existing orders retain the price, budget and validity they were sold with.
 const LEGACY_PLANS: ServerPlan[] = [
+  // Regular prices while the first top-up was 40% off (13 Oct to 3 Nov 2026).
+  { id: "sprint", name: "Sprint Pass", price: "8.33", currency: "USD", budgetNano: 2_500_000_000, days: null },
+  { id: "scholar", name: "Scholar Pass", price: "33.33", currency: "USD", budgetNano: 10_000_000_000, days: null },
+  { id: "mastery", name: "Mastery Pass", price: "100.00", currency: "USD", budgetNano: 30_000_000_000, days: null },
   { id: "sprint", name: "Sprint Pass", price: "2.99", currency: "USD", budgetNano: 1_495_000_000, days: 60 },
   { id: "scholar", name: "Scholar Pass", price: "6.99", currency: "USD", budgetNano: 3_495_000_000, days: 120 },
   { id: "mastery", name: "Mastery Pass", price: "14.99", currency: "USD", budgetNano: 7_495_000_000, days: 180 },
@@ -427,7 +432,7 @@ async function handlePrepareOrder(req: IncomingMessage, res: ServerResponse, ori
       if (owner === orderId) selected = promo;
       else {
         const ttl = await redisCommand(["TTL", key]);
-        if (ttl !== -1) return sendJson(res, 409, { error: "Another first-purchase checkout is in progress. Complete it or try again after the reservation expires." }, origin);
+        if (ttl !== -1) return sendJson(res, 409, { error: "Your discounted first top-up is already in progress in another checkout. Finish it, or try again in a few hours." }, origin);
       }
     }
     if (orderMatchesPlan(order, promo) && selected !== promo) return sendJson(res, 409, { error: "Promotion reservation could not be verified." }, origin);
@@ -534,7 +539,7 @@ async function handleCaptureOrder(req: IncomingMessage, res: ServerResponse, ori
         const key = await promoClaimKey(order.payer?.payer_id);
         if (key) {
           const held = await redisCommand(["EVAL", "if not redis.call('GET', KEYS[1]) then redis.call('SET', KEYS[1], ARGV[1]); return 1 elseif redis.call('TTL', KEYS[1]) == -1 then return 1 else return 0 end", 1, key, orderId]);
-          if (held !== 1) return sendJson(res, 409, { error: "Another first-purchase checkout is in progress. Complete it before making another purchase." }, origin);
+          if (held !== 1) return sendJson(res, 409, { error: "Your discounted first top-up is still in progress in another checkout. Finish it before buying another pass." }, origin);
         }
       }
     }

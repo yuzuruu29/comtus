@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
 import { PAYPAL_CLIENT_ID, type StudyPlan } from "../lib/paypal";
-import { formatUsdFromNano } from "../lib/credits";
 import { isTauri } from "../lib/desktop";
 import ExternalLink from "./ExternalLink";
 import { CheckCircle, CircleNotch, WarningCircle } from "@phosphor-icons/react";
@@ -258,12 +257,17 @@ export default function PayPalCheckout({
       {approved && (
         <div className="rounded-[var(--radius-field)] border border-brass/30 p-3 text-body text-ink">
           <p>PayPal order ID: {approved.orderId}. Keep this ID to restore your pass if payment is interrupted.</p>
-          {review && <p>{review.planName} final price: <strong>${review.price} USD</strong>{review.discounted ? "; first-purchase offer applied" : "; regular price"}.</p>}
-          {review && <p>{formatUsdFromNano(review.budgetNano)} hosted usage included. Usage does not expire.</p>}
+          {review && <p>{review.planName} final price: <strong>${review.price} USD</strong>.</p>}
+          {review && <p>{review.discounted ? "50% first top-up discount applied." : "Regular price. This PayPal account has already used its first top-up discount."} The pass never expires.</p>}
           <button type="button" disabled={loading} onClick={() => void (review ? confirmPayment() : prepareOrder(approved))} className="mt-2 rounded-[var(--radius-control)] border border-brass/40 px-3 py-2 text-brass disabled:opacity-50">
             {review ? "Confirm payment" : "Retry price review"}
           </button>
         </div>
+      )}
+      {!approved && (
+        <p className="text-small leading-relaxed text-muted">
+          PayPal may show ${plan.regularPrice} first. If this is your first top-up, the 50% discount is applied on the next step, before you confirm payment.
+        </p>
       )}
       <div ref={containerRef} className={`min-h-[38px] w-full ${approved ? "hidden" : ""}`} />
     </div>

@@ -31,7 +31,7 @@ describe.skipIf(process.env.COMTUS_SANDBOX_CHECK !== "1")("PayPal sandbox checko
     expect(response.ok).toBe(true);
     const order = await response.json() as { status: string; purchase_units: Array<{ custom_id: string; amount: { value: string; currency_code: string } }> };
     expect(order.status).toBe("CREATED");
-    expect(order.purchase_units).toMatchObject([{ custom_id: "comtus:sprint", amount: { value: "8.33", currency_code: "USD" } }]);
+    expect(order.purchase_units).toMatchObject([{ custom_id: "comtus:sprint", amount: { value: "10.00", currency_code: "USD" } }]);
   }, 30_000);
 
   it.skipIf(!process.env.COMTUS_SANDBOX_APPROVED_ORDER)("applies the first-purchase offer, captures, and restores an approved sandbox order", async () => {

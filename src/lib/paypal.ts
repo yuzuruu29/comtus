@@ -3,14 +3,16 @@
  * New passes carry an included usage budget. Passes already sold carry
  * a request count. The proxy is the source of truth either way.
  */
-import { budgetNanoForPrice, formatUsdFromNano } from "./credits";
+import { budgetNanoForPrice } from "./credits";
 
 export const PAYPAL_CLIENT_ID = (import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined)?.trim() || "";
 
 export interface StudyPlan {
   id: "sprint" | "scholar" | "mastery";
   name: string;
+  /** First top-up: half of regularPrice. api/paypal.ts owns the real amounts. */
   price: string;
+  /** Every later top-up. */
   regularPrice: string;
   amount: number;
   budgetNano: number;
@@ -24,7 +26,7 @@ export const STUDY_PLANS: StudyPlan[] = [
     id: "sprint",
     name: "Sprint Pass",
     price: "5.00",
-    regularPrice: "8.33",
+    regularPrice: "10.00",
     amount: 5,
     budgetNano: budgetNanoForPrice("5.00"),
     desc: "Focused exam prep and chapter review.",
@@ -33,7 +35,7 @@ export const STUDY_PLANS: StudyPlan[] = [
     id: "scholar",
     name: "Scholar Pass",
     price: "20.00",
-    regularPrice: "33.33",
+    regularPrice: "40.00",
     amount: 20,
     budgetNano: budgetNanoForPrice("20.00"),
     badge: "Popular",
@@ -44,12 +46,14 @@ export const STUDY_PLANS: StudyPlan[] = [
     id: "mastery",
     name: "Mastery Pass",
     price: "60.00",
-    regularPrice: "100.00",
+    regularPrice: "120.00",
     amount: 60,
     budgetNano: budgetNanoForPrice("60.00"),
     desc: "Deep research, thesis work, and intensive board review.",
   },
 ];
+
+export const FIRST_TOPUP_OFFER = "Your first top-up is 50% off. Every top-up after that is the regular price.";
 
 export type DecodedPass =
   | { kind: "requests"; requests: number; expiresAtMs: number }
@@ -78,9 +82,9 @@ export function decodePassInfo(token: string): DecodedPass | null {
 
 export function passSummary(info: DecodedPass): string {
   if (info.kind === "credits") {
-    if (info.expiresAtMs === null) return `Active pass · ${formatUsdFromNano(info.budgetNano)} hosted usage · no expiry`;
+    if (info.expiresAtMs === null) return "Active pass · no expiry";
     const days = Math.max(1, Math.ceil((info.expiresAtMs - Date.now()) / 86_400_000));
-    return `Active pass · ${formatUsdFromNano(info.budgetNano)} hosted usage · ${days}d remaining`;
+    return `Active pass · ${days}d remaining`;
   }
   return `${info.requests} hosted requests`;
 }
