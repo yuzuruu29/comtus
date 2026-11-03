@@ -151,13 +151,15 @@
     transparent 100%
   );
 }
+/* The note names its author for screen readers; on the page the brass rule
+   and the hand-set question already say who wrote it. */
 .user-margin-kicker {
-  display: block;
-  margin-bottom: 0.25rem;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.04em;
-  color: var(--brass);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .user-margin-text {
   margin: 0;
@@ -304,27 +306,39 @@
 }
 .md .katex-display > .katex { white-space: normal; }
 .md .katex-error { color: var(--rust); font-family: var(--font-mono); font-size: 0.85em; }
+/* Tables are ruled like a book's: a firm rule above and below, a light one
+   under the head, no cage of vertical lines. The head is set in the
+   interface face at a small size, sentence case as the model wrote it. */
 .md table {
   display: block;
-  width: 100%;
+  /* Fit the rules to the columns: a block table stretched to the measure
+     ran its top and bottom rules past the last column. */
+  width: fit-content;
   max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   border-collapse: collapse;
-  font-size: 13px;
+  border-block: 1.5px solid color-mix(in srgb, var(--ink) 55%, transparent);
+  font-size: 0.9em;
+  line-height: 1.55;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 .md th, .md td {
-  border: 1px solid var(--hairline-strong);
-  padding: 0.5em 0.75em;
+  padding: 0.6em 1.25em 0.6em 0;
+  border-bottom: 1px solid var(--hairline);
   text-align: left;
+  vertical-align: top;
 }
+.md tr > :last-child { padding-right: 0; }
+.md tbody tr:last-child > td { border-bottom: 0; }
 .md th {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--muted);
-  background: rgba(255, 255, 255, 0.03);
+  padding-block: 0.7em 0.55em;
+  border-bottom-color: var(--hairline-strong);
+  font-family: var(--font-ui);
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
 }
 .md hr { border-color: var(--hairline-strong); }
 
@@ -401,16 +415,33 @@
   transition-duration: var(--dur-slow);
 }
 
+/* A footnote mark, set the way a book sets one: a small brass figure lifted
+   off the word it cites. It rides on relative offset with no line box of its
+   own, so a cited line keeps the same leading as every other line (the old
+   vertical-align: super pushed each cited line apart and left the full stop
+   adrift). The interface face's figures, not mono: in running prose a mono
+   numeral reads as code. */
 .cite-mark {
-  font-variant-numeric: tabular-nums;
-  font-family: var(--font-mono);
-  font-size: 0.72em;
-  line-height: 1;
+  position: relative;
+  top: -0.48em;
+  margin-left: 0.08em;
+  font-family: var(--font-ui);
+  font-size: 0.64em;
+  font-weight: 600;
+  font-variant-numeric: lining-nums tabular-nums;
+  line-height: 0;
+  vertical-align: baseline;
   color: var(--brass);
-  vertical-align: super;
-  margin-left: 0.06em;
-  margin-right: 0;
   letter-spacing: 0.02em;
+}
+/* The brackets stay in the text for copying and screen readers. */
+.cite-bracket {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .desk-split {
@@ -479,10 +510,16 @@
   from { opacity: 0; transform: translateX(18px); }
   to { opacity: 1; transform: translateX(0); }
 }
+/* No overshoot: BRAND.md 5 refuses bounce, in keyframes as in springs. */
 @keyframes chip-pop {
-  0% { opacity: 0; transform: scale(0.7); }
-  70% { transform: scale(1.06); }
-  100% { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+/* A block the model has just started writing: a short fade and a 4px
+   settle, so new paragraphs arrive instead of popping in. */
+@keyframes ink-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
 }
 @keyframes shake-x {
   0%, 100% { transform: translateX(0); }
@@ -525,6 +562,13 @@
 
 .anim-shake { animation: shake-x var(--dur-glow) var(--ease-house) both; }
 
+/* Only the live streaming slot carries .md-live; the committed twin that
+   replaces it mounts still, so a finished answer never replays. The caret
+   keeps its own blink. */
+.md-live > :not(.stream-typing-beacon) {
+  animation: ink-in var(--dur-slow) var(--ease-out) both;
+}
+
 /* Shorter beat for stage/content swaps where the 450ms default drags —
    pair it with .anim-fade (this modifier wins on source order). */
 .anim-fade--fast { animation-duration: var(--dur-med); }
@@ -545,9 +589,30 @@
 .cite-footnote {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.35em;
+  gap: 0.45em;
   max-width: min(22rem, 100%);
-  animation: chip-pop var(--dur-slow) var(--ease-house) both;
+  min-height: 1.75rem;
+  color: color-mix(in srgb, var(--ink) 78%, var(--muted));
+  font-size: var(--text-small);
+  line-height: 1.45;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.3em;
+  transition: color var(--dur-fast) var(--ease-house), text-decoration-color var(--dur-fast) var(--ease-house);
+  animation: rise-in var(--dur-slow) var(--ease-house) both;
+}
+.cite-footnote:is(a, button):hover,
+.cite-footnote:is(a, button):focus-visible {
+  color: var(--ink);
+  text-decoration-color: color-mix(in srgb, var(--brass) 55%, transparent);
+}
+.cite-footnote[data-inert] { color: var(--muted); }
+.cite-footnote-index {
+  flex-shrink: 0;
+  min-width: 1ch;
+  color: var(--brass);
+  font-weight: 600;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 /* Truncation belongs to the layout, not to a magic character count. A hard
@@ -1148,72 +1213,10 @@
   font-weight: 600;
 }
 
-/* Sources-pane usage limits (5-hour + weekly). */
-.usage-limits-panel {
-  padding: 10px 14px 12px;
-  border-top: 1px solid var(--hairline);
-  background: color-mix(in srgb, var(--ground) 55%, transparent);
-}
-.usage-limits-kicker {
-  margin-bottom: 8px;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.usage-limit-row + .usage-limit-row {
-  margin-top: 10px;
-}
-.usage-limit-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--ink);
-}
-.usage-limit-track {
-  position: relative;
-  height: 6px;
-  margin-top: 5px;
-  overflow: hidden;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--ink) 10%, transparent);
-}
-/* Same reason as .effort-fill: clip-path, not width. --fill is 0..1. */
-.usage-limit-track .usage-fill {
-  display: block;
-  width: 100%;
-  height: 100%;
-  clip-path: inset(0 calc((1 - var(--fill, 0)) * 100%) 0 0);
-  border-radius: inherit;
-  background: var(--sage);
-  transition: clip-path var(--dur-med) var(--ease-out);
-}
-.usage-limit-row[data-tone="warn"] .usage-fill {
-  background: var(--brass);
-}
-.usage-limit-row[data-tone="limit"] .usage-fill {
-  background: var(--rust);
-}
-.usage-pct {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 11px;
-  color: var(--ink);
-}
-.usage-caption {
-  margin-top: 4px;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--muted);
-}
 @media (prefers-reduced-motion: reduce) {
   .effort-fill,
   .effort-thumb,
-  .effort-dot,
-  .usage-fill {
+  .effort-dot {
     transition: none;
   }
 }

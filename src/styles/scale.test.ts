@@ -3,10 +3,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /** Arbitrary pixel type sizes bypass the ladder in spec 5.2, and are how the
- *  studio ended up with dozens of near-identical sizes. This is a ratchet: it
- *  is green at today's count and may only ever go down. Target is 0 outside
- *  src/landing; each time you remove one, lower CEILING to match. */
-const CEILING = 329;
+ *  studio ended up with 21 near-identical sizes. They are all gone outside
+ *  src/landing: use text-label, -small, -body, -lead, -heading or -title. */
+const CEILING = 0;
 
 const ARBITRARY = /text-\[[0-9.]+px\]/g;
 

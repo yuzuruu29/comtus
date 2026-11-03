@@ -103,15 +103,15 @@ describe("tell: retired hype vocabulary", () => {
 
 /* ── Ratchets: real debt, a ceiling that only goes down ────────────────── */
 
-/** 35 uses of `uppercase`, nearly all a 9-11px mono badge or a section index.
- *  A micro-badge set in caps is legitimate; the eyebrow label is not, and rule
- *  1 above now owns that. Target 0. Lower this whenever you remove one. */
-const UPPERCASE_CEILING = 35;
+/** Every uppercase mono badge and kicker is now a sentence-case label in the
+ *  UI face. The one remaining match is a comment in Composer.tsx explaining
+ *  why that line is prose. Do not add another. */
+const UPPERCASE_CEILING = 1;
 
-/** 47 uses of the middle-dot joiner. Most are a genuine third fact in a list
- *  where a second line or a pill would read better. Target 0. The desk header's
- *  model button became the shared model picker, which removed one. */
-const MIDDOT_CEILING = 47;
+/** 39 uses of the middle-dot joiner. Most are a genuine third fact in a list
+ *  where a second line or a pill would read better. Target 0. The quiz and
+ *  exam item headers now set item, topic and kind as separate spans. */
+const MIDDOT_CEILING = 39;
 
 function count(rel: string, needle: string): number {
   return read(rel).split(needle).length - 1;

@@ -62,41 +62,41 @@ export const CURATED_FREE_MODELS: CuratedFreeModel[] = [
   {
     id: "dots-studio/dots-3-note-preview:free",
     name: "Dots3-Note Synthesizer",
-    badge: "Top Pick for Notes",
+    badge: "Top pick for notes",
     badgeType: "popular",
     desc: "Best for reading uploaded PDFs, synthesizing multi-chapter notes, and creating study outlines.",
-    bestFor: "Lecture Notes & Reading",
-    context: "512k Context",
+    bestFor: "Lecture notes and reading",
+    context: "512k context",
     icon: Sparkle,
   },
   {
     id: "nvidia/nemotron-3.5-lightning:free",
     name: "Nemotron 3.5 Lightning",
-    badge: "500+ tok/s · 1M Ctx",
+    badge: "500+ tok/s, 1M context",
     badgeType: "speed",
     desc: "Fastest engine. Best for instant flashcard drills, rapid Q&A, and indexing entire syllabi.",
-    bestFor: "Flashcards & Speed Drills",
-    context: "1M Context",
+    bestFor: "Flashcards and speed drills",
+    context: "1M context",
     icon: Lightning,
   },
   {
     id: "poolside/laguna-s-2.1:free",
     name: "Poolside Laguna STEM",
-    badge: "Math & Code Drills",
+    badge: "Math and code drills",
     badgeType: "math",
     desc: "Formulates step-by-step mathematical proofs, LaTeX equations, and programming logic.",
-    bestFor: "Math & Code Solutions",
-    context: "262k Context",
+    bestFor: "Math and code solutions",
+    context: "262k context",
     icon: Cpu,
   },
   {
     id: "openrouter/free",
     name: "Auto Free Router",
-    badge: "Auto-Fallback",
+    badge: "Auto fallback",
     badgeType: "auto",
     desc: "Automatically routes your prompts to the healthiest, lowest-latency free model available.",
-    bestFor: "Always-Available Study",
-    context: "Dynamic Failover",
+    bestFor: "Always available",
+    context: "Dynamic failover",
     icon: ArrowClockwise,
   },
 ];
@@ -387,11 +387,11 @@ export default function SettingsModal({
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="field-label">How Comtus reaches a model</div>
-              <span className="font-mono text-[10px] text-muted">
+              <span className="text-label text-muted">
                 {settingsMode === "starter"
                   ? "Zero technical setup"
                   : settingsMode === "advanced"
-                    ? "Developer / BYOK vault"
+                    ? "Saved keys and endpoints"
                     : "Managed Claude passes"}
               </span>
             </div>
@@ -407,15 +407,15 @@ export default function SettingsModal({
                     compatBaseUrl: draft.compatBaseUrl || "https://openrouter.ai/api/v1",
                   });
                 }}
-                className={`flex items-center justify-center gap-2 rounded-[var(--radius-dialog)] py-2.5 px-3 text-[13px] font-medium transition-all active:scale-[0.98] ${
+                className={`flex items-center justify-center gap-2 rounded-[var(--radius-dialog)] py-2.5 px-3 text-small font-medium transition-all active:scale-[0.98] ${
                   settingsMode === "starter"
                     ? "border border-brass/50 bg-brass/20 text-brass font-semibold shadow-[0_2px_12px_rgba(227,176,75,0.15)]"
                     : "text-muted hover:text-ink hover:bg-ink/[0.03]"
                 }`}
               >
                 <Sparkle size={ICON.md} weight={settingsMode === "starter" ? "fill" : "regular"} className="text-brass" />
-                <span>Basic (Free Models)</span>
-                <span className="rounded-[var(--radius-pill)] bg-sage/20 border border-sage/30 px-1.5 py-0.2 font-mono text-[8.5px] uppercase tracking-wider text-sage font-bold">
+                <span>Free models</span>
+                <span className="rounded-[var(--radius-pill)] bg-sage/20 border border-sage/30 px-1.5 py-0.2 text-label text-sage font-semibold">
                   Starter
                 </span>
               </button>
@@ -427,15 +427,15 @@ export default function SettingsModal({
                   setSettingsMode("advanced");
                   set({ provider: "openai-compatible" });
                 }}
-                className={`flex items-center justify-center gap-2 rounded-[var(--radius-dialog)] py-2.5 px-3 text-[13px] font-medium transition-all active:scale-[0.98] ${
+                className={`flex items-center justify-center gap-2 rounded-[var(--radius-dialog)] py-2.5 px-3 text-small font-medium transition-all active:scale-[0.98] ${
                   settingsMode === "advanced"
                     ? "border border-brass/50 bg-brass/20 text-brass font-semibold shadow-[0_2px_12px_rgba(227,176,75,0.15)]"
                     : "text-muted hover:text-ink hover:bg-ink/[0.03]"
                 }`}
               >
                 <Sliders size={ICON.md} weight={settingsMode === "advanced" ? "fill" : "regular"} className="text-brass" />
-                <span>Advanced BYOK</span>
-                <span className="rounded-[var(--radius-pill)] bg-ink/10 border border-hairline px-1.5 py-0.2 font-mono text-[8.5px] uppercase tracking-wider text-muted font-bold">
+                <span>Your own key</span>
+                <span className="rounded-[var(--radius-pill)] bg-ink/10 border border-hairline px-1.5 py-0.2 text-label text-muted font-semibold">
                   Technical
                 </span>
               </button>
@@ -447,15 +447,15 @@ export default function SettingsModal({
                   setSettingsMode("smarter");
                   set({ provider: "anthropic" });
                 }}
-                className={`flex items-center justify-center gap-2 rounded-[var(--radius-dialog)] py-2.5 px-3 text-[13px] font-medium transition-all active:scale-[0.98] ${
+                className={`flex items-center justify-center gap-2 rounded-[var(--radius-dialog)] py-2.5 px-3 text-small font-medium transition-all active:scale-[0.98] ${
                   settingsMode === "smarter"
                     ? "border border-brass/50 bg-brass/20 text-brass font-semibold shadow-[0_2px_12px_rgba(227,176,75,0.15)]"
                     : "text-muted hover:text-ink hover:bg-ink/[0.03]"
                 }`}
               >
                 <Crown size={ICON.md} weight={settingsMode === "smarter" ? "fill" : "regular"} className="text-brass" />
-                <span>Smarter Models</span>
-                <span className="rounded-[var(--radius-pill)] bg-brass/20 border border-brass/35 px-1.5 py-0.2 font-mono text-[8.5px] uppercase tracking-wider text-brass font-bold">
+                <span>Smarter models</span>
+                <span className="rounded-[var(--radius-pill)] bg-brass/20 border border-brass/35 px-1.5 py-0.2 text-label text-brass font-semibold">
                   Opus 5.5
                 </span>
               </button>
@@ -475,20 +475,20 @@ export default function SettingsModal({
                       <span className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-dialog)] bg-brass/25 text-brass">
                         <Sparkle size={ICON.md} weight="fill" />
                       </span>
-                      <span className="font-display text-[15px] font-[480] text-ink">
-                        Connect Free AI Models (OpenRouter)
+                      <span className="font-display text-lead font-[480] text-ink">
+                        Connect free models through OpenRouter
                       </span>
                       {isOpenRouterConnected ? (
-                        <span className="flex items-center gap-1 rounded-[var(--radius-pill)] bg-sage/20 border border-sage/35 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-sage font-semibold">
-                          <Check size={ICON.xs} /> Key Active
+                        <span className="flex items-center gap-1 rounded-[var(--radius-pill)] bg-sage/20 border border-sage/35 px-2 py-0.5 text-label text-sage font-semibold">
+                          <Check size={ICON.xs} /> Key active
                         </span>
                       ) : (
-                        <span className="rounded-[var(--radius-pill)] bg-sage/15 border border-sage/30 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-sage font-semibold">
-                          100% Free
+                        <span className="rounded-[var(--radius-pill)] bg-sage/15 border border-sage/30 px-2 py-0.5 text-label text-sage font-semibold">
+                          Free
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 text-[12px] text-muted leading-relaxed">
+                    <p className="mt-1 text-small text-muted leading-relaxed">
                       {isOpenRouterConnected
                         ? "Your OpenRouter connection is active and ready. Click below if you ever want to re-authorize or refresh keys."
                         : "Authorize in 1 click using Google or GitHub. Comtus generates and configures your key in the background with zero copy-pasting."}
@@ -498,7 +498,7 @@ export default function SettingsModal({
                   <button
                     type="button"
                     onClick={() => void startOpenRouterOAuth()}
-                    className="shrink-0 inline-flex items-center justify-center gap-2 rounded-[var(--radius-dialog)] bg-brass px-4.5 py-2.5 font-mono text-[12px] font-semibold text-ground shadow-[0_2px_14px_rgba(227,176,75,0.25)] hover:bg-brass-deep hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    className="shrink-0 inline-flex items-center justify-center gap-2 rounded-[var(--radius-dialog)] bg-brass px-4.5 py-2.5 text-small font-semibold text-ground shadow-[0_2px_14px_rgba(227,176,75,0.25)] hover:bg-brass-deep hover:scale-[1.02] active:scale-[0.98] transition-all"
                   >
                     <Sparkle size={ICON.sm} weight="fill" />
                     <span>{isOpenRouterConnected ? "Re-authorize (1-Click)" : "Connect with Google or GitHub"}</span>
@@ -506,12 +506,12 @@ export default function SettingsModal({
                 </div>
 
                 {/* Optional Manual Key input for users who have a key */}
-                <div className="pt-2 border-t border-brass/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11.5px] text-muted">
+                <div className="pt-2 border-t border-brass/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-label text-muted">
                   <span>Already have an OpenRouter key from another app?</span>
                   <button
                     type="button"
                     onClick={() => setManualKeyOpen((v) => !v)}
-                    className="font-mono text-brass hover:underline flex items-center gap-1"
+                    className="text-brass hover:underline flex items-center gap-1"
                   >
                     <span>{manualKeyOpen ? "Hide manual key field" : "Paste key manually"}</span>
                     {manualKeyOpen ? <CaretUp size={ICON.xs} /> : <CaretDown size={ICON.xs} />}
@@ -530,7 +530,7 @@ export default function SettingsModal({
                         })
                       }
                       placeholder="sk-or-v1-..."
-                      className={inputCls + " font-mono text-[12.5px]"}
+                      className={inputCls + " font-mono text-small"}
                       spellCheck={false}
                     />
                   </div>
@@ -541,14 +541,14 @@ export default function SettingsModal({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-display text-[15px] font-[450] text-ink">
-                      Choose Your Free Study Engine:
+                    <span className="font-display text-lead font-[450] text-ink">
+                      Choose a free model
                     </span>
-                    <span className="font-mono text-[10px] text-sage bg-sage/10 border border-sage/25 px-2 py-0.5 rounded-[var(--radius-pill)]">
-                      All 100% Free
+                    <span className="text-label text-sage bg-sage/10 border border-sage/25 px-2 py-0.5 rounded-[var(--radius-pill)]">
+                      All free
                     </span>
                   </div>
-                  <span className="font-mono text-[10.5px] text-muted">
+                  <span className="text-label text-muted">
                     Click to select
                   </span>
                 </div>
@@ -598,17 +598,17 @@ export default function SettingsModal({
                               <Icon size={ICON.md} weight={isSelected ? "fill" : "regular"} />
                             </span>
                             <div>
-                              <div className="font-display text-[14px] font-[500] text-ink leading-tight">
+                              <div className="font-display text-body font-[500] text-ink leading-tight">
                                 {model.name}
                               </div>
-                              <div className="font-mono text-[10px] text-muted mt-0.5">
+                              <div className="text-label text-muted mt-0.5">
                                 {model.bestFor}
                               </div>
                             </div>
                           </div>
 
                           <span
-                            className={`rounded-[var(--radius-pill)] px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider font-semibold shrink-0 ${
+                            className={`rounded-[var(--radius-pill)] px-2 py-0.5 text-label font-semibold shrink-0 ${
                               isSelected
                                 ? "bg-brass/25 border border-brass/40 text-brass"
                                 : "bg-ink/[0.04] border border-hairline text-muted"
@@ -618,15 +618,15 @@ export default function SettingsModal({
                           </span>
                         </div>
 
-                        <p className="mt-2.5 text-[11.5px] leading-snug text-muted">
+                        <p className="mt-2.5 text-label leading-snug text-muted">
                           {model.desc}
                         </p>
 
-                        <div className="mt-3 pt-2.5 border-t border-hairline/60 flex items-center justify-between font-mono text-[10.5px]">
+                        <div className="mt-3 pt-2.5 border-t border-hairline/60 flex items-center justify-between text-label">
                           <span className="text-muted">{model.context}</span>
                           {isSelected ? (
                             <span className="flex items-center gap-1 font-semibold text-brass">
-                              <Check size={ICON.xs} weight="bold" /> Active Model
+                              <Check size={ICON.xs} weight="bold" /> Active model
                             </span>
                           ) : (
                             <span className="text-muted group-hover:text-ink transition-colors">
@@ -641,14 +641,14 @@ export default function SettingsModal({
               </div>
 
               {/* Fair-use Notice & Advanced Link */}
-              <div className="rounded-[var(--radius-dialog)] border border-hairline bg-surface/40 p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-[11.5px] text-muted">
+              <div className="rounded-[var(--radius-dialog)] border border-hairline bg-surface/40 p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-label text-muted">
                 <span>
                   Free models share OpenRouter's public compute pools (resets 00:00 UTC).
                 </span>
                 <button
                   type="button"
                   onClick={() => setSettingsMode("advanced")}
-                  className="font-mono text-brass hover:underline flex items-center gap-1 shrink-0"
+                  className="text-brass hover:underline flex items-center gap-1 shrink-0"
                 >
                   <Sliders size={ICON.sm} />
                   <span>Switch to advanced keys and vault</span>
@@ -663,14 +663,14 @@ export default function SettingsModal({
           {settingsMode === "advanced" && (
             <div key={settingsMode} className="space-y-6 anim-fade anim-fade--fast">
               {/* Back to Starter mode banner */}
-              <div className="flex items-center justify-between gap-3 text-[12.5px]">
+              <div className="flex items-center justify-between gap-3 text-small">
                 <p className="text-muted">
                   Your key stays on this device. Save & test before it is used for study.
                 </p>
                 <button
                   type="button"
                   onClick={() => setSettingsMode("starter")}
-                  className="shrink-0 font-mono text-[11px] text-brass hover:underline"
+                  className="shrink-0 text-label text-brass hover:underline"
                 >
                   Simple models
                 </button>
@@ -681,21 +681,21 @@ export default function SettingsModal({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Key size={ICON.md} className="text-brass shrink-0" />
-                    <span className="text-[13px] font-medium text-ink">
+                    <span className="text-small font-medium text-ink">
                       Saved keys ({storedKeys.length})
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowAddKeyModal(true)}
-                    className="flex items-center gap-1 rounded-[var(--radius-field)] border border-brass/30 bg-brass/10 px-2.5 py-1 font-mono text-[11px] text-brass hover:bg-brass/20 transition-colors"
+                    className="flex items-center gap-1 rounded-[var(--radius-field)] border border-brass/30 bg-brass/10 px-2.5 py-1 text-label text-brass hover:bg-brass/20 transition-colors"
                   >
                     <Plus size={ICON.xs} /> Add a key
                   </button>
                 </div>
 
                 {storedKeys.length === 0 ? (
-                  <p className="text-[11.5px] leading-relaxed text-muted">
+                  <p className="text-label leading-relaxed text-muted">
                     No saved keys yet. Save an OpenRouter, Groq, or local key, then switch without pasting again.
                   </p>
                 ) : (
@@ -715,18 +715,18 @@ export default function SettingsModal({
                         >
                           <div>
                             <div className="flex items-center justify-between gap-1.5">
-                              <span className="font-medium text-[12.5px] text-ink truncate">
+                              <span className="font-medium text-small text-ink truncate">
                                 {k.name}
                               </span>
-                              <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 rounded bg-ink/5 text-muted border border-hairline shrink-0">
-                                {k.provider}
+                              <span className="text-label font-medium px-1.5 py-0.2 rounded bg-ink/5 text-muted border border-hairline shrink-0">
+                                {COMPAT_PRESETS.find((p) => p.id === k.provider)?.label ?? "Custom"}
                               </span>
                             </div>
-                            <div className="mt-1 font-mono text-[11px] text-brass/90 truncate">
+                            <div className="mt-1 font-mono text-label text-brass/90 truncate">
                               {maskKey(k.apiKey)}
                             </div>
                             {k.defaultModel && (
-                              <div className="mt-0.5 font-mono text-[10px] text-muted truncate">
+                              <div className="mt-0.5 font-mono text-label text-muted truncate">
                                 {k.defaultModel}
                               </div>
                             )}
@@ -734,8 +734,8 @@ export default function SettingsModal({
 
                           <div className="mt-2.5 pt-2 border-t border-hairline flex items-center justify-between gap-2">
                             {isActive ? (
-                              <span className="flex items-center gap-1 font-mono text-[10px] text-sage font-medium">
-                                <Check size={ICON.xs} /> Active Key
+                              <span className="flex items-center gap-1 text-label text-sage font-medium">
+                                <Check size={ICON.xs} /> Active key
                               </span>
                             ) : (
                               <button
@@ -749,7 +749,7 @@ export default function SettingsModal({
                                   setModelIds([]);
                                   setModelsNote("");
                                 }}
-                                className="font-mono text-[10.5px] text-moon hover:underline"
+                                className="text-label text-moon hover:underline"
                               >
                                 Use this key
                               </button>
@@ -773,22 +773,22 @@ export default function SettingsModal({
                 {draft.compatKey.trim().length > 0 &&
                   !storedKeys.some((k) => k.apiKey.trim() === draft.compatKey.trim()) && (
                     <div className="mt-2 rounded-[var(--radius-field)] border border-brass/25 bg-brass/[0.05] p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 text-[12px] text-ink">
+                      <div className="flex items-center gap-1.5 text-small text-ink">
                         <Bookmark size={ICON.sm} className="text-brass shrink-0" />
                         <span>Save current key to vault?</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <input
                           type="text"
-                          placeholder="Key name (e.g. Work Key)"
+                          placeholder="Key name, e.g. Work"
                           value={quickSaveName}
                           onChange={(e) => setQuickSaveName(e.target.value)}
-                          className="rounded border border-hairline bg-surface px-2 py-0.5 text-[11px] font-mono text-ink placeholder:text-muted focus:border-brass/40"
+                          className="rounded border border-hairline bg-surface px-2 py-0.5 text-label font-mono text-ink placeholder:text-muted focus:border-brass/40"
                         />
                         <button
                           type="button"
                           onClick={handleSaveCurrentKey}
-                          className="rounded bg-brass/20 hover:bg-brass/30 px-2 py-0.5 font-mono text-[10.5px] text-brass font-medium transition-colors"
+                          className="rounded bg-brass/20 hover:bg-brass/30 px-2 py-0.5 text-label text-brass font-medium transition-colors"
                         >
                           Save
                         </button>
@@ -816,10 +816,10 @@ export default function SettingsModal({
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-[11px] font-medium text-brass">{p.label}</span>
+                        <span className="text-label font-medium text-brass">{p.label}</span>
                         {selected && <Check size={ICON.xs} className="text-brass" aria-hidden="true" />}
                       </div>
-                      <div className="mt-0.5 line-clamp-1 text-[10.5px] leading-snug text-muted">{p.note}</div>
+                      <div className="mt-0.5 line-clamp-1 text-label leading-snug text-muted">{p.note}</div>
                     </button>
                     );
                   })}
@@ -844,7 +844,7 @@ export default function SettingsModal({
                       value={draft.compatKey}
                       onChange={(e) => set({ compatKey: e.target.value })}
                       placeholder={selectedPreset?.keyHint && selectedPreset.keyHint !== "no key" ? selectedPreset.keyHint : "sk-or-v1-…"}
-                      className={inputCls + " pr-10 font-mono text-[13px]"}
+                      className={inputCls + " pr-10 font-mono text-small"}
                       spellCheck={false}
                       autoComplete="off"
                     />
@@ -858,7 +858,7 @@ export default function SettingsModal({
                     </button>
                   </div>
                   {keyWarning && (
-                    <p className="mt-1.5 text-[12px] leading-snug text-brass" role="status">
+                    <p className="mt-1.5 text-small leading-snug text-brass" role="status">
                       {keyWarning}
                     </p>
                   )}
@@ -869,7 +869,7 @@ export default function SettingsModal({
                     value={draft.compatBaseUrl}
                     onChange={(e) => set({ compatBaseUrl: e.target.value })}
                     placeholder="https://openrouter.ai/api/v1"
-                    className={inputCls + " font-mono text-[13px]"}
+                    className={inputCls + " font-mono text-small"}
                     spellCheck={false}
                   />
                 </Field>
@@ -883,7 +883,7 @@ export default function SettingsModal({
                     type="button"
                     onClick={fetchModels}
                     disabled={fetchingModels}
-                    className="flex items-center gap-1 font-mono text-[11px] text-brass hover:underline disabled:opacity-50"
+                    className="flex items-center gap-1 text-label text-brass hover:underline disabled:opacity-50"
                   >
                     <ArrowClockwise size={ICON.xs} className={fetchingModels ? "animate-spin" : ""} />
                     <span>{fetchingModels ? "Fetching…" : "Fetch list from endpoint"}</span>
@@ -894,12 +894,12 @@ export default function SettingsModal({
                   value={draft.compatModel}
                   onChange={(e) => set({ compatModel: e.target.value })}
                   placeholder="dots-studio/dots-3-note-preview:free"
-                  className={inputCls + " font-mono text-[13px]"}
+                  className={inputCls + " font-mono text-small"}
                   spellCheck={false}
                 />
 
                 {modelsNote && (
-                  <p className="mt-1.5 font-mono text-[11px] text-sage">{modelsNote}</p>
+                  <p className="mt-1.5 text-label text-sage">{modelsNote}</p>
                 )}
 
                 {/* Model Search & Selection List */}
@@ -910,9 +910,9 @@ export default function SettingsModal({
                       placeholder="Filter fetched models..."
                       value={filterQuery}
                       onChange={(e) => setFilterQuery(e.target.value)}
-                      className={inputCls + " text-[12px] py-1.5 font-mono"}
+                      className={inputCls + " text-small py-1.5 font-mono"}
                     />
-                    <div className="max-h-48 overflow-y-auto space-y-1 pr-1 font-mono text-[11.5px]">
+                    <div className="max-h-48 overflow-y-auto space-y-1 pr-1 font-mono text-label">
                       {filteredModelIds.slice(0, 50).map((id) => (
                         <button
                           key={id}
@@ -955,26 +955,26 @@ export default function SettingsModal({
                             <Crown size={ICON.lg} weight="fill" />
                           </div>
                           <div>
-                            <div className="font-display text-[15.5px] font-[500] text-ink flex items-center gap-2">
-                              <span>Anthropic Pro Plan Active</span>
-                              <span className="rounded bg-brass/25 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-brass font-semibold">
-                                {planTier.toUpperCase()}
+                            <div className="font-display text-lead font-[500] text-ink flex items-center gap-2">
+                              <span>Pro plan active</span>
+                              <span className="rounded bg-brass/25 px-2 py-0.5 text-label capitalize text-brass font-semibold">
+                                {planTier}
                               </span>
                             </div>
-                            <div className="text-[11.5px] text-muted">
+                            <div className="text-label text-muted">
                               Powered by Claude Opus 5.5 & Sonnet 5.5 reasoning models
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 font-mono text-[11px] text-brass font-medium">
+                        <div className="flex items-center gap-1.5 font-mono text-label text-brass font-medium">
                           <Gauge size={ICON.sm} />
                           <span>{included}</span>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                        <span className="text-[11.5px] text-muted">
-                          Active Model: <span className="font-mono text-brass">{draft.anthropicModel === "claude-sonnet-5-5" ? "Claude Sonnet 5.5" : "Claude Opus 5.5"}</span>
+                        <span className="text-label text-muted">
+                          Active model: <span className="text-brass">{draft.anthropicModel === "claude-sonnet-5-5" ? "Claude Sonnet 5.5" : "Claude Opus 5.5"}</span>
                         </span>
                         <button
                           type="button"
@@ -983,9 +983,9 @@ export default function SettingsModal({
                             set({ provider: "openai-compatible" });
                             setSettingsMode("starter");
                           }}
-                          className="text-[11px] font-mono text-muted hover:text-rust transition-colors underline underline-offset-2"
+                          className="text-label text-muted hover:text-rust transition-colors underline underline-offset-2"
                         >
-                          Switch to BYOK Free Tier
+                          Switch back to free models
                         </button>
                       </div>
                     </div>
@@ -997,24 +997,24 @@ export default function SettingsModal({
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-brass/15 pb-3">
                       <div className="flex items-center gap-2">
                         <Crown size={ICON.lg} className="text-brass shrink-0" />
-                        <span className="font-display text-[15px] font-[450] text-ink">
-                          Smarter Models (Claude Opus 5.5 & Sonnet 5.5)
+                        <span className="font-display text-lead font-[450] text-ink">
+                          Smarter models: Claude Opus 5.5 and Sonnet 5.5
                         </span>
                       </div>
-                      <span className="self-start sm:self-auto rounded-[var(--radius-pill)] border border-hairline bg-ink/[0.04] px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted">
-                        Current Tier: Free BYOK
+                      <span className="self-start sm:self-auto rounded-[var(--radius-pill)] border border-hairline bg-ink/[0.04] px-2.5 py-0.5 text-label font-medium text-muted">
+                        Free plan
                       </span>
                     </div>
 
-                    <p className="text-[12.5px] leading-relaxed text-muted">
+                    <p className="text-small leading-relaxed text-muted">
                       Unlock hosted Claude Opus 5.5 and Sonnet 5.5 with 1M context for deep synthesis, mock exams, and slide generation. Instant activation via PayPal with no API setup or recurring subscription.
                     </p>
                     <p className="text-body text-muted">About 40% off your first eligible PayPal purchase. Review the final price before payment.</p>
 
                     {/* Pricing Grid */}
                     <div>
-                      <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-brass mb-2 font-medium">
-                        Select Study Pass & Pay via PayPal:
+                      <div className="text-label text-brass mb-2 font-medium">
+                        Choose a study pass
                       </div>
                       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                         {STUDY_PLANS.map((plan) => {
@@ -1032,29 +1032,29 @@ export default function SettingsModal({
                             >
                               <div>
                                 <div className="flex items-center justify-between gap-1.5">
-                                  <span className="font-medium text-ink text-[13.5px]">
+                                  <span className="font-medium text-ink text-body">
                                     {plan.name}
                                   </span>
                                   {plan.popular && (
-                                    <span className="rounded bg-brass/25 border border-brass/35 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider text-brass font-semibold shrink-0">
+                                    <span className="rounded bg-brass/25 border border-brass/35 px-1.5 py-0.5 text-label text-brass font-semibold shrink-0">
                                       Popular
                                     </span>
                                   )}
                                 </div>
 
                                 <div className="mt-1 flex items-baseline justify-between gap-1.5">
-                                  <span className="font-mono text-brass font-bold text-[14px]">
-                                    ${plan.price} <span className="font-mono text-[10px] font-normal text-muted">first purchase; ${plan.regularPrice} regular</span>
+                                  <span className="font-mono text-brass font-bold text-body">
+                                    ${plan.price} <span className="text-label font-normal text-muted">first purchase; ${plan.regularPrice} regular</span>
                                   </span>
                                 </div>
 
 
-                                <div className="mt-1 text-[11.5px] leading-snug text-muted">{plan.desc}</div>
+                                <div className="mt-1 text-label leading-snug text-muted">{plan.desc}</div>
                                 <div className="mt-1 text-body text-muted">{formatUsdFromNano(plan.budgetNano)} hosted usage included</div>
                               </div>
                               {isPlanSelected && (
-                                <div className="mt-2 text-right font-mono text-[10px] text-brass font-medium">
-                                  ✓ Selected
+                                <div className="mt-2 text-right text-label text-brass font-medium">
+                                  <span className="inline-flex items-center gap-1"><Check size={ICON.xs} weight="bold" /> Selected</span>
                                 </div>
                               )}
                             </button>
@@ -1066,13 +1066,13 @@ export default function SettingsModal({
                     {/* PayPal Smart Checkout */}
                     <div className="rounded-[var(--radius-dialog)] border border-hairline bg-ground/80 p-3.5 space-y-2.5">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                        <div className="flex items-center gap-2 text-[12.5px] text-ink font-medium">
+                        <div className="flex items-center gap-2 text-small text-ink font-medium">
                           <CreditCard size={ICON.md} className="text-brass shrink-0" />
                           <span>
                             Pay with PayPal: {selectedPlan.name} (up to ${selectedPlan.regularPrice} USD)
                           </span>
                         </div>
-                        <span className="font-mono text-[10px] text-brass">{selectedPlan.name} · no expiry</span>
+                        <span className="text-label text-brass">{selectedPlan.name}, no expiry</span>
                       </div>
                       {isTauri() ? (
                         /* The desktop CSP is script-src 'self', so the PayPal
@@ -1080,7 +1080,7 @@ export default function SettingsModal({
                            real browser completes payment, and the pass comes
                            back through the paste field below. */
                         <div className="space-y-2.5">
-                          <p className="text-[12.5px] leading-relaxed text-muted">
+                          <p className="text-small leading-relaxed text-muted">
                             In the desktop app, PayPal opens in your browser window. Complete the
                             payment there, then paste the access pass below. Your notebooks and keys
                             stay on this device throughout.
@@ -1148,7 +1148,7 @@ export default function SettingsModal({
 
               {/* Pass Activation Code Box */}
               <Field
-                label="Access Pass or Anthropic API Key"
+                label="Access pass or Anthropic API key"
                 hint="Paste an access pass from another device or your own Anthropic API key."
               >
                 <div className="flex gap-2">
@@ -1156,7 +1156,7 @@ export default function SettingsModal({
                     value={draft.anthropicKey}
                     onChange={(e) => set({ anthropicKey: e.target.value })}
                     placeholder="Paste access pass or sk-ant-…"
-                    className={inputCls + " font-mono text-[13px] flex-1"}
+                    className={inputCls + " font-mono text-small flex-1"}
                     spellCheck={false}
                   />
                   <button
@@ -1171,7 +1171,7 @@ export default function SettingsModal({
                         if (info) trackEvent("pass_activated", { source: "paste" });
                       }
                     }}
-                    className="rounded-[var(--radius-dialog)] bg-brass px-4 py-2 font-mono text-[11px] font-semibold text-ground hover:bg-brass-deep transition-colors"
+                    className="rounded-[var(--radius-dialog)] bg-brass px-4 py-2 text-label font-semibold text-ground hover:bg-brass-deep transition-colors"
                   >
                     Activate
                   </button>
@@ -1196,7 +1196,7 @@ export default function SettingsModal({
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="field-label">Thinking effort</div>
-              <span className="font-mono text-[10px] text-muted">
+              <span className="text-label text-muted">
                 Reasoning depth
               </span>
             </div>
@@ -1214,11 +1214,11 @@ export default function SettingsModal({
                         : "text-muted hover:text-ink hover:bg-ink/[0.03]"
                     }`}
                   >
-                    <span className="text-[12px] font-medium flex items-center gap-1">
+                    <span className="text-small font-medium flex items-center gap-1">
                       {e.id === "xhigh" && <Sparkle size={ICON.xs} className="inline" />}
                       {e.label}
                     </span>
-                    <span className={`text-[9px] font-mono uppercase tracking-wider ${active ? "text-ground/80" : "text-muted"}`}>
+                    <span className={`text-label font-medium ${active ? "text-ground/80" : "text-muted"}`}>
                       {e.badge}
                     </span>
                   </button>
@@ -1231,7 +1231,7 @@ export default function SettingsModal({
           <div className="rounded-[var(--radius-dialog)] border border-brass/20 bg-brass/[0.04] p-3.5 text-ink/90">
             <div className="flex items-start gap-2.5">
               <Warning size={ICON.md} className="text-brass shrink-0 mt-0.5" />
-              <div className="text-[12px] leading-relaxed text-muted">
+              <div className="text-small leading-relaxed text-muted">
                 <strong className="text-ink font-medium">Important AI Disclaimer:</strong> AI models (including free and open-source models) can make mistakes or hallucinate. Always verify formulas and answers against your syllabus.
               </div>
             </div>
@@ -1239,7 +1239,7 @@ export default function SettingsModal({
 
           {testing && <LampPulse label="Testing the connection…" />}
           {okProvider && (
-            <div className="flex items-center gap-2 rounded-[var(--radius-dialog)] border border-sage/30 bg-sage/[0.07] px-4 py-3 text-[13px] text-sage">
+            <div className="flex items-center gap-2 rounded-[var(--radius-dialog)] border border-sage/30 bg-sage/[0.07] px-4 py-3 text-small text-sage">
               <Check size={ICON.md} /> Connection verified. Companion fully charged.
             </div>
           )}
@@ -1266,16 +1266,16 @@ export default function SettingsModal({
         title="Save a key"
       >
         <div className="space-y-4">
-          <Field label="Key Name / Description">
+          <Field label="Key name">
             <input
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
-              placeholder="e.g. My Backup OpenRouter Key, Groq High-Speed"
+              placeholder="e.g. Backup OpenRouter key"
               className={inputCls}
             />
           </Field>
 
-          <Field label="Provider Preset">
+          <Field label="Provider">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {(
                 [
@@ -1285,15 +1285,15 @@ export default function SettingsModal({
                   ["cerebras", "Cerebras"],
                   ["deepseek", "DeepSeek"],
                   ["together", "Together AI"],
-                  ["ollama", "Ollama (Local)"],
-                  ["custom", "Custom Endpoint"],
+                  ["ollama", "Ollama (local)"],
+                  ["custom", "Custom endpoint"],
                 ] as const
               ).map(([p, label]) => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => handleProviderPresetChange(p)}
-                  className={`rounded-[var(--radius-field)] border px-2.5 py-1.5 font-mono text-[11px] transition-colors text-left ${
+                  className={`rounded-[var(--radius-field)] border px-2.5 py-1.5 text-label transition-colors text-left ${
                     newKeyProvider === p
                       ? "border-brass/60 bg-brass/20 text-brass font-medium"
                       : "border-hairline bg-ink/[0.02] text-muted hover:border-hairline-strong"
@@ -1311,7 +1311,7 @@ export default function SettingsModal({
               value={newKeyVal}
               onChange={(e) => setNewKeyVal(e.target.value)}
               placeholder="sk-or-v1-… or gsk_…"
-              className={inputCls + " font-mono text-[13px]"}
+              className={inputCls + " font-mono text-small"}
             />
           </Field>
 
@@ -1321,16 +1321,16 @@ export default function SettingsModal({
                 value={newKeyBaseUrl}
                 onChange={(e) => setNewKeyBaseUrl(e.target.value)}
                 placeholder="https://openrouter.ai/api/v1"
-                className={inputCls + " font-mono text-[12px]"}
+                className={inputCls + " font-mono text-small"}
               />
             </Field>
 
-            <Field label="Default Model ID">
+            <Field label="Default model ID">
               <input
                 value={newKeyModel}
                 onChange={(e) => setNewKeyModel(e.target.value)}
                 placeholder="dots-studio/dots-3-note-preview:free"
-                className={inputCls + " font-mono text-[12px]"}
+                className={inputCls + " font-mono text-small"}
               />
             </Field>
           </div>

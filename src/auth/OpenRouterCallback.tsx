@@ -57,7 +57,7 @@ export default function OpenRouterCallback() {
             <h2 className="font-display text-[1.6rem] font-[450] text-parchment">
               Connecting Free AI Models…
             </h2>
-            <p className="text-[13px] text-faded leading-relaxed">
+            <p className="text-small text-faded leading-relaxed">
               Exchanging authorization code and securely configuring your zero-setup study workspace.
             </p>
           </div>
@@ -71,7 +71,7 @@ export default function OpenRouterCallback() {
             <h2 className="font-display text-[1.6rem] font-[450] text-sage">
               Connected Successfully!
             </h2>
-            <p className="text-[13px] text-faded leading-relaxed">
+            <p className="text-small text-faded leading-relaxed">
               Your free models are active and ready. Entering your study room now…
             </p>
           </div>
@@ -85,14 +85,14 @@ export default function OpenRouterCallback() {
             <h2 className="font-display text-[1.6rem] font-[450] text-rust">
               Connection Failed
             </h2>
-            <p className="text-[13px] text-faded leading-relaxed">
+            <p className="text-small text-faded leading-relaxed">
               {errorMsg}
             </p>
             <div className="pt-2">
               <button
                 type="button"
                 onClick={() => navigate("/studio")}
-                className="inline-flex items-center gap-2 rounded-[var(--radius-dialog)] bg-brass px-5 py-2.5 font-mono text-[12px] font-semibold text-ground hover:bg-brass-deep transition-colors"
+                className="inline-flex items-center gap-2 rounded-[var(--radius-dialog)] bg-brass px-5 py-2.5 text-small font-semibold text-ground hover:bg-brass-deep transition-colors"
               >
                 <span>Continue to Studio</span>
               </button>

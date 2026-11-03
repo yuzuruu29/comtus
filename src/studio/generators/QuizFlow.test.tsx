@@ -180,7 +180,7 @@ describe("QuizTaker attempts", () => {
     await finishWithOneMiss();
 
     fireEvent.click(screen.getByRole("button", { name: "Retake the 1 I missed" }));
-    expect(screen.getByText(/Item 1 \/ 1/)).toBeInTheDocument();
+    expect(screen.getByText("Item 1 of 1")).toBeInTheDocument();
     expect(screen.getByText("What is 3-1?")).toBeInTheDocument();
 
     answer(/2/);
@@ -196,6 +196,6 @@ describe("QuizTaker attempts", () => {
     render(<QuizTaker payload={payload} gen={gen} />);
     await finishWithOneMiss();
     fireEvent.click(screen.getByRole("button", { name: /^Retake$/ }));
-    expect(screen.getByText(/Item 1 \/ 2/)).toBeInTheDocument();
+    expect(screen.getByText("Item 1 of 2")).toBeInTheDocument();
   });
 });

@@ -261,13 +261,13 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
               <div className="mt-5 flex justify-center gap-2">
                 <button
                   onClick={desk.retryLoad}
-                  className="rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 text-[12px] text-brass"
+                  className="rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 text-small text-brass"
                 >
                   Retry
                 </button>
                 <Link
                   to="/studio"
-                  className="rounded-[var(--radius-control)] border border-hairline px-4 py-2 text-[12px] text-muted hover:text-ink"
+                  className="rounded-[var(--radius-control)] border border-hairline px-4 py-2 text-small text-muted hover:text-ink"
                 >
                   Notebook shelf
                 </Link>
@@ -279,7 +279,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             overlay never remounts mid-drag (dragenter/leave pairs flicker). */}
         <div
           data-dropping={isDropping ? "true" : undefined}
-          className="pointer-events-none absolute inset-0 z-[50] flex items-center justify-center bg-ground/70 text-[15px] text-ink opacity-0 transition-opacity duration-fast ease-house data-[dropping]:opacity-100"
+          className="pointer-events-none absolute inset-0 z-[50] flex items-center justify-center bg-ground/70 text-lead text-ink opacity-0 transition-opacity duration-fast ease-house data-[dropping]:opacity-100"
         >
           <div
             data-dropping={isDropping ? "true" : undefined}
@@ -347,7 +347,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 className="group absolute right-0 top-0 bottom-0 z-30 -mr-1.5 flex w-3 cursor-col-resize select-none items-center justify-center transition-colors hover:opacity-100 focus-visible:bg-brass/[0.06] focus-visible:outline-none"
               >
                 <div className="h-8 w-1 rounded-[var(--radius-pill)] bg-hairline/80 shadow-sm transition-all duration-med group-hover:h-14 group-hover:w-1.5 group-hover:bg-brass group-active:h-20 group-active:bg-brass group-focus-visible:h-14 group-focus-visible:w-1.5 group-focus-visible:bg-brass group-focus-visible:shadow-[0_0_14px_rgba(227,176,75,0.42)] group-data-[collapse-ready=true]:h-20 group-data-[collapse-ready=true]:w-1.5 group-data-[collapse-ready=true]:bg-brass" />
-                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-pill)] border border-brass/30 bg-raised px-2.5 py-1 font-mono text-[10px] tracking-normal text-brass opacity-0 shadow-modal transition-opacity group-data-[collapse-ready=true]:opacity-100">
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-pill)] border border-brass/30 bg-raised px-2.5 py-1 text-label tracking-normal text-brass opacity-0 shadow-modal transition-opacity group-data-[collapse-ready=true]:opacity-100">
                   Release to collapse
                 </span>
               </div>
@@ -417,7 +417,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                 className="group absolute left-0 top-0 bottom-0 z-30 -ml-1.5 flex w-3 cursor-col-resize select-none items-center justify-center transition-colors hover:opacity-100 focus-visible:bg-brass/[0.06] focus-visible:outline-none"
               >
                 <div className="h-8 w-1 rounded-[var(--radius-pill)] bg-hairline/80 shadow-sm transition-all duration-med group-hover:h-14 group-hover:w-1.5 group-hover:bg-brass group-active:h-20 group-active:bg-brass group-focus-visible:h-14 group-focus-visible:w-1.5 group-focus-visible:bg-brass group-focus-visible:shadow-[0_0_14px_rgba(227,176,75,0.42)] group-data-[collapse-ready=true]:h-20 group-data-[collapse-ready=true]:w-1.5 group-data-[collapse-ready=true]:bg-brass" />
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-pill)] border border-brass/30 bg-raised px-2.5 py-1 font-mono text-[10px] tracking-normal text-brass opacity-0 shadow-modal transition-opacity group-data-[collapse-ready=true]:opacity-100">
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-pill)] border border-brass/30 bg-raised px-2.5 py-1 text-label tracking-normal text-brass opacity-0 shadow-modal transition-opacity group-data-[collapse-ready=true]:opacity-100">
                   Release to collapse
                 </span>
               </div>
@@ -644,7 +644,7 @@ function WorkspaceHeader({
               <AnalyticsTile index={2} label="Saved work" target={stats?.gens ?? 0} format={(v) => `${v}`} />
             </div>
 
-            <div className="rounded-[var(--radius-dialog)] border border-hairline/80 bg-ink/[0.02] p-3 text-[12.5px] leading-relaxed text-muted">
+            <div className="rounded-[var(--radius-dialog)] border border-hairline/80 bg-ink/[0.02] p-3 text-small leading-relaxed text-muted">
               Your sources, conversations, and saved work are stored on this device. Export this notebook to keep a backup you control.
             </div>
 
@@ -681,7 +681,7 @@ function RailButton({
         <Icon size={ICON.md} weight="light" />
       </button>
       <span
-        className={`pointer-events-none absolute top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-control)] border border-hairline bg-surface px-2 py-1 text-[11px] text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 ${
+        className={`pointer-events-none absolute top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-control)] border border-hairline bg-surface px-2 py-1 text-label text-ink opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 ${
           side === "left" ? "left-full ml-2" : "right-full mr-2"
         }`}
       >
@@ -708,7 +708,7 @@ function AnalyticsTile({
       className="anim-rise rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-3"
       style={{ ["--d"]: `${Math.min(index, 10) * 30}ms` } as CSSProperties}
     >
-      <div className="font-mono text-[18px] font-semibold text-brass">{format(counted)}</div>
+      <div className="font-mono text-title font-semibold text-brass">{format(counted)}</div>
       <div className="mt-1 text-label text-muted">{label}</div>
     </div>
   );

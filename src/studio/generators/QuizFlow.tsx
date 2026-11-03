@@ -406,7 +406,7 @@ function QuizResults({
           <span className="quiz-pass-seal" aria-hidden>
             <InkMark kind="check" />
           </span>
-          <span className="font-display text-[15px] font-semibold text-brass">
+          <span className="font-display text-lead font-semibold text-brass">
             Strong pass — the lamp stays lit.
           </span>
         </motion.div>
@@ -436,7 +436,7 @@ function QuizResults({
             {shownPct}%
           </div>
         </div>
-        <div className="mt-2 text-[13px] text-muted">
+        <div className="mt-2 text-small text-muted">
           {fmtScore(score)} of {payload.questions.length} correct
           {payload.questions.some((q) => q.format === "solution") && " · partially-correct solutions earn half credit"}
         </div>
@@ -446,7 +446,7 @@ function QuizResults({
         <div className="space-y-2.5">
           {[...byTopic.entries()].map(([topic, { c, t }], i) => (
             <div key={topic} className="flex items-center gap-3">
-              <span className="w-40 shrink-0 truncate text-[12.5px] text-ink/80">{topic}</span>
+              <span className="w-40 shrink-0 truncate text-small text-ink/80">{topic}</span>
               <div className="h-1.5 flex-1 overflow-hidden rounded bg-ink/[0.06]">
                 <motion.div
                   initial={{ scaleX: 0 }}
@@ -456,7 +456,7 @@ function QuizResults({
                   style={{ width: `${(c / t) * 100}%` }}
                 />
               </div>
-                  <span className="font-mono text-[10.5px] text-muted">{fmtScore(c)}/{t}</span>
+                  <span className="font-mono text-label text-muted">{fmtScore(c)}/{t}</span>
             </div>
           ))}
         </div>
@@ -535,11 +535,12 @@ function QuizQuestionView({
     <div className="space-y-5 relative">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-            Item {idx + 1} / {payload.questions.length} · {q.topic}
+          <div className="flex flex-wrap gap-x-3 text-label font-medium text-muted">
+            <span className="tabular-nums text-ink/80">Item {idx + 1} of {payload.questions.length}</span>
+            <span>{q.topic}</span>
           </div>
         </div>
-        <div className="whitespace-nowrap font-mono text-[11px] text-brass">{fmtScore(score)} correct</div>
+        <div className="whitespace-nowrap text-label tabular-nums text-brass">{fmtScore(score)} correct</div>
       </div>
       <div className="h-1 overflow-hidden rounded bg-ink/[0.06]">
         <motion.div
@@ -559,7 +560,7 @@ function QuizQuestionView({
           transition={SOFT}
           className="space-y-5"
         >
-          <AssessmentContent className="text-[15px] font-medium leading-relaxed text-ink">{q.stem}</AssessmentContent>
+          <AssessmentContent className="text-lead font-medium leading-relaxed text-ink">{q.stem}</AssessmentContent>
           {q.graph && <AssessmentGraph graph={q.graph} />}
 
           {isSolution ? (
@@ -612,7 +613,7 @@ function QuizQuestionView({
                     animate={ENTER.animate}
                     exit={{ opacity: 0 }}
                     transition={SOFT}
-                    className={`flex items-start gap-2 rounded-[var(--radius-dialog)] border px-4 py-3 text-[13.5px] ${correct ? "border-sage/30 bg-sage/[0.06]" : "border-rust/30 bg-rust/[0.06]"}`}
+                    className={`flex items-start gap-2 rounded-[var(--radius-dialog)] border px-4 py-3 text-body ${correct ? "border-sage/30 bg-sage/[0.06]" : "border-rust/30 bg-rust/[0.06]"}`}
                   >
                     <InkMark kind={correct ? "check" : "cross"} className={`mt-0.5 shrink-0 ${correct ? "text-sage" : "text-rust"}`} />
                     <span className="min-w-0">
@@ -647,7 +648,7 @@ function QuizQuestionView({
                     onClick={() => setPicked((p) => p.map((v, i) => (i === idx ? oi : v)))}
                     whileTap={{ scale: 0.985 }}
                     data-state={state}
-                    className={`quiz-option flex w-full items-center gap-3 rounded-[var(--radius-dialog)] border px-4 py-3 text-left text-[13.5px] transition-colors duration-med ${
+                    className={`quiz-option flex w-full items-center gap-3 rounded-[var(--radius-dialog)] border px-4 py-3 text-left text-body transition-colors duration-med ${
                       state === "picked"
                         ? "border-brass/50 bg-brass/[0.08]"
                         : state === "answer"
@@ -657,7 +658,7 @@ function QuizQuestionView({
                             : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
                     }`}
                   >
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--radius-pill)] border border-hairline-strong font-mono text-[10.5px] text-muted">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--radius-pill)] border border-hairline-strong font-mono text-label text-muted">
                       {String.fromCharCode(65 + oi)}
                     </span>
                     <AssessmentContent inline className="min-w-0 flex-1 text-ink/90">{opt}</AssessmentContent>
@@ -678,10 +679,11 @@ function QuizQuestionView({
                 transition={SOFT}
                 className="rounded-[var(--radius-dialog)] border border-moon/15 bg-moon/[0.05] px-4 py-3.5"
               >
-                <div className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-moon/80">
-                  Why{q.sourceHint ? ` · ${q.sourceHint}` : ""}
+                <div className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="text-small font-semibold text-moon">Why</span>
+                  {q.sourceHint && <span className="text-label text-muted">{q.sourceHint}</span>}
                 </div>
-                <AssessmentContent className="mt-1.5 text-[13px] leading-relaxed text-ink/85">{q.rationale}</AssessmentContent>
+                <AssessmentContent className="mt-1.5 text-small leading-relaxed text-ink/85">{q.rationale}</AssessmentContent>
               </motion.div>
             )}
           </AnimatePresence>

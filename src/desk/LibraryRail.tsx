@@ -107,7 +107,7 @@ export default function LibraryRail({
           )
         ) : (
           <>
-            <span className="select-none font-mono text-[10px] uppercase tracking-[0.26em] text-muted">
+            <span className="select-none text-label font-medium text-muted">
               Library
             </span>
             <button
@@ -138,7 +138,7 @@ export default function LibraryRail({
         ) : (
           <button
             onClick={onHome}
-            className={`flex h-8 w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 text-[12.5px] hover:bg-ink/5 hover:text-ink ${
+            className={`flex h-8 w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 text-small hover:bg-ink/5 hover:text-ink ${
               activeId === null ? "bg-ink/[0.055] text-brass" : "text-muted"
             }`}
             aria-current={activeId === null ? "page" : undefined}
@@ -163,7 +163,7 @@ export default function LibraryRail({
         ) : (
           <button
             onClick={onNew}
-            className="flex h-8 w-full items-center gap-2 rounded-[var(--radius-control)] border border-brass/25 bg-brass/[0.08] px-2.5 text-[12.5px] text-brass hover:bg-brass/[0.14]"
+            className="flex h-8 w-full items-center gap-2 rounded-[var(--radius-control)] border border-brass/25 bg-brass/[0.08] px-2.5 text-small text-brass hover:bg-brass/[0.14]"
           >
             <Plus size={ICON.sm} weight="light" />
             New notebook
@@ -194,13 +194,13 @@ export default function LibraryRail({
           ),
         )}
         {!railCollapsed && loadError && (
-          <div role="alert" className="mx-1 mt-2 flex gap-2 rounded-[var(--radius-control)] border border-rust/25 bg-rust/[0.06] px-2.5 py-2 text-[11.5px] leading-relaxed text-rust">
+          <div role="alert" className="mx-1 mt-2 flex gap-2 rounded-[var(--radius-control)] border border-rust/25 bg-rust/[0.06] px-2.5 py-2 text-label leading-relaxed text-rust">
             <WarningCircle size={ICON.sm} weight="light" className="mt-0.5 shrink-0" />
             <span>Library unavailable. Your data has not been removed.</span>
           </div>
         )}
         {!railCollapsed && !loadError && notebooks.length === 0 && (
-          <p className="px-2 pt-3 text-[12px] leading-relaxed text-muted">
+          <p className="px-2 pt-3 text-small leading-relaxed text-muted">
             No notebooks yet. One per subject works best.
           </p>
         )}
@@ -213,7 +213,7 @@ export default function LibraryRail({
         title="Delete notebook"
       >
         <div className="space-y-4">
-          <p className="text-[13.5px] leading-relaxed text-muted">
+          <p className="text-body leading-relaxed text-muted">
             Are you sure you want to remove/delete <strong className="font-medium text-ink">"{deletingNotebook?.name}"</strong>? All sources, notes, and study history inside it will be permanently deleted from this device.
           </p>
           <div className="flex justify-end gap-3 pt-2">
@@ -232,7 +232,7 @@ export default function LibraryRail({
                   setDeletingNotebook(null);
                 }
               }}
-              className="rounded-[var(--radius-control)] bg-rust px-4 py-2 text-[13px] font-medium text-white hover:brightness-110 active:scale-95 transition-all"
+              className="rounded-[var(--radius-control)] bg-rust px-4 py-2 text-small font-medium text-white hover:brightness-110 active:scale-95 transition-all"
             >
               Delete permanently
             </button>
@@ -246,7 +246,7 @@ export default function LibraryRail({
 function LetterTile({ name }: { name: string }) {
   const letter = name.trim().charAt(0).toUpperCase() || "·";
   return (
-    <span className="flex h-[22px] w-[22px] shrink-0 select-none items-center justify-center rounded bg-brass/10 font-mono text-[10px] tracking-normal text-brass">
+    <span className="flex h-[22px] w-[22px] shrink-0 select-none items-center justify-center rounded bg-brass/10 font-mono text-label tracking-normal text-brass">
       {letter}
     </span>
   );
@@ -278,10 +278,10 @@ function RailItemWide({
       >
         <LetterTile name={notebook.name} />
         <span className="min-w-0 flex-1">
-          <span className={`block truncate text-[13px] leading-tight ${active ? "text-ink" : "text-ink/80"}`}>
+          <span className={`block truncate text-small leading-tight ${active ? "text-ink" : "text-ink/80"}`}>
             {notebook.name}
           </span>
-          <span className="block truncate text-[10.5px] leading-tight text-muted">
+          <span className="block truncate text-label leading-tight text-muted">
             {timeAgo(notebook.updatedAt)}
           </span>
         </span>

@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { describe, expect, it } from "vitest";
 import { mathRehypePlugins, mathRemarkPlugins } from "./markdownMath";
-import { closeStreamingMarkdown, rehypeStreamCursor } from "./streamingMarkdown";
+import { closeStreamingMarkdown, rehypeCitationMarks, rehypeStreamCursor } from "./streamingMarkdown";
 
 describe("closeStreamingMarkdown", () => {
   it("leaves finished markdown alone", () => {
@@ -103,5 +103,36 @@ describe("rehypeStreamCursor", () => {
     const cursorAt = html.indexOf(CURSOR);
     expect(cursorAt).toBeGreaterThan(html.lastIndexOf('class="katex"'));
     expect(html.slice(cursorAt)).not.toContain("katex");
+  });
+});
+
+function renderCited(markdown: string): string {
+  return renderToStaticMarkup(
+    createElement(ReactMarkdown, { remarkPlugins: [remarkGfm], rehypePlugins: [rehypeCitationMarks] }, markdown),
+  );
+}
+
+const MARK = (n: string) =>
+  `<span class="cite-bracket">[</span>${n}<span class="cite-bracket">]</span>`;
+
+describe("rehypeCitationMarks", () => {
+  it("hugs the word it cites and keeps the full stop beside it", () => {
+    expect(renderCited("Water moves in [1].")).toContain(`moves in<sup class="cite-mark">${MARK("1")}</sup>.`);
+  });
+
+  it("sets marks written side by side as one superscript", () => {
+    expect(renderCited("Both agree [1] [2], mostly.")).toContain(
+      `agree<sup class="cite-mark">${MARK("1")},${MARK("2")}</sup>, mostly.`,
+    );
+  });
+
+  it("keeps the space after a mark and after bold text", () => {
+    expect(renderCited("called **lysis** [3] by most")).toContain(
+      `<strong>lysis</strong><sup class="cite-mark">${MARK("3")}</sup> by most`,
+    );
+  });
+
+  it("leaves code and arrays alone", () => {
+    expect(renderCited("`a[1]` stays")).not.toContain("cite-mark");
   });
 });

@@ -406,10 +406,8 @@
 .exam-plan-label {
   margin-top: 14px;
   color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: var(--text-label);
+  font-weight: 500;
 }
 
 .exam-plan-note {

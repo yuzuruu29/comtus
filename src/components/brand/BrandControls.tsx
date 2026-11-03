@@ -17,7 +17,7 @@ export function ByokBadge({
     <button
       type="button"
       onClick={onClick}
-      className={`group flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-hairline bg-surface px-2.5 sm:px-3 py-1 font-mono text-[10.5px] sm:text-[11px] font-semibold tracking-[0.06em] text-ink hover:border-brass/50 hover:bg-raised transition-all ${className}`}
+      className={`group flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-hairline bg-surface px-2.5 sm:px-3 py-1 text-label font-semibold tracking-[0.04em] text-ink hover:border-brass/50 hover:bg-raised transition-all ${className}`}
       title="BYOK Mode (Bring Your Own Key) — Click to configure API models & settings"
     >
       <span>BYOK</span>
@@ -32,7 +32,7 @@ export function ByokBadge({
  * glowing halo, and token balance pill.
  */
 export function ProBadge({
-  planTier = "PRO",
+  planTier = "pro",
   remainingTokens,
   onClick,
   className = "",
@@ -52,13 +52,13 @@ export function ProBadge({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-brass/40 bg-brass/10 px-2.5 sm:px-3 py-1 font-mono text-[10.5px] sm:text-[11px] font-semibold text-brass hover:bg-brass/20 transition-all ${className}`}
-      title={`Pro Plan Active (${planTier.toUpperCase()}) ${remainingTokens !== undefined ? `· ${remainingTokens.toLocaleString()} hosted requests left` : ""}`}
+      className={`flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-brass/40 bg-brass/10 px-2.5 sm:px-3 py-1 font-mono text-label font-semibold text-brass hover:bg-brass/20 transition-all ${className}`}
+      title={`Pro plan active (${planTier}) ${remainingTokens !== undefined ? `· ${remainingTokens.toLocaleString()} hosted requests left` : ""}`}
     >
       <Crown size={ICON.xs} weight="fill" className="text-brass animate-[pulse_3s_var(--ease-inout)_infinite]" />
-      <span className="font-bold tracking-[0.04em]">{planTier.toUpperCase()}</span>
+      <span className="font-ui capitalize">{planTier}</span>
       {remainingTokens !== undefined && remainingTokens > 0 && (
-        <span className="border-l border-brass/30 pl-1.5 text-[10px] text-brass/90 font-normal">
+        <span className="border-l border-brass/30 pl-1.5 text-label text-brass/90 font-normal">
           {formatTokens(remainingTokens)} req
         </span>
       )}
@@ -82,7 +82,7 @@ export function SettingsButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-h-[34px] items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/80 px-2.5 sm:px-3.5 py-1.5 text-[12.5px] font-medium text-muted hover:border-brass/50 hover:bg-surface hover:text-ink transition-colors shadow-sm ${className}`}
+      className={`flex min-h-[34px] items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/80 px-2.5 sm:px-3.5 py-1.5 text-small font-medium text-muted hover:border-brass/50 hover:bg-surface hover:text-ink transition-colors shadow-sm ${className}`}
       aria-label="Settings"
     >
       <GearSix size={ICON.sm} weight="light" className="transition-transform duration-slow group-hover:rotate-45" />

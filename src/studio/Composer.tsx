@@ -118,7 +118,7 @@ export default function Composer({
             exit={{ ...ENTER.exit, transition: EXIT }}
             transition={SOFT}
             onClick={onJumpToLatest}
-            className="absolute -top-9 right-4 z-20 flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-hairline-strong bg-raised px-3 py-1.5 text-[11.5px] text-ink shadow-modal"
+            className="absolute -top-9 right-4 z-20 flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-hairline-strong bg-raised px-3 py-1.5 text-label text-ink shadow-modal"
           >
             <ArrowDown size={ICON.xs} weight="light" />
             Jump to latest
@@ -171,7 +171,7 @@ export default function Composer({
                 className="composer-input"
               />
               {voice.state !== "idle" && (
-                <div className="flex min-h-5 items-center gap-2 text-[12px] leading-snug" role="status">
+                <div className="flex min-h-5 items-center gap-2 text-small leading-snug" role="status">
                   {(voice.state === "listening" || voice.state === "recording") && (
                     <span className="relative flex h-2 w-2 shrink-0">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-[var(--radius-pill)] bg-brass/50 [animation-duration:1.4s]" />
@@ -184,7 +184,7 @@ export default function Composer({
                     </span>
                   )}
                   {voice.state === "recording" && (
-                    <span className="font-mono text-[11px] text-muted">
+                    <span className="font-mono text-label text-muted">
                       Recording {Math.floor(voice.elapsed / 60)}:
                       {String(voice.elapsed % 60).padStart(2, "0")} — transcribes itself when
                       you pause
@@ -202,7 +202,7 @@ export default function Composer({
                 </div>
               )}
               {voice.error && (
-                <p role="alert" className="pt-1 text-[12px] leading-relaxed text-rust">
+                <p role="alert" className="pt-1 text-small leading-relaxed text-rust">
                   {voice.error}
                 </p>
               )}
@@ -445,7 +445,7 @@ function FocusMenu({
             </div>
             <div className="max-h-60 overflow-y-auto py-1">
               {sources.length === 0 && (
-                <div className="px-3 py-2 text-[12px] text-muted">
+                <div className="px-3 py-2 text-small text-muted">
                   Add sources in the Sources tab to ground your answers.
                 </div>
               )}
@@ -456,7 +456,7 @@ function FocusMenu({
                     key={s.id}
                     aria-pressed={checked}
                     onClick={() => toggle(s.id)}
-                    className="flex w-full items-center gap-2 rounded-[var(--radius-dialog)] px-2.5 py-1.5 text-left text-[12.5px] text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
+                    className="flex w-full items-center gap-2 rounded-[var(--radius-dialog)] px-2.5 py-1.5 text-left text-small text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
                   >
                     <span
                       className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border ${

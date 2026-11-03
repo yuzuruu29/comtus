@@ -208,7 +208,7 @@ export default function PayPalCheckout({
   if (native) {
     const website = import.meta.env.VITE_API_ORIGIN || "https://comtus-ai.vercel.app";
     return (
-      <div className="space-y-3 rounded-[var(--radius-control)] border border-hairline bg-ink/[0.02] p-4 text-[12px] leading-relaxed text-muted">
+      <div className="space-y-3 rounded-[var(--radius-control)] border border-hairline bg-ink/[0.02] p-4 text-small leading-relaxed text-muted">
         <p>
           Checkout opens on the Comtus website so payment code never runs inside the privileged
           desktop workspace. Your Access Pass activates automatically right after payment.
@@ -226,14 +226,14 @@ export default function PayPalCheckout({
   return (
     <div className="space-y-2">
       {error && (
-        <div key="error" className="anim-fade anim-fade--fast flex items-center gap-2 rounded-[var(--radius-field)] border border-rust/30 bg-rust/[0.08] p-2.5 text-[12px] text-rust">
+        <div key="error" className="anim-fade anim-fade--fast flex items-center gap-2 rounded-[var(--radius-field)] border border-rust/30 bg-rust/[0.08] p-2.5 text-small text-rust">
           <WarningCircle size={ICON.sm} className="shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div key="success" className="anim-fade anim-fade--fast flex items-start gap-2 rounded-[var(--radius-field)] border border-sage/30 bg-sage/[0.08] p-2.5 text-left text-[12px] leading-relaxed text-sage">
+        <div key="success" className="anim-fade anim-fade--fast flex items-start gap-2 rounded-[var(--radius-field)] border border-sage/30 bg-sage/[0.08] p-2.5 text-left text-small leading-relaxed text-sage">
           <CheckCircle size={ICON.sm} className="mt-0.5 shrink-0" />
           <span>
             Payment confirmed. Order {success}. Your Access Pass has been issued. Keep this order id — it restores the pass.
@@ -242,14 +242,14 @@ export default function PayPalCheckout({
       )}
 
       {!sdkReady && !error && (
-        <div key="sdk-loading" className="anim-fade anim-fade--fast flex items-center justify-center gap-2 rounded-[var(--radius-field)] border border-hairline bg-ink/[0.02] py-3 text-[12px] text-muted">
+        <div key="sdk-loading" className="anim-fade anim-fade--fast flex items-center justify-center gap-2 rounded-[var(--radius-field)] border border-hairline bg-ink/[0.02] py-3 text-small text-muted">
           <CircleNotch size={ICON.sm} className="animate-spin text-brass" />
           <span>Loading secure PayPal checkout…</span>
         </div>
       )}
 
       {loading && (
-        <div key="confirming" className="anim-fade anim-fade--fast flex items-center justify-center gap-2 rounded-[var(--radius-field)] border border-brass/30 bg-brass/[0.06] py-3 text-[12px] text-brass">
+        <div key="confirming" className="anim-fade anim-fade--fast flex items-center justify-center gap-2 rounded-[var(--radius-field)] border border-brass/30 bg-brass/[0.06] py-3 text-small text-brass">
           <CircleNotch size={ICON.sm} className="animate-spin text-brass" />
           <span>Confirming payment & activating your pass…</span>
         </div>

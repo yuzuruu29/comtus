@@ -186,7 +186,7 @@ export default function DeskApp() {
         }}
       >
         {desk.dropping > 0 && (
-          <div className="pointer-events-none absolute inset-0 z-[50] flex items-center justify-center bg-ground/70 text-[15px] text-ink">
+          <div className="pointer-events-none absolute inset-0 z-[50] flex items-center justify-center bg-ground/70 text-lead text-ink">
             {notebookId ? "Add files to this notebook" : "Create a notebook with these files"}
           </div>
         )}
@@ -278,13 +278,13 @@ export default function DeskApp() {
                       <div className="mt-5 flex justify-center gap-2">
                         <button
                           onClick={desk.retryLoad}
-                          className="rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 text-[12px] font-medium text-brass hover:bg-brass/10"
+                          className="rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 text-small font-medium text-brass hover:bg-brass/10"
                         >
                           Retry
                         </button>
                         <button
                           onClick={goHome}
-                          className="rounded-[var(--radius-control)] border border-hairline px-4 py-2 text-[12px] text-muted hover:text-ink"
+                          className="rounded-[var(--radius-control)] border border-hairline px-4 py-2 text-small text-muted hover:text-ink"
                         >
                           Desk home
                         </button>
@@ -397,7 +397,7 @@ function AppHeader({
               defaultValue={notebook.name}
               onBlur={(e) => onRename(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-              className="no-drag w-[min(34ch,34vw)] truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-0.5 font-display text-[14.5px] font-[450] text-ink hover:border-hairline focus:border-brass/40"
+              className="no-drag w-[min(34ch,34vw)] truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-0.5 font-display text-body font-[450] text-ink hover:border-hairline focus:border-brass/40"
               aria-label="Notebook name"
             />
           </>
@@ -409,7 +409,7 @@ function AppHeader({
             <>
               <button
                 onClick={() => void openAnalytics()}
-                className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2.5 py-1.5 text-[12px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
+                className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2.5 py-1.5 text-small text-muted hover:bg-ink/5 hover:text-ink sm:flex"
               >
                 Analytics
               </button>
@@ -422,7 +422,7 @@ function AppHeader({
               </button>
               <button
                 onClick={() => void handleShare()}
-                className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2.5 py-1.5 text-[12px] text-muted hover:bg-ink/5 hover:text-ink sm:flex"
+                className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2.5 py-1.5 text-small text-muted hover:bg-ink/5 hover:text-ink sm:flex"
               >
                 Share
               </button>
@@ -443,7 +443,7 @@ function AppHeader({
           {/* Plan Tier Status Badge (PRO only if Anthropic plan availed, else BYOK) */}
           {isPro ? (
             <ProBadge
-              planTier="PRO"
+              planTier="pro"
               onClick={onSettings}
               className="hidden sm:flex"
             />
@@ -457,7 +457,7 @@ function AppHeader({
           {/* User Avatar Badge */}
           <button
             onClick={onSettings}
-            className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-pill)] bg-brass/20 text-brass text-[11px] font-bold font-mono hover:brightness-110 transition-all select-none"
+            className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-pill)] bg-brass/20 text-brass text-label font-bold font-mono hover:brightness-110 transition-all select-none"
             title="User Profile & Model Settings"
           >
             N
@@ -472,20 +472,20 @@ function AppHeader({
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3 text-center">
               <div className="rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-3">
-                <div className="font-mono text-[18px] font-semibold text-brass">{stats?.sources ?? 0}</div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted mt-1">Sources</div>
+                <div className="font-mono text-title font-semibold text-brass">{stats?.sources ?? 0}</div>
+                <div className="text-label font-medium text-muted mt-1">Sources</div>
               </div>
               <div className="rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-3">
-                <div className="font-mono text-[18px] font-semibold text-brass">{((stats?.tokens ?? 0) / 1000).toFixed(1)}k</div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted mt-1">Tokens Grounded</div>
+                <div className="font-mono text-title font-semibold text-brass">{((stats?.tokens ?? 0) / 1000).toFixed(1)}k</div>
+                <div className="text-label font-medium text-muted mt-1">Tokens grounded</div>
               </div>
               <div className="rounded-[var(--radius-dialog)] border border-hairline bg-surface/70 p-3">
-                <div className="font-mono text-[18px] font-semibold text-brass">{stats?.gens ?? 0}</div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted mt-1">Saved Artifacts</div>
+                <div className="font-mono text-title font-semibold text-brass">{stats?.gens ?? 0}</div>
+                <div className="text-label font-medium text-muted mt-1">Saved artifacts</div>
               </div>
             </div>
 
-            <div className="rounded-[var(--radius-dialog)] border border-hairline/80 bg-ink/[0.02] p-3 text-[12.5px] leading-relaxed text-muted">
+            <div className="rounded-[var(--radius-dialog)] border border-hairline/80 bg-ink/[0.02] p-3 text-small leading-relaxed text-muted">
               🔒 <strong>Local-First Storage:</strong> All documents, question history, and generated notes for <em>{notebook.name}</em> live exclusively in IndexedDB on this device.
             </div>
 

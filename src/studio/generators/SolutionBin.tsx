@@ -97,7 +97,7 @@ export function SolutionBin({
               title="Replace photo"
             >
               <ArrowCounterClockwise size={ICON.sm} />
-              <span className="text-[11.5px] font-medium">Replace</span>
+              <span className="text-label font-medium">Replace</span>
             </button>
             <button
               onClick={() => {
@@ -168,10 +168,10 @@ export function SolutionBin({
             <ImageSquare size={ICON.xl} />
           </span>
           <div>
-            <p className="text-[13.5px] font-medium text-ink">
+            <p className="text-body font-medium text-ink">
               Submit your handwritten solution
             </p>
-            <p className="mt-1 text-[11.5px] leading-relaxed text-muted">
+            <p className="mt-1 text-label leading-relaxed text-muted">
               Solve on paper, then photograph your working — whole page, decent light.
             </p>
           </div>
@@ -180,7 +180,7 @@ export function SolutionBin({
               <button
                 onClick={() => pick(cameraRef)}
                 disabled={busy}
-                className="inline-flex min-h-[38px] items-center gap-2 rounded-[var(--radius-control)] grad-lamp px-4 py-2 text-[12.5px] font-semibold text-ground transition-all hover:brightness-[1.06] active:scale-[0.97] disabled:opacity-40"
+                className="inline-flex min-h-[38px] items-center gap-2 rounded-[var(--radius-control)] grad-lamp px-4 py-2 text-small font-semibold text-ground transition-all hover:brightness-[1.06] active:scale-[0.97] disabled:opacity-40"
               >
                 <Camera size={ICON.sm} />
                 Take photo
@@ -188,7 +188,7 @@ export function SolutionBin({
               <button
                 onClick={() => pick(fileRef)}
                 disabled={busy}
-                className="inline-flex min-h-[38px] items-center gap-2 rounded-[var(--radius-control)] border border-hairline bg-ink/[0.03] px-4 py-2 text-[12.5px] font-medium text-ink/90 transition-all hover:border-hairline-strong hover:bg-ink/[0.07] active:scale-[0.97] disabled:opacity-40"
+                className="inline-flex min-h-[38px] items-center gap-2 rounded-[var(--radius-control)] border border-hairline bg-ink/[0.03] px-4 py-2 text-small font-medium text-ink/90 transition-all hover:border-hairline-strong hover:bg-ink/[0.07] active:scale-[0.97] disabled:opacity-40"
               >
                 <ImageSquare size={ICON.sm} />
                 Upload file
@@ -196,18 +196,18 @@ export function SolutionBin({
             </div>
           )}
           {busy && (
-            <p className="text-[11.5px] text-brass" role="status">
+            <p className="text-label text-brass" role="status">
               Preparing your photo…
             </p>
           )}
-          <p className="hidden text-[10.5px] text-muted sm:block">
+          <p className="hidden text-label text-muted sm:block">
             or drop an image here
           </p>
         </div>
       )}
 
       {error && (
-        <p role="alert" className="mt-2 text-[12px] leading-relaxed text-rust">
+        <p role="alert" className="mt-2 text-small leading-relaxed text-rust">
           {error}
         </p>
       )}
@@ -234,7 +234,7 @@ const VERDICT_TEXT: Record<SolutionVerdict, string> = {
 /** The standing caveat that ships with every AI check. */
 export function AiCheckNote({ className = "" }: { className?: string }) {
   return (
-    <p className={`text-[11px] leading-relaxed text-muted ${className}`}>
+    <p className={`text-label leading-relaxed text-muted ${className}`}>
       AI checks can make mistakes — double-check the result against your notes and answer key.
     </p>
   );
@@ -250,11 +250,11 @@ export function SolutionVerdictCard({ check }: { check: SolutionCheck }) {
       transition={SOFT}
       className={`rounded-[var(--radius-dialog)] border px-4 py-3.5 ${meta.cls}`}
     >
-      <div className={`font-mono text-[10.5px] font-semibold uppercase tracking-[0.16em] ${VERDICT_TEXT[check.verdict]}`}>
+      <div className={`text-label font-semibold ${VERDICT_TEXT[check.verdict]}`}>
         {meta.label}
       </div>
       {check.transcribedAnswer && check.verdict !== "unreadable" && (
-        <p className="mt-2 text-[12.5px] text-muted">
+        <p className="mt-2 text-small text-muted">
           Read on your photo: <AssessmentContent inline className="text-ink/90">{check.transcribedAnswer}</AssessmentContent>
           {check.finalAnswerOk ? (
             <span className={VERDICT_TEXT.correct}> — matches</span>
@@ -266,7 +266,7 @@ export function SolutionVerdictCard({ check }: { check: SolutionCheck }) {
       {check.errors.length > 0 && (
         <ul className="mt-2 space-y-1">
           {check.errors.map((e, i) => (
-            <li key={i} className="flex gap-2 text-[12.5px] leading-relaxed text-ink/80">
+            <li key={i} className="flex gap-2 text-small leading-relaxed text-ink/80">
               <span className="mt-[7px] h-1 w-1 shrink-0 rounded-[var(--radius-pill)] bg-current opacity-60" />
               <AssessmentContent>{e}</AssessmentContent>
             </li>
@@ -274,7 +274,7 @@ export function SolutionVerdictCard({ check }: { check: SolutionCheck }) {
         </ul>
       )}
       {check.feedback && (
-        <AssessmentContent className="mt-2 text-[13px] leading-relaxed text-ink/85">{check.feedback}</AssessmentContent>
+        <AssessmentContent className="mt-2 text-small leading-relaxed text-ink/85">{check.feedback}</AssessmentContent>
       )}
       <AiCheckNote className="mt-3 border-t border-current/10 pt-2.5 opacity-90" />
     </motion.div>

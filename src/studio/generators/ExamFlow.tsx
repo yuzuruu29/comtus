@@ -229,7 +229,7 @@ Constraints: MCQ items have exactly 4 options with answerIndex pointing at the k
               <div className="text-body font-medium text-brass">
                 {p.name}
               </div>
-              <div className="mt-1 text-[11.5px] leading-snug text-muted">{p.blurb}</div>
+              <div className="mt-1 text-label leading-snug text-muted">{p.blurb}</div>
             </button>
           ))}
         </div>
@@ -296,7 +296,7 @@ Constraints: MCQ items have exactly 4 options with answerIndex pointing at the k
             onClick={() =>
               setBlueprint((b) => ({ ...b, sections: [...b.sections, { topic: "New topic", items: 10 }] }))
             }
-            className="flex min-h-[40px] items-center text-[12.5px] font-medium text-muted transition-colors hover:text-brass active:scale-95"
+            className="flex min-h-[40px] items-center text-small font-medium text-muted transition-colors hover:text-brass active:scale-95"
           >
             + Add section
           </button>
@@ -313,10 +313,10 @@ Constraints: MCQ items have exactly 4 options with answerIndex pointing at the k
           }`}
         >
           <span className="min-w-0">
-            <span className="block text-[13px] font-medium text-ink">
-              Handwritten solutions{withSolutions && <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.12em] text-brass">{solCount} items</span>}
+            <span className="block text-small font-medium text-ink">
+              Handwritten solutions{withSolutions && <span className="ml-2 text-label font-medium tabular-nums text-brass">{solCount} items</span>}
             </span>
-            <span className="mt-0.5 block text-[11.5px] leading-snug text-muted">
+            <span className="mt-0.5 block text-label leading-snug text-muted">
               A fifth of the exam becomes computation problems you solve on paper — submit a photo of your working and AI grades it.
             </span>
           </span>
@@ -498,8 +498,8 @@ function ExamSitting({
       <div className="space-y-6">
         <div className="rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] p-6 text-center">
           <div className="font-display text-[1.5rem] font-[430] text-ink">{payload.blueprint.title}</div>
-          <div className="mt-2 font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
-            {payload.blueprint.totalItems} items · {payload.blueprint.minutes} minutes · shaded scoring
+          <div className="mt-2 text-label font-medium text-muted">
+            {payload.blueprint.totalItems} items, {payload.blueprint.minutes} minutes, shaded scoring
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -509,7 +509,7 @@ function ExamSitting({
           >
             <Timer size={ICON.lg} className="text-brass" />
             <div className="mt-3 font-display text-[1.1rem] font-[440] text-ink">Simulated</div>
-            <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
+            <p className="mt-1.5 text-small leading-relaxed text-muted">
               Clock runs, answers stay hidden until you submit — the dress rehearsal.
             </p>
           </button>
@@ -519,7 +519,7 @@ function ExamSitting({
           >
             <PencilSimpleLine size={ICON.lg} className="text-brass" />
             <div className="mt-3 font-display text-[1.1rem] font-[440] text-ink">Drill</div>
-            <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
+            <p className="mt-1.5 text-small leading-relaxed text-muted">
               Every answer explained the moment you commit — for learning, not timing.
             </p>
           </button>
@@ -558,17 +558,18 @@ function ExamSitting({
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-          Item {idx + 1} / {qs.length} · {q.topic}
-          {isSolution && " · problem solving"}
+        <div className="flex flex-wrap gap-x-3 text-label font-medium text-muted">
+          <span className="tabular-nums text-ink/80">Item {idx + 1} of {qs.length}</span>
+          <span>{q.topic}</span>
+          {isSolution && <span>Problem solving</span>}
         </div>
         {mode === "simulated" ? (
-          <div className="font-mono text-[11.5px] tabular-nums text-brass">
+          <div className="font-mono text-label tabular-nums text-brass">
             {String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:
             {String(secondsLeft % 60).padStart(2, "0")}
           </div>
         ) : (
-          <div className="font-mono text-[11px] text-brass">{answeredCount} answered</div>
+          <div className="text-label tabular-nums text-brass">{answeredCount} answered</div>
         )}
       </div>
       <div className="h-1 overflow-hidden rounded bg-ink/[0.06]">
@@ -589,7 +590,7 @@ function ExamSitting({
           transition={SOFT}
           className="space-y-5"
         >
-          <AssessmentContent className="text-[15px] font-medium leading-relaxed text-ink">{q.stem}</AssessmentContent>
+          <AssessmentContent className="text-lead font-medium leading-relaxed text-ink">{q.stem}</AssessmentContent>
           {q.graph && <AssessmentGraph graph={q.graph} />}
 
           {isSolution ? (
@@ -633,7 +634,7 @@ function ExamSitting({
                   aria-label={assessmentOptionLabel(opt, oi)}
                   onClick={() => setAnswers((a) => a.map((v, i) => (i === idx ? oi : v)))}
                   whileTap={{ scale: 0.985 }}
-                  className={`flex w-full items-center gap-3 rounded-[var(--radius-dialog)] border px-4 py-3 text-left text-[13.5px] transition-colors duration-med ${
+                  className={`flex w-full items-center gap-3 rounded-[var(--radius-dialog)] border px-4 py-3 text-left text-body transition-colors duration-med ${
                     state === "picked"
                       ? "border-brass/50 bg-brass/[0.08]"
                       : state === "answer"
@@ -643,7 +644,7 @@ function ExamSitting({
                           : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
                   }`}
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--radius-pill)] border border-hairline-strong font-mono text-[10.5px] text-muted">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--radius-pill)] border border-hairline-strong font-mono text-label text-muted">
                     {String.fromCharCode(65 + oi)}
                   </span>
                   <AssessmentContent inline className="min-w-0 flex-1 text-ink/90">{opt}</AssessmentContent>
@@ -686,8 +687,8 @@ function ExamSitting({
                 transition={SOFT}
                 className="rounded-[var(--radius-dialog)] border border-moon/15 bg-moon/[0.05] px-4 py-3.5"
               >
-                <div className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-moon/80">Why</div>
-                <AssessmentContent className="mt-1.5 text-[13px] leading-relaxed text-ink/85">{q.rationale}</AssessmentContent>
+                <div className="text-small font-semibold text-moon">Why</div>
+                <AssessmentContent className="mt-1.5 text-small leading-relaxed text-ink/85">{q.rationale}</AssessmentContent>
               </motion.div>
             )}
           </AnimatePresence>
@@ -737,7 +738,7 @@ function ExamSitting({
               key={i}
               onClick={() => setIdx(i)}
               title={`Item ${i + 1}${qq.format === "solution" ? " · photo submission" : ""}`}
-              className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-field)] font-mono text-[10.5px] transition-all active:scale-90 sm:h-7 sm:w-7 sm:text-[9.5px] ${
+              className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-field)] font-mono text-label transition-all active:scale-90 sm:h-7 sm:w-7 ${
                 i === idx
                   ? "bg-brass/25 text-brass ring-1 ring-brass/40"
                   : isWorked(i)
@@ -876,7 +877,7 @@ function ExamResults({
         <div className={`mt-3 font-display text-[2.8rem] font-[420] leading-none sm:text-[3.4rem] ${pct >= 75 ? "text-sage" : "text-lamp"}`}>
           {shownPct}%
         </div>
-        <div className="mt-2 text-[13px] text-muted">
+        <div className="mt-2 text-small text-muted">
           {fmtScore(earned)} of {questions.length}
           {hasSolutions ? " · partially-correct solutions earn half credit" : " correct"} · {verdict}
         </div>
@@ -888,7 +889,7 @@ function ExamResults({
         <div className="space-y-2.5">
           {[...byTopic.entries()].map(([topic, { c, t }], i) => (
             <div key={topic} className="flex items-center gap-3">
-              <span className="w-32 shrink-0 truncate text-[12px] text-ink/80 sm:w-44 sm:text-[12.5px]">{topic}</span>
+              <span className="w-32 shrink-0 truncate text-small text-ink/80 sm:w-44">{topic}</span>
               <div className="h-1.5 flex-1 overflow-hidden rounded bg-ink/[0.06]">
                 <motion.div
                   initial={{ scaleX: 0 }}
@@ -898,7 +899,7 @@ function ExamResults({
                   style={{ width: `${(c / t) * 100}%` }}
                 />
               </div>
-              <span className="w-10 text-right font-mono text-[10.5px] text-muted">{fmtScore(c)}/{t}</span>
+              <span className="w-10 text-right font-mono text-label text-muted">{fmtScore(c)}/{t}</span>
             </div>
           ))}
         </div>
@@ -931,7 +932,7 @@ function ExamResults({
                     )}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <AssessmentContent className="text-[13.5px] font-medium leading-relaxed text-ink/90">{q.stem}</AssessmentContent>
+                    <AssessmentContent className="text-body font-medium leading-relaxed text-ink/90">{q.stem}</AssessmentContent>
                     {q.graph && <AssessmentGraph graph={q.graph} />}
                     {isSol ? (
                       <>
@@ -940,25 +941,25 @@ function ExamResults({
                             <SolutionVerdictCard check={chk} />
                           </div>
                         ) : subs[i] ? (
-                          <p className="mt-1.5 text-[12px] text-muted">
+                          <p className="mt-1.5 text-small text-muted">
                             This photo couldn't be checked — switch to a vision-capable model in Settings, then retake to grade it.
                           </p>
                         ) : (
-                          <p className="mt-1.5 text-[12px] text-muted">No solution submitted — skipped.</p>
+                          <p className="mt-1.5 text-small text-muted">No solution submitted — skipped.</p>
                         )}
-                        <p className="mt-1.5 text-[12px] text-muted">
+                        <p className="mt-1.5 text-small text-muted">
                           Key: <AssessmentContent inline className="text-sage">{q.answer}</AssessmentContent>
                         </p>
                       </>
                     ) : (
                       credit === 0 && (
-                        <p className="mt-1.5 text-[12px] text-muted">
+                        <p className="mt-1.5 text-small text-muted">
                           Yours: <AssessmentContent inline>{answers[i] !== null ? q.options[answers[i]!] : "— skipped"}</AssessmentContent> · Key:{" "}
                           <AssessmentContent inline className="text-sage">{q.options[q.answerIndex]}</AssessmentContent>
                         </p>
                       )
                     )}
-                    <AssessmentContent className="mt-1.5 text-[12.5px] leading-relaxed text-ink/70">{q.rationale}</AssessmentContent>
+                    <AssessmentContent className="mt-1.5 text-small leading-relaxed text-ink/70">{q.rationale}</AssessmentContent>
                   </div>
                 </div>
               </div>

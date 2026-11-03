@@ -39,7 +39,7 @@ export class ErrorBoundary extends Component<
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 text-[12px] text-brass hover:border-brass/70"
+            className="rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 text-small text-brass hover:border-brass/70"
           >
             Reload Comtus
           </button>

@@ -1,11 +1,11 @@
 .field-guide { padding-block: 76px 48px; background: var(--surface); color: var(--ink); }
-.field-guide-heading h2 { max-width: 850px; margin: 0; font-family: var(--font-read); font-size: var(--text-landing-section); font-weight: 440; letter-spacing: -.055em; word-spacing: .07em; line-height: 1.16; }
+.field-guide-heading h2 { max-width: 850px; margin: 0; font-family: var(--font-read); font-size: var(--text-landing-section); font-weight: 440; letter-spacing: -.028em; word-spacing: .03em; line-height: 1.16; }
 .field-guide-heading h2 em { font-weight: 400; }
 .field-guide-heading > p:last-child { margin-top: 22px; color: var(--muted); font-size: 15px; line-height: 1.75; }
 .field-guide-body { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 90px; margin-top: 42px; }
 .field-guide-formats { display: grid; gap: 28px; margin: 0; }
 .field-guide-formats > div + div { padding-top: 26px; }
-.field-guide-formats dt { margin-bottom: 12px; font-family: var(--font-read); font-size: 24px; font-weight: 460; letter-spacing: -.035em; line-height: 1.35; }
+.field-guide-formats dt { margin-bottom: 12px; font-family: var(--font-read); font-size: 24px; font-weight: 460; letter-spacing: -.018em; line-height: 1.35; }
 .field-guide-formats dd { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.8; }
 .field-guide-formats dd > span { display: block; margin-bottom: 6px; color: var(--brass); font-size: 12px; font-weight: 550; }
 .field-guide-figure { margin: 0; padding: 32px 34px 20px; background: var(--ground); }
@@ -23,7 +23,7 @@
 .field-guide-card-face { grid-area: 1 / 1; min-width: 0; padding: 28px 30px 26px; background: var(--surface); backface-visibility: hidden; }
 .field-guide-card-answer { transform: rotateY(180deg); }
 .field-guide-card-kicker { color: var(--muted); font-size: 11px; }
-.field-guide-card-face h3 { margin: 25px 0 22px; font-family: var(--font-read); font-size: 34px; font-weight: 440; letter-spacing: -.05em; line-height: 1.18; }
+.field-guide-card-face h3 { margin: 25px 0 22px; font-family: var(--font-read); font-size: 34px; font-weight: 440; letter-spacing: -.025em; line-height: 1.18; }
 .field-guide-card-face h3 em { font-weight: 400; }
 .field-guide-card-face > p { font-size: 14px; line-height: 1.8; }
 .field-guide-card > button { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; width: calc(100% - 60px); min-height: 56px; gap: 15px; margin: 0 30px 10px; border-top: 1px solid var(--hairline-strong); color: var(--brass); text-align: left; font-size: 13px; font-weight: 500; cursor: pointer; }
@@ -31,7 +31,7 @@
 .field-guide-card > button svg { flex-shrink: 0; }
 .field-guide-figure > figcaption { margin-top: 19px; color: var(--muted); text-align: center; font-size: 11px; }
 .field-guide-next { display: flex; align-items: center; justify-content: space-between; gap: 28px; margin-top: 48px; padding-top: 26px; border-top: 1px solid var(--hairline); }
-.field-guide-next > p { font-family: var(--font-read); font-size: 21px; line-height: 1.5; letter-spacing: -.025em; }
+.field-guide-next > p { font-family: var(--font-read); font-size: 21px; line-height: 1.5; letter-spacing: -.013em; }
 .field-guide-next > a { display: inline-flex; align-items: center; gap: 24px; min-height: 44px; color: var(--brass); font-size: 14px; font-weight: 500; text-decoration: underline; text-underline-offset: 6px; text-decoration-color: color-mix(in srgb, var(--brass) 40%, transparent); transition: text-decoration-color var(--dur-fast), text-underline-offset var(--dur-med) var(--ease-out); }
 .field-guide-next > a:is(:hover, :focus-visible) { text-decoration-color: currentColor; text-underline-offset: 8px; }
 .landing-home:not([data-motion="full"]) .field-guide-card-turn { transition: none; }

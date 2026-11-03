@@ -29,8 +29,8 @@ function dedupeCitations(list: Citation[]): SafeCitation[] {
   return out.slice(0, 10);
 }
 
-/** `[n]` mono footnotes under an answer (Task 2.4: replaces the older
- *  pill-chip citation rendering). */
+/** Footnotes under an answer: a brass figure, then the source it points to.
+ *  The figure matches the superscript mark in the answer above. */
 export default function CitationList({
   citations,
   onCite,
@@ -47,17 +47,18 @@ export default function CitationList({
       {list.map((c, i) => {
         const key = `${c.sourceId ?? "cite"}-${i}`;
         // The index is not decoration — it is how the answer refers to this
-        // citation, so it stays in the accessible name.
-        const index = <span>[{i + 1}]</span>;
+        // citation, so it stays in the accessible name, brackets included.
+        const index = (
+          <span className="cite-footnote-index">
+            <span className="cite-bracket">[</span>
+            {i + 1}
+            <span className="cite-bracket">]</span>
+          </span>
+        );
         const host = c.url ? hostOf(c.url) : "";
         if (c.url) {
           return (
-            <ExternalLink
-              key={key}
-              href={c.url}
-              title={c.url}
-              className="cite-footnote font-mono text-label text-brass transition-colors hover:text-ink"
-            >
+            <ExternalLink key={key} href={c.url} title={c.url} className="cite-footnote">
               {index} <span className="cite-footnote-title">{webTitle(c.sourceTitle) || host}</span>
               {host && <> <span className="shrink-0 text-muted">{host}</span></>}
               <ArrowSquareOut size={ICON.xs} className="shrink-0 self-center" aria-hidden="true" />
@@ -67,7 +68,7 @@ export default function CitationList({
         // A web result cited before page addresses were kept has nothing to open.
         if (c.sourceId?.startsWith("web-")) {
           return (
-            <span key={key} className="cite-footnote font-mono text-label text-muted">
+            <span key={key} className="cite-footnote" data-inert="">
               {index} <span className="cite-footnote-title">{webTitle(c.sourceTitle) || "Web page"}</span>
             </span>
           );
@@ -78,7 +79,7 @@ export default function CitationList({
             type="button"
             onClick={() => c.sourceId && onCite(c.sourceId, c.startChar)}
             title={c.citedText.slice(0, 160)}
-            className="cite-footnote font-mono text-label text-brass transition-colors hover:text-ink"
+            className="cite-footnote"
           >
             {index} <span className="cite-footnote-title">{c.sourceTitle || "Source"}</span>
           </button>

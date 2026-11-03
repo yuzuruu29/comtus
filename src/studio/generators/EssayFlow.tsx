@@ -130,7 +130,7 @@ JSON shape:
             className="flex w-full items-center gap-3 rounded-[var(--radius-dialog)] border border-brass/25 bg-brass/[0.05] px-4 py-3.5 text-left transition-colors hover:bg-brass/[0.09] disabled:opacity-50"
           >
             <Feather size={ICON.md} className="shrink-0 text-brass" />
-            <span className="text-[13.5px] text-ink/90">
+            <span className="text-body text-ink/90">
               {busy ? status || "Thinking of prompts…" : "Set three prompts from my sources"}
             </span>
           </button>
@@ -191,8 +191,8 @@ JSON shape:
               className="w-full rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] p-4 text-left transition-colors hover:border-brass/40 active:scale-[0.99]"
             >
               <div className="font-display text-[1.05rem] font-[440] text-ink">{p.title}</div>
-              <div className="mt-1.5 text-[13px] leading-relaxed text-ink/80">{p.prompt}</div>
-              <div className="mt-2 text-[12px] italic leading-relaxed text-muted">{p.guidance}</div>
+              <div className="mt-1.5 text-small leading-relaxed text-ink/80">{p.prompt}</div>
+              <div className="mt-2 text-small italic leading-relaxed text-muted">{p.guidance}</div>
             </button>
           ))}
           <div className="flex justify-end">
@@ -204,11 +204,11 @@ JSON shape:
       {chosen && (
         <div className="space-y-5">
           <div className="rounded-[var(--radius-dialog)] border border-brass/25 bg-brass/[0.05] px-4 py-3.5">
-            <div className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-brass/80">
+            <div className="text-small font-semibold text-brass">
               {chosen.title}
             </div>
-            <p className="mt-1.5 text-[14px] leading-relaxed text-ink/90">{chosen.prompt}</p>
-            <p className="mt-2 text-[12px] italic leading-relaxed text-muted">{chosen.guidance}</p>
+            <p className="mt-1.5 text-body leading-relaxed text-ink/90">{chosen.prompt}</p>
+            <p className="mt-2 text-small italic leading-relaxed text-muted">{chosen.guidance}</p>
           </div>
           <Field label="Rubric">
             <select value={rubricId} onChange={(e) => setRubricId(e.target.value)} className={inputCls}>
@@ -254,31 +254,31 @@ export function EssayFeedback({ payload }: { payload: EssayReviewPayload }) {
           {payload.overall}
           <span className="text-[1.2rem] text-muted sm:text-[1.4rem]"> / {payload.overallMax}</span>
         </div>
-        <p className="mx-auto mt-3 max-w-md text-[13px] leading-relaxed text-muted">{payload.prompt}</p>
+        <p className="mx-auto mt-3 max-w-md text-small leading-relaxed text-muted">{payload.prompt}</p>
       </div>
 
       <div className="space-y-3">
         {payload.criteria.map((c: RubricCriterion) => (
           <div key={c.name} className="rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] p-4">
             <div className="flex items-center justify-between">
-              <span className="text-[13.5px] font-medium text-ink/90">{c.name}</span>
-              <span className="font-mono text-[11.5px] text-brass">
+              <span className="text-body font-medium text-ink/90">{c.name}</span>
+              <span className="font-mono text-label text-brass">
                 {c.score} / {c.max}
               </span>
             </div>
             <div className="mt-2.5 h-1.5 overflow-hidden rounded bg-ink/[0.06]">
               <div className="h-full grad-lamp" style={{ width: `${(c.score / c.max) * 100}%` }} />
             </div>
-            <p className="mt-2.5 text-[12.5px] leading-relaxed text-muted">{c.comment}</p>
+            <p className="mt-2.5 text-small leading-relaxed text-muted">{c.comment}</p>
           </div>
         ))}
       </div>
 
       <div className="rounded-[var(--radius-dialog)] border border-moon/15 bg-moon/[0.05] px-4 py-4">
-        <div className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-moon/80">
+        <div className="text-small font-semibold text-moon">
           The grader's reasoning
         </div>
-        <p className="mt-2 text-[13px] leading-relaxed text-ink/85">{payload.reasoning}</p>
+        <p className="mt-2 text-small leading-relaxed text-ink/85">{payload.reasoning}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -286,7 +286,7 @@ export function EssayFeedback({ payload }: { payload: EssayReviewPayload }) {
           <div className="field-label mb-2.5 text-sage/80">Strengths</div>
           <ul className="space-y-2">
             {payload.strengths.map((s, i) => (
-              <li key={i} className="rounded-[var(--radius-field)] border border-sage/20 bg-sage/[0.04] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-ink/85">
+              <li key={i} className="rounded-[var(--radius-field)] border border-sage/20 bg-sage/[0.04] px-3.5 py-2.5 text-small leading-relaxed text-ink/85">
                 {s}
               </li>
             ))}
@@ -296,14 +296,14 @@ export function EssayFeedback({ payload }: { payload: EssayReviewPayload }) {
           <div className="field-label mb-2.5 text-brass/80">Next draft</div>
           <ul className="space-y-2">
             {payload.improvements.map((s, i) => (
-              <li key={i} className="rounded-[var(--radius-field)] border border-brass/20 bg-brass/[0.04] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-ink/85">
+              <li key={i} className="rounded-[var(--radius-field)] border border-brass/20 bg-brass/[0.04] px-3.5 py-2.5 text-small leading-relaxed text-ink/85">
                 {s}
               </li>
             ))}
           </ul>
         </div>
       </div>
-      <div className="text-center font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
+      <div className="text-center text-label font-medium text-muted">
         {pct}% — rough thought, polished
       </div>
     </div>

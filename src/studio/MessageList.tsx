@@ -22,7 +22,7 @@ function UserBubble({ content }: { content: string }) {
       transition={SOFT}
       className="user-margin-note"
     >
-      <span className="user-margin-kicker">In the margin</span>
+      <span className="user-margin-kicker">You asked</span>
       <p className="user-margin-text">{content}</p>
     </motion.div>
   );
@@ -185,7 +185,7 @@ export default function MessageList({
               {error && (
                 <motion.div
                   role="alert"
-                  className="anim-rise flex flex-wrap items-start gap-3 rounded-[var(--radius-dialog)] border border-rust/30 bg-rust/[0.07] px-4 py-3 text-[13px] text-rust"
+                  className="anim-rise flex flex-wrap items-start gap-3 rounded-[var(--radius-dialog)] border border-rust/30 bg-rust/[0.07] px-4 py-3 text-small text-rust"
                   exit={{ opacity: 0, transition: EXIT }}
                 >
                   <WarningCircle size={ICON.md} className="mt-0.5 shrink-0" />

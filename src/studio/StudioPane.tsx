@@ -468,7 +468,7 @@ export default function StudioPane({
             )}
 
             {deleteError && (
-              <p role="alert" className="rounded-[var(--radius-field)] border border-rust/30 bg-rust/[0.07] px-3 py-2 text-[11.5px] leading-relaxed text-rust">
+              <p role="alert" className="rounded-[var(--radius-field)] border border-rust/30 bg-rust/[0.07] px-3 py-2 text-label leading-relaxed text-rust">
                 {deleteError}
               </p>
             )}
@@ -660,7 +660,7 @@ function UndoDeleteToast({
       open={notice !== null}
       onClose={onExpire}
       durationMs={UNDO_DELETE_MS}
-      className="fixed bottom-[calc(5.5rem+var(--sab))] right-4 z-[80] flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-[var(--radius-dialog)] border border-brass/30 bg-raised px-4 py-3 text-[12.5px] text-ink shadow-modal lg:bottom-6 lg:right-6"
+      className="fixed bottom-[calc(5.5rem+var(--sab))] right-4 z-[80] flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-[var(--radius-dialog)] border border-brass/30 bg-raised px-4 py-3 text-small text-ink shadow-modal lg:bottom-6 lg:right-6"
     >
       {notice && (
         <>
@@ -728,7 +728,7 @@ function ArtifactView({
       return <SlideshowView gen={gen} />;
     case "note":
       return (
-        <div className="prose max-w-none text-ink text-[14.5px] leading-relaxed whitespace-pre-wrap">
+        <div className="prose max-w-none text-ink text-body leading-relaxed whitespace-pre-wrap">
           {(gen.payload as NotePayload)?.content}
         </div>
       );

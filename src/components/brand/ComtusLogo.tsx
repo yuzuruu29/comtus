@@ -1,24 +1,17 @@
-import { type ReactNode } from "react";
-
 export interface ComtusLogoProps {
-  /** Logo variant: 'mark' (emblem only), 'full' (emblem + COMTUS text), or 'illuminated' (with glow aura) */
+  /** Logo variant: 'mark' (emblem only), 'full' (emblem + wordmark), or 'illuminated' (with glow aura) */
   variant?: "mark" | "full" | "illuminated";
   /** Size preset */
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm";
   /** Whether the emblem breathes with subtle animated light pulse */
   breathe?: boolean;
   /** Custom className for the container */
   className?: string;
-  /** Optional subtitle or tagline */
-  subtitle?: ReactNode;
 }
 
 const SIZE_MAP = {
-  xs: { box: "h-6 w-6", icon: 16, text: "text-[13px]", gap: "gap-2" },
-  sm: { box: "h-7 w-7", icon: 18, text: "text-[15px]", gap: "gap-2.5" },
-  md: { box: "h-9 w-9", icon: 22, text: "text-[18px]", gap: "gap-3" },
-  lg: { box: "h-11 w-11", icon: 28, text: "text-[22px]", gap: "gap-3.5" },
-  xl: { box: "h-14 w-14", icon: 36, text: "text-[26px]", gap: "gap-4" },
+  xs: { box: "h-6 w-6", icon: 16, text: "text-lead", gap: "gap-2" },
+  sm: { box: "h-7 w-7", icon: 18, text: "text-title", gap: "gap-2.5" },
 };
 
 export function ComtusEmblem({
@@ -61,10 +54,9 @@ export function ComtusEmblem({
  */
 export default function ComtusLogo({
   variant = "full",
-  size = "md",
+  size = "sm",
   breathe = false,
   className = "",
-  subtitle,
 }: ComtusLogoProps) {
   const config = SIZE_MAP[size];
 
@@ -86,18 +78,11 @@ export default function ComtusLogo({
         <ComtusEmblem size={config.icon} breathe={breathe} />
       </div>
 
-      <div className="flex flex-col">
-        <span
-          className={`font-display font-[600] tracking-[0.05em] text-ink leading-none ${config.text}`}
-        >
-          COMTUS
-        </span>
-        {subtitle && (
-          <span className="mt-0.5 font-mono text-[10px] tracking-[0.14em] uppercase text-muted font-medium">
-            {subtitle}
-          </span>
-        )}
-      </div>
+      {/* The same wordmark as the site and the shelf: lowercase, set tight,
+          closed by a brass full stop. */}
+      <span className={`font-read font-[620] tracking-[-0.033em] text-ink leading-none ${config.text}`}>
+        comtus<span className="text-brass" aria-hidden="true">.</span>
+      </span>
     </div>
   );
 }

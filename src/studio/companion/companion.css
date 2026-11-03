@@ -7,7 +7,7 @@ html[data-motion="full"] .compad-panel { animation: compad-panel-in var(--dur-me
 .compad-panel button { cursor: pointer; }
 .compad-panel button:focus-visible, .compad-panel summary:focus-visible, .compad-panel textarea:focus-visible, .compad-panel input:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
 .compad-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 15px 10px 19px; }
-.compad-panel-header h2 { margin: 0; font-family: var(--font-read); font-size: 24px; font-weight: 440; letter-spacing: -.04em; }
+.compad-panel-header h2 { margin: 0; font-family: var(--font-read); font-size: 24px; font-weight: 440; letter-spacing: -.02em; }
 .compad-panel-header p { margin: 2px 0 0; color: var(--sage); font-size: 11px; }
 .compad-panel-header > button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--muted); }
 .compad-panel-header > button:hover { background: var(--raised); color: var(--ink); }
@@ -17,7 +17,7 @@ html[data-motion="full"] .compad-panel { animation: compad-panel-in var(--dur-me
 .compad-context > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 11px; }
 .compad-transcript { height: 170px; overflow-y: auto; overflow-x: hidden; padding: 17px 19px; overscroll-behavior: contain; scrollbar-width: thin; }
 .compad-transcript:focus-visible { outline: 2px solid var(--brass); outline-offset: -3px; }
-.compad-empty > p { margin: 0 0 8px; font-family: var(--font-read); font-size: 18px; line-height: 1.4; letter-spacing: -.03em; }
+.compad-empty > p { margin: 0 0 8px; font-family: var(--font-read); font-size: 18px; line-height: 1.4; letter-spacing: -.015em; }
 .compad-empty > span { display: block; max-width: 280px; color: var(--muted); font-size: 12px; line-height: 1.7; }
 .compad-empty button { min-height: 44px; margin-top: 7px; color: var(--brass); text-align: left; text-decoration: underline; text-underline-offset: 4px; font-size: 12px; }
 .compad-question { margin-bottom: 17px; padding: 11px 13px; border-radius: var(--radius-field); background: var(--raised); }

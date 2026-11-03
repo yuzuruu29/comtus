@@ -173,15 +173,15 @@ export function AudioOverviewViewer({
               <Broadcast size={ICON.xxl} weight={playing ? "fill" : "light"} className={playing ? "animate-pulse" : ""} />
             </div>
             <div>
-              <h3 className="font-display text-[17px] font-[500] text-ink">{payload.title}</h3>
-              <p className="mt-0.5 text-[12.5px] text-muted line-clamp-1">{payload.summary}</p>
+              <h3 className="font-display text-heading font-[500] text-ink">{payload.title}</h3>
+              <p className="mt-0.5 text-small text-muted line-clamp-1">{payload.summary}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPlaybackSpeed((s) => (s === 1 ? 1.25 : s === 1.25 ? 1.5 : 1))}
-              className="rounded-[var(--radius-pill)] border border-hairline bg-surface px-3 py-1 font-mono text-[11px] text-muted hover:text-ink transition-colors"
+              className="rounded-[var(--radius-pill)] border border-hairline bg-surface px-3 py-1 font-mono text-label text-muted hover:text-ink transition-colors"
               title="Playback speed"
             >
               {playbackSpeed}x
@@ -211,7 +211,7 @@ export function AudioOverviewViewer({
               style={{ width: `${progressPercent}%` }}
             />
           </div>
-          <div className="mt-1.5 flex justify-between font-mono text-[10px] text-muted">
+          <div className="mt-1.5 flex justify-between text-label tabular-nums text-muted">
             <span>Segment {currentTurn + 1} of {totalTurns}</span>
             <span>{playing ? "Playing conversation…" : "Paused"}</span>
           </div>
@@ -221,8 +221,8 @@ export function AudioOverviewViewer({
       {/* Interactive Transcript */}
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h4 className="font-display text-[14px] font-[450] text-ink">Conversation Transcript</h4>
-          <span className="font-mono text-[10.5px] text-muted">Alex & Sam</span>
+          <h4 className="font-display text-body font-[450] text-ink">Conversation Transcript</h4>
+          <span className="text-label text-muted">Alex & Sam</span>
         </div>
 
         <div
@@ -249,12 +249,12 @@ export function AudioOverviewViewer({
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1.5">
-                  <span className={`flex h-5 w-5 items-center justify-center rounded-[var(--radius-pill)] text-[10px] font-mono ${
+                  <span className={`flex h-5 w-5 items-center justify-center rounded-[var(--radius-pill)] text-label ${
                     isAlex ? "bg-moon/20 text-moon font-medium" : "bg-brass/20 text-brass font-medium"
                   }`}>
                     {isAlex ? "A" : "S"}
                   </span>
-                  <span className="font-display text-[13px] font-[500] text-ink">{turn.speaker}</span>
+                  <span className="font-display text-small font-[500] text-ink">{turn.speaker}</span>
                   {isActive && playing && (
                     <span className="ml-auto flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-2 w-2 rounded-[var(--radius-pill)] bg-brass opacity-75" />
@@ -262,7 +262,7 @@ export function AudioOverviewViewer({
                     </span>
                   )}
                 </div>
-                <p className="text-[13.5px] leading-relaxed text-ink/90">{turn.text}</p>
+                <p className="text-body leading-relaxed text-ink/90">{turn.text}</p>
               </button>
             );
           })}
@@ -317,8 +317,8 @@ export function AudioOverviewModal({
           <SpeakerHigh size={ICON.xl} weight="light" />
         </div>
         <div>
-          <h3 className="font-display text-[15px] font-[500] text-ink">Generate Audio Overview</h3>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
+          <h3 className="font-display text-lead font-[500] text-ink">Generate Audio Overview</h3>
+          <p className="mt-1 text-small leading-relaxed text-muted">
             Create an interactive, 2-host audio deep dive ("Alex" & "Sam") analyzing the main findings, connections, and debates across your sources.
           </p>
         </div>
