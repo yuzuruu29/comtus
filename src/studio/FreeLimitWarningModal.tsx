@@ -56,20 +56,20 @@ export default function FreeLimitWarningModal({
       wide
     >
       <div className="space-y-5">
-        <div className="rounded-[var(--radius-dialog)] border border-brass/25 bg-brass/[0.06] p-4 text-[13px] leading-relaxed text-ink/90">
+        <div className="rounded-[var(--radius-dialog)] border border-brass/25 bg-brass/[0.06] p-4 text-small leading-relaxed text-ink/90">
           <p className="font-medium text-brass">
             OpenRouter's free tier has an estimated daily request limit per model during peak hours.
           </p>
-          <p className="mt-1.5 text-muted text-[12px]">
+          <p className="mt-1.5 text-muted text-small">
             Your notes, uploaded documents, and study history are <strong>100% safe</strong> on your device. Choose an option below to continue studying without delay:
           </p>
         </div>
 
         {/* Quick Solution 1: Switch to another working free model */}
         <div>
-          <div className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-brass font-medium mb-2.5 flex items-center justify-between">
-            <span>Option 1: Switch to Another Working Free Model (1-Click)</span>
-            <span className="text-sage text-[10px]">100% Free</span>
+          <div className="text-label text-brass font-medium mb-2.5 flex items-center justify-between">
+            <span>Switch to another free model</span>
+            <span className="text-sage text-label">Free</span>
           </div>
 
           <button
@@ -78,8 +78,8 @@ export default function FreeLimitWarningModal({
             disabled={activeModel === "openrouter/free"}
             className="w-full rounded-[var(--radius-dialog)] border border-hairline bg-ground/70 p-3 text-left hover:border-brass/50 hover:bg-brass/[0.06] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <span className="font-medium text-[12.5px] text-ink">OpenRouter free router</span>
-            <p className="mt-1 text-[11px] text-muted">Let OpenRouter pick an available free model.</p>
+            <span className="font-medium text-small text-ink">OpenRouter free router</span>
+            <p className="mt-1 text-label text-muted">Let OpenRouter pick an available free model.</p>
           </button>
         </div>
 
@@ -87,16 +87,16 @@ export default function FreeLimitWarningModal({
           <div>
             <div className="flex items-center gap-2">
               <Lightning size={ICON.md} className="text-sage shrink-0" />
-              <span className="font-medium text-[13px] text-ink">Add your own key</span>
+              <span className="font-medium text-small text-ink">Add your own key</span>
             </div>
-            <p className="mt-1 text-[11.5px] text-muted">
+            <p className="mt-1 text-label text-muted">
               Groq, OpenRouter, and other OpenAI-compatible endpoints live in AI Models. A key is required before those models answer.
             </p>
           </div>
           <button
             type="button"
             onClick={handleOpenModels}
-            className="shrink-0 rounded-[var(--radius-field)] border border-sage/40 bg-sage/10 px-3 py-1.5 font-mono text-[11px] text-sage font-medium hover:bg-sage/20 transition-colors"
+            className="shrink-0 rounded-[var(--radius-field)] border border-sage/40 bg-sage/10 px-3 py-1.5 text-label text-sage font-medium hover:bg-sage/20 transition-colors"
           >
             Open AI Models
           </button>
@@ -106,11 +106,11 @@ export default function FreeLimitWarningModal({
           <div>
             <div className="flex items-center gap-2">
               <Crown size={ICON.lg} className="text-brass shrink-0" />
-              <span className="font-display text-[14px] font-[450] text-ink">
+              <span className="font-display text-body font-[450] text-ink">
                 Hosted Claude passes
               </span>
             </div>
-            <p className="mt-1 text-[12px] text-muted leading-relaxed">
+            <p className="mt-1 text-small text-muted leading-relaxed">
               Instant access to Claude Opus 5.5 & Sonnet 5.5 with no daily free-tier queues. First-purchase passes start at <strong>$5</strong> for eligible PayPal buyers.
             </p>
           </div>
@@ -120,7 +120,7 @@ export default function FreeLimitWarningModal({
               setOpen(false);
               onOpenSettings?.();
             }}
-            className="shrink-0 rounded-[var(--radius-field)] bg-brass px-4 py-2 font-mono text-[11.5px] font-semibold text-ground hover:bg-brass-deep transition-colors shadow-md flex items-center gap-1.5"
+            className="shrink-0 rounded-[var(--radius-field)] bg-brass px-4 py-2 text-label font-semibold text-ground hover:bg-brass-deep transition-colors shadow-md flex items-center gap-1.5"
           >
             <span>View Passes</span>
             <ArrowRight size={ICON.sm} />
@@ -128,7 +128,7 @@ export default function FreeLimitWarningModal({
         </div>
 
         {/* Bottom reset timer info */}
-        <div className="flex items-center justify-between pt-2 text-[11px] font-mono text-muted border-t border-hairline">
+        <div className="flex items-center justify-between pt-2 text-label text-muted border-t border-hairline">
           <span className="flex items-center gap-1.5">
             <Clock size={ICON.sm} className="text-brass" />
             <span>OpenRouter daily free quotas typically reset at 00:00 UTC.</span>

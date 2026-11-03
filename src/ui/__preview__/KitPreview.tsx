@@ -152,7 +152,7 @@ export default function KitPreview() {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-3 border-t border-hairline pt-6">
-      <h2 className="text-label font-medium uppercase tracking-wide text-muted">{title}</h2>
+      <h2 className="text-label font-medium text-muted">{title}</h2>
       {children}
     </section>
   );

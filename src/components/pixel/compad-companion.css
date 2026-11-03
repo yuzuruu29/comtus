@@ -123,8 +123,13 @@ html[data-motion="minimal"] .compad-speech { animation-name: compad-speech-fade;
 
 .compad-menu-anchor > * { max-width: 100%; }
 
+/* A finger cannot hover, and a 44px grip always on show covered most of
+   Compad's face and took taps meant to open it. On touch the grip waits
+   until Compad has focus. */
 @media (pointer: coarse) {
-  .compad-resize-handle { width: 44px; height: 44px; opacity: 1; }
+  .compad-resize-handle { width: 44px; height: 44px; visibility: hidden; }
+  .cozy-pixel-battery-companion:focus-within .compad-resize-handle,
+  .compad-resize-handle[data-resizing="true"] { visibility: visible; opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

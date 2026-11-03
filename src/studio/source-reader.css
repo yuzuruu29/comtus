@@ -111,10 +111,9 @@ div:has(> .reader-head) {
   gap: 0.75rem;
   margin: 1.5rem 0 1rem 2.75rem;
   color: var(--muted);
-  font-family: var(--font-mono);
   font-size: var(--text-label);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   user-select: none;
 }
 
@@ -370,10 +369,8 @@ html[data-theme="dark"] .reader-mark:hover {
 
 .reader-mark-page {
   color: var(--muted);
-  font-family: var(--font-mono);
   font-size: var(--text-label);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
 }
 
 .reader-marks-foot {

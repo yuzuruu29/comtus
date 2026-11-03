@@ -267,9 +267,9 @@ export default function CommandPalette({
                 aria-controls="command-palette-results"
                 aria-activedescendant={items[active] ? `command-${items[active].id}` : undefined}
                 autoComplete="off"
-                className="min-w-0 flex-1 bg-transparent text-[14px] text-ink placeholder:text-muted"
+                className="min-w-0 flex-1 bg-transparent text-body text-ink placeholder:text-muted"
               />
-              <kbd className="font-mono text-[10px] text-muted">esc</kbd>
+              <kbd className="font-mono text-label text-muted">esc</kbd>
             </div>
             <div
               id="command-palette-results"
@@ -278,7 +278,7 @@ export default function CommandPalette({
               className="max-h-[min(60vh,28rem)] overflow-y-auto py-1.5"
             >
               {items.length === 0 && (
-                <div className="px-4 py-8 text-center text-[13px] text-muted">
+                <div className="px-4 py-8 text-center text-small text-muted">
                   {searching ? "Searching your notebooks…" : "Nothing in your notebooks matches."}
                 </div>
               )}
@@ -287,7 +287,7 @@ export default function CommandPalette({
                 return (
                   <div key={item.id}>
                     {showGroup && (
-                      <div className="px-3.5 pb-1 pt-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
+                      <div className="px-3.5 pb-1 pt-2.5 text-label font-medium text-muted">
                         {item.group}
                       </div>
                     )}
@@ -299,7 +299,7 @@ export default function CommandPalette({
                       type="button"
                       onMouseEnter={() => setActive(i)}
                       onClick={() => run(item)}
-                      className={`flex w-full gap-2.5 px-3.5 py-2 text-left text-[13.5px] ${
+                      className={`flex w-full gap-2.5 px-3.5 py-2 text-left text-body ${
                         item.snippet ? "items-start" : "items-center"
                       } ${i === active ? "bg-brass/[0.1] text-ink" : "text-ink/85"}`}
                     >
@@ -312,11 +312,11 @@ export default function CommandPalette({
                         <span className="flex items-baseline gap-2">
                           <span className="min-w-0 flex-1 truncate">{item.label}</span>
                           {item.meta && (
-                            <span className="max-w-[40%] shrink-0 truncate text-[11.5px] text-muted">{item.meta}</span>
+                            <span className="max-w-[40%] shrink-0 truncate text-label text-muted">{item.meta}</span>
                           )}
                         </span>
                         {item.snippet && (
-                          <span className="mt-0.5 line-clamp-2 block text-[12px] leading-snug text-muted">
+                          <span className="mt-0.5 line-clamp-2 block text-small leading-snug text-muted">
                             {item.snippet.text.slice(0, item.snippet.start)}
                             <mark className="rounded-[2px] bg-brass/20 px-0.5 text-ink">
                               {item.snippet.text.slice(item.snippet.start, item.snippet.end)}
@@ -326,7 +326,7 @@ export default function CommandPalette({
                         )}
                       </span>
                       {item.hint && (
-                        <span className="font-mono text-[10px] text-muted">{item.hint}</span>
+                        <span className="font-mono text-label text-muted">{item.hint}</span>
                       )}
                     </button>
                   </div>

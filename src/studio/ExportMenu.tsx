@@ -57,7 +57,7 @@ export default function ExportMenu({ gen }: { gen: Generation }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={busy}
-        className="flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-hairline bg-ink/[0.03] px-3 py-1.5 text-[12px] text-ink/85 transition-colors hover:border-hairline-strong hover:text-ink disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-hairline bg-ink/[0.03] px-3 py-1.5 text-small text-ink/85 transition-colors hover:border-hairline-strong hover:text-ink disabled:opacity-50"
         aria-label="Download artifact"
         aria-expanded={open}
       >
@@ -66,7 +66,7 @@ export default function ExportMenu({ gen }: { gen: Generation }) {
       </button>
 
       {err && (
-        <div className="absolute right-0 top-full z-10 mt-1.5 flex w-56 items-start gap-1.5 rounded-[var(--radius-field)] border border-hairline bg-surface px-3 py-2 text-[11.5px] text-rust">
+        <div className="absolute right-0 top-full z-10 mt-1.5 flex w-56 items-start gap-1.5 rounded-[var(--radius-field)] border border-hairline bg-surface px-3 py-2 text-label text-rust">
           <Warning size={ICON.sm} className="mt-0.5 shrink-0" />
           {err}
         </div>
@@ -92,8 +92,8 @@ export default function ExportMenu({ gen }: { gen: Generation }) {
                 >
                   <meta.icon size={ICON.md} weight="light" className="shrink-0 text-brass/85" />
                   <span className="min-w-0">
-                    <span className="block text-[12.5px] text-ink/90">{meta.label}</span>
-                    <span className="block text-[10.5px] text-muted">{meta.hint}</span>
+                    <span className="block text-small text-ink/90">{meta.label}</span>
+                    <span className="block text-label text-muted">{meta.hint}</span>
                   </span>
                 </button>
               );

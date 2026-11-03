@@ -545,7 +545,7 @@ export default function ChatPane({
         leave={streamEndRef.current === "commit" ? "instant" : "fade"}
       />
 
-      {preparing && <p role="status" className="px-5 py-2 text-[12px] text-muted">Preparing your question…</p>}
+      {preparing && <p role="status" className="px-5 py-2 text-small text-muted">Preparing your question…</p>}
       <Composer
         notebook={notebook}
         sourcesVersion={sourcesVersion}
@@ -583,7 +583,7 @@ export default function ChatPane({
         open={toastNoteSaved}
         onClose={() => setToastNoteSaved(false)}
         durationMs={2600}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-[var(--radius-dialog)] border border-sage/40 bg-surface px-4 py-2.5 text-[13px] text-sage shadow-modal"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-[var(--radius-dialog)] border border-sage/40 bg-surface px-4 py-2.5 text-small text-sage shadow-modal"
       >
         <Check size={ICON.md} weight="bold" />
         <span role="status">Saved to Studio Notes</span>

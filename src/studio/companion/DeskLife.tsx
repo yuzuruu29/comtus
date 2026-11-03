@@ -270,7 +270,9 @@ export default function DeskLife({
           resizable
           think={batteryThink}
           face={batteryFace}
-          avoidSelector=".composer-shell, #mobile-bottom-nav, #workspace-sources-pane, #workspace-chat-pane, .workspace-header"
+          // Keep-outs are content, not panes: the chat's reading column leaves a
+          // gutter beside the studio pane where Compad can rest over nothing.
+          avoidSelector=".composer-shell, #mobile-bottom-nav, #workspace-sources-pane, .chat-reading-column > *, [role='separator'], #workspace-studio-pane section, .exam-plan, .workspace-header"
           restingOffset={restingOffset}
           onMenu={() => setCopilotOpen((v) => !v)}
           menuOpen={copilotOpen}

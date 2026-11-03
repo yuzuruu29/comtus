@@ -30,23 +30,23 @@ export default function UpdateToast() {
           <div className="overflow-hidden rounded-[var(--radius-field)] border border-hairline bg-surface/95 shadow-[0_18px_60px_-18px_rgba(0,0,0,0.75)]">
             {state.phase === "available" && (
               <div className="p-4">
-                <div className="flex items-center gap-2 text-[13.5px] font-medium text-ink">
+                <div className="flex items-center gap-2 text-body font-medium text-ink">
                   <ArrowCircleDown size={ICON.lg} weight="light" className="text-brass" />
                   Comtus {pendingVersion ?? "a new version"} is ready
                 </div>
-                <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
+                <p className="mt-1.5 text-small leading-relaxed text-muted">
                   Download and restart to update the Desk App. Your notebooks stay put.
                 </p>
                 <div className="mt-3 flex items-center gap-2">
                   <button
                     onClick={() => void install()}
-                    className="rounded-[var(--radius-control)] bg-brass px-3 py-1.5 text-[12.5px] font-medium text-ground transition hover:bg-brass-deep"
+                    className="rounded-[var(--radius-control)] bg-brass px-3 py-1.5 text-small font-medium text-ground transition hover:bg-brass-deep"
                   >
                     Update &amp; restart
                   </button>
                   <button
                     onClick={reset}
-                    className="rounded-[var(--radius-control)] px-3 py-1.5 text-[12.5px] text-muted transition hover:text-ink"
+                    className="rounded-[var(--radius-control)] px-3 py-1.5 text-small text-muted transition hover:text-ink"
                   >
                     Later
                   </button>
@@ -55,7 +55,7 @@ export default function UpdateToast() {
             )}
             {state.phase === "downloading" && (
               <div className="p-4">
-                <div className="text-[13px] font-medium text-ink">Downloading update…</div>
+                <div className="text-small font-medium text-ink">Downloading update…</div>
                 <div className="mt-2.5 h-1 overflow-hidden rounded-[var(--radius-pill)] bg-white/[0.08]">
                   <div
                     role="progressbar"
@@ -70,20 +70,20 @@ export default function UpdateToast() {
               </div>
             )}
             {state.phase === "installing" && (
-              <div className="p-4 text-[13px] text-ink">Restarting to finish the update…</div>
+              <div className="p-4 text-small text-ink">Restarting to finish the update…</div>
             )}
             {state.phase === "up-to-date" && (
               <button onClick={reset} className="flex w-full items-center gap-2 p-4 text-left">
                 <CheckCircle size={ICON.md} weight="light" className="shrink-0 text-sage" />
-                <span className="text-[13px] text-ink">Comtus is up to date.</span>
+                <span className="text-small text-ink">Comtus is up to date.</span>
               </button>
             )}
             {state.phase === "error" && (
               <button onClick={reset} className="flex w-full items-start gap-2 p-4 text-left">
                 <Warning size={ICON.md} weight="light" className="mt-0.5 shrink-0 text-rust" />
                 <span>
-                  <span className="block text-[13px] text-ink">Update check failed.</span>
-                  <span className="mt-0.5 block break-words text-[11.5px] leading-relaxed text-muted">
+                  <span className="block text-small text-ink">Update check failed.</span>
+                  <span className="mt-0.5 block break-words text-label leading-relaxed text-muted">
                     {state.message}
                   </span>
                 </span>

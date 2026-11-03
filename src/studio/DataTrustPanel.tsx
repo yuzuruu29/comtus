@@ -119,7 +119,7 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
         app only when you export them.
       </p>
       {quota && (
-        <p className="mt-2 font-mono text-[10.5px] uppercase tracking-[0.12em] text-muted">
+        <p className="mt-2 text-label font-medium text-muted">
           {quota}
         </p>
       )}
@@ -133,7 +133,7 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
             >
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-body text-ink/90">{nb.name}</span>
-                <span className="block font-mono text-[10px] text-muted">
+                <span className="block text-label tabular-nums text-muted">
                   {nb.sources} sources · {formatBytes(nb.bytes)}
                 </span>
               </span>
@@ -157,7 +157,7 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
         title="Delete notebook"
       >
         <div className="space-y-4">
-          <p className="text-[13.5px] leading-relaxed text-muted">
+          <p className="text-body leading-relaxed text-muted">
             Are you sure you want to remove/delete <strong className="font-medium text-ink">"{deletingNb?.name}"</strong>? All {deletingNb?.sources} sources and study history inside it will be permanently deleted from this device.
           </p>
           <div className="flex justify-end gap-3 pt-2">
@@ -176,7 +176,7 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
                   setDeletingNb(null);
                 }
               }}
-              className="rounded-[var(--radius-control)] bg-rust px-4 py-2 text-[13px] font-medium text-white hover:brightness-110 active:scale-95 transition-all"
+              className="rounded-[var(--radius-control)] bg-rust px-4 py-2 text-small font-medium text-white hover:brightness-110 active:scale-95 transition-all"
             >
               Delete permanently
             </button>
@@ -233,12 +233,12 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
           </span>
         )}
       </div>
-      <p className="mt-2 font-mono text-[10.5px] text-muted">{formatBackupAt(lastBackupAt)}</p>
-      <p className="mt-1 font-mono text-[10.5px] text-muted">
+      <p className="mt-2 text-label tabular-nums text-muted">{formatBackupAt(lastBackupAt)}</p>
+      <p className="mt-1 text-label text-muted">
         {kept === true ? "Kept on this device" : kept === false ? "This browser may clear this site" : "Storage persistence is not available"}
       </p>
       {needsBackup && (
-        <p className="mt-1 text-[12px] text-ink">Export a backup. This browser can remove site data.</p>
+        <p className="mt-1 text-small text-ink">Export a backup. This browser can remove site data.</p>
       )}
     </div>
   );

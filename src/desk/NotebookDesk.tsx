@@ -254,7 +254,7 @@ function RailButton({
       >
         <Icon size={ICON.md} weight="light" />
       </button>
-      <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-control)] border border-hairline bg-surface px-2 py-1 text-[11px] text-ink opacity-0 transition-opacity group-hover:opacity-100">
+      <span className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-control)] border border-hairline bg-surface px-2 py-1 text-label text-ink opacity-0 transition-opacity group-hover:opacity-100">
         {label}
       </span>
     </div>

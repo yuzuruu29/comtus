@@ -170,11 +170,25 @@ export function rehypeStreamCursor() {
 const CITE_RE = /\[(\d{1,2})\]/g;
 const SKIP_CITE_TAGS = new Set(["code", "pre", "sup", "script", "style"]);
 
+/** Rehype plugin: sets each `[n]` as a footnote mark. The mark hugs the word
+ *  it cites (the space a model writes before it would strand the mark, and
+ *  the full stop after it, on their own), and marks written side by side
+ *  share one superscript, "1,2". The brackets stay in the text for copying
+ *  and for screen readers; CSS hides them from sight. */
 export function rehypeCitationMarks() {
   return (tree: HastNode) => {
     markCitations(tree);
   };
 }
+
+const bracket = (value: string): HastNode => ({
+  type: "element",
+  tagName: "span",
+  properties: { className: ["cite-bracket"] },
+  children: [{ type: "text", value }],
+});
+
+const markParts = (n: string): HastNode[] => [bracket("["), { type: "text", value: n }, bracket("]")];
 
 function markCitations(node: HastNode): void {
   const kids = node.children;
@@ -194,15 +208,19 @@ function markCitations(node: HastNode): void {
     let last = 0;
     for (const match of child.value.matchAll(CITE_RE)) {
       const idx = match.index ?? 0;
-      if (idx > last) {
-        parts.push({ type: "text", value: child.value.slice(last, idx) });
+      const before = child.value.slice(last, idx).trimEnd();
+      const prev = parts[parts.length - 1];
+      if (!before && prev?.tagName === "sup") {
+        prev.children!.push({ type: "text", value: "," }, ...markParts(match[1]));
+      } else {
+        if (before) parts.push({ type: "text", value: before });
+        parts.push({
+          type: "element",
+          tagName: "sup",
+          properties: { className: ["cite-mark"] },
+          children: markParts(match[1]),
+        });
       }
-      parts.push({
-        type: "element",
-        tagName: "sup",
-        properties: { className: ["cite-mark"] },
-        children: [{ type: "text", value: match[0] }],
-      });
       last = idx + match[0].length;
     }
     if (last < child.value.length) {

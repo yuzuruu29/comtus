@@ -113,11 +113,31 @@ that role by an explicit allow-list in `src/styles/palette.test.ts`.
 All families are self-hosted via `@fontsource`. No Google Fonts CDN.
 
 Literata Variable (`--font-read`) carries long reading and editorial headings.
+It ships with its optical-size axis (`opsz.css`, `opsz-italic.css`, opsz 7–72), so
+a 90px headline gets the display cut and a 17px answer the text cut without any
+setting. Display tracking is light (about −0.03em at hero size) because the
+display cut is already drawn tight.
 Instrument Sans Variable (`--font-ui`) carries navigation, forms, actions, and interface copy.
-JetBrains Mono is reserved for measurements and code. Pixelify is an optional accent.
+JetBrains Mono is reserved for figures, keys, ids, timers and code. Pixelify is an optional accent.
 The landing uses the same families and tokens as the desk. Reading size adjusts source text
 and answers while interface controls keep their size. Never set a whole workspace to the
 display family or use uppercase mono as the default form voice.
+
+The interface ladder, smallest first: `text-label` 11px, `text-small` 13px,
+`text-body` 14px, `text-lead` 16px, `text-heading` 16.8px, `text-title` 20px,
+then `text-display`. Every desk size is one of these; `src/styles/scale.test.ts`
+holds arbitrary pixel sizes outside the landing at zero.
+
+Labels are sentence case in the UI face. A badge is `text-label font-semibold`
+on its tone; a section label inside a card ("Why", "The grader's reasoning")
+is `text-small font-semibold`. Uppercase survives only where the thing itself
+is capitals, such as a transfer code. `src/styles/tells.test.ts` holds the count.
+
+Answers are typeset like a book. A citation is a brass superscript figure in the
+UI face that hugs the word it cites; marks written side by side share one
+superscript ("1,2"). The brackets stay in the text for copying and for screen
+readers but are hidden from sight. Tables are booktabs: a heavier rule above
+and below, hairlines between rows, no vertical rules and no caps headers.
 
 Icons are one family (Phosphor) on one scale: `--icon-xs` 12px through `--icon-3xl`
 32px, exported as `ICON` from `src/ui/iconScale.ts`. The smallest step is for a
@@ -157,6 +177,8 @@ Movement in Comtus is physical, warm, and intentional. Interactions follow the p
   - `@keyframes pixel-flicker` / `torch-flicker`: warm filament micro-flicker for the pixel chrome.
   - `@keyframes citation-spotlight` / `cite-bloom`: a citation settling onto its passage, decaying over `--dur-settle`.
   - `@keyframes rise-in` / `fade-in` / `pop-in`: entrances. A short rise with a fade, never a scale — a panel that grows from 96% is a generated-UI tell.
+  - `@keyframes ink-in`: while an answer streams, each block the model starts settles in with a fade and a 4px rise (`.md-live`, the streaming slot only, so a finished answer never replays). Minimal fades it in place; None shows it at once.
+  - Keyframes never overshoot, the same rule the springs follow: `chip-pop` settles at its resting size without passing it.
 - **Glass for floating layers only (`.glass`, `src/index.css`)**: frosted paper
   for the layers that float over the desk: Compad's panel and speech, the focus
   timer, the milestone toast. Panes, cards and dialogs stay opaque paper. Glass

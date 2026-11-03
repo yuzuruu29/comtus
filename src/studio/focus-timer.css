@@ -131,7 +131,7 @@ html[data-motion="minimal"] .focus-panel { animation: focus-panel-fade var(--dur
   font-size: 40px;
   font-variant-numeric: tabular-nums;
   font-weight: 420;
-  letter-spacing: -0.03em;
+  letter-spacing: -.015em;
   line-height: 1.05;
 }
 .focus-dial-state { color: var(--muted); font-size: 12px; }

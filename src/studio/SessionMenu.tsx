@@ -116,7 +116,7 @@ export default function SessionMenu({
                           if (e.key === "Enter") commitRename();
                           if (e.key === "Escape") setRenamingId(null);
                         }}
-                        className="!py-1 !text-[12.5px]"
+                        className="!py-1 !text-small"
                       />
                     </div>
                   );
@@ -125,7 +125,7 @@ export default function SessionMenu({
                 return (
                   <div
                     key={session.id}
-                    className={`group relative flex w-full items-center justify-between gap-2 rounded-[var(--radius-control)] px-2.5 py-1 text-left text-[12.5px] transition-colors ${
+                    className={`group relative flex w-full items-center justify-between gap-2 rounded-[var(--radius-control)] px-2.5 py-1 text-left text-small transition-colors ${
                       isActive
                         ? "bg-brass/10 text-brass font-medium"
                         : "text-muted hover:bg-ink/[0.04] hover:text-ink"
@@ -182,7 +182,7 @@ export default function SessionMenu({
                 setMenuOpen(false);
                 onNew();
               }}
-              className="flex w-full items-center gap-2 border-t border-hairline px-3 py-2 text-[12px] font-medium text-brass hover:bg-brass/[0.06] transition-colors"
+              className="flex w-full items-center gap-2 border-t border-hairline px-3 py-2 text-small font-medium text-brass hover:bg-brass/[0.06] transition-colors"
             >
               <Plus size={ICON.sm} />
               New chat

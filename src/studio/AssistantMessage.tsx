@@ -129,7 +129,7 @@ const AssistantMessage = memo(function AssistantMessage({
 
       {/* Formatted Markdown Content */}
       {msg.content ? (
-        <div className="md md-answer text-ink">
+        <div className={`md md-answer text-ink${streaming ? " md-live" : ""}`}>
           <ReactMarkdown
             remarkPlugins={[remarkGfm, ...mathRemarkPlugins]}
             rehypePlugins={streaming ? [...mathRehypePlugins, rehypeCitationMarks, rehypeStreamCursor] : [...mathRehypePlugins, rehypeCitationMarks]}

@@ -259,7 +259,7 @@ export default function DeskHome({
         </div>
 
         {needsBackup && (
-          <p className="mt-4 text-[13px] text-muted">Export a backup. This browser can remove site data.</p>
+          <p className="mt-4 text-small text-muted">Export a backup. This browser can remove site data.</p>
         )}
 
         {/* Filter & View Controls Toolbar */}
@@ -268,7 +268,7 @@ export default function DeskHome({
           <div className="flex items-center gap-1.5 rounded-[var(--radius-control)] bg-surface/80 p-1 border border-hairline">
             <button
               onClick={() => setActiveTab("all")}
-              className={`rounded-[var(--radius-control)] px-3.5 py-1 text-[13px] font-medium transition-all ${
+              className={`rounded-[var(--radius-control)] px-3.5 py-1 text-small font-medium transition-all ${
                 activeTab === "all"
                   ? "bg-brass/15 text-brass shadow-sm"
                   : "text-muted hover:text-ink"
@@ -278,7 +278,7 @@ export default function DeskHome({
             </button>
             <button
               onClick={() => setActiveTab("my")}
-              className={`rounded-[var(--radius-control)] px-3.5 py-1 text-[13px] font-medium transition-all ${
+              className={`rounded-[var(--radius-control)] px-3.5 py-1 text-small font-medium transition-all ${
                 activeTab === "my"
                   ? "bg-brass/15 text-brass shadow-sm"
                   : "text-muted hover:text-ink"
@@ -302,7 +302,7 @@ export default function DeskHome({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search notebooks…"
-                className="h-9 w-44 rounded-[var(--radius-control)] border border-hairline bg-surface/50 pl-8 pr-3 text-[12.5px] text-ink placeholder:text-muted transition-all focus:w-60 focus:border-brass/40 focus:bg-surface"
+                className="h-9 w-44 rounded-[var(--radius-control)] border border-hairline bg-surface/50 pl-8 pr-3 text-small text-ink placeholder:text-muted transition-all focus:w-60 focus:border-brass/40 focus:bg-surface"
               />
               {searchQuery && (
                 <button
@@ -346,7 +346,7 @@ export default function DeskHome({
             <div ref={sortMenuRef} className="relative">
               <button
                 onClick={() => setSortMenuOpen((v) => !v)}
-                className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/60 px-3 text-[12.5px] font-medium text-muted hover:text-ink transition-colors"
+                className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/60 px-3 text-small font-medium text-muted hover:text-ink transition-colors"
               >
                 <span>
                   {sortOption === "recent"
@@ -357,7 +357,7 @@ export default function DeskHome({
                         ? "Oldest"
                         : "Most sources"}
                 </span>
-                <span className="text-[10px] text-muted">▾</span>
+                <span className="text-label text-muted">▾</span>
               </button>
 
               <AnimatePresence>
@@ -381,7 +381,7 @@ export default function DeskHome({
                           setSortOption(opt.id as SortOption);
                           setSortMenuOpen(false);
                         }}
-                        className={`flex w-full items-center px-3 py-2 text-left text-[12.5px] rounded-[var(--radius-control)] transition-colors ${
+                        className={`flex w-full items-center px-3 py-2 text-left text-small rounded-[var(--radius-control)] transition-colors ${
                           sortOption === opt.id
                             ? "bg-brass/10 text-brass font-medium"
                             : "text-muted hover:bg-ink/[0.04] hover:text-ink"
@@ -409,14 +409,14 @@ export default function DeskHome({
             />
             <button
               onClick={pickFile}
-              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3.5 text-[13px] text-ink/85 hover:border-hairline-strong hover:text-ink transition-colors"
+              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3.5 text-small text-ink/85 hover:border-hairline-strong hover:text-ink transition-colors"
             >
               <FolderOpen size={ICON.md} />
               <span>Open a file</span>
             </button>
             <button
               onClick={() => setReceiving(true)}
-              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3.5 text-[13px] text-ink/85 hover:border-hairline-strong hover:text-ink transition-colors"
+              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3.5 text-small text-ink/85 hover:border-hairline-strong hover:text-ink transition-colors"
             >
               <DeviceMobile size={ICON.md} />
               <span>From another device</span>
@@ -425,7 +425,7 @@ export default function DeskHome({
             {/* + Create New Button */}
             <button
               onClick={openCreateModal}
-              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] grad-lamp px-4 text-[13px] font-semibold text-ground shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
+              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] grad-lamp px-4 text-small font-semibold text-ground shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
             >
               <Plus size={ICON.md} weight="bold" />
               <span>Create new</span>
@@ -434,7 +434,7 @@ export default function DeskHome({
         </div>
 
         {fileNotice && (
-          <p role="status" className="mt-4 text-[13px] text-muted">
+          <p role="status" className="mt-4 text-small text-muted">
             {fileNotice}
           </p>
         )}
@@ -467,13 +467,13 @@ export default function DeskHome({
           <h2 className="font-display text-[1.45rem] font-[450] text-ink">
             Recent notebooks
           </h2>
-          <span className="font-mono text-[11px] text-muted">
+          <span className="text-label tabular-nums text-muted">
             {processedNotebooks.length} {processedNotebooks.length === 1 ? "notebook" : "notebooks"}
           </span>
         </div>
 
         {loadError && (
-          <div role="alert" className="mb-6 flex items-center gap-2.5 rounded-[var(--radius-dialog)] border border-rust/30 bg-rust/[0.06] px-4 py-3 text-[13px] text-rust">
+          <div role="alert" className="mb-6 flex items-center gap-2.5 rounded-[var(--radius-dialog)] border border-rust/30 bg-rust/[0.06] px-4 py-3 text-small text-rust">
             <WarningCircle size={ICON.md} weight="light" />
             The desk could not read your library. No data was removed.
           </div>
@@ -491,7 +491,7 @@ export default function DeskHome({
                 className="card-wake group flex min-h-[175px] h-full w-full flex-col items-center justify-center gap-3 rounded-[var(--radius-dialog)] border border-dashed border-hairline-strong bg-surface/30 p-5 text-center"
               >
                 <CreateNotebookEmblem />
-                <span className="font-display text-[15px] font-[450] text-ink/90 group-hover:text-brass">
+                <span className="font-display text-lead font-[450] text-ink/90 group-hover:text-brass">
                   Create new notebook
                 </span>
               </button>
@@ -549,7 +549,7 @@ export default function DeskHome({
                                     setRenamingNotebook(nb);
                                     setRenameDraft(nb.name);
                                   }}
-                                  className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
+                                  className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-small text-ink hover:bg-ink/[0.06]"
                                 >
                                   <PencilSimple size={ICON.sm} />
                                   Rename
@@ -559,7 +559,7 @@ export default function DeskHome({
                                     e.stopPropagation();
                                     void handleExport(nb);
                                   }}
-                                  className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
+                                  className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-small text-ink hover:bg-ink/[0.06]"
                                 >
                                   <DownloadSimple size={ICON.sm} />
                                   Export
@@ -570,7 +570,7 @@ export default function DeskHome({
                                     setMenuOpenId(null);
                                     setSending(nb);
                                   }}
-                                  className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-ink hover:bg-ink/[0.06]"
+                                  className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-small text-ink hover:bg-ink/[0.06]"
                                 >
                                   <DeviceMobile size={ICON.sm} />
                                   Send to device
@@ -581,7 +581,7 @@ export default function DeskHome({
                                     e.stopPropagation();
                                     setDeletingId(nb.id);
                                   }}
-                                  className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-[12px] text-rust hover:bg-rust/10"
+                                  className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-1.5 text-left text-small text-rust hover:bg-rust/10"
                                 >
                                   <Trash size={ICON.sm} />
                                   Delete
@@ -597,13 +597,13 @@ export default function DeskHome({
                         onClick={() => onOpenResume(nb.id)}
                         className="my-3 text-left"
                       >
-                        <h3 className="line-clamp-2 font-display text-[16px] font-[450] leading-snug text-ink transition-colors group-hover:text-brass">
+                        <h3 className="line-clamp-2 font-display text-lead font-[450] leading-snug text-ink transition-colors group-hover:text-brass">
                           {nb.name}
                         </h3>
                       </button>
 
                       {/* Footer Meta Row (Screenshot 1 format: "Oct 6, 2025 · 1 source") */}
-                      <div className="flex items-center text-[13px] text-muted">
+                      <div className="flex items-center text-small text-muted">
                         <span>{formatDate(nb.updatedAt)}</span>
                         <span className="mx-1.5 text-muted">·</span>
                         <span>
@@ -638,17 +638,17 @@ export default function DeskHome({
                   >
                     <StudyGlyph name={nb.name} size="sm" bare />
                     <div className="min-w-0">
-                      <span className="block truncate font-display text-[15px] font-[450] text-ink group-hover:text-brass">
+                      <span className="block truncate font-display text-lead font-[450] text-ink group-hover:text-brass">
                         {nb.name}
                       </span>
                     </div>
                   </button>
 
-                  <div className="flex items-center gap-6 text-[12px] text-muted">
+                  <div className="flex items-center gap-6 text-small text-muted">
                     {examCountdown(nb) && (
                       <span className="font-[560] text-brass">{examCountdown(nb)}</span>
                     )}
-                    <span className="rounded-[var(--radius-pill)] bg-ink/[0.04] px-2.5 py-0.5 font-mono text-[12px]">
+                    <span className="rounded-[var(--radius-pill)] bg-ink/[0.04] px-2.5 py-0.5 text-small tabular-nums">
                       {nb.sourceCount} {nb.sourceCount === 1 ? "source" : "sources"}
                     </span>
                     <span className="w-28 text-right">{timeAgo(nb.updatedAt)}</span>
@@ -677,7 +677,7 @@ export default function DeskHome({
               );
             })}
             {processedNotebooks.length === 0 && (
-              <div className="px-6 py-10 text-center text-muted text-[13px]">
+              <div className="px-6 py-10 text-center text-muted text-small">
                 No notebooks match your search.
               </div>
             )}
@@ -710,7 +710,7 @@ export default function DeskHome({
             />
           </Field>
           {createError && (
-            <p role="alert" className="text-[13px] leading-relaxed text-rust">
+            <p role="alert" className="text-small leading-relaxed text-rust">
               {createError}
             </p>
           )}
@@ -771,7 +771,7 @@ export default function DeskHome({
         title="Delete notebook"
       >
         <div className="space-y-4">
-          <p className="text-[13.5px] leading-relaxed text-muted">
+          <p className="text-body leading-relaxed text-muted">
             Are you sure you want to delete this notebook? All sources, notes, and study history inside it will be permanently deleted from this device.
           </p>
           <div className="flex justify-end gap-3 pt-2">
@@ -780,7 +780,7 @@ export default function DeskHome({
             </button>
             <button
               onClick={() => deletingId && void handleDelete(deletingId)}
-              className="rounded-[var(--radius-control)] bg-rust px-4 py-2 text-[13px] font-medium text-white hover:brightness-110 active:scale-95 transition-all"
+              className="rounded-[var(--radius-control)] bg-rust px-4 py-2 text-small font-medium text-white hover:brightness-110 active:scale-95 transition-all"
             >
               Delete permanently
             </button>
@@ -811,7 +811,7 @@ function StartHero({ onCreate, onOpenFile }: { onCreate: () => void; onOpenFile:
       className="grid gap-8 rounded-[var(--radius-dialog)] border border-hairline bg-surface/40 p-7 sm:p-9 lg:grid-cols-[1.15fr_1fr] lg:gap-12"
     >
       <div>
-        <span className="font-mono text-label tracking-[0.14em] text-brass">
+        <span className="text-small font-medium text-brass">
           A notebook of your own
         </span>
         <h2 id="desk-start-title" className="mt-3 font-display text-[clamp(1.6rem,3vw,2.2rem)] font-[450] leading-tight text-ink">

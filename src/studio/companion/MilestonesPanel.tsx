@@ -27,7 +27,7 @@ export default function MilestonesPanel({
       }
       wide
     >
-      <p className="text-[13px] leading-relaxed text-muted">
+      <p className="text-small leading-relaxed text-muted">
         {`Marks of study kept on this device. ${held} of ${MILESTONES.length} held.`}
       </p>
       <div
@@ -55,8 +55,8 @@ export default function MilestonesPanel({
                 {isHeld ? <InkMark kind="check" /> : <span className="milestone-seal-blank" />}
               </span>
               <div className="min-w-0">
-                <h3 className="font-display text-[14.5px] font-[450] text-ink">{m.title}</h3>
-                <p className="mt-0.5 text-[12px] leading-relaxed text-muted">{m.line}</p>
+                <h3 className="font-display text-body font-[450] text-ink">{m.title}</h3>
+                <p className="mt-0.5 text-small leading-relaxed text-muted">{m.line}</p>
                 {isHeld && (
                   <p className="milestone-date">
                     {`Held ${new Date(unlockedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`}

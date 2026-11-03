@@ -4,12 +4,17 @@
 @import "./styles/chrome-pixel.css";
 @import "./styles/font-presets.css";
 
-@import "@fontsource-variable/literata";
-/* The drawn italic. Without it every <em> and italic Literata line is a
-   synthesized slant of the roman, which is what the landing's emphasis
-   words and the reader's quotations were silently using. The browser only
+/* Literata with its optical-size axis (7-72), not the weight-only cut. The
+   weight-only file pins every size to the 14pt text design, so a 100px
+   headline was a blown-up reading face: soft joins, loose fit, and tracking
+   pulled in by hand to compensate. With opsz the browser picks the display
+   drawing for headlines and the text drawing for answers on its own
+   (font-optical-sizing: auto is the default). */
+@import "@fontsource-variable/literata/opsz.css";
+/* The drawn italic, with the same axis. Without it every <em> and italic
+   Literata line is a synthesized slant of the roman. The browser only
    fetches the subset an italic glyph actually needs. */
-@import "@fontsource-variable/literata/wght-italic.css";
+@import "@fontsource-variable/literata/opsz-italic.css";
 @import "@fontsource-variable/instrument-sans";
 
 @import "@fontsource/jetbrains-mono/400.css";
@@ -94,8 +99,18 @@
   --text-heading--line-height: 1.35;
   --text-heading--font-weight: 500;
 
+  /* The interface ladder (spec 5.2), smallest first:
+     label 11, small 13, body 14, lead 16, heading 16.8, title 20, then
+     display. Every interface size is one of these; scale.test.ts keeps
+     arbitrary pixel sizes out of the desk. */
+  --text-lead: 1rem;
+  --text-lead--line-height: 1.5;
+
   --text-body: 0.875rem;
   --text-body--line-height: 1.6;
+
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.5;
 
   --text-label: 0.6875rem;
   --text-label--line-height: 1.4;
@@ -393,6 +408,7 @@ html[data-theme="light"] .grad-lamp {
   @keyframes slide-right-in { from { opacity: 0; } to { opacity: 1; } }
   @keyframes pop-in         { from { opacity: 0; } to { opacity: 1; } }
   @keyframes chip-pop       { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ink-in         { from { opacity: 0; } to { opacity: 1; } }
   @keyframes shake-x        { from { opacity: 0.4; } to { opacity: 1; } }
 
   html[data-shell],
@@ -460,7 +476,9 @@ html[data-motion="minimal"] .anim-rise,
 html[data-motion="minimal"] .anim-slide-l,
 html[data-motion="minimal"] .anim-slide-r,
 html[data-motion="minimal"] .anim-pop,
-html[data-motion="minimal"] .chip-in {
+html[data-motion="minimal"] .chip-in,
+html[data-motion="minimal"] .cite-footnote,
+html[data-motion="minimal"] .md-live > :not(.stream-typing-beacon) {
   animation-name: fade-in;
 }
 

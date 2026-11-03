@@ -75,8 +75,8 @@ export default function HostedCheckout() {
                     : "border-hairline text-muted hover:border-hairline-strong hover:text-ink"
                 }`}
               >
-                <span className="block text-[12px] font-medium">{candidate.name}</span>
-                <span className="mt-1 block font-mono text-[11px]">${candidate.price} first purchase; ${candidate.regularPrice} regular</span>
+                <span className="block text-small font-medium">{candidate.name}</span>
+                <span className="mt-1 block text-label tabular-nums">${candidate.price} first purchase; ${candidate.regularPrice} regular</span>
               </button>
             ))}
           </div>
@@ -86,7 +86,7 @@ export default function HostedCheckout() {
               <span className="font-display text-title">{plan.name}</span>
               <span className="font-mono text-title text-brass">${plan.price} first purchase</span>
             </div>
-            <p className="mt-1 text-[12px] text-muted">{plan.desc} · Usage does not expire. One-time payment, no automatic renewal.</p>
+            <p className="mt-1 text-small text-muted">{plan.desc} · Usage does not expire. One-time payment, no automatic renewal.</p>
             <p className="mt-1 text-body text-muted">{formatUsdFromNano(plan.budgetNano)} hosted usage included.</p>
             <p className="mt-1 text-body text-muted">About 40% off your first eligible PayPal purchase. Regular price ${plan.regularPrice}. The final amount is shown for review before payment.</p>
           </div>
@@ -103,13 +103,13 @@ export default function HostedCheckout() {
 
           {passToken && (
             <div className="mt-5 space-y-3 rounded-[var(--radius-control)] border border-sage/30 bg-sage/[0.08] p-4">
-              <p className="text-[12px] leading-relaxed text-sage">
+              <p className="text-small leading-relaxed text-sage">
                 Payment confirmed — your Access Pass is ready. Copy it into Comtus Desktop →
                 Settings → Models → Access Pass to activate hosted models.
               </p>
               <div className="flex items-stretch gap-2">
                 <code
-                  className="min-w-0 flex-1 select-all overflow-x-auto whitespace-nowrap rounded-[var(--radius-control)] border border-hairline bg-ink/[0.03] px-2.5 py-2 font-mono text-[11px] text-ink"
+                  className="min-w-0 flex-1 select-all overflow-x-auto whitespace-nowrap rounded-[var(--radius-control)] border border-hairline bg-ink/[0.03] px-2.5 py-2 font-mono text-label text-ink"
                   title={passToken}
                 >
                   {passToken}
@@ -117,23 +117,23 @@ export default function HostedCheckout() {
                 <button
                   type="button"
                   onClick={() => void copyPass()}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-control)] border border-brass/40 px-3 py-2 text-[12px] font-medium text-brass transition-colors hover:bg-brass/10"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-control)] border border-brass/40 px-3 py-2 text-small font-medium text-brass transition-colors hover:bg-brass/10"
                 >
                   {copied ? <Check size={ICON.sm} /> : <Copy size={ICON.sm} />}
                   {copied ? "Copied" : "Copy pass"}
                 </button>
               </div>
               {orderId && (
-                <p className="font-mono text-[12px] text-ink">PayPal order id: {orderId}</p>
+                <p className="font-mono text-small text-ink">PayPal order id: {orderId}</p>
               )}
-              <p className="text-[11px] text-faint">
+              <p className="text-label text-faint">
                 This pass is shown only here. Keep the order id — it restores the pass if you lose the token.
               </p>
             </div>
           )}
 
           {!passToken && (
-            <p className="mt-5 text-center text-[11px] leading-relaxed text-faint">
+            <p className="mt-5 text-center text-label leading-relaxed text-faint">
               After payment, your Access Pass appears right here — copy it into Comtus Desktop →
               Settings → Models.
             </p>

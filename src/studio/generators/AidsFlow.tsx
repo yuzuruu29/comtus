@@ -123,7 +123,7 @@ Return ONLY the markdown document — no preamble.`,
             }`}
           >
             <div className="font-display text-[1.02rem] font-[440] text-ink">{a.name}</div>
-            <div className="mt-1 text-[11.5px] leading-snug text-muted">{a.line}</div>
+            <div className="mt-1 text-label leading-snug text-muted">{a.line}</div>
           </button>
         ))}
       </div>
@@ -149,10 +149,10 @@ export function DocViewer({ payload }: { payload: DocPayload }) {
           setCopied(true);
           setTimeout(() => setCopied(false), 1600);
         }}
-        className="absolute right-0 top-0 z-10 flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-hairline bg-ground/70 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted backdrop-blur transition-colors hover:text-ink"
+        className="absolute right-0 top-0 z-10 flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-hairline bg-ground/70 px-3 py-1.5 text-label font-medium text-muted backdrop-blur transition-colors hover:text-ink"
       >
         {copied ? <Check size={ICON.xs} className="text-sage" /> : <Copy size={ICON.xs} />}
-        {copied ? "copied" : "copy"}
+        {copied ? "Copied" : "Copy"}
       </button>
       <div className="md pt-10">
         <ReactMarkdown
@@ -257,9 +257,9 @@ JSON shape: {"cards":[{"front":"...","back":"...","topic":"..."}]}`,
             onChange={(e) => setCount(Math.max(1, Math.min(100, +e.target.value)))}
             placeholder="Custom count (e.g. 15)"
             aria-label="Number of flashcards"
-            className={inputCls + " font-mono text-[13px] w-44"}
+            className={inputCls + " font-mono text-small w-44"}
           />
-          <span className="text-[12px] text-muted">Custom count (1–100)</span>
+          <span className="text-small text-muted">Custom count (1–100)</span>
         </div>
       </div>
 
@@ -392,15 +392,15 @@ JSON shape:
               Anthropic Exclusive Feature
             </span>
           </div>
-          <p className="text-[13px] leading-relaxed text-muted">
+          <p className="text-small leading-relaxed text-muted">
             The <strong>PPT & Slideshow Maker</strong> requires the deep architectural synthesis and structured reasoning of <strong>Claude Opus 5.5 & Sonnet 5.5</strong> to produce production-grade slide decks and speaker scripts.
           </p>
-          <div className="rounded-[var(--radius-dialog)] border border-hairline bg-ground/70 p-3 text-[12px] text-brass flex items-center justify-between">
+          <div className="rounded-[var(--radius-dialog)] border border-hairline bg-ground/70 p-3 text-small text-brass flex items-center justify-between">
             <span>Available with a Study Pass or Anthropic API key · First purchase from $5</span>
             {onOpenSettings && (
               <button
                 onClick={onOpenSettings}
-                className="rounded-[var(--radius-field)] grad-lamp px-3 py-1 font-mono text-[11px] font-semibold text-ground"
+                className="rounded-[var(--radius-field)] grad-lamp px-3 py-1 text-label font-semibold text-ground"
               >
                 Open Settings
               </button>
@@ -416,7 +416,7 @@ JSON shape:
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-2 font-mono text-[11px] text-brass">
+      <div className="flex items-center gap-2 text-label text-brass">
         <Crown size={ICON.sm} className="text-brass" />
         <span>Powered by Claude Opus 5.5 & Sonnet 5.5</span>
       </div>
@@ -435,8 +435,8 @@ JSON shape:
                   : "border-hairline bg-ink/[0.02] hover:border-hairline-strong"
               }`}
             >
-              <div className="font-medium text-[13px] text-ink">{s.name}</div>
-              <div className="mt-0.5 text-[11px] text-muted">{s.desc}</div>
+              <div className="font-medium text-small text-ink">{s.name}</div>
+              <div className="mt-0.5 text-label text-muted">{s.desc}</div>
             </button>
           ))}
         </div>
@@ -536,14 +536,14 @@ export function SlideshowView({ gen }: { gen: Generation }) {
             {payload.deckTitle || "Presentation Deck"}
           </h3>
           {payload.deckSubtitle && (
-            <p className="text-[12px] text-muted">{payload.deckSubtitle}</p>
+            <p className="text-small text-muted">{payload.deckSubtitle}</p>
           )}
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowNotes((v) => !v)}
-            className={`rounded-[var(--radius-field)] border px-2.5 py-1 font-mono text-[11px] transition-colors ${
+            className={`rounded-[var(--radius-field)] border px-2.5 py-1 text-label transition-colors ${
               showNotes ? "border-brass/50 bg-brass/15 text-brass" : "border-hairline text-muted hover:text-ink"
             }`}
           >
@@ -551,14 +551,14 @@ export function SlideshowView({ gen }: { gen: Generation }) {
           </button>
           <button
             onClick={exportMarkdown}
-            className="flex items-center gap-1 rounded-[var(--radius-field)] border border-hairline bg-ink/5 px-2.5 py-1 font-mono text-[11px] text-muted hover:text-ink"
+            className="flex items-center gap-1 rounded-[var(--radius-field)] border border-hairline bg-ink/5 px-2.5 py-1 text-label text-muted hover:text-ink"
           >
             {copied ? <Check size={ICON.xs} className="text-sage" /> : <Copy size={ICON.xs} />}
             {copied ? "Copied" : "Copy Deck"}
           </button>
           <button
             onClick={() => setFullscreen((v) => !v)}
-            className="flex items-center gap-1 rounded-[var(--radius-field)] border border-hairline bg-ink/5 px-2.5 py-1 font-mono text-[11px] text-muted hover:text-ink"
+            className="flex items-center gap-1 rounded-[var(--radius-field)] border border-hairline bg-ink/5 px-2.5 py-1 text-label text-muted hover:text-ink"
           >
             {fullscreen ? <ArrowsIn size={ICON.xs} /> : <ArrowsOut size={ICON.xs} />}
             {fullscreen ? "Exit" : "Fullscreen"}
@@ -570,11 +570,11 @@ export function SlideshowView({ gen }: { gen: Generation }) {
       <div className="relative min-h-[340px] sm:min-h-[380px] rounded-[var(--radius-dialog)] border border-brass/30 bg-gradient-to-b from-surface/95 to-ground p-6 sm:p-8 flex flex-col justify-between shadow-[0_15px_40px_rgba(0,0,0,0.4)]">
         <div>
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-brass bg-brass/10 border border-brass/25 px-2.5 py-0.5 rounded-[var(--radius-pill)]">
+            <span className="text-label font-medium tabular-nums text-brass bg-brass/10 border border-brass/25 px-2.5 py-0.5 rounded-[var(--radius-pill)]">
               Slide {activeIdx + 1} of {slides.length}
             </span>
             {slide.visualLayoutHint && (
-              <span className="font-mono text-[10px] text-muted border border-hairline px-2 py-0.5 rounded">
+              <span className="text-label text-muted border border-hairline px-2 py-0.5 rounded">
                 Layout: {slide.visualLayoutHint}
               </span>
             )}
@@ -585,12 +585,12 @@ export function SlideshowView({ gen }: { gen: Generation }) {
           </h2>
 
           {slide.subtitle && (
-            <p className="mt-1 text-[13px] text-muted italic">{slide.subtitle}</p>
+            <p className="mt-1 text-small text-muted italic">{slide.subtitle}</p>
           )}
 
           <ul className="mt-6 space-y-2.5">
             {slide.bullets?.map((b, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-[14px] leading-relaxed text-ink/90">
+              <li key={i} className="flex items-start gap-2.5 text-body leading-relaxed text-ink/90">
                 <span className="mt-1.5 h-1.5 w-1.5 rounded-[var(--radius-pill)] bg-brass shrink-0" />
                 <span>{b}</span>
               </li>
@@ -601,10 +601,10 @@ export function SlideshowView({ gen }: { gen: Generation }) {
         {/* Speaker Notes Drawer */}
         {showNotes && slide.notes && (
           <div className="mt-6 pt-4 border-t border-hairline bg-ground/50 rounded-[var(--radius-dialog)] p-3.5 space-y-1">
-            <span className="font-mono text-[9.5px] uppercase tracking-wider text-brass font-medium">
-              🎙️ Presenter Script / Speaker Notes:
+            <span className="text-label text-brass font-medium">
+              Speaker notes
             </span>
-            <p className="text-[12.5px] leading-relaxed text-muted">{slide.notes}</p>
+            <p className="text-small leading-relaxed text-muted">{slide.notes}</p>
           </div>
         )}
       </div>
