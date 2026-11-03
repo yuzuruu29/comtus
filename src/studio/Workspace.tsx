@@ -2,13 +2,14 @@ import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSP
 import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Books, CaretLeft, ChartBar, ChatCircle, DeviceMobile, DotsThree, DownloadSimple, GearSix, Notebook, SidebarSimple } from "@phosphor-icons/react";
-import type { Notebook as NotebookRow } from "../lib/types";
+import type { Notebook as NotebookRow, Source } from "../lib/types";
 import { useCallSettings, useSettings } from "../lib/settings";
 import { modelLabelFor } from "../lib/llm";
 import { detectPlatform, isTauri } from "../lib/desktop";
 import { IconButton, Menu } from "../ui";
 import { ENTER, EXIT, SPRING, SOFT, deskPane, useCountUp } from "./fx";
 import SourcesPane from "./SourcesPane";
+import SourceReader from "./SourceReader";
 import ChatPane from "./ChatPane";
 import StudioPane from "./StudioPane";
 import SettingsModal, { type SettingsTab } from "./SettingsModal";
@@ -52,6 +53,30 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   const [mobilePane, setMobilePane] = useState<MobilePane>("chat");
   const panes = panesFor(desk.layout);
   const desktop = useMediaQuery("(min-width: 1024px)");
+  // From 1280px an opened source docks beside the chat, so the page and the
+  // answer about it share the desk. Narrower, the reader stays a dialog.
+  const wide = useMediaQuery("(min-width: 1280px)");
+  const [reading, setReading] = useState<{ source: Source; startChar?: number } | null>(null);
+  const readerDocked = wide && reading !== null;
+  // The docked reader borrows the study tools' column. The student can bring
+  // the tools back for this reading without changing the saved layout.
+  const [studioWhileReading, setStudioWhileReading] = useState(false);
+  const studioShown = panes.studio && (!readerDocked || studioWhileReading);
+  const closeReading = useCallback(() => {
+    setReading(null);
+    setStudioWhileReading(false);
+  }, []);
+  // A source deleted while it is open closes its reader.
+  useEffect(() => {
+    if (!reading) return;
+    let cancelled = false;
+    void db.sources.get(reading.source.id).then((source) => {
+      if (!cancelled && !source) closeReading();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [closeReading, desk.sourcesVersion, reading]);
   const [desktopChatTarget, setDesktopChatTarget] = useState<HTMLElement | null>(null);
   const [mobileChatTarget, setMobileChatTarget] = useState<HTMLElement | null>(null);
   const [chatFocusRequest, setChatFocusRequest] = useState(0);
@@ -68,7 +93,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
     if (!pendingWork) return;
     if (!desktop) setMobilePane("studio");
     else if (!panes.studio) setLayout(panes.sources ? "standard" : "writing");
-  }, [desktop, panes.sources, panes.studio, pendingWork, setLayout]);
+    else if (readerDocked) setStudioWhileReading(true);
+  }, [desktop, panes.sources, panes.studio, pendingWork, readerDocked, setLayout]);
   // Search deep links, file picks and drops land on the pane that handles
   // them on mobile.
   const pendingChat = desk.pendingChatId;
@@ -96,8 +122,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
     [panes.studio, setLayout],
   );
   const collapseStudio = useCallback(
-    () => setLayout(panes.sources ? "reading" : "focus"),
-    [panes.sources, setLayout],
+    () => (readerDocked ? setStudioWhileReading(false) : setLayout(panes.sources ? "reading" : "focus")),
+    [panes.sources, readerDocked, setLayout],
   );
 
   const sourcesResize = usePaneResize({
@@ -165,8 +191,12 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   }, [panes.sources, panes.studio, setLayout]);
 
   const toggleStudio = useCallback(() => {
+    if (readerDocked && panes.studio) {
+      setStudioWhileReading((shown) => !shown);
+      return;
+    }
     setLayout(panes.studio ? (panes.sources ? "reading" : "focus") : (panes.sources ? "standard" : "writing"));
-  }, [panes.sources, panes.studio, setLayout]);
+  }, [panes.sources, panes.studio, readerDocked, setLayout]);
 
   return (
     <DeskShell
@@ -261,7 +291,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
 
         <WorkspaceHeader
           notebook={desk.notebook}
-          panes={panes}
+          panes={{ sources: panes.sources, studio: studioShown }}
           onToggleSources={toggleSources}
           onToggleStudio={toggleStudio}
           onRename={(name) => void desk.rename(name)}
@@ -299,6 +329,8 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   addRequest={desktop ? addSourceRequest : 0}
                   onAddRequestConsumed={consumeAddSource}
                   onAsk={askInChat}
+                  onView={setReading}
+                  readingId={reading?.source.id ?? null}
                 />
               </div>
             ) : (
@@ -322,6 +354,22 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             )}
           </aside>
 
+          {readerDocked && reading && (
+            <div id="workspace-reader-pane" className="desk-sheet-frame workspace-reader anim-fade anim-fade--fast">
+              <div className="desk-sheet">
+                <SourceReader
+                  key={`${reading.source.id}:${reading.startChar ?? ""}`}
+                  docked
+                  source={reading.source}
+                  startChar={reading.startChar}
+                  onClose={closeReading}
+                  onAsk={askInChat}
+                  onHighlightsChanged={desk.bumpSources}
+                />
+              </div>
+            </div>
+          )}
+
           <main id="workspace-chat-pane" className="desk-sheet-frame min-w-0 flex-1">
             <motion.div ref={setDesktopChatTarget} initial={ENTER.initial} animate={ENTER.animate} transition={SOFT} className="desk-sheet" />
           </main>
@@ -332,28 +380,37 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
             id="workspace-studio-pane"
             data-resizing={studioResize.isDragging ? "true" : undefined}
             style={{
-              [PANE_WIDTH_VAR]: `${panes.studio ? studioResize.width : RAIL_W}px`,
+              [PANE_WIDTH_VAR]: `${studioShown ? studioResize.width : RAIL_W}px`,
               width: `var(${PANE_WIDTH_VAR})`,
             } as CSSProperties}
             className="relative shrink-0 overflow-visible border-l desk-split transition-[width] duration-slow ease-[var(--ease-out)] data-[resizing=true]:transition-none motion-reduce:transition-none will-change-[width] [backface-visibility:hidden]"
           >
-            {panes.studio ? (
-              <div id="workspace-studio-content" className={`${deskPane} flex flex-col anim-fade anim-fade--fast`}>
+            {/* While the docked reader borrows the column, the tools stay
+                mounted but hidden, so an unsaved note or a study set in
+                progress is still there when they come back. */}
+            {panes.studio && (
+              <div id="workspace-studio-content" hidden={!studioShown} className={`${deskPane} flex flex-col anim-fade anim-fade--fast`}>
                 <StudioPane
                   notebookId={notebookId}
-                  onCollapse={() => desk.setLayout(panes.sources ? "reading" : "focus")}
+                  onCollapse={collapseStudio}
                   pendingGenerationId={desktop ? pendingWork : null}
                   onPendingGenerationConsumed={clearPendingWork}
                 />
               </div>
-            ) : (
+            )}
+            {!studioShown && (
               <div className="anim-fade flex h-full flex-col items-center pt-3" style={{ ["--d"]: "60ms" } as CSSProperties}>
-                <RailButton icon={Books} label="Study tools" side="right" onClick={() => desk.setLayout(panes.sources ? "standard" : "writing")} />
+                <RailButton
+                  icon={Books}
+                  label="Study tools"
+                  side="right"
+                  onClick={() => (readerDocked && panes.studio ? setStudioWhileReading(true) : desk.setLayout(panes.sources ? "standard" : "writing"))}
+                />
               </div>
             )}
 
             {/* Pull / Stretch Resizer Handle for Right Sidebar */}
-            {panes.studio && (
+            {studioShown && (
               <div
                 {...studioResize.separatorProps}
                 title="Drag to resize · Arrow keys adjust · Double-click resets"
@@ -436,6 +493,16 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           </nav>
         </div>
 
+        {reading && !wide && (
+          <SourceReader
+            key={`${reading.source.id}:${reading.startChar ?? ""}`}
+            source={reading.source}
+            startChar={reading.startChar}
+            onClose={closeReading}
+            onAsk={askInChat}
+            onHighlightsChanged={desk.bumpSources}
+          />
+        )}
         <SettingsModal open={settingsOpen} initialTab={settingsTab} onClose={() => setSettingsOpen(false)} />
         </div>
       </ConsoleShell>

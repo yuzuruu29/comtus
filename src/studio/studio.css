@@ -63,6 +63,9 @@
 .source-index-open { display: flex; align-items: flex-start; gap: 0.625rem; min-width: 0; min-height: 3rem; padding: 0.375rem 0.25rem; text-align: left; border-radius: var(--radius-control); }
 .source-index-icon { flex-shrink: 0; padding-top: 0.125rem; color: var(--muted); }
 .source-index-open:hover .source-index-icon { color: var(--brass); }
+/* The source open in the docked reader beside the chat. */
+.source-index-row:has(> .source-index-open[aria-current]) { border-color: color-mix(in srgb, var(--brass) 55%, var(--hairline-strong)); background: color-mix(in srgb, var(--brass-pale) 14%, var(--surface)); }
+.source-index-open[aria-current] .source-index-icon { color: var(--brass); }
 .source-index-title { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: var(--ink); font-size: var(--text-body); font-weight: 550; line-height: 1.45; overflow-wrap: anywhere; }
 .source-index-fact { display: block; margin-top: 0.375rem; color: var(--muted); font-size: 0.8125rem; line-height: 1.5; }
 .source-index-actions { display: flex; flex-direction: column; align-items: center; }

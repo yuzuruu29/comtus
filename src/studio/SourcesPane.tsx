@@ -110,6 +110,8 @@ export default function SourcesPane({
   addRequest,
   onAddRequestConsumed,
   onAsk,
+  onView,
+  readingId,
 }: {
   notebookId: string;
   version: number;
@@ -127,6 +129,11 @@ export default function SourcesPane({
   onAddRequestConsumed?: () => void;
   /** Sends a quoted passage from the reader to the chat composer. */
   onAsk?: (prompt: string) => void;
+  /** Hands an opened source to a reader the parent hosts, instead of this
+      pane's own dialog. */
+  onView?: (view: { source: Source; startChar?: number }) => void;
+  /** The source that parent reader shows, marked in the list. */
+  readingId?: string | null;
 }) {
   const [sources, setSources] = useState<Source[]>([]);
   const [sourcesLoaded, setSourcesLoaded] = useState(false);
@@ -148,6 +155,10 @@ export default function SourcesPane({
   const [urlOpen, setUrlOpen] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [viewing, setViewing] = useState<{ source: Source; startChar?: number } | null>(null);
+  const openReader = useCallback(
+    (next: { source: Source; startChar?: number }) => (onView ? onView(next) : setViewing(next)),
+    [onView],
+  );
   const [focused, setFocused] = useState<string[] | null>(() => loadFocus(notebookId));
   const fileRef = useRef<HTMLInputElement>(null);
   const seenImportTick = useRef<number | null>(null);
@@ -294,13 +305,13 @@ export default function SourcesPane({
     if (!pendingView) return;
     let cancelled = false;
     void db.sources.get(pendingView.sourceId).then((source) => {
-      if (!cancelled && source) setViewing({ source, startChar: pendingView.startChar });
+      if (!cancelled && source) openReader({ source, startChar: pendingView.startChar });
       onPendingConsumed?.();
     });
     return () => {
       cancelled = true;
     };
-  }, [onPendingConsumed, pendingView]);
+  }, [onPendingConsumed, openReader, pendingView]);
 
 const visibleSources = sources.filter((source) => source.title.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
 
@@ -465,7 +476,8 @@ const visibleSources = sources.filter((source) => source.title.toLocaleLowerCase
                   data-selected={isSelected}
                 >
                   <button
-                    onClick={() => setViewing({ source: s })}
+                    onClick={() => openReader({ source: s })}
+                    aria-current={readingId === s.id ? "true" : undefined}
                     className="source-index-open"
                   >
                     <span className="source-index-icon">

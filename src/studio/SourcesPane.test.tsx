@@ -43,6 +43,20 @@ async function addPastedSource(title: string) {
 }
 
 describe("SourcesPane", () => {
+  it("hands an opened source to the reader its parent hosts", async () => {
+    const onView = vi.fn();
+    const { rerender } = render(<SourcesPane notebookId="nb1" version={0} onChanged={() => {}} onView={onView} />);
+    await addPastedSource("My Notes");
+
+    fireEvent.click(screen.getByRole("button", { name: /^My Notes/ }));
+    expect(onView).toHaveBeenCalledWith({ source: expect.objectContaining({ title: "My Notes" }) });
+    expect(screen.queryByRole("dialog")).toBeNull();
+
+    const [saved] = await db.sources.toArray();
+    rerender(<SourcesPane notebookId="nb1" version={0} onChanged={() => {}} onView={onView} readingId={saved.id} />);
+    expect(screen.getByRole("button", { name: /^My Notes/ })).toHaveAttribute("aria-current", "true");
+  });
+
   it("renders the empty state copy with a single Add source control", async () => {
     renderPane();
     expect(

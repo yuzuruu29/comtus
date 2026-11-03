@@ -1,9 +1,9 @@
 import "fake-indexeddb/auto";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import type { ReactNode } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { MemoryRouter } from "react-router-dom";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter, useNavigate } from "react-router-dom";
 import { db } from "../lib/db";
 import Workspace from "./Workspace";
 
@@ -54,5 +54,61 @@ describe("workspace on a narrow screen", () => {
     await screen.findByRole("dialog", { name: "Lecture" });
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(screen.getAllByRole("dialog", { name: "Lecture" })).toHaveLength(1);
+  });
+});
+
+describe("workspace on a wide desk", () => {
+  // Every min-width query matches, so the source reader docks beside the chat.
+  beforeEach(() => {
+    vi.spyOn(window, "matchMedia").mockImplementation(
+      (query) => ({ matches: true, media: query, addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList,
+    );
+  });
+  afterEach(async () => {
+    vi.restoreAllMocks();
+    await db.sources.clear();
+  });
+
+  function GoTo({ to }: { to: string }) {
+    const navigate = useNavigate();
+    return <button type="button" onClick={() => navigate(to)}>Go</button>;
+  }
+
+  async function openDocked(initial: string) {
+    await db.notebooks.put({ id: "nb1", name: "Pharm", createdAt: 1, updatedAt: 1 });
+    await db.sources.put({ id: "s1", notebookId: "nb1", title: "Lecture", kind: "txt", content: "Beta blockers slow the heart.", chars: 29, tokens: 8, addedAt: 1 });
+    render(
+      <MemoryRouter initialEntries={[initial]}>
+        <GoTo to="/studio/nb1?work=deck-1" />
+        <Workspace notebookId="nb1" />
+      </MemoryRouter>,
+    );
+    await screen.findByRole("region", { name: "Lecture" });
+  }
+
+  it("keeps the study tools mounted while the reader borrows their column", async () => {
+    await db.notebooks.put({ id: "nb1", name: "Pharm", createdAt: 1, updatedAt: 1 });
+    await db.sources.put({ id: "s1", notebookId: "nb1", title: "Lecture", kind: "txt", content: "Beta blockers slow the heart.", chars: 29, tokens: 8, addedAt: 1 });
+    render(
+      <MemoryRouter initialEntries={["/studio/nb1"]}>
+        <Workspace notebookId="nb1" />
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(document.getElementById("workspace-studio-content")).not.toBeNull());
+    const tools = document.getElementById("workspace-studio-content")!;
+    await waitFor(() => expect(document.getElementById("workspace-sources-content")).not.toBeNull());
+    fireEvent.click(await within(document.getElementById("workspace-sources-content")!).findByRole("button", { name: /^Lecture/ }));
+    await screen.findByRole("region", { name: "Lecture" });
+    // The same element, so an unsaved note inside it survives.
+    expect(document.getElementById("workspace-studio-content")).toBe(tools);
+    expect(tools.hidden).toBe(true);
+  });
+
+  it("brings the study tools back for a saved-work link while reading", async () => {
+    await openDocked("/studio/nb1?source=s1");
+    expect(document.getElementById("workspace-studio-content")!.hidden).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Go" }));
+    await waitFor(() => expect(document.getElementById("workspace-studio-content")!.hidden).toBe(false));
+    expect(screen.getByRole("region", { name: "Lecture" })).toBeInTheDocument();
   });
 });

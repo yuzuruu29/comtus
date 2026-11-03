@@ -37,8 +37,8 @@ async function settled() {
 }
 
 /** Selects [start, end) of the source inside the rendered reader. */
-async function selectSource(start: number, end: number) {
-  await settled();
+async function selectSource(start: number, end: number, inDialog = true) {
+  if (inDialog) await settled();
   const runs = [...document.querySelectorAll<HTMLElement>("[data-at]")];
   const point = (offset: number): [Node, number] => {
     const run = runs.filter((el) => Number(el.dataset.at) <= offset).pop()!;
@@ -108,6 +108,45 @@ describe("SourceReader", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Ask" }));
     expect(onAsk).toHaveBeenCalledWith("About this passage from “Cell energy”:\n> Ribosomes build proteins\n\n");
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("docked, sits beside the chat and stays open after asking", async () => {
+    const onAsk = vi.fn();
+    const onClose = vi.fn();
+    render(<SourceReader docked source={source} onClose={onClose} onAsk={onAsk} />);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByRole("region", { name: "Cell energy" })).toBeInTheDocument();
+    const start = content.indexOf("Ribosomes");
+    await selectSource(start, start + "Ribosomes build proteins".length, false);
+    fireEvent.click(await screen.findByRole("button", { name: "Ask" }));
+    expect(onAsk).toHaveBeenCalledWith("About this passage from “Cell energy”:\n> Ribosomes build proteins\n\n");
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("docked, closes on Escape only while focus is inside it", async () => {
+    const onClose = vi.fn();
+    render(
+      <>
+        <input aria-label="Composer" />
+        <SourceReader docked source={source} onClose={onClose} onAsk={() => {}} />
+      </>,
+    );
+    const start = content.indexOf("Ribosomes");
+    await selectSource(start, start + "Ribosomes".length, false);
+    await screen.findByRole("button", { name: "Ask" });
+    screen.getByLabelText("Composer").focus();
+    fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+    expect(onClose).not.toHaveBeenCalled();
+    // Escape in the composer leaves the reader's selection alone too.
+    expect(screen.getByRole("button", { name: "Ask" })).toBeInTheDocument();
+
+    // Inside the reader, Escape first drops the selection, then closes.
+    screen.getByRole("button", { name: "Close the reader" }).focus();
+    fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+    expect(screen.queryByRole("button", { name: "Ask" })).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("makes a cloze card from the sentence around a selection", async () => {
