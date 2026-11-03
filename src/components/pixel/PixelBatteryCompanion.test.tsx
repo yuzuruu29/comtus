@@ -105,6 +105,19 @@ describe("PixelBatteryCompanion", () => {
     expect(overlaps(companion, sources)).toBe(false);
   });
 
+  it("covers as little as it can when no spot is free", () => {
+    // A narrow desk: the chat fills the screen, the composer sits at its foot
+    // where Compad would rest, and only the chat's right margin is quiet.
+    const viewport = { width: 800, height: 600 };
+    const dimensions = { width: 60, height: 64 };
+    const chat = { left: 0, top: 0, right: 800, bottom: 600 };
+    const composer = { left: 40, top: 480, right: 760, bottom: 580 };
+    const resting = computeBottomRightRestingPos(dimensions, viewport, { right: 20, bottom: 20 });
+    const nudged = nudgeOutOfRects(resting, dimensions, [chat, composer], viewport);
+    // Off the composer, even though it still sits over the chat.
+    expect(nudged.top + dimensions.height <= composer.top || nudged.left >= composer.right).toBe(true);
+  });
+
   it("keeps every notebook mood inside the sprite frame with pages, binding and a ribbon", () => {
     expect(Object.keys(COZY_PIXEL_BATTERY_ANIMATIONS).sort()).toEqual(["celebrate", "cheer", "idle", "nod", "poke", "read", "sleep", "think"]);
     expect(Object.keys(BATTERY_PALETTE).join(" ")).not.toMatch(/TERMINAL|SCREEN|CYAN/);

@@ -14,6 +14,10 @@
 .shelf-page .btn, .shelf-page .icon-btn, .shelf-page .segmented-option, .shelf-page .menu-item, .shelf-dialog .btn, .shelf-dialog .field-input { min-height: 44px; }
 .shelf-page .icon-btn { min-width: 44px; }
 .shelf-page :is(a, button):focus-visible { outline: 2px solid var(--brass); outline-offset: 4px; }
+/* The tabs run the header's full height so their rule meets its border; the
+   focus ring hugs the label instead of boxing the whole header. */
+.shelf-nav a:focus-visible { outline: none; }
+.shelf-nav a:focus-visible > span { outline: 2px solid var(--brass); outline-offset: 4px; border-radius: 2px; }
 .shelf-skip-link { position: fixed; top: 0.75rem; left: 1rem; z-index: var(--z-modal); padding: 0.75rem 1rem; background: var(--surface); transform: translateY(-200%); }
 .shelf-skip-link:focus { transform: none; }
 .shelf-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; padding-block: clamp(2rem, 4vw, 3.5rem) 2.5rem; }
@@ -130,7 +134,6 @@
   .shelf-brand { font-size: 1.5rem; }
   .shelf-nav { gap: 0.75rem; }
   .shelf-nav a { font-size: 0.8125rem; }
-  .shelf-nav a:last-child { display: none; }
   .shelf-intro { align-items: flex-start; flex-direction: column; gap: 1.25rem; padding-block: 2rem 1.5rem; }
   .shelf-intro-actions { display: grid; width: 100%; grid-template-columns: auto minmax(0, 1fr); }
   .shelf-start-copy { padding: 1.5rem 0; }

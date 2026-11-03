@@ -223,8 +223,8 @@ export default function Shelf({
               comtus<span aria-hidden="true">.</span>
             </Link>
             <nav className="shelf-nav" aria-label="Studio navigation">
-              <Link to="/studio" aria-current="page">Shelf</Link>
-              <Link to="/study-companion">Study guide</Link>
+              <Link to="/studio" aria-current="page"><span>Shelf</span></Link>
+              <Link to="/study-companion"><span>Study guide</span></Link>
             </nav>
             <div className="shelf-header-actions">
               <span className="shelf-save-note"><HardDrives size={ICON.md} aria-hidden="true" /> Saved on this device</span>
@@ -290,7 +290,7 @@ export default function Shelf({
             ) : notebooks.length === 0 ? (
               <section className="shelf-start" aria-labelledby="shelf-start-title">
                 <div className="shelf-start-copy">
-                  <span className="shelf-kicker"><span aria-hidden="true">01 /</span> A notebook of your own</span>
+                  <span className="shelf-kicker">A notebook of your own</span>
                   <h2 id="shelf-start-title">What are you<br /><em>working on?</em></h2>
                   <p>A course. An exam. A question that won’t leave you alone. Give it a notebook and start making connections.</p>
                   <Button className="shelf-new" icon={<Plus size={ICON.lg} aria-hidden="true" />} onClick={() => setCreating(true)}>
@@ -401,11 +401,10 @@ export default function Shelf({
                     />
                   ) : (
                     <ul className="shelf-grid" data-view={viewMode} aria-label="Notebooks">
-                      {processedNotebooks.map((nb, index) => (
+                      {processedNotebooks.map((nb) => (
                         <li key={nb.id}>
                           <NotebookCard
                             notebook={nb}
-                            number={index + 1}
                             onOpen={onOpen}
                             onRename={(notebook) => {
                               setRenamingNotebook(notebook);

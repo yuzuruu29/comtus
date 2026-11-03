@@ -108,13 +108,11 @@ function PrefSwitch({
 
 function Section({
   id,
-  index,
   title,
   note,
   children,
 }: {
   id: SectionId;
-  index: number;
   title: string;
   note?: string;
   children: ReactNode;
@@ -122,9 +120,6 @@ function Section({
   return (
     <section data-pref={id} aria-labelledby={`prefs-${id}`} className="prefs-section">
       <header className="prefs-section-head">
-        <span className="prefs-section-number" aria-hidden="true">
-          {String(index + 1).padStart(2, "0")}
-        </span>
         <div>
           <h3 id={`prefs-${id}`}>{title}</h3>
           {note && <p>{note}</p>}
@@ -246,7 +241,7 @@ export default function SettingsPreferences({ footer, onDone }: { footer: ReactN
       </nav>
 
       <div className="prefs-sections">
-        <Section id="look" index={0} title="Look" note="How the desk is lit and lettered.">
+        <Section id="look" title="Look" note="How the desk is lit and lettered.">
           <div className="prefs-field">
             <div className="field-label">Light</div>
             <Segmented
@@ -314,7 +309,7 @@ export default function SettingsPreferences({ footer, onDone }: { footer: ReactN
           </div>
         </Section>
 
-        <Section id="reading" index={1} title="Reading" note="Sources and answers follow these. The rest of the desk keeps its size.">
+        <Section id="reading" title="Reading" note="Sources and answers follow these. The rest of the desk keeps its size.">
           <div className="prefs-field prefs-field-stack">
             <div>
               <div className="field-label">Size</div>
@@ -355,7 +350,7 @@ export default function SettingsPreferences({ footer, onDone }: { footer: ReactN
           </p>
         </Section>
 
-        <Section id="writing" index={2} title="Writing" note="How a question leaves the composer.">
+        <Section id="writing" title="Writing" note="How a question leaves the composer.">
           <div className="prefs-field">
             <div className="field-label">Send with</div>
             <Segmented
@@ -397,7 +392,7 @@ export default function SettingsPreferences({ footer, onDone }: { footer: ReactN
           </div>
         </Section>
 
-        <Section id="motion" index={3} title="Motion" note="How much the desk moves while you study.">
+        <Section id="motion" title="Motion" note="How much the desk moves while you study.">
           <div className="prefs-motion">
             <Segmented
               aria-label="Motion"
@@ -432,7 +427,7 @@ export default function SettingsPreferences({ footer, onDone }: { footer: ReactN
           )}
         </Section>
 
-        <Section id="sound" index={4} title="Sound" note="Everything the desk plays, under one switch.">
+        <Section id="sound" title="Sound" note="Everything the desk plays, under one switch.">
           <PrefSwitch
             checked={!muted}
             onChange={(on) => {
@@ -500,7 +495,7 @@ export default function SettingsPreferences({ footer, onDone }: { footer: ReactN
           </Button>
         </Section>
 
-        <Section id="companion" index={5} title="Companion">
+        <Section id="companion" title="Companion">
           <PrefSwitch
             checked={companionOn}
             onChange={(on) => update({ companion: on })}

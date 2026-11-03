@@ -296,7 +296,6 @@ export default function StudioPane({
     <div className="study-tools">
       <div className="pane-head">
         <div className="pane-head-title">
-          <span className="pane-index" aria-hidden="true">03</span>
           <h2>Study tools</h2>
         </div>
         <div className="pane-head-actions">

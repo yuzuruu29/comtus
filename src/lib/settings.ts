@@ -180,7 +180,9 @@ export const useSettings = create<SettingsState>()(
       effort: "high",
       theme: "light",
       motionMode: "full",
-      companion: true,
+      // Compad is opt-in for new installs too (spec 6.3), so a first desk
+      // has nothing floating over it. Saved settings keep their choice.
+      companion: false,
       companionSfx: true,
       // Pixel accent chrome is opt-in for new installs (spec 3.4). Existing
       // users keep their choice through migrate().

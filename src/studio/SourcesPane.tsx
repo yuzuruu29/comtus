@@ -346,7 +346,6 @@ const visibleSources = sources.filter((source) => source.title.toLocaleLowerCase
     <div className="source-index">
       <div className="pane-head">
         <div className="pane-head-title">
-          <span className="pane-index" aria-hidden="true">01</span>
           <h2>Sources</h2>
         </div>
         <div className="pane-head-actions">
@@ -375,6 +374,7 @@ const visibleSources = sources.filter((source) => source.title.toLocaleLowerCase
       {sources.length > 0 && (
         <div className="source-index-toolbar">
           <AddSourceMenu
+            variant="secondary"
             disabled={!!importing}
             onPickFiles={openPicker}
             onPasteText={() => setPasteOpen(true)}
@@ -552,7 +552,7 @@ const visibleSources = sources.filter((source) => source.title.toLocaleLowerCase
           study tool spends the reader's attention on nothing they can act on. */}
       {sources.length > 0 && (
         <div className="source-index-footer">
-          <span>{sources.length} {sources.length === 1 ? "source" : "sources"} · saved on this device</span>
+          <span>{sources.length} {sources.length === 1 ? "source" : "sources"} saved on this device</span>
         </div>
       )}
       <UrlModal

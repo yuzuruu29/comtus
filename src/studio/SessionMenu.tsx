@@ -66,7 +66,6 @@ export default function SessionMenu({
       className="pane-head chat-session-head relative z-30"
     >
       <div className="pane-head-title">
-        <span className="pane-index" aria-hidden="true">02</span>
         <h2>Chat</h2>
       </div>
       <div className="pane-head-actions chat-session-actions">
