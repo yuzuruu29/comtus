@@ -29,11 +29,13 @@ import { ICON } from "../../ui/iconScale";
 
 export function QuizConfigForm({
   notebookId,
+  sourceIds,
   defaultScope = "",
   onDone,
   onCancel,
 }: {
   notebookId: string;
+  sourceIds?: string[];
   defaultScope?: string;
   onDone: (gen: Generation) => void;
   onCancel: () => void;
@@ -60,7 +62,7 @@ export function QuizConfigForm({
     setBusy(true);
     setStatus("Reading your sources…");
     try {
-      const src = await buildSourceBlock(notebookId, scope || "key concepts and facts");
+      const src = await buildSourceBlock(notebookId, scope || "key concepts and facts", sourceIds);
       if (!src.titles.length) throw new Error("Add at least one source first.");
       setStatus("Comtus is writing your quiz…");
       const raw = await generateJSON<QuizPayload>({

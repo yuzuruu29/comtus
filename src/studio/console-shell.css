@@ -67,6 +67,54 @@
 .workspace-title:hover { border-color: var(--hairline); }
 .workspace-title:focus { border-color: var(--brass); }
 
+/* The mode switch sits in the middle of the header: the heading and the
+   actions share the space either side equally. */
+.workspace-header:has(.workspace-modes) .workspace-actions { flex: 1 1 0; justify-content: flex-end; }
+
+.workspace-modes {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.workspace-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  min-height: 32px;
+  padding: 0 0.875rem;
+  border-radius: var(--radius-pill);
+  color: var(--muted);
+  font-size: var(--text-small);
+  font-weight: 500;
+  transition: background-color var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.workspace-mode:hover { color: var(--ink); }
+.workspace-mode[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--leather) 18%, transparent);
+}
+.workspace-mode[aria-pressed="true"] svg { color: var(--brass); }
+.workspace-mode:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+@media (max-width: 1023px) {
+  .workspace-mode { padding-inline: 0.625rem; }
+}
+
+/* Phones switch modes from the tab bar instead. */
+@media (max-width: 639px) {
+  .workspace-modes { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-mode { transition: none; }
+}
+
 .workspace-header .icon-btn { flex-shrink: 0; min-width: 38px; min-height: 38px; }
 
 @media (pointer: coarse) {

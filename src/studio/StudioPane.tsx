@@ -1,22 +1,15 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  BookOpen,
   ArrowCounterClockwise,
-  Briefcase,
   CaretDown,
-  ClockCounterClockwise,
   FileText,
-  GraduationCap,
-  ListChecks,
   NotePencil,
   PencilSimple,
   PenNib,
   Plus,
   Presentation,
-  Question,
   SidebarSimple,
-  Stack,
   Trash,
 } from "@phosphor-icons/react";
 import {
@@ -29,31 +22,12 @@ import {
 import { purgeDeckProgress } from "../lib/reviews";
 import { latestAttempts } from "../lib/attempts";
 import { WORK_SAVED } from "../lib/activity";
-import type {
-  Attempt,
-  Generation,
-  GenerationKind,
-  QuizPayload,
-  ExamPayload,
-  EssayReviewPayload,
-  DocPayload,
-  NotePayload,
-} from "../lib/types";
+import type { Attempt, Generation, GenerationKind, NotePayload } from "../lib/types";
 import { DRIFT_X, EXIT, RISE_2, SOFT } from "./fx";
 import { Toast } from "./Toast";
 import { timeAgo, Modal, Field, inputCls, btnLamp, btnGhost } from "./ui";
 import ExportMenu from "./ExportMenu";
-import { QuizConfigForm, QuizTaker } from "./generators/QuizFlow";
-import { ExamConfigForm, ExamRunner } from "./generators/ExamFlow";
-import { EssayConfigForm, EssayFeedback } from "./generators/EssayFlow";
-import {
-  AidsConfigForm,
-  DocViewer,
-  FlashcardsConfigForm,
-  FlashcardsView,
-  PresentationConfigForm,
-  SlideshowView,
-} from "./generators/AidsFlow";
+import { ArtifactView, DOCUMENT_TOOLS, FLOW_TITLES, FlowForm, PRACTICE_TOOLS, type Flow } from "./practiceFlows";
 import { useDesk } from "./DeskContext";
 import StudyStanding from "./StudyStanding";
 import ExamPlan from "./ExamPlan";
@@ -63,34 +37,10 @@ import { Button, IconButton } from "../ui";
 import "./study-tools.css";
 import { ICON } from "../ui/iconScale";
 
-type Flow = "quiz" | "exam" | "essay" | "flashcards" | "presentation" | "aids" | null;
 type DeletedGenerationNotice = {
   generation: Generation;
   focusUndo: boolean;
 };
-
-const DOCUMENT_TOOLS: { kind: GenerationKind; icon: typeof BookOpen; name: string }[] = [
-  { kind: "study-guide", icon: BookOpen, name: "Study guide" },
-  { kind: "brief", icon: Briefcase, name: "Briefing doc" },
-  { kind: "faq", icon: Question, name: "FAQ" },
-  { kind: "timeline", icon: ClockCounterClockwise, name: "Timeline" },
-];
-
-/* The rows used to carry a tinted icon tile each — brass, sage, rust at 10%
-   behind the glyph. That spent three semantic colours on decoration (sage
-   means verified, rust means error) and the tiles washed out to pale
-   squares in Lamplight. The rows are ink on paper now; the brass bookmark
-   in .rule-bookmark marks the one you are on. */
-const PRACTICE_TOOLS: {
-  flow: Exclude<Flow, null>;
-  icon: typeof ListChecks;
-  name: string;
-  line: string;
-}[] = [
-  { flow: "quiz", icon: ListChecks, name: "Practice quiz", line: "Check what you know" },
-  { flow: "flashcards", icon: Stack, name: "Flashcards", line: "Remember the key ideas" },
-  { flow: "exam", icon: GraduationCap, name: "Mock exam", line: "Practice under time pressure" },
-];
 
 const KIND_CSS: Record<ReturnType<typeof kindAccent>, string> = {
   brass: "var(--brass)",
@@ -112,15 +62,6 @@ const KIND_LABELS: Record<GenerationKind, string> = {
   slideshow: "Slideshow",
   note: "Note",
   "audio-overview": "Audio overview",
-};
-
-const FLOW_TITLES: Record<string, string> = {
-  quiz: "Quiz",
-  exam: "Mock exam",
-  essay: "Essay coach",
-  flashcards: "Flashcards",
-  presentation: "Presentation & Slides",
-  aids: "Study aid",
 };
 
 const UNDO_DELETE_MS = 5_000;
@@ -148,7 +89,7 @@ export default function StudioPane({
   const [gens, setGens] = useState<Generation[]>([]);
   const [lastAttempts, setLastAttempts] = useState<Map<string, Attempt>>(new Map());
   const [historyVersion, setHistoryVersion] = useState(0);
-  const [flow, setFlow] = useState<Flow>(null);
+  const [flow, setFlow] = useState<Flow | null>(null);
   const [quizScope, setQuizScope] = useState("");
   const [aidKind, setAidKind] = useState<GenerationKind | undefined>(undefined);
   const [viewing, setViewing] = useState<Generation | null>(null);
@@ -507,40 +448,18 @@ export default function StudioPane({
         title={flow ? FLOW_TITLES[flow] ?? "Studio" : ""}
         wide
       >
-        {flow === "quiz" && (
-          <QuizConfigForm
+        {flow && (
+          <FlowForm
+            flow={flow}
             notebookId={notebookId}
-            defaultScope={quizScope}
-            onDone={done}
-            onCancel={() => setFlow(null)}
-          />
-        )}
-        {flow === "exam" && (
-          <ExamConfigForm notebookId={notebookId} onDone={done} onCancel={() => setFlow(null)} />
-        )}
-        {flow === "essay" && (
-          <EssayConfigForm notebookId={notebookId} onDone={done} onCancel={() => setFlow(null)} />
-        )}
-        {flow === "flashcards" && (
-          <FlashcardsConfigForm notebookId={notebookId} onDone={done} onCancel={() => setFlow(null)} />
-        )}
-        {flow === "presentation" && (
-          <PresentationConfigForm
-            notebookId={notebookId}
-            onDone={done}
-            onCancel={() => setFlow(null)}
-            onOpenSettings={desk.openSettings}
-          />
-        )}
-        {flow === "aids" && (
-          <AidsConfigForm
-            notebookId={notebookId}
-            initialKind={aidKind}
+            quizScope={quizScope}
+            aidKind={aidKind}
             onDone={done}
             onCancel={() => {
               setFlow(null);
               setAidKind(undefined);
             }}
+            onOpenSettings={desk.openSettings}
           />
         )}
       </Modal>
@@ -680,58 +599,4 @@ function UndoDeleteToast({
       )}
     </Toast>
   );
-}
-
-function ArtifactView({
-  gen,
-  notebookId,
-  onClose,
-  onNewQuiz,
-  onOpenGeneration,
-  onSittingChange,
-}: {
-  gen: Generation;
-  notebookId: string;
-  onClose: () => void;
-  onNewQuiz: () => void;
-  onOpenGeneration: (gen: Generation) => void;
-  onSittingChange: (active: boolean) => void;
-}) {
-  switch (gen.kind) {
-    case "quiz":
-      return (
-        <QuizTaker
-          payload={gen.payload as QuizPayload}
-          gen={gen}
-          onRegenerate={onNewQuiz}
-          onOpenGeneration={onOpenGeneration}
-          onActiveChange={onSittingChange}
-        />
-      );
-    case "exam":
-      return (
-        <ExamRunner
-          payload={gen.payload as ExamPayload}
-          gen={gen}
-          onExit={onClose}
-          onOpenGeneration={onOpenGeneration}
-          onActiveChange={onSittingChange}
-        />
-      );
-    case "essay-review":
-      return <EssayFeedback payload={gen.payload as EssayReviewPayload} />;
-    case "flashcards":
-      return <FlashcardsView gen={gen} notebookId={notebookId} />;
-    case "presentation":
-    case "slideshow":
-      return <SlideshowView gen={gen} />;
-    case "note":
-      return (
-        <div className="prose max-w-none text-ink text-body leading-relaxed whitespace-pre-wrap">
-          {(gen.payload as NotePayload)?.content}
-        </div>
-      );
-    default:
-      return <DocViewer payload={gen.payload as DocPayload} />;
-  }
 }

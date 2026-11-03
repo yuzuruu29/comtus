@@ -53,11 +53,13 @@ const AIDS: { kind: GenerationKind; name: string; line: string; ask: string }[] 
 
 export function AidsConfigForm({
   notebookId,
+  sourceIds,
   initialKind,
   onDone,
   onCancel,
 }: {
   notebookId: string;
+  sourceIds?: string[];
   initialKind?: GenerationKind;
   onDone: (gen: Generation) => void;
   onCancel: () => void;
@@ -76,7 +78,7 @@ export function AidsConfigForm({
     setBusy(true);
     setStatus("Reading your sources…");
     try {
-      const src = await buildSourceBlock(notebookId, aid.name);
+      const src = await buildSourceBlock(notebookId, aid.name, sourceIds);
       if (!src.titles.length) throw new Error("Add at least one source first.");
       setStatus(`Writing your ${aid.name.toLowerCase()}…`);
       const markdown = await generateMarkdown({
@@ -171,10 +173,12 @@ export function DocViewer({ payload }: { payload: DocPayload }) {
 
 export function FlashcardsConfigForm({
   notebookId,
+  sourceIds,
   onDone,
   onCancel,
 }: {
   notebookId: string;
+  sourceIds?: string[];
   onDone: (gen: Generation) => void;
   onCancel: () => void;
 }) {
@@ -193,7 +197,7 @@ export function FlashcardsConfigForm({
     setBusy(true);
     setStatus("Reading your sources…");
     try {
-      const src = await buildSourceBlock(notebookId, scope || "key terms, definitions, and facts");
+      const src = await buildSourceBlock(notebookId, scope || "key terms, definitions, and facts", sourceIds);
       if (!src.titles.length) throw new Error("Add at least one source first.");
       setStatus(`Distilling ${targetCount} cards…`);
       const payload = await generateJSON<FlashcardsPayload>({
@@ -291,11 +295,13 @@ JSON shape: {"cards":[{"front":"...","back":"...","topic":"..."}]}`,
 
 export function PresentationConfigForm({
   notebookId,
+  sourceIds,
   onDone,
   onCancel,
   onOpenSettings,
 }: {
   notebookId: string;
+  sourceIds?: string[];
   onDone: (gen: Generation) => void;
   onCancel: () => void;
   onOpenSettings?: () => void;
@@ -326,7 +332,7 @@ export function PresentationConfigForm({
     setBusy(true);
     setStatus("Reading source materials…");
     try {
-      const src = await buildSourceBlock(notebookId, focus || "comprehensive presentation deck");
+      const src = await buildSourceBlock(notebookId, focus || "comprehensive presentation deck", sourceIds);
       if (!src.titles.length) throw new Error("Add at least one source first.");
       setStatus(`Structuring ${slideCount}-slide deck with speaker notes…`);
       const payload = await generateJSON<PresentationPayload>({

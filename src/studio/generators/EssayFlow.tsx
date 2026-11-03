@@ -20,10 +20,12 @@ interface PromptIdea {
 
 export function EssayConfigForm({
   notebookId,
+  sourceIds,
   onDone,
   onCancel,
 }: {
   notebookId: string;
+  sourceIds?: string[];
   onDone: (gen: Generation) => void;
   onCancel: () => void;
 }) {
@@ -45,7 +47,7 @@ export function EssayConfigForm({
     setBusy(true);
     setStatus("Reading your sources for essay-worthy tensions…");
     try {
-      const src = await buildSourceBlock(notebookId, "central themes, arguments, debates");
+      const src = await buildSourceBlock(notebookId, "central themes, arguments, debates", sourceIds);
       if (!src.titles.length) throw new Error("Add at least one source first.");
       const out = await generateJSON<{ prompts: PromptIdea[] }>({
         ...cs,
@@ -74,7 +76,7 @@ JSON shape: {"prompts":[{"title":"short name","prompt":"the essay question itsel
     setStatus("Reading your essay the way an examiner would…");
     try {
       const promptText = chosen ? chosen.prompt : customPrompt.trim();
-      const src = await buildSourceBlock(notebookId, promptText);
+      const src = await buildSourceBlock(notebookId, promptText, sourceIds);
       const criteriaText = rubric.criteria.map(([n, max]) => `- ${n} (max ${max})`).join("\n");
       const review = sanitizeReview(
         await generateJSON<unknown>({
