@@ -5,9 +5,10 @@
   padding: 1.25rem clamp(1.25rem, 3vw, 2.75rem) 1.5rem;
 }
 
+/* On the column's text edge, where the margin notes and answers below it start, not centred in it. */
 .chat-welcome {
   max-width: 34rem;
-  margin: clamp(0.75rem, 2.5vh, 2rem) auto 1.25rem;
+  margin: clamp(0.75rem, 2.5vh, 2rem) 0 1.25rem;
   font-family: var(--font-ui);
 }
 
@@ -64,8 +65,9 @@
 .chat-starters button > svg { color: var(--brass); }
 
 @media (max-width: 639px) {
-  .chat-reading-column { padding: 1.25rem 1.25rem 1.5rem; }
-  .chat-welcome { margin: 0.75rem auto 1rem; }
+  /* The composer's mobile inset plus its border and draft padding (studio.css), so both share a text edge. */
+  .chat-reading-column { padding: 1.25rem calc(0.625rem + 0.875rem + 1px) 1.5rem; }
+  .chat-welcome { margin: 0.75rem 0 1rem; }
   .chat-welcome-context { margin-bottom: 1rem; }
   .chat-welcome h1 { max-width: 17ch; }
   .chat-welcome-copy { margin-block: 1rem 1.25rem; }

@@ -227,7 +227,8 @@ html[data-theme="dark"] .landing-nightfall { background: var(--ground); }
 .landing-closing-inner { display: flex; justify-content: space-between; align-items: center; gap: 40px; }
 .landing-closing-inner > p { font-family: var(--font-read); font-size: var(--text-landing-statement); font-weight: 430; letter-spacing: -.055em; word-spacing: .07em; line-height: 1.17; }
 .landing-closing-inner > p em { font-weight: 400; }
-.landing-closing-inner > div { display: grid; justify-items: start; gap: 16px; }
+/* Set flush to the column's right edge, so the button and its note end on the same line as the footer links below. */
+.landing-closing-inner > div { display: grid; justify-items: end; gap: 16px; text-align: end; }
 .landing-closing-inner > div > span { color: var(--muted); font-size: 12px; }
 
 .landing-footer { background: var(--ground); color: var(--ink); font-family: var(--font-ui); }
@@ -311,6 +312,10 @@ html[data-theme="dark"] .landing-nightfall { background: var(--ground); }
 .landing-desktop-steps a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--brass); text-underline-offset: 3px; }
 .landing-desktop-smarter { max-width: 62ch; margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--hairline); color: var(--muted); font-size: 13px; line-height: 1.8; }
 .landing-desktop-smarter strong { color: var(--ink); font-weight: 600; }
+/* Beside the card, the first step starts on the card title's line rather than at its top border. */
+@media (min-width: 941px) {
+  .landing-desktop-steps { margin-top: 29px; }
+}
 @media (max-width: 1100px) {
   .landing-desktop-body { gap: 48px; }
 }
@@ -335,13 +340,11 @@ html[data-theme="dark"] .landing-nightfall { background: var(--ground); }
   .landing-document-content { grid-template-columns: 150px minmax(0, 1fr); gap: 36px; }
 }
 
+/* One column keeps the page's left edge: the hero sets ragged-right like every section below it. */
 @media (max-width: 940px) {
-  .landing-hero-editorial { text-align: center; }
-  .landing-hero-signature { justify-content: center; }
   .landing-hero-intro { grid-template-columns: 1fr; gap: 24px; }
-  .landing-hero-lead { max-width: 480px; margin-inline: auto; }
-  .landing-hero-actions { justify-content: center; }
-  .landing-hero-note { max-width: 360px; margin-inline: auto; }
+  .landing-hero-lead { max-width: 480px; }
+  .landing-hero-note { max-width: 360px; }
 }
 
 @media (max-width: 760px) {
@@ -354,10 +357,8 @@ html[data-theme="dark"] .landing-nightfall { background: var(--ground); }
   .landing-hero-signature { margin-bottom: 26px; }
   .landing-hero h1 { line-height: 1.12; }
   .landing-hero-lead { max-width: 450px; font-size: 16px; }
-  .landing-hero-note { max-width: 360px; margin-inline: auto; }
   .landing-demo-section { padding-block: 16px 26px; }
   .landing-demo-heading { align-items: start; flex-direction: column; gap: 4px; }
-  .landing-demo-heading > p { padding-left: 31px; }
   .landing-preview-desk { grid-template-columns: 1fr; }
   .landing-preview-work { order: -1; padding: 24px 28px 28px; }
   .landing-preview-grounded { display: flex; }
@@ -375,6 +376,7 @@ html[data-theme="dark"] .landing-nightfall { background: var(--ground); }
   .landing-section-heading > p { max-width: 490px; }
   .landing-closing { padding-block: 54px 60px; }
   .landing-closing-inner { align-items: start; flex-direction: column; gap: 28px; }
+  .landing-closing-inner > div { justify-items: start; text-align: start; }
   .landing-footer-links { gap: 48px; }
   .landing-document-content { grid-template-columns: 1fr; gap: 34px; }
   .landing-document-index { position: static; display: flex; flex-wrap: wrap; gap: 4px 22px; }

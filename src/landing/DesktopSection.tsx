@@ -100,7 +100,7 @@ export default function DesktopSection() {
         <p className="landing-desktop-smarter" data-landing-reveal>
           Local models are free. When a chapter calls for more, hosted access to{" "}
           <strong>Claude Opus 5.5 and Sonnet 5.5</strong> is a one-time PayPal top-up inside the app,
-          under Settings, then Smarter Models. The local model stays yours either way.
+          under AI{" "}Models, then Smarter{" "}Models. The local model stays yours either way.
         </p>
       </div>
     </section>

@@ -382,7 +382,8 @@
 
 /* Chat scroll area — mask under the input */
 .chat-scroll {
-  scrollbar-gutter: stable;
+  /* Both edges, so the reading column centres on the same axis as the composer below it. */
+  scrollbar-gutter: stable both-edges;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--ink) 16%, transparent) transparent;
 }
@@ -673,6 +674,11 @@
 }
 
 .composer-wrap { position: relative; flex-shrink: 0; padding: 0.375rem 1.25rem 0.5rem; }
+/* Draft text starts on the message column's text edge: the column's width and inset
+   (chat-welcome.css), less the shell's 1px border and the draft's 0.875rem padding. */
+.composer-column {
+  max-width: calc(48rem - 2 * clamp(1.25rem, 3vw, 2.75rem) + 2 * (0.875rem + 1px));
+}
 .composer-context { display: flex; align-items: center; gap: 0.25rem; min-width: 0; padding: 0.25rem 0.5rem 0; }
 .composer-model { position: relative; min-width: 0; max-width: 44%; }
 .composer-sources { min-width: 0; flex: 1; }

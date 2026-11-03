@@ -126,7 +126,7 @@ export default function Composer({
           </motion.button>
         )}
       </AnimatePresence>
-      <div className="mx-auto w-full max-w-3xl rounded-[var(--radius-dialog)]">
+      <div className="composer-column mx-auto w-full rounded-[var(--radius-dialog)]">
         <div
           data-focused={focused ? "" : undefined}
           data-streaming={streaming ? "" : undefined}
