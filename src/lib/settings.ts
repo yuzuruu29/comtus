@@ -118,7 +118,7 @@ export function migrateSettings(persisted: unknown, version: number): Partial<Se
       ? rawProvider
       : "openai-compatible";
   const base: Partial<SettingsState> = {
-    recentModels: ["openrouter/free", "dots-studio/dots-3-note-preview:free", "nvidia/nemotron-3.5-lightning:free"],
+    recentModels: ["openrouter/free", "deepseek/deepseek-r1:free", "nvidia/nemotron-3.5-lightning:free"],
     ...old,
     provider: RETIRED_SIGN_IN.has(rawProvider) ? "openai-compatible" : provider,
     storedKeys: old.storedKeys || [],
@@ -168,7 +168,7 @@ export const useSettings = create<SettingsState>()(
       compatModel: "openrouter/free",
       recentModels: [
         "openrouter/free",
-        "dots-studio/dots-3-note-preview:free",
+        "deepseek/deepseek-r1:free",
         "nvidia/nemotron-3.5-lightning:free",
       ],
       storedKeys: [],

@@ -37,7 +37,7 @@ function openPicker(effort: Effort = "high", onEffortChange = vi.fn()) {
 describe("ComposerSideRail", () => {
   it("shows the current effort on a compact chip until opened", () => {
     render(<ComposerSideRail effort="high" onEffortChange={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Thinking effort" })).toHaveTextContent("High");
+    expect(screen.getByRole("button", { name: "Thinking effort" })).toHaveTextContent("Deep");
     expect(screen.queryByRole("slider")).not.toBeInTheDocument();
   });
 
@@ -45,7 +45,7 @@ describe("ComposerSideRail", () => {
     openPicker();
     const slider = screen.getByRole("slider", { name: "Thinking effort" });
     expect(slider).toHaveAttribute("aria-orientation", "horizontal");
-    expect(slider).toHaveAttribute("aria-valuetext", "High");
+    expect(slider).toHaveAttribute("aria-valuetext", "Deep");
     expect(slider).toHaveAttribute("aria-valuenow", "2");
     expect(slider).toHaveAttribute("aria-valuemax", "3");
   });
@@ -59,7 +59,7 @@ describe("ComposerSideRail", () => {
     expect(onEffortChange).toHaveBeenCalledWith("medium");
   });
 
-  it("jumps to Low on Home and Extra High on End", () => {
+  it("jumps to Quick on Home and Extra deep on End", () => {
     const onEffortChange = openPicker("high");
     const slider = screen.getByRole("slider", { name: "Thinking effort" });
     fireEvent.keyDown(slider, { key: "Home" });
@@ -68,19 +68,19 @@ describe("ComposerSideRail", () => {
     expect(onEffortChange).toHaveBeenCalledWith("xhigh");
   });
 
-  it("selects Extra High from the labeled tick", () => {
+  it("selects Extra deep from the labeled tick", () => {
     const onEffortChange = openPicker("medium");
-    fireEvent.click(screen.getAllByRole("button", { name: "Extra High" })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Extra deep" })[0]!);
     expect(onEffortChange).toHaveBeenCalledWith("xhigh");
   });
 
-  it("selects Low from the labeled tick", () => {
+  it("selects Quick from the labeled tick", () => {
     const onEffortChange = openPicker("high");
-    fireEvent.click(screen.getAllByRole("button", { name: "Low" })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Quick" })[0]!);
     expect(onEffortChange).toHaveBeenCalledWith("low");
   });
 
-  it("maps a pointer press near the right of the track to Extra High", () => {
+  it("maps a pointer press near the right of the track to Extra deep", () => {
     const onEffortChange = openPicker("medium");
     const slider = screen.getByRole("slider", { name: "Thinking effort" });
     mockTrackRect(slider);
@@ -88,7 +88,7 @@ describe("ComposerSideRail", () => {
     expect(onEffortChange).toHaveBeenCalledWith("xhigh");
   });
 
-  it("maps a pointer press near the left of the track to Low", () => {
+  it("maps a pointer press near the left of the track to Quick", () => {
     const onEffortChange = openPicker("medium");
     const slider = screen.getByRole("slider", { name: "Thinking effort" });
     mockTrackRect(slider);
@@ -118,7 +118,7 @@ describe("ComposerSideRail", () => {
       <ComposerSideRail effort="high" onEffortChange={onEffortChange} reasoning={{ enabled: false, onChange }} />,
     );
     fireEvent.click(screen.getByRole("button", { name: "Thinking effort" }));
-    fireEvent.click(screen.getAllByRole("button", { name: "Medium" })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Balanced" })[0]!);
     expect(onEffortChange).toHaveBeenCalledWith("medium");
     expect(onChange).toHaveBeenCalledWith(true);
   });

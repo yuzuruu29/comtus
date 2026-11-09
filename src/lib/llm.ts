@@ -28,14 +28,14 @@ export const MODELS: {
   {
     id: "claude-opus-5-5",
     label: "Opus 5.5",
-    note: "Deepest reasoning · complex synthesis",
+    note: "Deepest thinking · best for hard exams",
     ctx: "1M ctx",
     badge: "Deepest",
   },
   {
     id: "claude-sonnet-5-5",
     label: "Sonnet 5.5",
-    note: "Faster, lighter · swift revisions",
+    note: "Quick replies · everyday study",
     ctx: "1M ctx",
     badge: "Fast",
   },
@@ -52,31 +52,31 @@ export interface EffortOption {
 export const EFFORTS: EffortOption[] = [
   {
     id: "low",
-    label: "Low",
-    shortLabel: "Low",
+    label: "Quick",
+    shortLabel: "Quick",
     badge: "Fast",
-    desc: "Answers quickly after a brief check. Good for facts and definitions.",
+    desc: "Quick answers for facts and definitions.",
   },
   {
     id: "medium",
-    label: "Medium",
-    shortLabel: "Medium",
+    label: "Balanced",
+    shortLabel: "Balanced",
     badge: "Balanced",
-    desc: "Thinks for a moment first. Good for most questions and explanations.",
+    desc: "Good for most questions and explanations.",
   },
   {
     id: "high",
-    label: "High",
-    shortLabel: "High",
+    label: "Deep",
+    shortLabel: "Deep",
     badge: "Deep",
-    desc: "Works through the problem step by step. Good for multi-step maths, proofs and tricky ideas.",
+    desc: "Step by step for maths, proofs and tricky ideas.",
   },
   {
     id: "xhigh",
-    label: "Extra High",
-    shortLabel: "Extra High",
+    label: "Extra deep",
+    shortLabel: "Extra deep",
     badge: "Max",
-    desc: "Takes the longest and checks its own work. Save it for the hardest problems.",
+    desc: "Slowest and most careful, for the hardest problems.",
   },
 ];
 
@@ -93,71 +93,39 @@ export const COMPAT_PRESETS: {
     id: "openrouter",
     label: "OpenRouter",
     baseUrl: "https://openrouter.ai/api/v1",
-    note: "hundreds of open & closed models, one key",
+    note: "Free models with one key · recommended",
     model: "openrouter/free",
     keyHint: "sk-or-v1-…",
-  },
-  {
-    id: "nous",
-    label: "Nous",
-    baseUrl: "https://inference-api.nousresearch.com/v1",
-    note: "Nous-hosted inference, including ox-alpha",
-    model: "stealth/ox-alpha",
-    keyHint: "Nous key",
   },
   {
     id: "groq",
     label: "Groq",
     baseUrl: "https://api.groq.com/openai/v1",
-    note: "very fast open models · free tier",
+    note: "Very fast · free tier",
     model: "llama-3.3-70b-versatile",
     keyHint: "gsk_…",
-  },
-  {
-    id: "zen",
-    label: "OpenCode Zen",
-    baseUrl: "https://opencode.ai/zen/v1",
-    note: "curated frontier open models · free",
-    model: "qwen3-coder",
-    keyHint: "Zen key",
-  },
-  {
-    id: "cerebras",
-    label: "Cerebras",
-    baseUrl: "https://api.cerebras.ai/v1",
-    note: "wafer-scale speed · free tier",
-    model: "llama-3.3-70b",
-    keyHint: "csk-…",
   },
   {
     id: "google",
     label: "Google AI Studio",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-    note: "Gemini models · free tier",
-    model: "gemini-2.0-flash",
+    note: "Gemini · free tier",
+    model: "gemini-2.5-flash",
     keyHint: "AIza…",
   },
   {
     id: "deepseek",
     label: "DeepSeek",
     baseUrl: "https://api.deepseek.com/v1",
-    note: "cheap reasoners",
+    note: "Deep reasoning · low cost",
     model: "deepseek-reasoner",
     keyHint: "sk-…",
-  },
-  {
-    id: "together",
-    label: "Together",
-    baseUrl: "https://api.together.xyz/v1",
-    note: "hosted open models",
-    model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-    keyHint: "Together key",
   },
   {
     id: "ollama",
     label: "Ollama",
     baseUrl: "http://localhost:11434/v1",
-    note: "local & free — no key needed",
+    note: "On this computer · no key needed",
     model: "llama3.3",
     keyHint: "no key",
   },
@@ -165,7 +133,7 @@ export const COMPAT_PRESETS: {
     id: "lmstudio",
     label: "LM Studio",
     baseUrl: "http://localhost:1234/v1",
-    note: "local & free — no key needed",
+    note: "On this computer · no key needed",
     model: "local-model",
     keyHint: "no key",
   },
@@ -247,7 +215,7 @@ export function modelLabelFor(_provider: ProviderId, model: string): string {
 
 /** Effort label from the single EFFORTS table — no duplicated ternaries. */
 export function effortLabelFor(effort: Effort): string {
-  return EFFORTS.find((e) => e.id === effort)?.label ?? "High";
+  return EFFORTS.find((e) => e.id === effort)?.label ?? "Deep";
 }
 
 /* ── Clients ──────────────────────────────────────────────── */
@@ -1069,7 +1037,7 @@ export async function listCompatModels(
   for await (const m of page) {
     if (typeof m.id === "string") {
       if (isOpenRouter) {
-        if (m.id.endsWith(":free") || m.id.includes(":free") || m.id === "stealth/ox-alpha") {
+        if (m.id.endsWith(":free") || m.id.includes(":free")) {
           ids.push(m.id);
         }
       } else {
