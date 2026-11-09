@@ -114,7 +114,7 @@ export default function ModelPickerMenu({
                 </ModelGroup>
               )}
 
-              <ModelGroup title="Free models">
+              <ModelGroup title="Free — no setup needed">
                 {CURATED_FREE_MODELS.map((m) => (
                   <ModelOption
                     key={m.id}
@@ -123,7 +123,7 @@ export default function ModelPickerMenu({
                     note={m.bestFor}
                     selected={
                       cs.provider === "openai-compatible" &&
-                      (activeModelId === m.id || (!activeModelId && m.id === "dots-studio/dots-3-note-preview:free"))
+                      (activeModelId === m.id || (!activeModelId && m.id === "openrouter/free"))
                     }
                     onSelect={() => selectFreeModel(m.id)}
                   />
@@ -137,7 +137,7 @@ export default function ModelPickerMenu({
                       key={k.id}
                       icon={Key}
                       name={k.name}
-                      note={k.provider}
+                      note={k.provider === "openrouter" ? "OpenRouter" : k.provider === "groq" ? "Groq" : k.provider === "deepseek" ? "DeepSeek" : "Custom"}
                       selected={
                         cs.provider === "openai-compatible" &&
                         s.compatKey === k.apiKey &&
@@ -168,7 +168,7 @@ export default function ModelPickerMenu({
                 className="model-menu-footer"
               >
                 <GearSix size={ICON.sm} />
-                <span>Models and keys in Settings</span>
+                <span>All models in Settings</span>
               </button>
             )}
           </motion.div>

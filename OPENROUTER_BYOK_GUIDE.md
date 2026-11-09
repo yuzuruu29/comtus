@@ -1,6 +1,6 @@
 # Comtus AI: Free Models & BYOK Guide (OpenRouter vs. Groq)
 
-> **Comtus Studio** gives you access to two top free AI providers with a **recurring self-updating model catalog**, plus an optional **Smarter Models Tier (Claude Opus 5 & Sonnet 5)** via PayPal usage passes.
+> **Comtus Studio** gives you access to two top free AI providers with a **recurring self-updating model catalog**, plus an optional **Smarter Models Tier (Claude Opus 5.5 & Sonnet 5.5)** via PayPal usage passes.
 
 ---
 
@@ -12,7 +12,7 @@ If you are new to Comtus and want free AI, here is the 30-second summary:
 | :--- | :--- | :--- | :--- |
 | **✨ OpenRouter (Free)** | Deep reasoning, high intelligence, largest model variety | `deepseek/deepseek-r1:free` or `meta-llama/llama-3.3-70b-instruct:free` | Complex 100-item mock board exams, step-by-step logic, math, long readings |
 | **⚡ Groq (Fast Free)** | World-record speed (~500+ tokens/sec on LPU hardware) | `llama-3.3-70b-versatile` or `llama-3.1-8b-instant` | Instant flashcards, rapid-fire study drills, fast question answering |
-| **👑 Smarter Tier (Claude)** | Deepest frontier reasoning, adaptive thinking (BYOK disabled) | `claude-opus-5` or `claude-sonnet-5` (Hosted Key · PayPal Pass) | Highest-stakes exam review (PNLE, LET, CE Board, USMLE, Bar) |
+| **👑 Smarter Tier (Claude)** | Deepest frontier reasoning, adaptive thinking (BYOK disabled) | `claude-opus-5-5` or `claude-sonnet-5-5` (Hosted Key · PayPal Pass) | Highest-stakes exam review (PNLE, LET, CE Board, USMLE, Bar) |
 
 ---
 

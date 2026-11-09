@@ -46,7 +46,7 @@ import { startOpenRouterOAuth } from "../lib/openrouterAuth";
 import SettingsPreferences from "./SettingsPreferences";
 import { ICON } from "../ui/iconScale";
 
-/* Curated, verified working free study models for the Starter / Basic view */
+/* Curated free models for the web starter view — plain names, no capacities. */
 export interface CuratedFreeModel {
   id: string;
   name: string;
@@ -54,50 +54,36 @@ export interface CuratedFreeModel {
   badgeType: "popular" | "speed" | "vision" | "logic" | "math" | "auto";
   desc: string;
   bestFor: string;
-  context: string;
   icon: typeof Sparkle;
 }
 
 export const CURATED_FREE_MODELS: CuratedFreeModel[] = [
   {
-    id: "dots-studio/dots-3-note-preview:free",
-    name: "Dots3-Note Synthesizer",
-    badge: "Top pick for notes",
-    badgeType: "popular",
-    desc: "Best for reading uploaded PDFs, synthesizing multi-chapter notes, and creating study outlines.",
-    bestFor: "Lecture notes and reading",
-    context: "512k context",
-    icon: Sparkle,
+    id: "openrouter/free",
+    name: "Auto",
+    badge: "Recommended",
+    badgeType: "auto",
+    desc: "Picks a good free model for each question. Best if you are not sure which to use.",
+    bestFor: "Good all-rounder",
+    icon: ArrowClockwise,
   },
   {
-    id: "nvidia/nemotron-3.5-lightning:free",
-    name: "Nemotron 3.5 Lightning",
-    badge: "500+ tok/s, 1M context",
-    badgeType: "speed",
-    desc: "Fastest engine. Best for instant flashcard drills, rapid Q&A, and indexing entire syllabi.",
-    bestFor: "Flashcards and speed drills",
-    context: "1M context",
-    icon: Lightning,
-  },
-  {
-    id: "poolside/laguna-s-2.1:free",
-    name: "Poolside Laguna STEM",
-    badge: "Math and code drills",
-    badgeType: "math",
-    desc: "Formulates step-by-step mathematical proofs, LaTeX equations, and programming logic.",
-    bestFor: "Math and code solutions",
-    context: "262k context",
+    id: "deepseek/deepseek-r1:free",
+    name: "Deep thinking",
+    badge: "Thorough",
+    badgeType: "logic",
+    desc: "Works step by step for exams, maths and long readings.",
+    bestFor: "Exams and maths",
     icon: Cpu,
   },
   {
-    id: "openrouter/free",
-    name: "Auto Free Router",
-    badge: "Auto fallback",
-    badgeType: "auto",
-    desc: "Automatically routes your prompts to the healthiest, lowest-latency free model available.",
-    bestFor: "Always available",
-    context: "Dynamic failover",
-    icon: ArrowClockwise,
+    id: "nvidia/nemotron-3.5-lightning:free",
+    name: "Fast questions",
+    badge: "Fast",
+    badgeType: "speed",
+    desc: "Quick replies for flashcards and short questions.",
+    bestFor: "Flashcards and quick answers",
+    icon: Lightning,
   },
 ];
 
@@ -121,6 +107,7 @@ export default function SettingsModal({
     s.provider === "anthropic" ? "smarter" : "starter"
   );
   const [manualKeyOpen, setManualKeyOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState<boolean>(() => isTauri());
 
   useEffect(() => {
     if (open) {
@@ -153,7 +140,7 @@ export default function SettingsModal({
   const [newKeyProvider, setNewKeyProvider] = useState<StoredKey["provider"]>("openrouter");
   const [newKeyVal, setNewKeyVal] = useState("");
   const [newKeyBaseUrl, setNewKeyBaseUrl] = useState("https://openrouter.ai/api/v1");
-  const [newKeyModel, setNewKeyModel] = useState("dots-studio/dots-3-note-preview:free");
+  const [newKeyModel, setNewKeyModel] = useState("openrouter/free");
   const [quickSaveName, setQuickSaveName] = useState("");
   const closeAddKeyModal = useCallback(() => setShowAddKeyModal(false), []);
 
@@ -166,6 +153,7 @@ export default function SettingsModal({
     let cancel = false;
     const requestedBase = draft.compatBaseUrl.trim();
     const runFetch = async () => {
+      if (isWeb) return; // Web picks from the free list — no raw model fetch
       setFetchingModels(true);
       try {
         const ids = await listCompatModels(draft.compatKey.trim(), requestedBase);
@@ -207,7 +195,7 @@ export default function SettingsModal({
           provider: "openai-compatible",
           apiKey: draft.compatKey.trim(),
           baseUrl: draft.compatBaseUrl.trim() || "https://openrouter.ai/api/v1",
-          model: draft.compatModel.trim() || "dots-studio/dots-3-note-preview:free",
+          model: draft.compatModel.trim() || "openrouter/free",
           effort: draft.effort,
         };
 
@@ -233,7 +221,7 @@ export default function SettingsModal({
       anthropicModel: draft.anthropicModel,
       compatKey: cs.provider === "openai-compatible" ? cs.apiKey : draft.compatKey.trim(),
       compatBaseUrl: draft.compatBaseUrl.trim() || "https://openrouter.ai/api/v1",
-      compatModel: draft.compatModel.trim() || "dots-studio/dots-3-note-preview:free",
+      compatModel: draft.compatModel.trim() || "openrouter/free",
       effort: draft.effort,
     });
     if (cs.provider === "anthropic" && cs.apiKey) {
@@ -263,11 +251,7 @@ export default function SettingsModal({
           ? "DeepSeek Key"
           : draft.compatBaseUrl.includes("openrouter")
             ? "OpenRouter Key"
-            : draft.compatBaseUrl.includes("opencode")
-              ? "OpenCode Zen Key"
-              : draft.compatBaseUrl.includes("cerebras")
-                ? "Cerebras Key"
-                : "Custom BYOK Key");
+            : "Custom Key");
 
     const provider: StoredKey["provider"] = draft.compatBaseUrl.includes("groq")
       ? "groq"
@@ -275,18 +259,14 @@ export default function SettingsModal({
         ? "deepseek"
         : draft.compatBaseUrl.includes("openrouter")
           ? "openrouter"
-          : draft.compatBaseUrl.includes("opencode")
-            ? "zen"
-            : draft.compatBaseUrl.includes("cerebras")
-              ? "cerebras"
-              : "custom";
+          : "custom";
 
     addStoredKey({
       name,
       provider,
       apiKey: keyVal,
       baseUrl: draft.compatBaseUrl.trim() || "https://openrouter.ai/api/v1",
-      defaultModel: draft.compatModel.trim() || "dots-studio/dots-3-note-preview:free",
+      defaultModel: draft.compatModel.trim() || "openrouter/free",
     });
     setQuickSaveName("");
   };
@@ -298,7 +278,7 @@ export default function SettingsModal({
       provider: newKeyProvider,
       apiKey: newKeyVal.trim(),
       baseUrl: newKeyBaseUrl.trim() || "https://openrouter.ai/api/v1",
-      defaultModel: newKeyModel.trim() || "dots-studio/dots-3-note-preview:free",
+      defaultModel: newKeyModel.trim() || "openrouter/free",
     });
     setNewKeyName("");
     setNewKeyVal("");
@@ -351,6 +331,8 @@ export default function SettingsModal({
     draft.provider === "openai-compatible" &&
     draft.compatBaseUrl.includes("openrouter") &&
     draft.compatKey.trim().length > 0;
+  const isWeb = !isTauri();
+  const PROVIDERS = COMPAT_PRESETS.filter((p) => (isWeb ? p.id !== "ollama" && p.id !== "lmstudio" : true));
   const selectedPreset = COMPAT_PRESETS.find((preset) => preset.baseUrl === draft.compatBaseUrl);
   const keyWarning = keyMismatch(draft.compatBaseUrl, draft.compatKey);
 
@@ -558,7 +540,7 @@ export default function SettingsModal({
                     const isSelected =
                       draft.provider === "openai-compatible" &&
                       (draft.compatModel === model.id ||
-                        (model.id === "dots-studio/dots-3-note-preview:free" && !draft.compatModel));
+                        (model.id === "openrouter/free" && !draft.compatModel));
                     const Icon = model.icon;
 
                     return (
@@ -623,14 +605,13 @@ export default function SettingsModal({
                         </p>
 
                         <div className="mt-3 pt-2.5 border-t border-hairline/60 flex items-center justify-between text-label">
-                          <span className="text-muted">{model.context}</span>
                           {isSelected ? (
                             <span className="flex items-center gap-1 font-semibold text-brass">
                               <Check size={ICON.xs} weight="bold" /> Active model
                             </span>
                           ) : (
                             <span className="text-muted group-hover:text-ink transition-colors">
-                              Select a model
+                              Choose this
                             </span>
                           )}
                         </div>
@@ -665,17 +646,32 @@ export default function SettingsModal({
               {/* Back to Starter mode banner */}
               <div className="flex items-center justify-between gap-3 text-small">
                 <p className="text-muted">
-                  Your key stays on this device. Save & test before it is used for study.
+                  {isWeb ? "Free models are set up already. This panel is only needed if you pay for your own AI elsewhere." : "Your key stays on this device. Save & test before it is used for study."}
                 </p>
                 <button
                   type="button"
                   onClick={() => setSettingsMode("starter")}
                   className="shrink-0 text-label text-brass hover:underline"
                 >
-                  Simple models
+                  Free models
                 </button>
               </div>
 
+              {isWeb && !advancedOpen ? (
+                <div className="rounded-[var(--radius-dialog)] border border-hairline bg-surface/40 p-4 space-y-3">
+                  <p className="text-small text-muted leading-relaxed">
+                    Already pay for an AI key elsewhere and want to use it here? Most students do not need this. The free models above already work.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setAdvancedOpen(true)}
+                    className="text-small text-brass hover:underline"
+                  >
+                    Show advanced options (technical)
+                  </button>
+                </div>
+              ) : (
+                <>
               {/* Saved BYOK Keys Vault */}
               <div className="overflow-hidden rounded-[var(--radius-dialog)] border border-hairline bg-ink/[0.02] p-4 space-y-3">
                 <div className="flex items-center justify-between">
@@ -799,9 +795,9 @@ export default function SettingsModal({
 
               {/* Endpoint Presets Grid */}
               <div>
-                <div className="field-label mb-2">Provider</div>
+                <div className="field-label mb-2">{isWeb ? "Your AI" : "Provider"}</div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {COMPAT_PRESETS.map((p) => {
+                  {PROVIDERS.map((p) => {
                     const selected = draft.compatBaseUrl === p.baseUrl;
                     return (
                     <button
@@ -827,9 +823,9 @@ export default function SettingsModal({
               </div>
 
               {/* Raw API Key & Base URL Inputs */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className={`grid grid-cols-1 gap-4 ${isWeb ? "" : "sm:grid-cols-2"}`}>
                 <Field
-                  label="API key"
+                  label={isWeb ? "Key" : "API key"}
                   hint={
                     selectedPreset
                       ? selectedPreset.keyHint === "no key"
@@ -864,6 +860,7 @@ export default function SettingsModal({
                   )}
                 </Field>
 
+                {!isWeb && (
                 <Field label="Base URL" hint="Must include /v1 for most endpoints.">
                   <input
                     value={draft.compatBaseUrl}
@@ -873,9 +870,11 @@ export default function SettingsModal({
                     spellCheck={false}
                   />
                 </Field>
+                )}
               </div>
 
-              {/* Model ID Field with Live Fetcher */}
+              {/* Model picker — desktop only; web picks from the free list above */}
+              {!isWeb && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="field-label">Model ID</div>
@@ -893,7 +892,7 @@ export default function SettingsModal({
                 <input
                   value={draft.compatModel}
                   onChange={(e) => set({ compatModel: e.target.value })}
-                  placeholder="dots-studio/dots-3-note-preview:free"
+                  placeholder="openrouter/free"
                   className={inputCls + " font-mono text-small"}
                   spellCheck={false}
                 />
@@ -932,6 +931,9 @@ export default function SettingsModal({
                   </div>
                 )}
               </div>
+              )}
+              </>
+              )}
             </div>
           )}
 
@@ -1007,7 +1009,7 @@ export default function SettingsModal({
                     </div>
 
                     <p className="text-small leading-relaxed text-muted">
-                      Unlock hosted Claude Opus 5.5 and Sonnet 5.5 with 1M context for deep synthesis, mock exams, and slide generation. Instant activation via PayPal with no API setup or recurring subscription.
+                      {isWeb ? "The most careful models for mock exams and hard topics. Pay once with PayPal, no setup needed." : "Unlock hosted Claude Opus 5.5 and Sonnet 5.5 for deep synthesis, mock exams, and slide generation. Instant activation via PayPal with no API setup or recurring subscription."}
                     </p>
                     <p className="text-body text-muted">About 40% off your first eligible PayPal purchase. Review the final price before payment.</p>
 
@@ -1110,8 +1112,8 @@ export default function SettingsModal({
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="field-label">Claude 5.5 model</div>
-                  <span className="font-mono text-label text-muted">1M context window</span>
+                  <div className="field-label">Claude model</div>
+                  {!isWeb && <span className="font-mono text-label text-muted">1M context window</span>}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {MODELS.map((m) => {
@@ -1133,9 +1135,11 @@ export default function SettingsModal({
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-body text-ink">Claude {m.label}</span>
+                            {!isWeb && (
                             <span className="rounded bg-brass/20 border border-brass/30 px-1.5 py-0.5 font-mono text-label text-brass">
                               {m.ctx}
                             </span>
+                            )}
                           </div>
                           <div className="mt-0.5 text-label text-muted">{m.note}</div>
                         </div>
@@ -1192,16 +1196,16 @@ export default function SettingsModal({
             </div>
           )}
 
-          {/* Thinking Effort Selector */}
+          {/* Thinking effort — plain words for the web, full set on desktop */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <div className="field-label">Thinking effort</div>
+              <div className="field-label">{isWeb ? "How hard should it think?" : "Thinking effort"}</div>
               <span className="text-label text-muted">
-                Reasoning depth
+                {isWeb ? "Quick for facts, deep for hard work" : "Reasoning depth"}
               </span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 rounded-[var(--radius-dialog)] border border-hairline bg-ground/60 p-1.5">
-              {EFFORTS.map((e) => {
+            <div className={`grid ${isWeb ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-4"} gap-1.5 rounded-[var(--radius-dialog)] border border-hairline bg-ground/60 p-1.5`}>
+              {(isWeb ? EFFORTS.filter((e) => e.id !== "xhigh") : EFFORTS).map((e) => {
                 const active = draft.effort === e.id;
                 return (
                   <button
@@ -1278,16 +1282,20 @@ export default function SettingsModal({
           <Field label="Provider">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {(
-                [
-                  ["openrouter", "OpenRouter"],
-                  ["groq", "Groq"],
-                  ["zen", "OpenCode Zen"],
-                  ["cerebras", "Cerebras"],
-                  ["deepseek", "DeepSeek"],
-                  ["together", "Together AI"],
-                  ["ollama", "Ollama (local)"],
-                  ["custom", "Custom endpoint"],
-                ] as const
+                isWeb
+                  ? ([
+                      ["openrouter", "OpenRouter"],
+                      ["groq", "Groq"],
+                      ["deepseek", "DeepSeek"],
+                      ["custom", "Custom"],
+                    ] as Array<[StoredKey["provider"], string]>)
+                  : ([
+                      ["openrouter", "OpenRouter"],
+                      ["groq", "Groq"],
+                      ["deepseek", "DeepSeek"],
+                      ["ollama", "Ollama (local)"],
+                      ["custom", "Custom"],
+                    ] as Array<[StoredKey["provider"], string]>)
               ).map(([p, label]) => (
                 <button
                   key={p}
@@ -1315,6 +1323,7 @@ export default function SettingsModal({
             />
           </Field>
 
+          {!isWeb && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Base URL">
               <input
@@ -1329,11 +1338,12 @@ export default function SettingsModal({
               <input
                 value={newKeyModel}
                 onChange={(e) => setNewKeyModel(e.target.value)}
-                placeholder="dots-studio/dots-3-note-preview:free"
+                placeholder="openrouter/free"
                 className={inputCls + " font-mono text-small"}
               />
             </Field>
           </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-2">
             <button className={btnGhost} onClick={() => setShowAddKeyModal(false)}>

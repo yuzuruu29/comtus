@@ -97,7 +97,7 @@ async function performExchange(code: string): Promise<string> {
     provider: "openai-compatible",
     compatKey: data.key,
     compatBaseUrl: "https://openrouter.ai/api/v1",
-    compatModel: "dots-studio/dots-3-note-preview:free",
+    compatModel: "openrouter/free",
   });
 
   return data.key;
