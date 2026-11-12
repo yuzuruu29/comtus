@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { BookOpenText, Books, CaretLeft, ChartBar, ChatCircle, DeviceMobile, DotsThree, DownloadSimple, GearSix, ListChecks, Notebook, SidebarSimple } from "@phosphor-icons/react";
+import { BookOpenText, Books, CaretLeft, ChartBar, ChatCircle, DeviceMobile, DotsThree, DownloadSimple, FileArrowDown, GearSix, ListChecks, Notebook, SidebarSimple } from "@phosphor-icons/react";
 import type { Generation, Notebook as NotebookRow, Source } from "../lib/types";
 import { useCallSettings, useSettings } from "../lib/settings";
 import { modelLabelFor } from "../lib/llm";
 import { detectPlatform, isTauri } from "../lib/desktop";
-import { IconButton, Menu } from "../ui";
-import { ENTER, EXIT, SPRING, SOFT, deskPane, useCountUp } from "./fx";
+import { IconButton, LampSwitch, Menu } from "../ui";
+import { CRISP, ENTER, EXIT, SPRING, SOFT, deskPane, useCountUp } from "./fx";
 import SourcesPane from "./SourcesPane";
 import SourceReader from "./SourceReader";
 import ChatPane from "./ChatPane";
@@ -27,6 +27,8 @@ import ConsoleShell from "./ConsoleShell";
 import { SendToDeviceDialog } from "./DeviceTransfer";
 import { ICON } from "../ui/iconScale";
 import FocusTimer from "./FocusTimer";
+import type { AddSourceKind } from "./AddSourceMenu";
+import "./lamplight.css";
 import PracticeDesk from "./PracticeDesk";
 
 type MobilePane = "sources" | "chat" | "studio";
@@ -142,6 +144,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
     setChatFocusRequest((request) => request + 1);
   }, [mode, setMode]);
   const [addSourceRequest, setAddSourceRequest] = useState(0);
+  const [addSourceKind, setAddSourceKind] = useState<AddSourceKind | undefined>(undefined);
   const consumeAddSource = useCallback(() => setAddSourceRequest(0), []);
 
   // `?work=<generationId>` opens a saved item (e.g. a deck due for review)
@@ -262,6 +265,15 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
     setLayout(panes.studio ? (panes.sources ? "reading" : "focus") : (panes.sources ? "standard" : "writing"));
   }, [panes.sources, panes.studio, readerDocked, setLayout]);
 
+  /** Brings the Sources pane forward and opens one way in (or its menu). */
+  const addSources = (kind?: AddSourceKind) => {
+    if (mode !== "understand") setMode("understand");
+    if (desktop) { if (!panes.sources) desk.setLayout(panes.studio ? "standard" : "reading"); }
+    else setMobilePane("sources");
+    setAddSourceKind(kind);
+    setAddSourceRequest((request) => request + 1);
+  };
+
   return (
     <DeskShell
       layout={desk.layout}
@@ -276,12 +288,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
         onNavigateSources={openSource}
         modelLabel={modelLabel}
         onOpenSettings={() => openSettings("models")}
-        onAddSources={() => {
-          if (mode !== "understand") setMode("understand");
-          if (desktop) { if (!panes.sources) desk.setLayout(panes.studio ? "standard" : "reading"); }
-          else setMobilePane("sources");
-          setAddSourceRequest((request) => request + 1);
-        }}
+        onAddSources={addSources}
         surfaceTarget={desktop ? desktopChatTarget : shownMobilePane === "chat" ? mobileChatTarget : null}
         focusRequest={chatFocusRequest}
         pendingSessionId={desk.pendingChatId}
@@ -342,15 +349,11 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
         )}
         {/* Kept mounted: the drop veil fades on a data-attribute flip so the
             overlay never remounts mid-drag (dragenter/leave pairs flicker). */}
-        <div
-          data-dropping={isDropping ? "true" : undefined}
-          className="pointer-events-none absolute inset-0 z-[50] flex items-center justify-center bg-ground/70 text-lead text-ink opacity-0 transition-opacity duration-fast ease-house data-[dropping]:opacity-100"
-        >
-          <div
-            data-dropping={isDropping ? "true" : undefined}
-            className={`rounded-[var(--radius-control)] px-6 py-3 scale-[0.98] transition-transform duration-fast ease-house data-[dropping]:scale-100 ${isDropping ? "ring-breathe" : ""}`}
-          >
-            Drop onto this notebook
+        <div data-dropping={isDropping ? "true" : undefined} className="desk-drop-veil">
+          <div className="desk-drop-sheet">
+            <FileArrowDown size={ICON.xxxl} weight="light" aria-hidden="true" />
+            <strong>Drop onto this notebook</strong>
+            <span>It joins your sources, ready to read and ask about.</span>
           </div>
         </div>
 
@@ -365,7 +368,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
           onSettings={openSettings}
         />
 
-        <div className="relative z-10 hidden min-h-0 flex-1 lg:flex" hidden={mode === "practice"}>
+        <div className="desk-mode-view relative z-10 hidden min-h-0 flex-1 lg:flex" data-mode={mode} hidden={mode === "practice"}>
           {/* Left Sidebar: Sources (Retractable & Resizable). Chat mode
               hides the side panes instead of unmounting them, so a draft
               note or a study set in progress is still there afterwards. */}
@@ -397,6 +400,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   dropFiles={desktop ? desk.dropFiles : null}
                   onDropConsumed={() => desk.setDropFiles(null)}
                   addRequest={desktop ? addSourceRequest : 0}
+                  addKind={addSourceKind}
                   onAddRequestConsumed={consumeAddSource}
                   onAsk={askInChat}
                   onView={setReading}
@@ -498,11 +502,12 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
         </div>
 
         {practiceMounted && (
-          <div className="relative z-10 flex min-h-0 flex-1 flex-col" hidden={mode !== "practice"}>
+          <div className="desk-mode-view relative z-10 flex min-h-0 flex-1 flex-col" hidden={mode !== "practice"}>
             <PracticeDesk
               notebookId={notebookId}
               sourcesVersion={desk.sourcesVersion}
               onOpenSettings={() => openSettings("models")}
+              onAddSources={() => addSources()}
               openRequest={practiceRequest}
             />
           </div>
@@ -526,6 +531,7 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
                   dropFiles={desktop ? null : desk.dropFiles}
                   onDropConsumed={() => desk.setDropFiles(null)}
                   addRequest={desktop ? 0 : addSourceRequest}
+                  addKind={addSourceKind}
                   onAddRequestConsumed={consumeAddSource}
                   onAsk={askInChat}
                 />
@@ -681,6 +687,7 @@ function WorkspaceHeader({
               onClick={() => onMode(id)}
               className="workspace-mode"
             >
+              {mode === id && <motion.span layoutId="desk-mode-thumb" transition={CRISP} className="workspace-mode-thumb" aria-hidden="true" />}
               <Icon size={ICON.md} weight={mode === id ? "fill" : "regular"} aria-hidden="true" />
               <span>{label}</span>
             </button>
@@ -731,6 +738,7 @@ function WorkspaceHeader({
               { key: "commands", label: "Search and commands", onSelect: actions.openPalette },
             ]}
           />
+          <LampSwitch className="no-drag" />
           <IconButton
             onClick={() => onSettings()}
             aria-label="Settings"

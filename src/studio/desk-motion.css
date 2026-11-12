@@ -75,7 +75,7 @@ html[data-motion="full"] .chat-welcome-rule {
 html[data-motion="full"] .chat-welcome h1 {
   animation: desk-typeset 760ms var(--ease-out) 90ms backwards;
 }
-html[data-motion="full"] :is(.chat-welcome-copy, .chat-welcome > .btn, .chat-welcome-hint) {
+html[data-motion="full"] :is(.chat-welcome-copy, .chat-welcome > .btn) {
   animation: desk-rise var(--dur-glow) var(--ease-out) 240ms backwards;
 }
 html[data-motion="full"] .chat-starters button {

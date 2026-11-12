@@ -28,7 +28,7 @@ import { uid } from "../lib/db";
 import { addSourceWithChunks } from "../lib/db";
 import { DRIFT_X, ENTER, EXIT, RISE_2, SOFT } from "./fx";
 import { ErrorNote } from "./ui";
-import AddSourceMenu from "./AddSourceMenu";
+import AddSourceMenu, { type AddSourceKind } from "./AddSourceMenu";
 import SourceReader from "./SourceReader";
 import { highlightCounts } from "../lib/highlights";
 import { sourceSize } from "../lib/sourceSize";
@@ -108,6 +108,7 @@ export default function SourcesPane({
   dropRequestId,
   onDropConsumed,
   addRequest,
+  addKind,
   onAddRequestConsumed,
   onAsk,
   onView,
@@ -126,6 +127,8 @@ export default function SourcesPane({
   onDropConsumed?: () => void;
   /** Non-zero asks this pane to open its Add source menu. */
   addRequest?: number;
+  /** Which way in the request asked for; without one the menu opens. */
+  addKind?: AddSourceKind;
   onAddRequestConsumed?: () => void;
   /** Sends a quoted passage from the reader to the chat composer. */
   onAsk?: (prompt: string) => void;
@@ -267,15 +270,18 @@ export default function SourcesPane({
     };
   }, [importTick]);
 
-  // A request from elsewhere on the desk (the chat's "Add your first source") opens this pane's menu once.
+  // A request from elsewhere on the desk opens one way in: the fresh page's sheets name theirs, the rest get the menu.
   // It waits for the first load: before it, `sources` is empty, so the empty-state menu would open and then
   // unmount when the toolbar menu replaces it.
   const [menuRequest, setMenuRequest] = useState(0);
   useEffect(() => {
     if (!addRequest || !sourcesLoaded) return;
-    setMenuRequest((value) => value + 1);
+    if (addKind === "file") fileRef.current?.click();
+    else if (addKind === "paste") setPasteOpen(true);
+    else if (addKind === "url") setUrlOpen(true);
+    else setMenuRequest((value) => value + 1);
     onAddRequestConsumed?.();
-  }, [addRequest, sourcesLoaded, onAddRequestConsumed]);
+  }, [addKind, addRequest, sourcesLoaded, onAddRequestConsumed]);
 
   useEffect(() => {
     if (!dropFiles || dropFiles.length === 0) {
@@ -532,7 +538,7 @@ const visibleSources = sources.filter((source) => source.title.toLocaleLowerCase
 
         {sources.length === 0 && !importing && (
           <section className="source-index-empty" aria-label="Start your source collection">
-            <FileText size={ICON.xxxl} weight="light" aria-hidden="true" />
+            <div className="source-stack" aria-hidden="true"><i /><i /><i /></div>
             <h3>Your reading starts here.</h3>
             <p>Add a chapter, your notes, or a link. Keep the material behind your questions within reach.</p>
               <AddSourceMenu

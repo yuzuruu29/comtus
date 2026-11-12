@@ -1,12 +1,20 @@
 import type { RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Plus, WarningCircle } from "@phosphor-icons/react";
+import { FileText, Globe, PencilSimpleLine, WarningCircle } from "@phosphor-icons/react";
 import type { ChatMessage, Notebook, WebSearchMeta } from "../lib/types";
 import { Button } from "../ui";
 import { DRIFT_X, EXIT, SOFT } from "./fx";
+import type { AddSourceKind } from "./AddSourceMenu";
 import AssistantMessage, { SearchStatusStrip } from "./AssistantMessage";
 import "./chat-welcome.css";
 import { ICON } from "../ui/iconScale";
+
+/** The three ways a first source arrives, laid out as sheets on a fresh page. */
+const FRESH_SHEETS: { kind: AddSourceKind; Icon: typeof FileText; title: string; line: string }[] = [
+  { kind: "file", Icon: FileText, title: "A chapter or handout", line: "A PDF, slides, a document or a photo of a page." },
+  { kind: "paste", Icon: PencilSimpleLine, title: "Your own notes", line: "Paste what you have typed or copied." },
+  { kind: "url", Icon: Globe, title: "A web page", line: "An article or a video, by its address." },
+];
 
 const STARTERS = [
   { label: "Find the key ideas", prompt: "Summarize the key ideas across my sources" },
@@ -76,7 +84,7 @@ export default function MessageList({
   onRetry?: (prompt: string) => void;
   /** A question is being prepared, so an unanswered last note is not a dead end yet. */
   busy?: boolean;
-  onAddSources?: () => void;
+  onAddSources?: (kind?: AddSourceKind) => void;
   hasModel?: boolean;
   onOpenSettings?: () => void;
   scrollRef: RefObject<HTMLDivElement | null>;
@@ -100,7 +108,7 @@ export default function MessageList({
     >
       <div className="chat-reading-column">
         {messages.length === 0 && !streaming && (
-          <section className="chat-welcome" aria-label="Start studying">
+          <section className={`chat-welcome${sourceCount === 0 ? " chat-welcome-fresh" : ""}`} aria-label="Start studying">
             <p className="chat-welcome-context">
               <span className="chat-welcome-rule" aria-hidden="true" />
               {sourceCount > 0 ? `${sourceCount} ${sourceCount === 1 ? "source" : "sources"} on your desk` : "A fresh page"}
@@ -124,11 +132,17 @@ export default function MessageList({
             ) : sourceCount > 0 ? (
               onOpenSettings && <Button onClick={onOpenSettings}>Choose a model</Button>
             ) : (
-              <>
-                {/* chat-welcome.css hides this while the sources pane beside it shows its own Add source. */}
-                {onAddSources && <Button variant="secondary" className="chat-welcome-add" icon={<Plus size={ICON.md} aria-hidden="true" />} onClick={onAddSources}>Add your first source</Button>}
-                <p className="chat-welcome-hint">Add a PDF, your notes, or a web page from Sources. Start with one.</p>
-              </>
+              onAddSources && (
+                <div className="fresh-sheets" aria-label="Ways to add your first source">
+                  {FRESH_SHEETS.map(({ kind, Icon, title, line }) => (
+                    <button key={kind} type="button" className="sheet-loose fresh-sheet" onClick={() => onAddSources(kind)}>
+                      <Icon size={ICON.xxl} weight="light" aria-hidden="true" />
+                      <strong>{title}</strong>
+                      <span>{line}</span>
+                    </button>
+                  ))}
+                </div>
+              )
             )}
           </section>
         )}

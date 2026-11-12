@@ -20,8 +20,8 @@ it("offers source import before source-based starters, and opens a grounded star
   };
   const { rerender } = render(<MessageList {...props} />);
   expect(screen.queryByRole("button", { name: "Find the key ideas" })).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Add your first source" }));
-  expect(onAddSources).toHaveBeenCalledOnce();
+  fireEvent.click(screen.getByRole("button", { name: /Your own notes/ }));
+  expect(onAddSources).toHaveBeenCalledExactlyOnceWith("paste");
   expect(onSend).not.toHaveBeenCalled();
   rerender(<MessageList {...props} sourceCount={2} />);
   fireEvent.click(screen.getByRole("button", { name: "Find the key ideas" }));

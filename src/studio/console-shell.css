@@ -90,13 +90,20 @@
   color: var(--muted);
   font-size: var(--text-small);
   font-weight: 500;
-  transition: background-color var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-fast);
+  position: relative;
+  isolation: isolate;
+  transition: color var(--dur-fast);
 }
 .workspace-mode:hover { color: var(--ink); }
-.workspace-mode[aria-pressed="true"] {
+.workspace-mode[aria-pressed="true"] { color: var(--ink); font-weight: 600; }
+/* One raised tab for the whole switch: it slides to the mode you pick
+   (a shared layout in Workspace.tsx) instead of each button lighting up. */
+.workspace-mode-thumb {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
   background: var(--surface);
-  color: var(--ink);
-  font-weight: 600;
   box-shadow: 0 1px 2px color-mix(in srgb, var(--leather) 18%, transparent);
 }
 .workspace-mode[aria-pressed="true"] svg { color: var(--brass); }

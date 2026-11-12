@@ -33,11 +33,11 @@ import {
 
 export type Flow = "quiz" | "exam" | "essay" | "flashcards" | "presentation" | "aids";
 
-export const DOCUMENT_TOOLS: { kind: GenerationKind; icon: typeof BookOpen; name: string }[] = [
-  { kind: "study-guide", icon: BookOpen, name: "Study guide" },
-  { kind: "brief", icon: Briefcase, name: "Briefing doc" },
-  { kind: "faq", icon: Question, name: "FAQ" },
-  { kind: "timeline", icon: ClockCounterClockwise, name: "Timeline" },
+export const DOCUMENT_TOOLS: { kind: GenerationKind; icon: typeof BookOpen; name: string; line: string }[] = [
+  { kind: "study-guide", icon: BookOpen, name: "Study guide", line: "The main ideas, in the order to learn them." },
+  { kind: "brief", icon: Briefcase, name: "Briefing doc", line: "A short read for when time is tight." },
+  { kind: "faq", icon: Question, name: "FAQ", line: "The questions this material tends to raise." },
+  { kind: "timeline", icon: ClockCounterClockwise, name: "Timeline", line: "Events and steps, set in sequence." },
 ];
 
 /* The rows used to carry a tinted icon tile each, which spent three semantic

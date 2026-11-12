@@ -44,7 +44,7 @@ export default function DesktopSection() {
         </div>
 
         <div className="landing-desktop-body">
-          <div className="landing-desktop-card" data-landing-reveal>
+          <div className="sheet-loose landing-desktop-card" data-landing-reveal>
             <h3>{primary ? `Install for ${primary.label}` : "Install Comtus"}</h3>
             <p>Windows and macOS. Free, and no account.</p>
             {primary ? (

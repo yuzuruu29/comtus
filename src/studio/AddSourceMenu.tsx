@@ -2,6 +2,9 @@ import { ClipboardText, Globe, Plus, UploadSimple } from "@phosphor-icons/react"
 import { Button, Menu } from "../ui";
 import { ICON } from "../ui/iconScale";
 
+/** The three ways a source comes in. The fresh page in chat asks for one by name. */
+export type AddSourceKind = "file" | "paste" | "url";
+
 /** The single "Add source" control: a Button that opens a Menu with the
  *  three intake paths. SourcesPane mounts exactly one instance at a time —
  *  from the empty state when there are no sources, from the pane header

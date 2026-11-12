@@ -123,6 +123,10 @@
   transform-origin: 0 50%;
   animation: landing-rule-in 700ms var(--ease-out) 120ms both;
 }
+/* The light comes up behind the headline as the page opens (landing.css). */
+.landing-home[data-motion="full"] .landing-hero::before {
+  animation: landing-fade 1400ms var(--ease-out) 160ms backwards;
+}
 
 .landing-home[data-motion="minimal"] .landing-hero-editorial {
   animation: landing-fade var(--dur-slow) var(--ease-out) both;

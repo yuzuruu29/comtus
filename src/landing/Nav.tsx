@@ -5,6 +5,7 @@ import "../ui/ui.css";
 import "./landing.css";
 import "./landing-motion.css";
 import { ICON } from "../ui/iconScale";
+import { LampSwitch } from "../ui/LampSwitch";
 
 const LINKS = [
   { label: "How it works", hash: "#how-it-works" },
@@ -81,6 +82,7 @@ export default function Nav({ onLanding = false }: { onLanding?: boolean }) {
           ))}
         </nav>
         <div className="landing-nav-actions">
+          <LampSwitch />
           <Link to="/studio" className="btn btn-primary btn-sm">Open the desk</Link>
           <button ref={toggleRef} className="landing-nav-toggle" type="button" aria-label={open ? "Close navigation" : "Open navigation"} aria-expanded={open} aria-controls="landing-navigation" onClick={() => setOpen(!open)}>
             <List className="landing-nav-icon-open" size={ICON.xxl} aria-hidden="true" />

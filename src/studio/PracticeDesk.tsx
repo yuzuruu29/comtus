@@ -45,11 +45,14 @@ export default function PracticeDesk({
   notebookId,
   sourcesVersion,
   onOpenSettings,
+  onAddSources,
   openRequest = null,
 }: {
   notebookId: string;
   sourcesVersion: number;
   onOpenSettings?: () => void;
+  /** Takes an empty notebook back to Understand to add its first source. */
+  onAddSources?: () => void;
   /** Saved work sent over from Understand. A new object is a new request. */
   openRequest?: { gen: Generation } | null;
 }) {
@@ -230,6 +233,11 @@ export default function PracticeDesk({
                 ? "Add a source in Understand first. Every question here is written from your own material."
                 : "A short quiz is a good start: it shows what stuck and what needs another look."}
             </p>
+            {sources.length === 0 && onAddSources && (
+              <div className="practice-welcome-actions">
+                <Button onClick={onAddSources}>Add a source</Button>
+              </div>
+            )}
             {sources.length > 0 && (
               <div className="practice-welcome-actions">
                 <Button onClick={() => openFlow("quiz")}>Start a quiz</Button>

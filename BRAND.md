@@ -186,6 +186,32 @@ Movement in Comtus is physical, warm, and intentional. Interactions follow the p
   `prefers-reduced-transparency`. Neumorphism is out: it fails contrast and
   reads as plastic, not paper.
 
+### The lamp — light as a material
+
+The desk lamp sits at the upper left; light is what moves (`src/ui/LampSwitch.tsx`,
+`src/studio/lamplight.css`).
+
+- **The lamp switch** is the theme control on the landing nav, the shelf and the
+  desk header. Daylight with the lamp off, Lamplight with it on. Going to
+  Daylight, the new page spreads out of the lamp in a circle; going to
+  Lamplight, the old page gathers back into it (a view transition, 700ms). At
+  Minimal the browser cross-fades; at None, and without view transitions, the
+  theme changes in one frame. Hovering tilts the shade a few degrees.
+- **The lit sheet.** The sheet you work on (the chat page, the practice sheet)
+  carries a pool of `--brass-pale` light from its upper-left corner. It comes up
+  when the sheet arrives, and the lamp is turned up while you write or an
+  answer is written. It never pulses on its own: light changes with what you do.
+  The landing hero has the same pool, brighter while you reach for "Open the desk".
+- **Loose sheets (`.sheet-loose`, `src/ui/ui.css`).** Paper you can pick up lies
+  at a small angle (`--tilt`, `--drop`) and squares up and lifts under the pointer
+  or focus. Daylight shows it with the thrown shadow, Lamplight with a hairline
+  that warms to brass. Used for the fresh page's three ways in, the model
+  access notes and the install card. Reduced motion lays them flat.
+- **Changing mode lays a different sheet down**: the mode switch's raised tab
+  slides to the mode you pick, and the new view settles in with a short rise.
+- **Dropping a file** raises a dashed brass sheet over the desk, and the empty
+  source stack fans out to show where the reading will land.
+
 ### Study feedback — marked like paper
 
 A tutor marks paper; Comtus does the same (`src/studio/generators/study-feedback.css`).

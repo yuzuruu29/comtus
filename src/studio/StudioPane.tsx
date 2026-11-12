@@ -12,6 +12,7 @@ import {
   Presentation,
   SidebarSimple,
   Trash,
+  Tray,
 } from "@phosphor-icons/react";
 import {
   db,
@@ -283,16 +284,17 @@ export default function StudioPane({
             <h3 id={createStudyId}>Make something to read.</h3>
             <p>Guides and summaries written from your sources.</p>
           </div>
-          <div className="study-tools-secondary">
+          <div className="guide-tools">
             {DOCUMENT_TOOLS.map((tool) => (
-              <Button key={tool.kind} variant="ghost" size="sm" onClick={() => openAid(tool.kind)}>
-                <tool.icon size={ICON.md} aria-hidden="true" />
-                {tool.name}
-              </Button>
+              <button key={tool.kind} type="button" className="guide-tool" onClick={() => openAid(tool.kind)}>
+                <tool.icon size={ICON.lg} aria-hidden="true" />
+                <span className="guide-tool-copy"><strong>{tool.name}</strong><small>{tool.line}</small></span>
+              </button>
             ))}
-            <Button variant="ghost" size="sm" onClick={() => setFlow("presentation")}>
-              <Presentation size={ICON.md} aria-hidden="true" />Slides & deck
-            </Button>
+            <button type="button" className="guide-tool" onClick={() => setFlow("presentation")}>
+              <Presentation size={ICON.lg} aria-hidden="true" />
+              <span className="guide-tool-copy"><strong>Slides & deck</strong><small>An outline you can present from.</small></span>
+            </button>
           </div>
           <Button variant="secondary" className="practice-tool rule-bookmark" onClick={() => onOpenPractice()}>
             <span className="practice-tool-icon"><ListChecks size={ICON.xl} aria-hidden="true" /></span>
@@ -451,10 +453,13 @@ export default function StudioPane({
               })}
             </AnimatePresence>
 
-{gens.length === 0 && (
-              <p className="study-saved-empty">
-                Save an answer, write a note, or make a study set. It waits here when you come back.
-              </p>
+            {gens.length === 0 && (
+              <div className="study-saved-tray">
+                <Tray size={ICON.xl} weight="light" aria-hidden="true" />
+                <p className="study-saved-empty">
+                  Save an answer, write a note, or make a study set. It waits here when you come back.
+                </p>
+              </div>
             )}
 
             {deleteError && (

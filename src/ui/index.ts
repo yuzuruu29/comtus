@@ -3,6 +3,7 @@ import "./ui.css";
 export { Button } from "./Button";
 export type { ButtonProps, ButtonVariant, ButtonSize } from "./Button";
 export { IconButton } from "./IconButton";
+export { LampSwitch } from "./LampSwitch";
 export { Chip } from "./Chip";
 export type { ChipProps, ChipTone } from "./Chip";
 export { Field } from "./Field";

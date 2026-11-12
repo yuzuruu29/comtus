@@ -23,6 +23,7 @@ import { appendTranscript } from "../lib/voice";
 import { useVoiceInput } from "./useVoiceInput";
 import SessionMenu from "./SessionMenu";
 import MessageList from "./MessageList";
+import type { AddSourceKind } from "./AddSourceMenu";
 import Composer from "./Composer";
 import CompadChat from "./CompadChat";
 import { useCompadChat } from "./CompadChatContext";
@@ -51,7 +52,7 @@ export default function ChatPane({
   onNavigateSources: (sourceId: string, startChar?: number) => void;
   modelLabel?: string;
   onOpenSettings?: () => void;
-  onAddSources?: () => void;
+  onAddSources?: (kind?: AddSourceKind) => void;
   /** Task 3.3 supplies real model capabilities; until then callers may pass
    *  { thinking: false } to hide the composer's Think toggle. */
   capabilities?: { thinking?: boolean };

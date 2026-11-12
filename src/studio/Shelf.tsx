@@ -16,7 +16,7 @@ import {
   HardDrives,
   X,
 } from "@phosphor-icons/react";
-import { Button, Dialog, Empty, Field, IconButton, Input, Menu, Segmented, Skeleton } from "../ui";
+import { Button, Dialog, Empty, Field, IconButton, Input, LampSwitch, Menu, Segmented, Skeleton } from "../ui";
 import { db, createNotebook, deleteNotebook, touchNotebook } from "../lib/db";
 import { exportNotebook, openNotebookText, readNotebookFileNative } from "../lib/backup";
 import type { Notebook } from "../lib/types";
@@ -228,6 +228,7 @@ export default function Shelf({
             </nav>
             <div className="shelf-header-actions">
               <span className="shelf-save-note"><HardDrives size={ICON.md} aria-hidden="true" /> Saved on this device</span>
+              <LampSwitch />
               <IconButton aria-label="Settings" onClick={() => openSettings("settings")}>
                 <GearSix size={ICON.xl} aria-hidden="true" />
               </IconButton>

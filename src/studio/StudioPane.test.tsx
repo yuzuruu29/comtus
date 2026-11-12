@@ -130,7 +130,7 @@ describe("StudioPane", () => {
 
     expect(screen.getByRole("heading", { name: "Notes & guides" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Practice quiz/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Study guide" })).toBeVisible();
+    expect(screen.getByRole("button", { name: /^Study guide/ })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: /Test yourself in Practice/ }));
     expect(onOpenPractice).toHaveBeenLastCalledWith();
   });

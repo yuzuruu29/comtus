@@ -1,0 +1,344 @@
+/* ==========================================================================
+   Lamplight: the desk's light as a material (BRAND.md 5, "The lamp").
+
+   The lamp sits at the upper left of the desk. Its light pools on the sheet
+   you are working on, comes up when the sheet arrives, and warms while you
+   write or an answer is being written. Sheets you can pick up lie at a small
+   angle until the pointer squares them.
+
+   Same contract as desk-motion.css: the resting style is the finished page,
+   every running animation reads html[data-motion], and fill is "backwards"
+   only so nothing of an arrival stays on the element. No ambient loops live
+   here: light changes with what you do, it never pulses on its own.
+   ========================================================================== */
+
+@property --lamp-glow {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+
+/* ── 1 · The lit sheet ──────────────────────────────────────────────── */
+
+.desk-sheet > .bg-paper-parchment,
+.practice-stage .practice-sheet {
+  --lamp-glow: 15%;
+  background-image: radial-gradient(
+    82% 64% at 0% 0%,
+    color-mix(in srgb, var(--brass-pale) var(--lamp-glow), transparent),
+    transparent 72%
+  );
+  transition: --lamp-glow var(--dur-glow) var(--ease-out);
+}
+html[data-theme="dark"] :is(.desk-sheet > .bg-paper-parchment, .practice-sheet) {
+  --lamp-glow: 9%;
+}
+
+/* Writing, or being answered: the lamp is turned up. */
+.desk-sheet > .bg-paper-parchment:has(.composer-shell:is([data-focused], [data-streaming])) {
+  --lamp-glow: 30%;
+}
+html[data-theme="dark"] .desk-sheet > .bg-paper-parchment:has(.composer-shell:is([data-focused], [data-streaming])) {
+  --lamp-glow: 17%;
+}
+
+@keyframes lamp-up {
+  from { --lamp-glow: 0%; }
+}
+html[data-motion="full"] .desk-sheet > .bg-paper-parchment {
+  animation: lamp-up 1100ms var(--ease-out) 140ms backwards;
+}
+/* The practice sheet already slides in (practice-desk.css); the light joins it. */
+html[data-motion="full"] .practice-sheet {
+  animation:
+    practice-sheet-in var(--dur-med) var(--ease-out),
+    lamp-up 1100ms var(--ease-out) 140ms backwards;
+}
+
+/* ── 2 · Changing mode lays a different sheet down ──────────────────── */
+/* Understand and Chat share one container, so the display never flips
+   between them; the animation name does, and a new name restarts it. */
+
+@keyframes desk-lay {
+  from { opacity: 0; transform: translateY(8px); }
+}
+@keyframes desk-lay-again {
+  from { opacity: 0; transform: translateY(8px); }
+}
+html[data-motion="full"] .desk-mode-view {
+  animation: desk-lay var(--dur-slow) var(--ease-out) backwards;
+}
+html[data-motion="full"] .desk-mode-view[data-mode="chat"] {
+  animation-name: desk-lay-again;
+}
+html[data-motion="minimal"] .desk-mode-view {
+  animation: desk-fade var(--dur-med) var(--ease-out) backwards;
+}
+
+/* ── 3 · A fresh page: three sheets to start from ───────────────────── */
+
+.chat-welcome-fresh { max-width: 41rem; }
+
+.fresh-sheets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.875rem;
+  margin-top: 0.25rem;
+  padding-bottom: 0.5rem;
+}
+
+.fresh-sheet {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 0.3125rem;
+  min-height: 9.25rem;
+  padding: 1rem 1rem 1.125rem;
+  color: var(--muted);
+  text-align: left;
+}
+.fresh-sheet:nth-child(1) { --tilt: -1.4deg; --n: 0; }
+.fresh-sheet:nth-child(2) { --tilt: 0.9deg; --drop: 5px; --n: 1; }
+.fresh-sheet:nth-child(3) { --tilt: -0.6deg; --drop: 1px; --n: 2; }
+
+/* The corner of the sheet is turned down, the way a page you mean to come
+   back to is. It is the page colour over the card's own corner. */
+.fresh-sheet::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 15px;
+  height: 15px;
+  border-bottom-left-radius: 3px;
+  background: linear-gradient(225deg, var(--surface) 49%, var(--hairline-strong) 50%, var(--raised) 53%);
+  pointer-events: none;
+}
+
+.fresh-sheet svg {
+  margin-bottom: 0.625rem;
+  color: var(--brass);
+  transform-origin: 30% 80%;
+  transition: transform var(--dur-med) var(--ease-out);
+}
+.fresh-sheet strong {
+  color: var(--ink);
+  font-family: var(--font-read);
+  font-size: var(--text-lead);
+  font-weight: 480;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+.fresh-sheet span {
+  font-size: var(--text-small);
+  line-height: 1.5;
+}
+
+html[data-motion="full"] .fresh-sheet:is(:hover, :focus-visible) svg {
+  transform: translateY(-2px) rotate(-8deg);
+}
+.fresh-sheet:active {
+  translate: 0 1px;
+  box-shadow:
+    inset 0 1px 3px color-mix(in srgb, var(--leather) 22%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--brass) 14%, transparent);
+  transition-duration: var(--dur-fast);
+}
+
+html[data-motion="full"] .fresh-sheet {
+  animation: desk-settle 820ms var(--ease-out) backwards;
+  animation-delay: calc(260ms + var(--n, 0) * 90ms);
+}
+html[data-motion="minimal"] .fresh-sheet {
+  animation: desk-fade var(--dur-slow) var(--ease-out) backwards;
+}
+
+@media (max-width: 639px) {
+  .fresh-sheets { grid-template-columns: minmax(0, 1fr); gap: 0.625rem; }
+  .fresh-sheet {
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.875rem;
+    min-height: 0;
+    padding: 0.875rem 1rem;
+  }
+  /* Stacked full-width rows read as a list; a tilt there only skews the edges. */
+  .fresh-sheets .fresh-sheet:nth-child(n) { --tilt: 0deg; --drop: 0px; }
+  .fresh-sheet svg { grid-row: span 2; margin: 0.125rem 0 0; }
+}
+
+/* ── 4 · The source stack ───────────────────────────────────────────── */
+/* An empty Sources pane shows where the reading goes: three loose sheets.
+   They square up under the pointer, and fan out while a file is held over
+   the notebook, so the desk points at where the drop will land. */
+
+.source-stack {
+  position: relative;
+  width: 4.25rem;
+  height: 5rem;
+  margin: 0.25rem 0 1.5rem 0.5rem;
+}
+.source-stack i {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 2px 6px 6px 2px;
+  background: var(--surface);
+  rotate: var(--tilt);
+  translate: var(--shift);
+  transition:
+    rotate var(--dur-slow) var(--ease-out),
+    translate var(--dur-slow) var(--ease-out);
+}
+.source-stack i:nth-child(1) { --tilt: -9deg; --shift: -5px 3px; }
+.source-stack i:nth-child(2) { --tilt: 5deg; --shift: 6px 1px; }
+.source-stack i:nth-child(3) {
+  --tilt: -2deg;
+  --shift: 0 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 0.5625rem,
+    var(--hairline) 0.5625rem calc(0.5625rem + 1px)
+  );
+  background-size: calc(100% - 1.25rem) 2.75rem;
+  background-position: 0.625rem 1.375rem;
+  background-repeat: no-repeat;
+}
+/* A brass heading on the top sheet. */
+.source-stack i:nth-child(3)::before {
+  content: "";
+  position: absolute;
+  top: 0.75rem;
+  left: 0.625rem;
+  width: 1.5rem;
+  height: 2px;
+  background: var(--brass);
+}
+
+.source-index-empty:hover .source-stack i:nth-child(1) { --tilt: -3deg; --shift: -2px 1px; }
+.source-index-empty:hover .source-stack i:nth-child(2) { --tilt: 2deg; --shift: 2px 0; }
+.source-index-empty:hover .source-stack i:nth-child(3) { --tilt: 0deg; }
+
+.workspace-companion-root:has(> [data-dropping]) .source-stack i:nth-child(1) { --tilt: -16deg; --shift: -12px 4px; }
+.workspace-companion-root:has(> [data-dropping]) .source-stack i:nth-child(2) { --tilt: 12deg; --shift: 13px 2px; }
+.workspace-companion-root:has(> [data-dropping]) .source-stack i:nth-child(3) { --shift: 0 -6px; }
+
+html[data-motion="full"] .source-stack i {
+  animation: desk-settle 760ms var(--ease-out) backwards;
+  animation-delay: calc(120ms + var(--n, 0) * 80ms);
+}
+.source-stack i:nth-child(2) { --n: 1; }
+.source-stack i:nth-child(3) { --n: 2; }
+
+/* ── 5 · Dropping a file onto the desk ──────────────────────────────── */
+
+.desk-drop-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--ground) 78%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.desk-drop-veil[data-dropping] { opacity: 1; }
+
+.desk-drop-sheet {
+  display: grid;
+  justify-items: center;
+  gap: 0.375rem;
+  width: min(24rem, calc(100% - 3rem));
+  padding: 2.25rem 2rem 2rem;
+  border: 1.5px dashed color-mix(in srgb, var(--brass) 70%, transparent);
+  border-radius: 3px 12px 12px 3px;
+  background: var(--surface);
+  box-shadow: var(--elev-lift);
+  color: var(--muted);
+  font-size: var(--text-small);
+  text-align: center;
+  translate: 0 10px;
+  rotate: -1deg;
+  transition:
+    translate var(--dur-slow) var(--ease-out),
+    rotate var(--dur-slow) var(--ease-out);
+}
+.desk-drop-veil[data-dropping] .desk-drop-sheet { translate: 0 0; rotate: 0deg; }
+.desk-drop-sheet svg { margin-bottom: 0.5rem; color: var(--brass); }
+.desk-drop-sheet strong {
+  color: var(--ink);
+  font-family: var(--font-read);
+  font-size: var(--text-title);
+  font-weight: 450;
+  letter-spacing: -0.015em;
+}
+
+/* ── 6 · Notes & guides: a catalogue you can thumb through ──────────── */
+
+.guide-tools {
+  display: grid;
+  margin-bottom: 0.875rem;
+  border-top: 1px solid var(--hairline);
+}
+.guide-tool {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: 0.75rem;
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.625rem 0.5rem 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--muted);
+  text-align: left;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+.guide-tool svg {
+  margin-top: 0.125rem;
+  transition:
+    color var(--dur-med) var(--ease-out),
+    transform var(--dur-med) var(--ease-out);
+}
+.guide-tool-copy { display: grid; gap: 1px; transition: transform var(--dur-med) var(--ease-out); }
+.guide-tool strong { color: var(--ink); font-size: var(--text-body); font-weight: 550; }
+.guide-tool small { font-size: var(--text-label); line-height: 1.45; }
+
+.guide-tool:is(:hover, :focus-visible) { background: color-mix(in srgb, var(--brass) 6%, transparent); }
+.guide-tool:is(:hover, :focus-visible) svg { color: var(--brass); }
+.guide-tool:focus-visible { outline-offset: -2px; }
+.guide-tool:active { background: color-mix(in srgb, var(--brass) 11%, transparent); }
+html[data-motion="full"] .guide-tool:is(:hover, :focus-visible) svg { transform: translateY(-2px) rotate(-8deg); }
+html[data-motion="full"] .guide-tool:is(:hover, :focus-visible) .guide-tool-copy { transform: translateX(3px); }
+
+html[data-motion="full"] .guide-tool {
+  animation: desk-rise var(--dur-glow) var(--ease-out) backwards;
+  animation-delay: calc(120ms + var(--n, 0) * 40ms);
+}
+html[data-motion="minimal"] .guide-tool {
+  animation: desk-fade var(--dur-slow) var(--ease-out) backwards;
+}
+.guide-tool:nth-child(2) { --n: 1; }
+.guide-tool:nth-child(3) { --n: 2; }
+.guide-tool:nth-child(4) { --n: 3; }
+.guide-tool:nth-child(5) { --n: 4; }
+
+/* Nothing saved yet: an empty tray, drawn in the same ink. */
+.study-saved-tray {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem;
+  border: 1px dashed var(--hairline-strong);
+  border-radius: 3px 8px 8px 3px;
+}
+.study-saved-tray svg { color: var(--muted); }
+.study-saved-tray .study-saved-empty { margin: 0; padding: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .source-stack i,
+  .desk-drop-sheet {
+    rotate: 0deg;
+    translate: 0 0;
+  }
+}

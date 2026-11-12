@@ -512,9 +512,104 @@ html[data-motion="full"] .ink-mark path + path {
   from { stroke-dashoffset: 1; }
 }
 
+/* ── Lamp switch ─────────────────────────────────────────────────────────
+   The desk lamp turns Lamplight on and off (LampSwitch.tsx). Lit, the glyph
+   is brass on a soft pool of its own light; the head dips toward the page
+   under the pointer. The theme change itself is a view transition: light
+   spreads out of the lamp into Daylight, and gathers back into it for
+   Lamplight. Only the Full budget draws the circle; Minimal keeps the
+   browser's plain cross-fade, and None never starts a transition. */
+
+.lamp-switch {
+  position: relative;
+  flex-shrink: 0;
+}
+.lamp-switch svg {
+  position: relative;
+  transform-origin: 50% 85%;
+  transition: transform var(--dur-med) var(--ease-out);
+}
+.lamp-switch[aria-pressed="true"] {
+  color: var(--brass);
+}
+.lamp-switch-glow {
+  position: absolute;
+  inset: -6px;
+  border-radius: var(--radius-pill);
+  background: radial-gradient(closest-side, var(--glow-warm), transparent);
+  opacity: 0;
+  transition: opacity var(--dur-glow) var(--ease-out);
+  pointer-events: none;
+}
+.lamp-switch[aria-pressed="true"] .lamp-switch-glow {
+  opacity: 1;
+}
+@media (hover: hover) {
+  html[data-motion="full"] .lamp-switch:hover svg {
+    transform: rotate(-9deg);
+  }
+}
+
+@keyframes lamp-spread {
+  from { clip-path: circle(0 at var(--lamp-x) var(--lamp-y)); }
+  to { clip-path: circle(var(--lamp-r) at var(--lamp-x) var(--lamp-y)); }
+}
+@keyframes lamp-gather {
+  from { clip-path: circle(var(--lamp-r) at var(--lamp-x) var(--lamp-y)); }
+  to { clip-path: circle(0 at var(--lamp-x) var(--lamp-y)); }
+}
+
+html[data-motion="full"][data-lamp]::view-transition-old(root),
+html[data-motion="full"][data-lamp]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html[data-motion="full"][data-lamp="spread"]::view-transition-new(root) {
+  animation: lamp-spread var(--dur-settle) var(--ease-out) both;
+}
+html[data-motion="full"][data-lamp="gather"]::view-transition-old(root) {
+  z-index: 1;
+  animation: lamp-gather var(--dur-settle) var(--ease-inout) both;
+}
+
+/* ── Loose sheet ─────────────────────────────────────────────────────── */
+/* A sheet of paper left on the desk lies at a small angle; the pointer (or
+   focus) squares it up and lifts it. The angle is the resting state, set per
+   sheet with --tilt and --drop, on the individual rotate/translate properties
+   so an arrival that animates `transform` never fights it.
+   Elevation follows BRAND.md 4.5: a thrown shadow in Daylight, where shadows
+   read; a hairline in Lamplight, where they do not. Never both. */
+.sheet-loose {
+  border: 1px solid transparent;
+  border-radius: 2px 8px 8px 2px;
+  background: var(--surface);
+  box-shadow: var(--elev-card);
+  rotate: var(--tilt, 0deg);
+  translate: 0 var(--drop, 0px);
+  transition:
+    rotate var(--dur-med) var(--ease-out),
+    translate var(--dur-med) var(--ease-out),
+    box-shadow var(--dur-med) var(--ease-out),
+    border-color var(--dur-med) var(--ease-out);
+}
+.sheet-loose:is(:hover, :focus-visible, :focus-within) {
+  rotate: 0deg;
+  translate: 0 -3px;
+  box-shadow: var(--elev-lift);
+}
+:is(html[data-theme="dark"], .theme-lamplight) .sheet-loose {
+  border-color: var(--hairline-strong);
+  box-shadow: none;
+}
+:is(html[data-theme="dark"], .theme-lamplight) .sheet-loose:is(:hover, :focus-visible, :focus-within) {
+  border-color: color-mix(in srgb, var(--brass) 55%, transparent);
+  box-shadow: 0 0 24px var(--glow-warm);
+}
+
 /* ── Reduced motion (BRAND.md 5) ─────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
+  .sheet-loose { rotate: 0deg; translate: 0 0; }
   .btn,
   .icon-btn,
   .chip,

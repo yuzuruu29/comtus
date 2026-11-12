@@ -54,7 +54,7 @@ export default function CompadChat({
           const element = scrollRef.current;
           if (element) stickBottom.current = element.scrollHeight - element.scrollTop - element.clientHeight < 60;
         }}>
-        {!messages.length && !streaming && <div className="compad-empty"><p>A small space for a good question.</p><span>This is your notebook’s chat, using its sources and selected model.</span>{sourceCount === 0 && onAddSources && <button type="button" onClick={onAddSources}>Add a source to study together</button>}</div>}
+        {!messages.length && !streaming && <div className="compad-empty"><p>A small space for a good question.</p><span>This is your notebook’s chat, using its sources and selected model.</span>{sourceCount === 0 && onAddSources && <button type="button" onClick={() => onAddSources()}>Add a source to study together</button>}</div>}
         {messages.map((message) => message.role === "user" ? (
           <div key={message.id} className="compad-question"><span>You</span><p>{message.content}</p></div>
         ) : (
