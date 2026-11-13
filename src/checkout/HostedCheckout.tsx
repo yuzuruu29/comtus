@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
-import { STUDY_PLANS } from "../lib/paypal";
-import { formatUsdFromNano } from "../lib/credits";
+import { FIRST_TOPUP_OFFER, STUDY_PLANS } from "../lib/paypal";
 import PayPalCheckout from "../studio/PayPalCheckout";
 import { usePageMeta } from "../lib/usePageMeta";
 import { trackEvent } from "../lib/analytics";
@@ -76,7 +75,7 @@ export default function HostedCheckout() {
                 }`}
               >
                 <span className="block text-small font-medium">{candidate.name}</span>
-                <span className="mt-1 block text-label tabular-nums">${candidate.price} first purchase; ${candidate.regularPrice} regular</span>
+                <span className="mt-1 block text-label tabular-nums">${candidate.price} first top-up, then ${candidate.regularPrice}</span>
               </button>
             ))}
           </div>
@@ -84,12 +83,12 @@ export default function HostedCheckout() {
           <div className="my-6 border-y border-hairline py-4">
             <div className="flex items-baseline justify-between gap-4">
               <span className="font-display text-title">{plan.name}</span>
-              <span className="font-mono text-title text-brass">${plan.price} first purchase</span>
+              <span className="text-title tabular-nums text-brass">
+                <s className="mr-2 text-body text-muted">${plan.regularPrice}</s>${plan.price}
+              </span>
             </div>
-            <p className="mt-1 text-small text-muted">{plan.desc} · Usage does not expire. One-time payment, no automatic renewal.</p>
-            <p className="mt-1 text-body text-muted">{formatUsdFromNano(plan.budgetNano)} hosted usage included.</p>
-            <p className="mt-1 text-body text-muted">About 40% off your first eligible PayPal purchase. Regular price ${plan.regularPrice}. The final amount is shown for review before payment.</p>
-          </div>
+            <p className="mt-1 text-small text-muted">{plan.desc} The pass never expires. One-time payment, no automatic renewal.</p>
+            <p className="mt-3 text-body text-ink">{FIRST_TOPUP_OFFER}</p>          </div>
 
           <PayPalCheckout
             plan={plan}

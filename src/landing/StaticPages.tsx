@@ -120,7 +120,7 @@ export function PrivacyPage() {
             <strong>Model requests:</strong> when you chat, generate quizzes/exams, check solutions, or use voice features, the relevant text (your question, conversation context, and text extracted from sources in the active notebook) is transmitted to the AI provider you selected so it can generate a response.
           </li>
           <li>
-            <strong>Hosted-pass telemetry:</strong> if you purchase a Smarter Models pass, we store only the minimum needed to operate it: a pass identifier, the usage it has spent, any expiry, your PayPal order id, and a keyed hash of your PayPal payer ID for promotion eligibility. Hosted usage is metered by token cost. A refund or dispute disables that pass. We do not store your name, address, or card details — those live with PayPal.
+            <strong>Hosted-pass telemetry:</strong> if you purchase a Smarter Models pass, we store only the minimum needed to operate it: a pass identifier, the usage it has spent, any expiry, your PayPal order id, and a keyed hash of your PayPal payer ID so the first top-up discount applies only once. Each reply's length is counted against the pass. A refund or dispute disables that pass. We do not store your name, address, or card details — those live with PayPal.
           </li>
           <li>
             <strong>Analytics:</strong> aggregate, non-identifying product analytics are collected via Vercel Analytics (page views and visits).
@@ -227,10 +227,10 @@ export function TermsPage() {
           4. Purchases, Delivery & Access Passes
         </h2>
         <p>
-          Smarter Models passes are sold in US dollars and processed by PayPal. When PayPal confirms your payment, your access pass is issued automatically. Passes sold from 13 October 2026 include a prepaid budget of hosted model usage, and each reply spends the tokens it actually uses. Passes sold earlier keep the request count they were sold with. A lost pass can be restored with the PayPal order id. Passes are personal credentials: sharing, reselling, or automating access with a pass is prohibited and may lead to suspension of the pass without refund.
+          Smarter Models passes are sold in US dollars and processed by PayPal. When PayPal confirms your payment, your access pass is issued automatically. Passes sold from 13 October 2026 include a fixed allowance of Claude use that never expires. Each reply draws on it according to its length, so longer answers and larger documents use more, and the number of replies a pass covers varies. Passes sold earlier keep the request count they were sold with. A lost pass can be restored with the PayPal order id. Passes are personal credentials: sharing, reselling, or automating access with a pass is prohibited and may lead to suspension of the pass without refund.
         </p>
         <p>
-          The first-purchase offer applies once per identifiable PayPal payer to purchases under the new pricing; older purchases do not disqualify buyers. Refunds and disputes do not reset eligibility. PayPal may show the regular price before eligibility is checked; review the final amount before confirming payment.
+          Your first top-up is 50% off the regular price. The discount applies once per PayPal account; every later top-up is charged the regular price. Purchases made before 13 October 2026 do not count as a first top-up, and a refund or dispute does not restore the discount. PayPal may show the regular price first; the final amount is shown for you to review before you confirm payment.
         </p>
 
         <h2 className="pt-4">
