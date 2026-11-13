@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Brain, CaretDown } from "@phosphor-icons/react";
 import { EFFORTS, effortLabelFor } from "../lib/llm";
+import { isTauri } from "../lib/desktop";
 import { useSettings } from "../lib/settings";
 import type { Effort } from "../lib/types";
-import { effortToStep, stepFromTrackX, stepToEffort } from "./composerControls";
+import { effortStepsFor, effortToStep, stepFromTrackX, stepToEffort } from "./composerControls";
 import { DUR, EXIT, POPOVER, RISE_1, SOFT, SPRING } from "./fx";
 import { ICON } from "../ui/iconScale";
 
@@ -28,10 +29,15 @@ export function ComposerSideRail({
   const dragging = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
   const reduceMotion = !!useReducedMotion();
-  const step = effortToStep(effort);
-  const along = `calc(12px + ${step / 3} * (100% - 24px))`;
-  const label = effortLabelFor(effort);
-  const active = EFFORTS.find((e) => e.id === effort) ?? EFFORTS[2];
+  const allowExtraDeep = isTauri();
+  const steps = effortStepsFor(allowExtraDeep);
+  const topStep = steps.length - 1;
+  const shownEfforts = allowExtraDeep ? EFFORTS : EFFORTS.filter((item) => item.id !== "xhigh");
+  const step = effortToStep(effort, steps);
+  const shownEffort = stepToEffort(step, steps);
+  const along = `calc(12px + ${step / topStep} * (100% - 24px))`;
+  const label = effortLabelFor(shownEffort);
+  const active = shownEfforts.find((e) => e.id === shownEffort) ?? shownEfforts[topStep];
   const off = reasoning ? !reasoning.enabled : false;
   const chipText = off ? "Thinking off" : label;
 
@@ -60,13 +66,10 @@ export function ComposerSideRail({
     };
   }, [open]);
 
-  const applyPointer = useCallback(
-    (target: HTMLElement, clientX: number) => {
-      const rect = target.getBoundingClientRect();
-      pick(stepToEffort(stepFromTrackX({ clientX, left: rect.left, width: rect.width })));
-    },
-    [pick],
-  );
+  const applyPointer = (target: HTMLElement, clientX: number) => {
+    const rect = target.getBoundingClientRect();
+    pick(stepToEffort(stepFromTrackX({ clientX, left: rect.left, width: rect.width, steps }), steps));
+  };
 
   const settle = (e?: React.PointerEvent<HTMLElement>) => {
     if (e?.currentTarget && e.currentTarget.hasPointerCapture?.(e.pointerId)) {
@@ -104,7 +107,7 @@ export function ComposerSideRail({
         title="How much the model thinks before answering"
         onClick={() => setOpen((v) => !v)}
         className={`effort-chip ${open ? "is-open" : ""}`}
-        data-level={effort}
+        data-level={shownEffort}
         data-off={off ? "" : undefined}
       >
         <Brain size={ICON.sm} weight={off ? "regular" : "fill"} className="shrink-0" />
@@ -132,7 +135,7 @@ export function ComposerSideRail({
             className="effort-popover"
             role="dialog"
             aria-label="Thinking effort"
-            data-level={effort}
+            data-level={shownEffort}
           >
             {reasoning && (
               <div className="effort-section effort-switch-row">
@@ -158,11 +161,11 @@ export function ComposerSideRail({
                 aria-label="Thinking effort"
                 aria-orientation="horizontal"
                 aria-valuemin={0}
-                aria-valuemax={3}
+                aria-valuemax={topStep}
                 aria-valuenow={step}
                 aria-valuetext={label}
                 className={`effort-track ${isDragging ? "is-dragging" : ""}`}
-                data-level={effort}
+                data-level={shownEffort}
                 onPointerDown={(e) => {
                   dragging.current = true;
                   setIsDragging(true);
@@ -181,27 +184,27 @@ export function ComposerSideRail({
                     "1": "low",
                     "2": "medium",
                     "3": "high",
-                    End: "xhigh",
-                    "4": "xhigh",
+                    End: steps[topStep],
+                    ...(allowExtraDeep ? { "4": "xhigh" as const } : {}),
                   };
                   let next: Effort | undefined = keys[e.key];
-                  if (e.key === "ArrowRight" || e.key === "ArrowUp") next = stepToEffort(step + 1);
-                  if (e.key === "ArrowLeft" || e.key === "ArrowDown") next = stepToEffort(step - 1);
+                  if (e.key === "ArrowRight" || e.key === "ArrowUp") next = stepToEffort(step + 1, steps);
+                  if (e.key === "ArrowLeft" || e.key === "ArrowDown") next = stepToEffort(step - 1, steps);
                   if (!next) return;
                   e.preventDefault();
                   pick(next);
                 }}
               >
-                <span className="effort-fill" style={{ "--fill": step / 3 } as CSSProperties} />
-                {EFFORTS.map((item, index) => (
+                <span className="effort-fill" style={{ "--fill": step / topStep } as CSSProperties} />
+                {shownEfforts.map((item, index) => (
                   <button
                     key={item.id}
                     type="button"
                     tabIndex={-1}
                     aria-label={item.label}
-                    aria-pressed={item.id === effort}
+                    aria-pressed={item.id === shownEffort}
                     className={`effort-dot ${index <= step ? "is-lit" : ""}`}
-                    style={{ left: `calc(12px + ${index / 3} * (100% - 24px))` }}
+                    style={{ left: `calc(12px + ${index / topStep} * (100% - 24px))` }}
                     onClick={() => pick(item.id)}
                   />
                 ))}
@@ -215,11 +218,11 @@ export function ComposerSideRail({
                 </span>
               </div>
               <div className="effort-ticks">
-                {EFFORTS.map((item) => (
+                {shownEfforts.map((item) => (
                   <button
                     key={item.id}
                     type="button"
-                    aria-pressed={item.id === effort}
+                    aria-pressed={item.id === shownEffort}
                     className="effort-tick"
                     onClick={() => pick(item.id)}
                   >

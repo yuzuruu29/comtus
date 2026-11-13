@@ -100,6 +100,7 @@ export default function SettingsModal({
   initialTab?: SettingsTab;
 }) {
   const s = useSettings();
+  const isWeb = !isTauri();
   // Draft state mirrors the store; "Save & test" validates before committing.
   const [draft, setDraft] = useState(() => snapshot(s));
   const [tab, setTab] = useState<SettingsTab>(initialTab);
@@ -146,14 +147,13 @@ export default function SettingsModal({
 
   // Live model sync for advanced mode
   useEffect(() => {
-    if (!open || draft.provider !== "openai-compatible" || !draft.compatBaseUrl.trim()) return;
+    if (isWeb || !open || draft.provider !== "openai-compatible" || !draft.compatBaseUrl.trim()) return;
     const isLocal = draft.compatBaseUrl.includes("localhost") || draft.compatBaseUrl.includes("127.0.0.1");
     if (!isLocal && !draft.compatKey.trim() && !draft.compatBaseUrl.includes("openrouter")) return;
 
     let cancel = false;
     const requestedBase = draft.compatBaseUrl.trim();
     const runFetch = async () => {
-      if (isWeb) return; // Web picks from the free list — no raw model fetch
       setFetchingModels(true);
       try {
         const ids = await listCompatModels(draft.compatKey.trim(), requestedBase);
@@ -174,7 +174,7 @@ export default function SettingsModal({
       cancel = true;
       clearTimeout(timer);
     };
-  }, [open, draft.provider, draft.compatBaseUrl, draft.compatKey]);
+  }, [open, draft.provider, draft.compatBaseUrl, draft.compatKey, isWeb]);
 
   const set = (patch: Partial<typeof draft>) => {
     setDraft((d) => ({ ...d, ...patch }));
@@ -331,7 +331,6 @@ export default function SettingsModal({
     draft.provider === "openai-compatible" &&
     draft.compatBaseUrl.includes("openrouter") &&
     draft.compatKey.trim().length > 0;
-  const isWeb = !isTauri();
   const PROVIDERS = COMPAT_PRESETS.filter((p) => (isWeb ? p.id !== "ollama" && p.id !== "lmstudio" : true));
   const selectedPreset = COMPAT_PRESETS.find((preset) => preset.baseUrl === draft.compatBaseUrl);
   const keyWarning = keyMismatch(draft.compatBaseUrl, draft.compatKey);
@@ -535,7 +534,7 @@ export default function SettingsModal({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                   {CURATED_FREE_MODELS.map((model) => {
                     const isSelected =
                       draft.provider === "openai-compatible" &&
@@ -1206,7 +1205,7 @@ export default function SettingsModal({
             </div>
             <div className={`grid ${isWeb ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-4"} gap-1.5 rounded-[var(--radius-dialog)] border border-hairline bg-ground/60 p-1.5`}>
               {(isWeb ? EFFORTS.filter((e) => e.id !== "xhigh") : EFFORTS).map((e) => {
-                const active = draft.effort === e.id;
+                const active = (isWeb && draft.effort === "xhigh" ? "high" : draft.effort) === e.id;
                 return (
                   <button
                     key={e.id}
@@ -1313,7 +1312,10 @@ export default function SettingsModal({
             </div>
           </Field>
 
-          <Field label="API Key" hint="Leave empty for local Ollama / LM Studio.">
+          <Field
+            label="API Key"
+            hint={isWeb ? "Paste your provider key." : "Leave empty for local Ollama / LM Studio."}
+          >
             <input
               type="password"
               value={newKeyVal}

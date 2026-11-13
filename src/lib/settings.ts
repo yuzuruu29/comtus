@@ -73,6 +73,22 @@ interface SettingsState {
 
 const RETIRED_SIGN_IN = new Set(["claude-oauth", "codex"]);
 
+const RETIRED_FREE_MODELS = new Set([
+  "dots-studio/dots-3-note-preview:free",
+  "poolside/laguna-s-2.1:free",
+  "stealth/ox-alpha",
+]);
+
+const DEFAULT_RECENT_MODELS = [
+  "openrouter/free",
+  "deepseek/deepseek-r1:free",
+  "nvidia/nemotron-3.5-lightning:free",
+];
+
+function replaceRetiredModel(modelId: string): string {
+  return RETIRED_FREE_MODELS.has(modelId) ? "openrouter/free" : modelId;
+}
+
 /** A local or private-network endpoint (Ollama, LM Studio, a LAN box) that serves without a key. */
 export function isKeylessEndpoint(baseUrl: string): boolean {
   let host: string;
@@ -94,7 +110,8 @@ export function isKeylessEndpoint(baseUrl: string): boolean {
 }
 
 /** Persist migration. Version 15 drops Claude and ChatGPT subscription
- *  sign-in; anyone still on those providers lands on OpenRouter-compatible. */
+ *  sign-in; anyone still on those providers lands on OpenRouter-compatible.
+ *  Version 17 replaces retired curated free models with openrouter/free. */
 export function migrateSettings(persisted: unknown, version: number): Partial<SettingsState> {
   const source = { ...((persisted ?? {}) as Record<string, unknown>) };
   const apiKey = typeof source.apiKey === "string" ? source.apiKey : "";
@@ -117,11 +134,28 @@ export function migrateSettings(persisted: unknown, version: number): Partial<Se
     rawProvider === "anthropic" || rawProvider === "openai-compatible"
       ? rawProvider
       : "openai-compatible";
+  const compatModel =
+    typeof old.compatModel === "string" ? replaceRetiredModel(old.compatModel) : old.compatModel;
+  const recentModels = Array.isArray(old.recentModels)
+    ? Array.from(
+        new Set(
+          old.recentModels
+            .filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+            .map((id) => replaceRetiredModel(id.trim())),
+        ),
+      )
+    : DEFAULT_RECENT_MODELS;
+  const storedKeys = (old.storedKeys || []).map((entry) =>
+    entry.defaultModel && RETIRED_FREE_MODELS.has(entry.defaultModel)
+      ? { ...entry, defaultModel: "openrouter/free" }
+      : entry,
+  );
   const base: Partial<SettingsState> = {
-    recentModels: ["openrouter/free", "deepseek/deepseek-r1:free", "nvidia/nemotron-3.5-lightning:free"],
     ...old,
+    ...(compatModel !== undefined ? { compatModel } : {}),
+    recentModels: recentModels.length > 0 ? recentModels : DEFAULT_RECENT_MODELS,
     provider: RETIRED_SIGN_IN.has(rawProvider) ? "openai-compatible" : provider,
-    storedKeys: old.storedKeys || [],
+    storedKeys,
     isPro: old.isPro ?? false,
     planTier: old.planTier ?? "free",
     tokenBalance: old.tokenBalance ?? 0,
@@ -166,11 +200,7 @@ export const useSettings = create<SettingsState>()(
       compatKey: "",
       compatBaseUrl: "https://openrouter.ai/api/v1",
       compatModel: "openrouter/free",
-      recentModels: [
-        "openrouter/free",
-        "deepseek/deepseek-r1:free",
-        "nvidia/nemotron-3.5-lightning:free",
-      ],
+      recentModels: DEFAULT_RECENT_MODELS,
       storedKeys: [],
       isPro: false,
       planTier: "free",
@@ -271,7 +301,7 @@ export const useSettings = create<SettingsState>()(
     }),
     {
       name: "comtus-settings",
-      version: 16,
+      version: 17,
       migrate: migrateSettings,
     },
   ),

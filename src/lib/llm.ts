@@ -191,11 +191,17 @@ function hostedSystem(apiKey: string, text: string): string | Anthropic.TextBloc
   return [{ type: "text", text, cache_control: { type: "ephemeral" } }];
 }
 
-/** Human label for the active model across every provider — curated
+const CURATED_FREE_LABELS: Record<string, string> = {
+  "openrouter/free": "Auto",
+  "deepseek/deepseek-r1:free": "Deep thinking",
+  "nvidia/nemotron-3.5-lightning:free": "Fast questions",
+};
+
+/** Human label for the active model across every provider - curated
  *  catalogue labels first, prettified ids as fallback. Never truncates
  *  mid-word like the old `.slice(0, 16)` did. */
 export function modelLabelFor(_provider: ProviderId, model: string): string {
-  if (model === "openrouter/free") return "Auto Free Router";
+  if (model in CURATED_FREE_LABELS) return CURATED_FREE_LABELS[model];
   const short = (model.split("/").pop() ?? model).replace(/:free$/i, "");
   const curated = MODELS.find((m) => m.id === model || m.id === short);
   if (curated) return curated.label;
@@ -213,12 +219,10 @@ export function modelLabelFor(_provider: ProviderId, model: string): string {
   return pretty.length > 28 ? `${pretty.slice(0, 27).trimEnd()}…` : pretty;
 }
 
-/** Effort label from the single EFFORTS table — no duplicated ternaries. */
+/** Effort label from the single EFFORTS table - no duplicated ternaries. */
 export function effortLabelFor(effort: Effort): string {
   return EFFORTS.find((e) => e.id === effort)?.label ?? "Deep";
 }
-
-/* ── Clients ──────────────────────────────────────────────── */
 
 /* ── Clients ──────────────────────────────────────────────── */
 

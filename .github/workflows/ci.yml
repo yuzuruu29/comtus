@@ -19,3 +19,5 @@ jobs:
       - run: pnpm lint
       - run: pnpm exec tsc --noEmit
       - run: pnpm test
+      - run: pnpm test:mobile
+      - run: pnpm build

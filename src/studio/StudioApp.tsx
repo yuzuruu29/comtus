@@ -9,6 +9,7 @@ import { useSettings } from "../lib/settings";
 import { studioNotebookIdFromPath } from "./studioPath";
 import "./studio.css";
 import "./desk-motion.css";
+import "./lamplight.css";
 
 export default function StudioApp() {
   const { pathname } = useLocation();

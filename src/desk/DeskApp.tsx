@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { DeviceMobile, GearSix } from "@phosphor-icons/react";
+import { DeviceMobile, FileArrowDown, GearSix } from "@phosphor-icons/react";
 import { createNotebook, db } from "../lib/db";
 import { exportNotebook } from "../lib/backup";
 import type { Notebook as NotebookRow } from "../lib/types";
@@ -26,6 +26,8 @@ import DeskHome from "./DeskHome";
 import NotebookDesk from "./NotebookDesk";
 import FirstRunSetup from "./FirstRunSetup";
 import { ICON } from "../ui/iconScale";
+import { LampSwitch } from "../ui";
+import "../studio/lamplight.css";
 
 /** Comtus for desktop — a standalone product surface. The library is a
     persistent rail, never a page; the desk at rest is a working home;
@@ -185,11 +187,13 @@ export default function DeskApp() {
           if (e.dataTransfer.files.length) void importDrop(e.dataTransfer.files);
         }}
       >
-        {desk.dropping > 0 && (
-          <div className="pointer-events-none absolute inset-0 z-[50] flex items-center justify-center bg-ground/70 text-lead text-ink">
-            {notebookId ? "Add files to this notebook" : "Create a notebook with these files"}
+        <div data-dropping={desk.dropping > 0 ? "true" : undefined} className="desk-drop-veil">
+          <div className="desk-drop-sheet">
+            <FileArrowDown size={ICON.xxxl} weight="light" aria-hidden="true" />
+            <strong>{notebookId ? "Drop onto this notebook" : "Create a notebook with these files"}</strong>
+            <span>It joins your sources, ready to read and ask about.</span>
           </div>
-        )}
+        </div>
 
         {/* App chrome — the single window strip */}
         <AppHeader
@@ -360,6 +364,7 @@ function AppHeader({
   const [sending, setSending] = useState(false);
 
   const isPro = useSettings((s) => Boolean(s.isPro && s.planTier !== "free"));
+  const isStock = useSettings((s) => s.isStockConfig());
 
   const openAnalytics = async () => {
     if (!notebook) return;
@@ -432,36 +437,27 @@ function AppHeader({
           <div className="hidden sm:block">
             <ModelPickerMenu modelLabel={modelLabel} onOpenSettings={onSettings} placement="below" />
           </div>
+          <LampSwitch className="no-drag" />
           <button
             onClick={onSettings}
-            className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
+            className="no-drag flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
             aria-label="Settings"
           >
             <GearSix size={ICON.md} weight="light" />
           </button>
 
-          {/* Plan Tier Status Badge (PRO only if Anthropic plan availed, else BYOK) */}
           {isPro ? (
             <ProBadge
               planTier="pro"
               onClick={onSettings}
               className="hidden sm:flex"
             />
-          ) : (
+          ) : !isStock ? (
             <ByokBadge
               onClick={onSettings}
               className="hidden sm:flex"
             />
-          )}
-
-          {/* User Avatar Badge */}
-          <button
-            onClick={onSettings}
-            className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-pill)] bg-brass/20 text-brass text-label font-bold font-mono hover:brightness-110 transition-all select-none"
-            title="User Profile & Model Settings"
-          >
-            N
-          </button>
+          ) : null}
         </div>
         <CaptionButtons />
       </header>

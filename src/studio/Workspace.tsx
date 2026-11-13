@@ -145,7 +145,10 @@ export default function Workspace({ notebookId }: { notebookId: string }) {
   }, [mode, setMode]);
   const [addSourceRequest, setAddSourceRequest] = useState(0);
   const [addSourceKind, setAddSourceKind] = useState<AddSourceKind | undefined>(undefined);
-  const consumeAddSource = useCallback(() => setAddSourceRequest(0), []);
+  const consumeAddSource = useCallback(() => {
+    setAddSourceRequest(0);
+    setAddSourceKind(undefined);
+  }, []);
 
   // `?work=<generationId>` opens a saved item (e.g. a deck due for review)
   // in the studio pane. Only the visible StudioPane receives it: the hidden

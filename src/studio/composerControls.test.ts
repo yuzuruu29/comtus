@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { modelLabelFor } from "../lib/llm";
-import { effortToStep, stepFromTrackX, stepToEffort } from "./composerControls";
+import { effortStepsFor, effortToStep, stepFromTrackX, stepToEffort } from "./composerControls";
 
 describe("effortToStep / stepToEffort", () => {
   it("maps Low to step 0 and back", () => {
@@ -27,6 +27,14 @@ describe("effortToStep / stepToEffort", () => {
     expect(stepToEffort(-4)).toBe("low");
     expect(stepToEffort(9)).toBe("xhigh");
     expect(stepToEffort(2.6)).toBe("xhigh");
+  });
+
+  it("clamps xhigh onto Deep on the 3-stop web ladder", () => {
+    const webSteps = effortStepsFor(false);
+    expect(webSteps).toEqual(["low", "medium", "high"]);
+    expect(effortToStep("xhigh", webSteps)).toBe(2);
+    expect(stepToEffort(9, webSteps)).toBe("high");
+    expect(stepFromTrackX({ clientX: 96, left: 0, width: 100, steps: webSteps })).toBe(2);
   });
 });
 
@@ -57,7 +65,9 @@ describe("modelLabelFor", () => {
     expect(modelLabelFor("anthropic", "claude-sonnet-5-5")).toBe("Sonnet 5.5");
     expect(modelLabelFor("openai-compatible", "claude-sonnet-5-5")).toBe("Sonnet 5.5");
     expect(modelLabelFor("openai-compatible", "anthropic/claude-opus-5-5")).toBe("Opus 5.5");
-    expect(modelLabelFor("openai-compatible", "openrouter/free")).toBe("Auto Free Router");
+    expect(modelLabelFor("openai-compatible", "openrouter/free")).toBe("Auto");
+    expect(modelLabelFor("openai-compatible", "deepseek/deepseek-r1:free")).toBe("Deep thinking");
+    expect(modelLabelFor("openai-compatible", "nvidia/nemotron-3.5-lightning:free")).toBe("Fast questions");
     expect(modelLabelFor("openai-compatible", "dots-studio/dots-3-note-preview:free")).toBe("Dots 3 Note Preview");
     expect(modelLabelFor("openai-compatible", "llama-3.3-70b-versatile")).toBe("Llama 3.3 70B Versatile");
   });

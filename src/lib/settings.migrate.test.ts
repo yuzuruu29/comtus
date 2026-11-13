@@ -52,4 +52,35 @@ describe("migrateSettings", () => {
       anthropicModel: "claude-sonnet-5-5",
     });
   });
+
+  it("replaces retired curated free model IDs in compatModel, recentModels, and storedKeys", () => {
+    const next = migrateSettings(
+      {
+        compatModel: "dots-studio/dots-3-note-preview:free",
+        recentModels: [
+          "poolside/laguna-s-2.1:free",
+          "stealth/ox-alpha",
+          "nvidia/nemotron-3.5-lightning:free",
+        ],
+        storedKeys: [
+          {
+            id: "k1",
+            name: "OpenRouter",
+            provider: "openrouter",
+            apiKey: "sk-or-test",
+            baseUrl: "https://openrouter.ai/api/v1",
+            defaultModel: "stealth/ox-alpha",
+            createdAt: 1,
+          },
+        ],
+      },
+      16,
+    );
+    expect(next.compatModel).toBe("openrouter/free");
+    expect(next.recentModels).toEqual([
+      "openrouter/free",
+      "nvidia/nemotron-3.5-lightning:free",
+    ]);
+    expect(next.storedKeys?.[0]?.defaultModel).toBe("openrouter/free");
+  });
 });

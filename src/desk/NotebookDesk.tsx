@@ -4,6 +4,7 @@ import { Books, Notebook } from "@phosphor-icons/react";
 import type { Notebook as NotebookRow } from "../lib/types";
 import { ENTER, SOFT, deskPane } from "../studio/fx";
 import SourcesPane from "../studio/SourcesPane";
+import type { AddSourceKind } from "../studio/AddSourceMenu";
 import ChatPane from "../studio/ChatPane";
 import StudioPane from "../studio/StudioPane";
 import { panesFor, type LayoutMode } from "../studio/layout";
@@ -75,9 +76,14 @@ export default function NotebookDesk({
   const panes = panesFor(layout, compact);
 
   const [addSourceRequest, setAddSourceRequest] = useState(0);
-  const consumeAddSource = useCallback(() => setAddSourceRequest(0), []);
-  const onAddSources = useCallback(() => {
+  const [addSourceKind, setAddSourceKind] = useState<AddSourceKind | undefined>(undefined);
+  const consumeAddSource = useCallback(() => {
+    setAddSourceRequest(0);
+    setAddSourceKind(undefined);
+  }, []);
+  const onAddSources = useCallback((kind?: AddSourceKind) => {
     if (!panes.sources) setLayout(compact ? "reading" : panes.studio ? "standard" : "reading");
+    setAddSourceKind(kind);
     setAddSourceRequest((request) => request + 1);
   }, [compact, panes.sources, panes.studio, setLayout]);
 
@@ -147,6 +153,7 @@ export default function NotebookDesk({
                 if (dropRequest) onDropConsumed(dropRequest.id);
               }}
               addRequest={addSourceRequest}
+              addKind={addSourceKind}
               onAddRequestConsumed={consumeAddSource}
               onAsk={onAsk}
             />

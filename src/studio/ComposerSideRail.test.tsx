@@ -1,11 +1,18 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Effort } from "../lib/types";
 import { ComposerSideRail } from "./ComposerSideRail";
 
+function setDesktopRuntime(enabled: boolean) {
+  const win = window as unknown as { __TAURI__?: unknown };
+  if (enabled) win.__TAURI__ = {};
+  else delete win.__TAURI__;
+}
+
 afterEach(() => {
   cleanup();
+  setDesktopRuntime(false);
 });
 
 function mockTrackRect(el: HTMLElement) {
@@ -35,6 +42,10 @@ function openPicker(effort: Effort = "high", onEffortChange = vi.fn()) {
 }
 
 describe("ComposerSideRail", () => {
+  beforeEach(() => {
+    setDesktopRuntime(true);
+  });
+
   it("shows the current effort on a compact chip until opened", () => {
     render(<ComposerSideRail effort="high" onEffortChange={vi.fn()} />);
     expect(screen.getByRole("button", { name: "Thinking effort" })).toHaveTextContent("Deep");
@@ -121,5 +132,42 @@ describe("ComposerSideRail", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Balanced" })[0]!);
     expect(onEffortChange).toHaveBeenCalledWith("medium");
     expect(onChange).toHaveBeenCalledWith(true);
+  });
+});
+
+describe("ComposerSideRail on web", () => {
+  beforeEach(() => {
+    setDesktopRuntime(false);
+  });
+
+  it("hides Extra deep and caps keyboard/pointer navigation at Deep", () => {
+    const onEffortChange = openPicker("high");
+    const slider = screen.getByRole("slider", { name: "Thinking effort" });
+    expect(slider).toHaveAttribute("aria-valuemax", "2");
+    expect(screen.queryByRole("button", { name: "Extra deep" })).not.toBeInTheDocument();
+
+    fireEvent.keyDown(slider, { key: "ArrowRight" });
+    expect(onEffortChange).toHaveBeenLastCalledWith("high");
+
+    fireEvent.keyDown(slider, { key: "End" });
+    expect(onEffortChange).toHaveBeenLastCalledWith("high");
+
+    onEffortChange.mockClear();
+    fireEvent.keyDown(slider, { key: "4" });
+    expect(onEffortChange).not.toHaveBeenCalled();
+
+    mockTrackRect(slider);
+    fireEvent.pointerDown(slider, { clientX: 96 });
+    expect(onEffortChange).toHaveBeenLastCalledWith("high");
+  });
+
+  it("displays a persisted xhigh setting as Deep on web", () => {
+    render(<ComposerSideRail effort="xhigh" onEffortChange={vi.fn()} />);
+    const trigger = screen.getByRole("button", { name: "Thinking effort" });
+    expect(trigger).toHaveTextContent("Deep");
+    fireEvent.click(trigger);
+    const slider = screen.getByRole("slider", { name: "Thinking effort" });
+    expect(slider).toHaveAttribute("aria-valuetext", "Deep");
+    expect(slider).toHaveAttribute("aria-valuenow", "2");
   });
 });

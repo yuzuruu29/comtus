@@ -11,6 +11,11 @@ import SourcesPane from "./SourcesPane";
 // module scope, which jsdom does not provide. Nothing here parses a PDF.
 vi.mock("pdfjs-dist", () => ({ GlobalWorkerOptions: {}, getDocument: vi.fn() }));
 
+const mockNativeOpen = vi.fn();
+const mockNativeReadFile = vi.fn();
+vi.mock("@tauri-apps/plugin-dialog", () => ({ open: (...args: unknown[]) => mockNativeOpen(...args) }));
+vi.mock("@tauri-apps/plugin-fs", () => ({ readFile: (...args: unknown[]) => mockNativeReadFile(...args) }));
+
 vi.mock("motion/react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("motion/react")>();
   return { ...actual, AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</> };
@@ -19,6 +24,9 @@ vi.mock("motion/react", async (importOriginal) => {
 afterEach(async () => {
   cleanup();
   localStorage.clear();
+  mockNativeOpen.mockReset();
+  mockNativeReadFile.mockReset();
+  delete (window as unknown as { __TAURI__?: unknown }).__TAURI__;
   await db.sources.clear();
   await db.chunks.clear();
 });
@@ -114,5 +122,53 @@ describe("SourcesPane", () => {
     await screen.findByText("My Notes");
     expect(await screen.findByRole("menuitem", { name: "Paste text" })).toBeInTheDocument();
     expect(consumed).toHaveBeenCalledTimes(1);
+  });
+
+  it("clicks the HTML file input when addKind is file on web", async () => {
+    const clickSpy = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => {});
+    const consumed = vi.fn();
+    try {
+      render(
+        <SourcesPane
+          notebookId="nb1"
+          version={0}
+          onChanged={() => {}}
+          addRequest={1}
+          addKind="file"
+          onAddRequestConsumed={consumed}
+        />,
+      );
+      await waitFor(() => expect(clickSpy).toHaveBeenCalledTimes(1));
+      expect(mockNativeOpen).not.toHaveBeenCalled();
+      expect(consumed).toHaveBeenCalledTimes(1);
+    } finally {
+      clickSpy.mockRestore();
+    }
+  });
+
+  it("opens the native Tauri file picker when addKind is file on desktop", async () => {
+    (window as unknown as { __TAURI__?: unknown }).__TAURI__ = {};
+    mockNativeOpen.mockResolvedValueOnce(["C:\\docs\\chapter1.txt"]);
+    mockNativeReadFile.mockResolvedValueOnce(new TextEncoder().encode("Study notes imported from Tauri desktop."));
+    const clickSpy = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => {});
+    const consumed = vi.fn();
+    try {
+      render(
+        <SourcesPane
+          notebookId="nb1"
+          version={0}
+          onChanged={() => {}}
+          addRequest={1}
+          addKind="file"
+          onAddRequestConsumed={consumed}
+        />,
+      );
+      await waitFor(() => expect(mockNativeOpen).toHaveBeenCalledTimes(1));
+      expect(clickSpy).not.toHaveBeenCalled();
+      expect(consumed).toHaveBeenCalledTimes(1);
+      expect(await screen.findByText("chapter1")).toBeInTheDocument();
+    } finally {
+      clickSpy.mockRestore();
+    }
   });
 });

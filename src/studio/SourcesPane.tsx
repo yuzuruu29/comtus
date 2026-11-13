@@ -164,8 +164,17 @@ export default function SourcesPane({
   );
   const [focused, setFocused] = useState<string[] | null>(() => loadFocus(notebookId));
   const fileRef = useRef<HTMLInputElement>(null);
+  const mountedRef = useRef(true);
   const seenImportTick = useRef<number | null>(null);
+  const seenAddRequest = useRef<number>(0);
   const seenDropSignal = useRef<number | FileList | null>(null);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     return subscribeFocus(notebookId, (ids) => {
@@ -241,47 +250,53 @@ export default function SourcesPane({
     onImportTriggeredRef.current = onImportTriggered;
   }, [handleFiles, onImportTriggered]);
 
-  useEffect(() => {
-    if (!importTick || importTick <= 0) return;
-    if (seenImportTick.current === importTick) return;
-    seenImportTick.current = importTick;
+  const openPicker = useCallback((onDone?: () => void) => {
     if (!isTauri()) {
       fileRef.current?.click();
-      onImportTriggeredRef.current?.();
+      onDone?.();
       return;
     }
-    let cancelled = false;
     void chooseNativeFiles()
       .then((files) => {
-        if (!cancelled && files) void handleFilesRef.current(files);
+        if (mountedRef.current && files) void handleFilesRef.current(files);
       })
       .catch((error: unknown) => {
-        if (!cancelled) {
+        if (mountedRef.current) {
           setFailed([
             error instanceof Error ? error.message : "The native file picker could not be opened.",
           ]);
         }
       })
       .finally(() => {
-        if (!cancelled) onImportTriggeredRef.current?.();
+        if (mountedRef.current) onDone?.();
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [importTick]);
+  }, []);
+
+  useEffect(() => {
+    if (!importTick || importTick <= 0) return;
+    if (seenImportTick.current === importTick) return;
+    seenImportTick.current = importTick;
+    openPicker(() => onImportTriggeredRef.current?.());
+  }, [importTick, openPicker]);
 
   // A request from elsewhere on the desk opens one way in: the fresh page's sheets name theirs, the rest get the menu.
-  // It waits for the first load: before it, `sources` is empty, so the empty-state menu would open and then
-  // unmount when the toolbar menu replaces it.
+  // Generic menu requests wait for the first load: before it, `sources` is empty, so the empty-state menu would open and then
+  // unmount when the toolbar menu replaces it. Direct file/paste/url requests do not depend on that swap.
   const [menuRequest, setMenuRequest] = useState(0);
   useEffect(() => {
-    if (!addRequest || !sourcesLoaded) return;
-    if (addKind === "file") fileRef.current?.click();
+    if (!addRequest) {
+      seenAddRequest.current = 0;
+      return;
+    }
+    if (seenAddRequest.current === addRequest) return;
+    if (!addKind && !sourcesLoaded) return;
+    seenAddRequest.current = addRequest;
+    if (addKind === "file") openPicker();
     else if (addKind === "paste") setPasteOpen(true);
     else if (addKind === "url") setUrlOpen(true);
     else setMenuRequest((value) => value + 1);
     onAddRequestConsumed?.();
-  }, [addKind, addRequest, sourcesLoaded, onAddRequestConsumed]);
+  }, [addKind, addRequest, sourcesLoaded, onAddRequestConsumed, openPicker]);
 
   useEffect(() => {
     if (!dropFiles || dropFiles.length === 0) {
@@ -346,7 +361,7 @@ const visibleSources = sources.filter((source) => source.title.toLocaleLowerCase
     saveFocus(notebookId, value);
   };
 
-  const openPicker = () => fileRef.current?.click();
+  const handleOpenPicker = () => openPicker();
 
   return (
     <div className="source-index">
@@ -382,7 +397,7 @@ const visibleSources = sources.filter((source) => source.title.toLocaleLowerCase
           <AddSourceMenu
             variant="secondary"
             disabled={!!importing}
-            onPickFiles={openPicker}
+            onPickFiles={handleOpenPicker}
             onPasteText={() => setPasteOpen(true)}
             onWebAddress={() => setUrlOpen(true)}
             openRequest={menuRequest}
@@ -542,7 +557,7 @@ const visibleSources = sources.filter((source) => source.title.toLocaleLowerCase
             <h3>Your reading starts here.</h3>
             <p>Add a chapter, your notes, or a link. Keep the material behind your questions within reach.</p>
               <AddSourceMenu
-                onPickFiles={openPicker}
+                onPickFiles={handleOpenPicker}
                 onPasteText={() => setPasteOpen(true)}
                 onWebAddress={() => setUrlOpen(true)}
                 openRequest={menuRequest}

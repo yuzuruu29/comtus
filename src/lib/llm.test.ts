@@ -124,7 +124,9 @@ describe("catalogue & helpers", () => {
   });
 
   it("modelLabelFor gives curated / prettified / alias labels, never mid-word truncations", () => {
-    expect(modelLabelFor("anthropic", "openrouter/free")).toBe("Auto Free Router");
+    expect(modelLabelFor("anthropic", "openrouter/free")).toBe("Auto");
+    expect(modelLabelFor("openai-compatible", "deepseek/deepseek-r1:free")).toBe("Deep thinking");
+    expect(modelLabelFor("openai-compatible", "nvidia/nemotron-3.5-lightning:free")).toBe("Fast questions");
     expect(modelLabelFor("anthropic", "claude-sonnet-5-5")).toBe("Sonnet 5.5");
     expect(modelLabelFor("anthropic", "claude-opus-5")).toBe("Opus 5.5");
     // Unknown id → prettified, short enough.
