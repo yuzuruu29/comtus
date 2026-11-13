@@ -415,14 +415,12 @@ export default function StudioPane({
                       >
                         <h4>{g.title}</h4>
                         <span>
-                          {KIND_LABELS[g.kind]} · {timeAgo(g.createdAt)}
+                          <span>{KIND_LABELS[g.kind]}</span>
+                          <span>{timeAgo(g.createdAt)}</span>
                           {lastAttempts.has(g.id) && (
-                            <>
-                              {" · "}
-                              <span className="study-saved-score">
-                                Last {fmtScore(lastAttempts.get(g.id)!.score)}/{lastAttempts.get(g.id)!.total}
-                              </span>
-                            </>
+                            <span className="study-saved-score">
+                              Last {fmtScore(lastAttempts.get(g.id)!.score)}/{lastAttempts.get(g.id)!.total}
+                            </span>
                           )}
                         </span>
                       </button>

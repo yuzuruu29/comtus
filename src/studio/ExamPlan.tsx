@@ -192,7 +192,7 @@ function PlanRow({
   switch (item.kind) {
     case "review":
       title = `Review ${plural(item.due, "card")}`;
-      detail = `About ${item.minutes} min${item.decks > 1 ? ` across ${item.decks} decks` : ` · ${item.deckTitle}`}`;
+      detail = `About ${item.minutes} min${item.decks > 1 ? ` across ${item.decks} decks` : ` in ${item.deckTitle}`}`;
       action = "Review";
       run = () => onDeck(item.deckId);
       break;

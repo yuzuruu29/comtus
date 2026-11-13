@@ -47,7 +47,15 @@ export default function CompadChat({
 
   return (
     <div className="compad-chat">
-      <div className="compad-context"><strong>{notebook.name}</strong><span>{modelLabel || "Your selected model"} · {sourceCount} {sourceCount === 1 ? "source" : "sources"}</span></div>
+      <div className="compad-context">
+        <strong>{notebook.name}</strong>
+        <span className="inline-flex min-w-0 items-baseline gap-2.5">
+          <span className="truncate">{modelLabel || "Your selected model"}</span>
+          <span className="shrink-0">
+            {sourceCount} {sourceCount === 1 ? "source" : "sources"}
+          </span>
+        </span>
+      </div>
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
       <div ref={scrollRef} className="compad-transcript" role="region" aria-label="Compad conversation" tabIndex={0}
         onScroll={() => {

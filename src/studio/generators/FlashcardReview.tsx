@@ -274,10 +274,12 @@ export function FlashcardsView({ gen, notebookId }: { gen: Generation; notebookI
           {plural(remaining, "card")} left
           {session.mode === "all" && <span className="fc-meta-mode">Studying all</span>}
         </span>
-        <span className="fc-meta-state" data-state={cardState.toLowerCase()}>
-          {cardState}
-          {card.topic ? ` · ${card.topic}` : ""}
-        </span>
+        <div className="flex flex-wrap items-baseline gap-x-2.5">
+          <span className="fc-meta-state" data-state={cardState.toLowerCase()}>
+            {cardState}
+          </span>
+          {card.topic && <span className="text-muted">{card.topic}</span>}
+        </div>
       </div>
       <div className="fc-progress" aria-hidden="true">
         <span style={{ ["--done" as string]: answered / Math.max(1, answered + remaining) }} />

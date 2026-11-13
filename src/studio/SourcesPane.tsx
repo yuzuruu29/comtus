@@ -52,7 +52,7 @@ const KIND_ICON: Record<string, typeof FileText> = {
  *  otherwise a rough word count. */
 function sourceFact(s: Source, highlights = 0): string {
   const size = sourceSize(s);
-  return highlights ? `${size} · ${highlights} marked` : size;
+  return highlights ? `${size} (${highlights} marked)` : size;
 }
 
 async function chooseNativeFiles(): Promise<File[] | null> {

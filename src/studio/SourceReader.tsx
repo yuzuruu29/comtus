@@ -399,14 +399,12 @@ export default function SourceReader({
     <>
       <div className="reader-head">
         <div className="reader-meta">
-          {SOURCE_KIND_NAMES[source.kind] ?? source.kind} · {sourceSize(source)}
+          <span>{SOURCE_KIND_NAMES[source.kind] ?? source.kind}</span>
+          <span>{sourceSize(source)}</span>
           {source.meta?.url && (
-            <>
-              {" · "}
-              <ExternalLink href={source.meta.url} className="text-moon underline-offset-2 hover:underline">
-                Original link
-              </ExternalLink>
-            </>
+            <ExternalLink href={source.meta.url} className="text-moon underline-offset-2 hover:underline">
+              Original link
+            </ExternalLink>
           )}
         </div>
         <Segmented<View>
@@ -419,7 +417,7 @@ export default function SourceReader({
           }}
           options={[
             { value: "read", label: "Text" },
-            { value: "marks", label: highlights.length ? `Highlights · ${highlights.length}` : "Highlights" },
+            { value: "marks", label: highlights.length ? `Highlights (${highlights.length})` : "Highlights" },
           ]}
         />
       </div>

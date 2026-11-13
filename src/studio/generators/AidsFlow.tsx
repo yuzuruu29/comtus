@@ -402,7 +402,7 @@ JSON shape:
             The <strong>PPT & Slideshow Maker</strong> requires the deep architectural synthesis and structured reasoning of <strong>Claude Opus 5.5 & Sonnet 5.5</strong> to produce production-grade slide decks and speaker scripts.
           </p>
           <div className="rounded-[var(--radius-dialog)] border border-hairline bg-ground/70 p-3 text-small text-brass flex items-center justify-between">
-            <span>Available with a Study Pass or Anthropic API key · First top-up from $5</span>
+            <span>Available with a Study Pass or Anthropic API key. First top-up from $5.</span>
             {onOpenSettings && (
               <button
                 onClick={onOpenSettings}

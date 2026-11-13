@@ -92,7 +92,7 @@ export default function StudyMotion({ motionMode }: { motionMode: MotionState })
           </svg>
           <div className="study-motion-highlight"><span>Recall is a kind of rehearsal.</span></div>
           <p className="study-motion-notebook-foot">Put the page aside. Explain it in your own words.</p>
-          <div className="study-motion-citation"><span>1</span> Reading notes · p. 12</div>
+          <div className="study-motion-citation"><span>1</span> Reading notes, p. 12</div>
           <span className="study-motion-page-number">A thought, taking shape.</span>
         </div>
 

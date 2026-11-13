@@ -40,9 +40,10 @@ export default function HostedCheckout() {
       <div className="mx-auto max-w-xl">
         <Link
           to="/"
-          className="field-label inline-flex rounded-[var(--radius-control)] py-2 text-brass hover:text-ink"
+          className="field-label inline-flex items-baseline gap-2.5 rounded-[var(--radius-control)] py-2 text-brass hover:text-ink"
         >
-          COMTUS · SECURE CHECKOUT
+          <span>Comtus</span>
+          <span className="font-normal text-muted">Secure checkout</span>
         </Link>
 
         <section className="mt-8 rounded-[var(--radius-dialog)] border border-hairline bg-surface p-6 shadow-modal sm:p-8">

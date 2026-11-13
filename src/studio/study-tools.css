@@ -269,7 +269,10 @@
 }
 
 .study-saved-open > span {
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.625rem;
   margin-top: 3px;
   color: var(--muted);
   font-size: 11px;

@@ -739,7 +739,7 @@ function ExamSitting({
             <button
               key={i}
               onClick={() => setIdx(i)}
-              title={`Item ${i + 1}${qq.format === "solution" ? " · photo submission" : ""}`}
+              title={`Item ${i + 1}${qq.format === "solution" ? " (photo submission)" : ""}`}
               className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-field)] font-mono text-label transition-all active:scale-90 sm:h-7 sm:w-7 ${
                 i === idx
                   ? "bg-brass/25 text-brass ring-1 ring-brass/40"
@@ -879,9 +879,15 @@ function ExamResults({
         <div className={`mt-3 font-display text-[2.8rem] font-[420] leading-none sm:text-[3.4rem] ${pct >= 75 ? "text-sage" : "text-lamp"}`}>
           {shownPct}%
         </div>
-        <div className="mt-2 text-small text-muted">
-          {fmtScore(earned)} of {questions.length}
-          {hasSolutions ? " · partially-correct solutions earn half credit" : " correct"} · {verdict}
+        <div className="mt-2 flex flex-wrap items-baseline justify-center gap-x-3 gap-y-0.5 text-small text-muted">
+          <span>
+            {fmtScore(earned)} of {questions.length}
+            {hasSolutions ? "" : " correct"}
+          </span>
+          <span>{verdict}</span>
+          {hasSolutions && (
+            <span className="basis-full text-label">Partially-correct solutions earn half credit.</span>
+          )}
         </div>
         {hasSolutions && <AiCheckNote className="mx-auto mt-3 max-w-sm" />}
       </motion.div>
@@ -955,9 +961,13 @@ function ExamResults({
                       </>
                     ) : (
                       credit === 0 && (
-                        <p className="mt-1.5 text-small text-muted">
-                          Yours: <AssessmentContent inline>{answers[i] !== null ? q.options[answers[i]!] : "— skipped"}</AssessmentContent> · Key:{" "}
-                          <AssessmentContent inline className="text-sage">{q.options[q.answerIndex]}</AssessmentContent>
+                        <p className="mt-1.5 flex flex-wrap gap-x-3 text-small text-muted">
+                          <span>
+                            Yours: <AssessmentContent inline>{answers[i] !== null ? q.options[answers[i]!] : "skipped"}</AssessmentContent>
+                          </span>
+                          <span>
+                            Key: <AssessmentContent inline className="text-sage">{q.options[q.answerIndex]}</AssessmentContent>
+                          </span>
                         </p>
                       )
                     )}

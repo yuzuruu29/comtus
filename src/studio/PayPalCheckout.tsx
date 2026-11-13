@@ -216,7 +216,7 @@ export default function PayPalCheckout({
           href={`${website}/checkout?plan=${plan.id}`}
           className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-control)] border border-brass/40 px-4 py-2 font-medium text-brass hover:bg-brass/10"
         >
-          Continue securely in browser · {plan.name}
+          Continue securely in browser ({plan.name})
         </ExternalLink>
       </div>
     );

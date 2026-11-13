@@ -439,8 +439,10 @@ function QuizResults({
           </div>
         </div>
         <div className="mt-2 text-small text-muted">
-          {fmtScore(score)} of {payload.questions.length} correct
-          {payload.questions.some((q) => q.format === "solution") && " · partially-correct solutions earn half credit"}
+          <span>{fmtScore(score)} of {payload.questions.length} correct</span>
+          {payload.questions.some((q) => q.format === "solution") && (
+            <span className="mt-0.5 block text-label">Partially-correct solutions earn half credit.</span>
+          )}
         </div>
       </motion.div>
       <div>

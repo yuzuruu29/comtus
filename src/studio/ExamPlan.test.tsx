@@ -62,7 +62,7 @@ describe("ExamPlan", () => {
     });
     renderPlan();
     expect(await screen.findByText("Review 1 card")).toBeInTheDocument();
-    expect(screen.getByText("About 1 min · Organelles")).toBeInTheDocument();
+    expect(screen.getByText("About 1 min in Organelles")).toBeInTheDocument();
     expect(screen.getByText("Sit a timed mock exam")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Change the exam date" }));

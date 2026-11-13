@@ -183,7 +183,7 @@ describe("SourceReader", () => {
       updatedAt: 1,
     });
     render(<SourceReader source={source} onClose={() => {}} />);
-    fireEvent.click(await screen.findByRole("radio", { name: "Highlights · 1" }));
+    fireEvent.click(await screen.findByRole("radio", { name: "Highlights (1)" }));
     expect(screen.getByText("Protein factories")).toBeInTheDocument();
     expect(screen.getByText("Page 2")).toBeInTheDocument();
 

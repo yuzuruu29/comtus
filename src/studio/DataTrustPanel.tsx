@@ -133,8 +133,11 @@ export default function DataTrustPanel({ open }: { open: boolean }) {
             >
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-body text-ink/90">{nb.name}</span>
-                <span className="block text-label tabular-nums text-muted">
-                  {nb.sources} sources · {formatBytes(nb.bytes)}
+                <span className="flex flex-wrap gap-x-3 text-label tabular-nums text-muted">
+                  <span>
+                    {nb.sources} {nb.sources === 1 ? "source" : "sources"}
+                  </span>
+                  <span>{formatBytes(nb.bytes)}</span>
                 </span>
               </span>
               <button

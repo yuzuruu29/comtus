@@ -336,10 +336,10 @@ export default function SettingsModal({
 
   const versionRow = (
     <div className="flex items-center justify-between gap-3">
-      <span className="font-ui text-xs text-muted">
-        Comtus v{__APP_VERSION__}
-        {isTauri() ? " · Desk App" : ""}
-      </span>
+      <div className="flex flex-wrap items-baseline gap-x-2.5 font-ui text-xs text-muted">
+        <span>Comtus v{__APP_VERSION__}</span>
+        {isTauri() && <span>Desk App</span>}
+      </div>
       {isTauri() && (
         <button
           type="button"

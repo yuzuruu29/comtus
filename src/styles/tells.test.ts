@@ -108,10 +108,10 @@ describe("tell: retired hype vocabulary", () => {
  *  why that line is prose. Do not add another. */
 const UPPERCASE_CEILING = 1;
 
-/** 37 uses of the middle-dot joiner. Most are a genuine third fact in a list
- *  where a second line or a pill would read better. Target 0. The quiz and
- *  exam item headers now set item, topic and kind as separate spans. */
-const MIDDOT_CEILING = 37;
+/** 13 remaining uses in TSX sources: 10 persisted generation/notebook title
+ *  formats and 3 inline code comments; all visible UI separators have moved
+ *  to separate elements, parentheses, or natural prose. */
+const MIDDOT_CEILING = 13;
 
 function count(rel: string, needle: string): number {
   return read(rel).split(needle).length - 1;

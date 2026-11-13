@@ -20,6 +20,10 @@ div:has(> .reader-head) {
 }
 
 .reader-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
   color: var(--muted);
   font-size: var(--text-label);
 }
