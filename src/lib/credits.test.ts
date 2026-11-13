@@ -45,7 +45,7 @@ describe("hosted credit cost", () => {
     const table = (source: string) => {
       const start = source.indexOf("MODEL_RATES");
       const end = source.indexOf("} as const;", start);
-      return source.slice(start, end);
+      return source.slice(start, end).replace(/\r\n/g, "\n");
     };
     expect(table(edge)).toBe(table(client));
   });
