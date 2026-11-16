@@ -18,7 +18,7 @@ export default function StudyFieldGuide() {
         <div className="field-guide-body">
           <dl className="field-guide-formats">
             <div data-landing-reveal><dt>Remember the essentials.</dt><dd><span>Flashcards & quizzes</span>Recall an idea before you turn the card. Check the explanation when you miss a question.</dd></div>
-            <div data-landing-reveal><dt>See how it fits together.</dt><dd><span>Study guides & mind maps</span>Give a long chapter a shape you can work with, then follow the details back to your sources.</dd></div>
+            <div data-landing-reveal><dt>See how it fits together.</dt><dd><span>Study guides & timelines</span>Give a long chapter a shape you can work with, then follow the details back to your sources.</dd></div>
             <div data-landing-reveal><dt>Rehearse the harder parts.</dt><dd><span>Mock exams & essay feedback</span>Practise under a time limit, or take another pass at your argument and the evidence behind it.</dd></div>
           </dl>
           <figure className="field-guide-figure" data-landing-reveal>
