@@ -156,7 +156,7 @@ export function DocViewer({ payload }: { payload: DocPayload }) {
         {copied ? <Check size={ICON.xs} className="text-sage" /> : <Copy size={ICON.xs} />}
         {copied ? "Copied" : "Copy"}
       </button>
-      <div className="md pt-10">
+      <div className="md md-answer pt-10">
         <ReactMarkdown
           remarkPlugins={[remarkGfm, ...mathRemarkPlugins]}
           rehypePlugins={[...mathRehypePlugins]}

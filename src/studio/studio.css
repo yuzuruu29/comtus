@@ -129,7 +129,8 @@
   color: color-mix(in srgb, var(--ink) 94%, transparent);
   overflow-wrap: break-word;
 }
-/* An answer follows the reading size, a step under the source it cites:
+/* An answer or a written doc (study guide, brief, FAQ, timeline) follows
+   the reading size, a step under the source it cites:
    Comfortable lands on the 14.5px answers were drawn at. */
 .md-answer {
   font-family: var(--font-read);
