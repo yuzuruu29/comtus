@@ -1,31 +1,31 @@
 {
-  "version": "0.3.2",
+  "version": "0.3.3",
   "notes": "Installable desktop builds — macOS (.dmg) and Windows (.exe). See the assets below.",
-  "pub_date": "2026-10-25T19:56:42.698Z",
+  "pub_date": "2026-11-16T07:11:26.455Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMENqWEdiNi9QbWJJa21GbW1rbS9BQnpMQTVKRytLa1hyeExaU3ZzM2NvRWovbHFCbDVuVUphdlZUanJoQ2FId3prYWFIYXhmRUFwMkZvT0swaEYrdmkya3ZjWFNjdWcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyOTU3NjgxCWZpbGU6Q29tdHVzLmFwcC50YXIuZ3oKSmF0NDRPSEdOQWlHeDhjZjNPMlBERGNjMXBKN285UEJId20ya2pheHZCd1pPbVgxYU90bTBFUWZ3RFl0WXZqb2ZLSHhzRFcwNUNmcC8zWktSKzBhQmc9PQo=",
-      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.2/Comtus_aarch64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMENqWEdiNi9QbVZ4S043ZHFXaTRKTjRIRk5CT1BoUWt6RGs4Q1JnZTJaQWNWTmhlTU1qMjhOR3lwUXNVQkpEV1plZWhoN0ZUSU96aFFPcGp4VTFNRU5YOEtsaUVsUHdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0ODEzMDgyCWZpbGU6Q29tdHVzLmFwcC50YXIuZ3oKUktmaEZ2eWdNYnY0S0pzZlV3N0RZcjdvOXhVYmZwb0lDTmJ5U2FxK05yM1AzOWowVFN3eE1CWjJlSEI4TmNPcTVzK2gxUXd5NThBU0RFekRVYjRpQmc9PQo=",
+      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.3/Comtus_aarch64.app.tar.gz"
     },
     "darwin-aarch64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMENqWEdiNi9QbWJJa21GbW1rbS9BQnpMQTVKRytLa1hyeExaU3ZzM2NvRWovbHFCbDVuVUphdlZUanJoQ2FId3prYWFIYXhmRUFwMkZvT0swaEYrdmkya3ZjWFNjdWcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyOTU3NjgxCWZpbGU6Q29tdHVzLmFwcC50YXIuZ3oKSmF0NDRPSEdOQWlHeDhjZjNPMlBERGNjMXBKN285UEJId20ya2pheHZCd1pPbVgxYU90bTBFUWZ3RFl0WXZqb2ZLSHhzRFcwNUNmcC8zWktSKzBhQmc9PQo=",
-      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.2/Comtus_aarch64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMENqWEdiNi9QbVZ4S043ZHFXaTRKTjRIRk5CT1BoUWt6RGs4Q1JnZTJaQWNWTmhlTU1qMjhOR3lwUXNVQkpEV1plZWhoN0ZUSU96aFFPcGp4VTFNRU5YOEtsaUVsUHdJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0ODEzMDgyCWZpbGU6Q29tdHVzLmFwcC50YXIuZ3oKUktmaEZ2eWdNYnY0S0pzZlV3N0RZcjdvOXhVYmZwb0lDTmJ5U2FxK05yM1AzOWowVFN3eE1CWjJlSEI4TmNPcTVzK2gxUXd5NThBU0RFekRVYjRpQmc9PQo=",
+      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.3/Comtus_aarch64.app.tar.gz"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMENqWEdiNi9QbWE5djhhMHBHRXBmMitPTUJuWGRXVUVTaXpNeEZIdTZsaURXcW1UdmxOU2M5WXNSRXQwc3MyQ3BxT01weWM2a2Zwcmx3TmEveXFacVk0SldDT3Z6Y3c4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyOTU3NzI5CWZpbGU6Q29tdHVzLmFwcC50YXIuZ3oKOXdoMTdyWk41NEFKbE5yZEU3cVdMTW5xZElGSnI1M3lCb3VSNjJEamE3MWJMdDgzUXpXVmIvYm1PNm9Zend3KzFmZ1FJbXd1d2VrcDlZZTN4QWlEREE9PQo=",
-      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.2/Comtus_x64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMENqWEdiNi9QbVp3aXNVNUpSSUwzSFB0c3Fud3JHVExHSUdjU1oyRFhrUHlnMGpCMVkzVXFndDlSNVpJcFpMN1YrdG0xUHBsNEVTeUllOGhuaDlLbS9XTHZ6QXFBS1FvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0ODEzMDc3CWZpbGU6Q29tdHVzLmFwcC50YXIuZ3oKeEhuMUVKbVdPU0pQSUZ1c0N2SmQwbFZpdGVNVE5iWXVxMHQ3bkZyV2ZhcGtGSmI5Mi9NSFZUa1Zld3pwM01OSmVXWTM3emxpSWVuSWtBL09vclgxQVE9PQo=",
+      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.3/Comtus_x64.app.tar.gz"
     },
     "darwin-x86_64-app": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMENqWEdiNi9QbWE5djhhMHBHRXBmMitPTUJuWGRXVUVTaXpNeEZIdTZsaURXcW1UdmxOU2M5WXNSRXQwc3MyQ3BxT01weWM2a2Zwcmx3TmEveXFacVk0SldDT3Z6Y3c4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyOTU3NzI5CWZpbGU6Q29tdHVzLmFwcC50YXIuZ3oKOXdoMTdyWk41NEFKbE5yZEU3cVdMTW5xZElGSnI1M3lCb3VSNjJEamE3MWJMdDgzUXpXVmIvYm1PNm9Zend3KzFmZ1FJbXd1d2VrcDlZZTN4QWlEREE9PQo=",
-      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.2/Comtus_x64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMENqWEdiNi9QbVp3aXNVNUpSSUwzSFB0c3Fud3JHVExHSUdjU1oyRFhrUHlnMGpCMVkzVXFndDlSNVpJcFpMN1YrdG0xUHBsNEVTeUllOGhuaDlLbS9XTHZ6QXFBS1FvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0ODEzMDc3CWZpbGU6Q29tdHVzLmFwcC50YXIuZ3oKeEhuMUVKbVdPU0pQSUZ1c0N2SmQwbFZpdGVNVE5iWXVxMHQ3bkZyV2ZhcGtGSmI5Mi9NSFZUa1Zld3pwM01OSmVXWTM3emxpSWVuSWtBL09vclgxQVE9PQo=",
+      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.3/Comtus_x64.app.tar.gz"
     },
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMENqWEdiNi9QbVp0MTEvYkJNeFkrTisvYUVKTGt6OUlSOUFsaFg3N1NOS0NscHBxQ3ZKN2FEMXpwLzNHS0d4eTR3UmJsZGdoczIrOE9EU2krWHd6dEtSaVRHclcxWWdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyOTU4MTk5CWZpbGU6Q29tdHVzXzAuMy4yX3g2NC1zZXR1cC5leGUKak1iVHR1RWZteldNcHI4TWFUaUlUUXpSUno3SFlsTjhpa0gzbGk3QzJ6Z1QycGJucXpwaGNVb25zSFBTM0gyTm9hMEhQRy9FTTdTcVFLYTZPMXYxQnc9PQo=",
-      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.2/Comtus_0.3.2_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMENqWEdiNi9QbWEzWTc4eFQya3ZTaHhIN2gxdWJYMHN1cXN4ZzYvTDdTWFY4bTlMMXZBRVpzaUZ2ZWJxMG9NbE5XNVZ2RHUxTTNyZ2k5aWF5VlduU1hiZkxGTmswTEFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0ODEzMDgwCWZpbGU6Q29tdHVzXzAuMy4zX3g2NC1zZXR1cC5leGUKaExEaWxjTnBoWUNUbVByQkF0V1g3dHA4ZWt0WUJwTEhmU0F1OCtId04yc0lTVkdyZFFsYmY4UlNHZkFvcGZ5QTZTaS9IMjRZM0xVNlY0ZmdHYzVKRFE9PQo=",
+      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.3/Comtus_0.3.3_x64-setup.exe"
     },
     "windows-x86_64-nsis": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMENqWEdiNi9QbVp0MTEvYkJNeFkrTisvYUVKTGt6OUlSOUFsaFg3N1NOS0NscHBxQ3ZKN2FEMXpwLzNHS0d4eTR3UmJsZGdoczIrOE9EU2krWHd6dEtSaVRHclcxWWdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyOTU4MTk5CWZpbGU6Q29tdHVzXzAuMy4yX3g2NC1zZXR1cC5leGUKak1iVHR1RWZteldNcHI4TWFUaUlUUXpSUno3SFlsTjhpa0gzbGk3QzJ6Z1QycGJucXpwaGNVb25zSFBTM0gyTm9hMEhQRy9FTTdTcVFLYTZPMXYxQnc9PQo=",
-      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.2/Comtus_0.3.2_x64-setup.exe"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUMENqWEdiNi9QbWEzWTc4eFQya3ZTaHhIN2gxdWJYMHN1cXN4ZzYvTDdTWFY4bTlMMXZBRVpzaUZ2ZWJxMG9NbE5XNVZ2RHUxTTNyZ2k5aWF5VlduU1hiZkxGTmswTEFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0ODEzMDgwCWZpbGU6Q29tdHVzXzAuMy4zX3g2NC1zZXR1cC5leGUKaExEaWxjTnBoWUNUbVByQkF0V1g3dHA4ZWt0WUJwTEhmU0F1OCtId04yc0lTVkdyZFFsYmY4UlNHZkFvcGZ5QTZTaS9IMjRZM0xVNlY0ZmdHYzVKRFE9PQo=",
+      "url": "https://github.com/yuzuruu29/comtus-releases/releases/download/v0.3.3/Comtus_0.3.3_x64-setup.exe"
     }
   }
 }
