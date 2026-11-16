@@ -4,7 +4,7 @@ import {
   Sparkle,
   Check,
   CaretDown,
-  GearSix,
+  Gear,
   Crown,
   Key,
   type Icon,
@@ -167,7 +167,7 @@ export default function ModelPickerMenu({
                 }}
                 className="model-menu-footer"
               >
-                <GearSix size={ICON.sm} />
+                <Gear size={ICON.sm} />
                 <span>All models in Settings</span>
               </button>
             )}

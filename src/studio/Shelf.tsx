@@ -7,7 +7,7 @@ import {
   DeviceMobile,
   FileArrowUp,
   FolderOpen,
-  GearSix,
+  Gear,
   ListDashes,
   MagnifyingGlass,
   Plug,
@@ -230,7 +230,7 @@ export default function Shelf({
               <span className="shelf-save-note"><HardDrives size={ICON.md} aria-hidden="true" /> Saved on this device</span>
               <LampSwitch />
               <IconButton aria-label="Settings" onClick={() => openSettings("settings")}>
-                <GearSix size={ICON.xl} aria-hidden="true" />
+                <Gear size={ICON.xl} aria-hidden="true" />
               </IconButton>
             </div>
           </header>

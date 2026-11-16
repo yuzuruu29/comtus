@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { BookOpenText, Books, CaretLeft, ChartBar, ChatCircle, DeviceMobile, DotsThree, DownloadSimple, FileArrowDown, GearSix, ListChecks, Notebook, SidebarSimple } from "@phosphor-icons/react";
+import { BookOpenText, Books, CaretLeft, ChartBar, ChatCircle, DeviceMobile, DotsThree, DownloadSimple, FileArrowDown, Gear, ListChecks, Notebook, SidebarSimple } from "@phosphor-icons/react";
 import type { Generation, Notebook as NotebookRow, Source } from "../lib/types";
 import { useCallSettings, useSettings } from "../lib/settings";
 import { modelLabelFor } from "../lib/llm";
@@ -746,7 +746,7 @@ function WorkspaceHeader({
             onClick={() => onSettings()}
             aria-label="Settings"
           >
-            <GearSix size={ICON.xl} aria-hidden="true" />
+            <Gear size={ICON.xl} aria-hidden="true" />
           </IconButton>
         </div>
         <CaptionButtons />

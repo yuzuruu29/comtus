@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import {
   BookOpen,
+  CaretDown,
   DotsThreeVertical,
   DeviceMobile,
   DownloadSimple,
@@ -32,6 +33,12 @@ import ReviewDueStrip from "../studio/ReviewDueStrip";
 import { ICON } from "../ui/iconScale";
 
 type SortOption = "recent" | "az" | "oldest" | "sources";
+const SORT_LABEL: Record<SortOption, string> = {
+  recent: "Most recent",
+  az: "Alphabetical",
+  oldest: "Oldest",
+  sources: "Most sources",
+};
 
 interface NotebookWithCount extends Notebook {
   sourceCount: number;
@@ -262,102 +269,89 @@ export default function DeskHome({
           <p className="mt-4 text-small text-muted">Export a backup. This browser can remove site data.</p>
         )}
 
-        {/* Filter & View Controls Toolbar */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-          {/* Left: Tab Pills */}
-          <div className="flex items-center gap-1.5 rounded-[var(--radius-control)] bg-surface/80 p-1 border border-hairline">
-            <button
-              onClick={() => setActiveTab("all")}
-              className={`rounded-[var(--radius-control)] px-3.5 py-1 text-small font-medium transition-all ${
-                activeTab === "all"
-                  ? "bg-brass/15 text-brass shadow-sm"
-                  : "text-muted hover:text-ink"
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setActiveTab("my")}
-              className={`rounded-[var(--radius-control)] px-3.5 py-1 text-small font-medium transition-all ${
-                activeTab === "my"
-                  ? "bg-brass/15 text-brass shadow-sm"
-                  : "text-muted hover:text-ink"
-              }`}
-            >
-              My notebooks
-            </button>
+        {/* Filter & view toolbar: one 36px row that wraps by group, never
+            inside a label. */}
+        <div className="mt-6 flex flex-wrap items-center justify-end gap-x-2 gap-y-2.5">
+          <div role="group" aria-label="Show" data-track className="desk-track mr-auto">
+            {(
+              [
+                ["all", "All"],
+                ["my", "My notebooks"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveTab(id)}
+                aria-pressed={activeTab === id}
+                className="px-3.5"
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
-          {/* Right: Controls & Actions */}
-          <div className="flex items-center gap-3">
-            {/* Search Input */}
-            <div className="relative hidden sm:block">
+          <div className="flex items-center gap-2">
+            <div className="desk-search relative hidden sm:block">
               <MagnifyingGlass
                 size={ICON.sm}
                 weight="light"
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
               />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search notebooks…"
-                className="h-9 w-44 rounded-[var(--radius-control)] border border-hairline bg-surface/50 pl-8 pr-3 text-small text-ink placeholder:text-muted transition-all focus:w-60 focus:border-brass/40 focus:bg-surface"
+                aria-label="Search notebooks"
+                className={`h-9 w-44 rounded-[var(--radius-control)] border border-hairline bg-surface/50 pl-8 ${searchQuery ? "pr-8" : "pr-3"} text-small text-ink placeholder:text-muted focus:w-56 focus:border-brass/40 focus:bg-surface`}
               />
               {searchQuery && (
                 <button
+                  type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+                  aria-label="Clear search"
+                  className="absolute right-1.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-[4px] text-muted hover:text-ink"
                 >
-                  <X size={ICON.xs} />
+                  <X size={ICON.xs} aria-hidden="true" />
                 </button>
               )}
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center rounded-[var(--radius-control)] border border-hairline bg-surface/60 p-0.5">
+            <div role="group" aria-label="View" data-track className="desk-track">
               <button
+                type="button"
                 onClick={() => setViewMode("grid")}
-                className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] transition-colors ${
-                  viewMode === "grid"
-                    ? "bg-ink/[0.08] text-brass"
-                    : "text-muted hover:text-ink"
-                }`}
+                aria-pressed={viewMode === "grid"}
                 title="Grid view"
                 aria-label="Grid view"
+                className="w-[1.875rem]"
               >
-                <SquaresFour size={ICON.md} weight={viewMode === "grid" ? "fill" : "light"} />
+                <SquaresFour size={ICON.md} weight={viewMode === "grid" ? "fill" : "light"} aria-hidden="true" />
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode("list")}
-                className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] transition-colors ${
-                  viewMode === "list"
-                    ? "bg-ink/[0.08] text-brass"
-                    : "text-muted hover:text-ink"
-                }`}
+                aria-pressed={viewMode === "list"}
                 title="List view"
                 aria-label="List view"
+                className="w-[1.875rem]"
               >
-                <ListDashes size={ICON.md} weight={viewMode === "list" ? "bold" : "light"} />
+                <ListDashes size={ICON.md} weight={viewMode === "list" ? "bold" : "light"} aria-hidden="true" />
               </button>
             </div>
 
-            {/* Sort Dropdown */}
             <div ref={sortMenuRef} className="relative">
               <button
+                type="button"
                 onClick={() => setSortMenuOpen((v) => !v)}
-                className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/60 px-3 text-small font-medium text-muted hover:text-ink transition-colors"
+                aria-expanded={sortMenuOpen}
+                aria-label={`Sort: ${SORT_LABEL[sortOption]}`}
+                className="desk-control flex h-9 shrink-0 items-center gap-1.5 px-3 text-small font-medium text-muted"
               >
-                <span>
-                  {sortOption === "recent"
-                    ? "Most recent"
-                    : sortOption === "az"
-                      ? "Alphabetical"
-                      : sortOption === "oldest"
-                        ? "Oldest"
-                        : "Most sources"}
-                </span>
-                <span className="text-label text-muted">▾</span>
+                <span>{SORT_LABEL[sortOption]}</span>
+                <CaretDown size={ICON.xs} weight="bold" aria-hidden="true" className="desk-caret" />
               </button>
 
               <AnimatePresence>
@@ -369,32 +363,31 @@ export default function DeskHome({
                     transition={SOFT}
                     className="absolute right-0 top-[calc(100%+6px)] z-50 w-40 overflow-hidden rounded-[var(--radius-control)] border border-hairline bg-surface p-1 shadow-modal"
                   >
-                    {[
-                      { id: "recent", label: "Most recent" },
-                      { id: "az", label: "Alphabetical" },
-                      { id: "oldest", label: "Oldest" },
-                      { id: "sources", label: "Most sources" },
-                    ].map((opt) => (
+                    {(Object.keys(SORT_LABEL) as SortOption[]).map((id) => (
                       <button
-                        key={opt.id}
+                        key={id}
+                        type="button"
                         onClick={() => {
-                          setSortOption(opt.id as SortOption);
+                          setSortOption(id);
                           setSortMenuOpen(false);
                         }}
-                        className={`flex w-full items-center px-3 py-2 text-left text-small rounded-[var(--radius-control)] transition-colors ${
-                          sortOption === opt.id
+                        aria-current={sortOption === id ? "true" : undefined}
+                        className={`flex w-full items-center whitespace-nowrap px-3 py-2 text-left text-small rounded-[var(--radius-control)] transition-colors ${
+                          sortOption === id
                             ? "bg-brass/10 text-brass font-medium"
                             : "text-muted hover:bg-ink/[0.04] hover:text-ink"
                         }`}
                       >
-                        {opt.label}
+                        {SORT_LABEL[id]}
                       </button>
                     ))}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
+          </div>
 
+          <div className="flex items-center gap-2">
             <input
               ref={fileRef}
               type="file"
@@ -408,26 +401,27 @@ export default function DeskHome({
               }}
             />
             <button
+              type="button"
               onClick={pickFile}
-              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3.5 text-small text-ink/85 hover:border-hairline-strong hover:text-ink transition-colors"
+              className="desk-control flex h-9 shrink-0 items-center gap-1.5 px-3.5 text-small text-ink/85"
             >
-              <FolderOpen size={ICON.md} />
+              <FolderOpen size={ICON.md} aria-hidden="true" />
               <span>Open a file</span>
             </button>
             <button
+              type="button"
               onClick={() => setReceiving(true)}
-              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline px-3.5 text-small text-ink/85 hover:border-hairline-strong hover:text-ink transition-colors"
+              className="desk-control flex h-9 shrink-0 items-center gap-1.5 px-3.5 text-small text-ink/85"
             >
-              <DeviceMobile size={ICON.md} />
+              <DeviceMobile size={ICON.md} aria-hidden="true" />
               <span>From another device</span>
             </button>
-
-            {/* + Create New Button */}
             <button
+              type="button"
               onClick={openCreateModal}
-              className="flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] grad-lamp px-4 text-small font-semibold text-ground shadow-sm hover:brightness-105 active:scale-[0.98] transition-all"
+              className="flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[var(--radius-control)] grad-lamp px-4 text-small font-semibold text-ground shadow-sm"
             >
-              <Plus size={ICON.md} weight="bold" />
+              <Plus size={ICON.md} weight="bold" aria-hidden="true" />
               <span>Create new</span>
             </button>
           </div>
@@ -454,7 +448,7 @@ export default function DeskHome({
               <button
                 type="button"
                 onClick={onSettings}
-                className="rounded-[var(--radius-control)] border border-hairline px-3.5 py-2 text-label text-muted transition-colors hover:border-hairline-strong hover:text-ink"
+                className="desk-control px-3.5 py-2 text-label text-muted"
               >
                 Connect online
               </button>
@@ -780,7 +774,7 @@ export default function DeskHome({
             </button>
             <button
               onClick={() => deletingId && void handleDelete(deletingId)}
-              className="rounded-[var(--radius-control)] bg-rust px-4 py-2 text-small font-medium text-white hover:brightness-110 active:scale-95 transition-all"
+              className="rounded-[var(--radius-control)] bg-rust px-4 py-2 text-small font-medium text-white hover:brightness-110 active:translate-y-px transition-all"
             >
               Delete permanently
             </button>
@@ -831,7 +825,7 @@ function StartHero({ onCreate, onOpenFile }: { onCreate: () => void; onOpenFile:
           <button
             type="button"
             onClick={onOpenFile}
-            className="inline-flex items-center gap-2 rounded-[var(--radius-control)] border border-hairline px-3.5 py-2 text-body text-muted transition-colors hover:border-hairline-strong hover:text-ink"
+            className="desk-control inline-flex items-center gap-2 px-3.5 py-2 text-body text-muted"
           >
             <FolderOpen size={ICON.md} aria-hidden="true" />
             Open a notebook file

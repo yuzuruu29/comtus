@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { Crown, GearSix, Plus, Sparkle } from "@phosphor-icons/react";
+import { Crown, Gear, Plus, Sparkle } from "@phosphor-icons/react";
 import { ICON } from "../../ui/iconScale";
 
 /**
@@ -82,10 +82,10 @@ export function SettingsButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-h-[34px] items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/80 px-2.5 sm:px-3.5 py-1.5 text-small font-medium text-muted hover:border-brass/50 hover:bg-surface hover:text-ink transition-colors shadow-sm ${className}`}
+      className={`group flex min-h-[34px] items-center gap-1.5 rounded-[var(--radius-control)] border border-hairline bg-surface/80 px-2.5 sm:px-3.5 py-1.5 text-small font-medium text-muted hover:border-brass/50 hover:bg-raised hover:text-ink active:translate-y-px transition-[color,background-color,border-color,transform] shadow-sm ${className}`}
       aria-label="Settings"
     >
-      <GearSix size={ICON.sm} weight="light" className="transition-transform duration-slow group-hover:rotate-45" />
+      <Gear size={ICON.md} className="transition-transform duration-slow group-hover:rotate-45 motion-reduce:transition-none" />
       {children ?? <span className="hidden sm:inline">Settings</span>}
     </button>
   );

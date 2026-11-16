@@ -27,8 +27,11 @@
 .field-guide-card-face h3 em { font-weight: 400; }
 .field-guide-card-face > p { font-size: 14px; line-height: 1.8; }
 .field-guide-card > button { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; width: calc(100% - 60px); min-height: 56px; gap: 15px; margin: 0 30px 10px; border-top: 1px solid var(--hairline-strong); color: var(--brass); text-align: left; font-size: 13px; font-weight: 500; cursor: pointer; }
-.field-guide-card > button:hover { color: var(--ink); }
-.field-guide-card > button svg { flex-shrink: 0; }
+.field-guide-card > button { transition: color var(--dur-fast), border-color var(--dur-fast); }
+.field-guide-card > button:hover { color: var(--ink); border-top-color: color-mix(in srgb, var(--brass) 50%, var(--hairline-strong)); }
+.field-guide-card > button svg { flex-shrink: 0; transition: transform var(--dur-med) var(--ease-out); }
+/* The arrows start the turn the card is about to make. */
+.landing-home[data-motion="full"] .field-guide-card > button:hover svg { transform: rotate(40deg); }
 .field-guide-figure > figcaption { margin-top: 19px; color: var(--muted); text-align: center; font-size: 11px; }
 .field-guide-next { display: flex; align-items: center; justify-content: space-between; gap: 28px; margin-top: 48px; padding-top: 26px; border-top: 1px solid var(--hairline); }
 .field-guide-next > p { font-family: var(--font-read); font-size: 21px; line-height: 1.5; letter-spacing: -.013em; }

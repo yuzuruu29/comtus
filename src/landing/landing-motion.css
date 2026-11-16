@@ -249,7 +249,7 @@ html[data-motion="full"] .landing-nav-toggle[aria-expanded="true"] .landing-nav-
   transform: rotate(45deg);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .landing-nav-links a::after {
     display: none;
   }

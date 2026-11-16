@@ -1,0 +1,423 @@
+/* ==========================================================================
+   Lamplight hover (BRAND.md 5): one hover language for every control in the
+   app and on the site.
+
+   The desk lamp is the only light in Comtus, so whatever the hand rests on
+   is lit by it: a pool of brass light sits under the pointer (--mx/--my,
+   written by src/ui/lampLight.ts). How far it reaches and how bright it is
+   depends on what is lit:
+
+   - Keys (standalone buttons and chips) are rubber stamps lifting off the
+     page: up a pixel, a warm top edge, a leather ledge, a warm pool beneath,
+     the hairline and the glyph warming to brass. The press sinks them in.
+   - Rows (menu items, options, list rows) stay on the page and take the
+     brass bookmark on their leading edge instead of lifting.
+   - Track options (tabs, segmented toggles) light up in place.
+   - Primary buttons catch the light as a sheen across the brass.
+   - Cards take a wide, faint pool and keep their own lift.
+   - Text links keep their underline that settles to brass.
+   - Destructive controls lift and press but never take the brass.
+
+   The glow is a background-image over each control's own background. It is
+   !important because component hover rules set the `background` shorthand,
+   which would otherwise erase it. Nothing here sets `display`, `position` or
+   `translate`, so Tailwind layout and positioning utilities keep working.
+
+   One-off Tailwind buttons are sorted by their classes: a `hover:bg-*`
+   button is a key, or a row when it is full width. Anything inside a
+   tablist, radiogroup, .segmented or [data-track] is a track option. A
+   control opts out with data-lamp="off".
+   ========================================================================== */
+
+@property --lamp {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+/* Per kind of control; not inherited, so a button inside a card keeps its
+   own small pool. */
+@property --lamp-reach {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 64px;
+}
+@property --lamp-strength {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 22%;
+}
+
+.model-option,
+.model-menu-footer,
+.menu-item,
+[role="menuitem"],
+[role="option"],
+.practice-recent button,
+.practice-sources label,
+.reader-mark-list button,
+.prefs-index button,
+.chat-starters button,
+.landing-sample-prompts > button,
+.source-index-select,
+.guide-tool,
+:is(button, a, [role="button"])[class*="hover:bg-"][class*="w-full"] {
+  --lamp-reach: 140px;
+  --lamp-strength: 16%;
+}
+:is([role="tablist"], [role="radiogroup"], .segmented, [data-track]) :is(button, [role="tab"], [role="radio"]) {
+  --lamp-reach: 56px;
+  --lamp-strength: 18%;
+}
+.card-wake,
+.card-paper-curl,
+.card-book-press,
+.review-due-deck,
+.practice-tool,
+.quiz-option,
+.fresh-sheet,
+.sheet-loose,
+.source-index-row,
+.milestone-card,
+.field-guide-card > button,
+.hover-lift {
+  --lamp-reach: 260px;
+  --lamp-strength: 10%;
+}
+:is(.btn-primary, .icon-btn-primary, .composer-send, .grad-lamp) {
+  --lamp-reach: 90px;
+  --lamp-strength: 40%;
+}
+
+@media (hover: hover) {
+  /* ── Every control is lit ─────────────────────────────────────────── */
+  :is(
+      button,
+      summary,
+      [role="button"],
+      [role="menuitem"],
+      [role="option"],
+      [role="tab"],
+      a[class*="btn"],
+      a[class*="hover:bg-"],
+      .card-wake,
+      .card-paper-curl,
+      .card-book-press,
+      .review-due-deck,
+      .sheet-loose,
+      .source-index-row,
+      .milestone-card,
+      .practice-sources label,
+      .hover-lift
+    ):not(
+      :disabled,
+      [aria-disabled="true"],
+      [data-lamp="off"],
+      .grad-lamp,
+      .link-pencil,
+      [class*="underline"],
+      .landing-text-button,
+      .landing-text-link,
+      .shelf-start-open,
+      .cite-footnote,
+      .compad-sprite-button,
+      .compad-resize-handle,
+      .effort-dot,
+      .effort-tick,
+      .reader-mark,
+      [role="switch"],
+      [role="slider"],
+      .btn-danger,
+      .icon-btn-danger,
+      .chat-session-delete,
+      .composer-stop,
+      [class*="rust"],
+      /* A card is lit as one sheet; the plain buttons that make up its
+         body would only stack a second pool inside it. */
+      :is(.card-wake, .card-paper-curl, .card-book-press, .review-due-deck, .sheet-loose) :is(button, [role="button"]):not([class*="hover:bg-"], [class*="btn"])
+    ):is(:hover, [aria-expanded="true"]) {
+    --lamp: var(--lamp-strength);
+    background-image: radial-gradient(
+      var(--lamp-reach) circle at var(--mx, 50%) var(--my, 0%),
+      color-mix(in srgb, var(--brass-pale) var(--lamp), transparent),
+      transparent 72%
+    ) !important;
+  }
+  /* The lamp-gradient primary keeps its brass under the sheen. */
+  .grad-lamp:is(button, a, [role="button"]):not(:disabled, [aria-disabled="true"]):hover {
+    --lamp: var(--lamp-strength);
+    background-image:
+      radial-gradient(
+        var(--lamp-reach) circle at var(--mx, 50%) var(--my, 0%),
+        color-mix(in srgb, var(--brass-pale) var(--lamp), transparent),
+        transparent 70%
+      ),
+      linear-gradient(92deg, var(--brass-deep), var(--brass-pale)) !important;
+    box-shadow: var(--elev-lift);
+    filter: none;
+    transform: translateY(-1px);
+  }
+  html[data-theme="light"] .grad-lamp:is(button, a, [role="button"]):not(:disabled, [aria-disabled="true"]):hover {
+    background-image:
+      radial-gradient(
+        var(--lamp-reach) circle at var(--mx, 50%) var(--my, 0%),
+        color-mix(in srgb, var(--brass-pale) var(--lamp), transparent),
+        transparent 70%
+      ),
+      linear-gradient(92deg, var(--brass-deep), var(--brass)) !important;
+  }
+
+  /* ── Keys lift off the page ───────────────────────────────────────── */
+  :is(
+      .btn-secondary,
+      .btn-ghost,
+      .icon-btn-ghost,
+      .icon-btn-secondary,
+      .chip,
+      .desk-control,
+      .desk-tool,
+      .focus-trigger,
+      .milestone-chip,
+      .model-chip,
+      .lamp-switch,
+      .composer-mode,
+      .composer-voice,
+      .composer-source-trigger,
+      .effort-chip,
+      .effort-settings,
+      .composer-followup,
+      .chat-session-trigger,
+      .chat-session-edit,
+      .answer-action,
+      .think-toggle,
+      .compad-panel-header > button,
+      .reader-toolbar button,
+      .prefs-replay,
+      .fc-rate,
+      .study-motion-controls button,
+      .practice-rail-tool,
+      .landing-practice-options button,
+      .landing-setup-suggestions button,
+      .landing-nav-toggle,
+      .landing-citation,
+      :is(button, a, summary, [role="button"])[class*="hover:bg-"]:not([class*="w-full"])
+    ):not(
+      :disabled,
+      [aria-disabled="true"],
+      [data-lamp="off"],
+      [class*="rust"],
+      [class*="grad"],
+      :is([role="tablist"], [role="radiogroup"], .segmented, [data-track]) *
+    ):is(:hover, [aria-expanded="true"], .is-open) {
+    border-color: color-mix(in srgb, var(--brass) 45%, var(--hairline-strong));
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--brass-pale) 24%, transparent),
+      0 2px 0 color-mix(in srgb, var(--leather) 18%, transparent),
+      0 8px 16px -8px var(--glow-warm);
+    transform: translateY(-1px);
+  }
+  /* The glyph warms to brass with its key or row. Icons that carry their
+     own colour, and anything already chosen, keep theirs. */
+  :is(
+      .btn-secondary,
+      .btn-ghost,
+      .icon-btn-ghost,
+      .icon-btn-secondary,
+      .chip,
+      .desk-control,
+      .desk-tool,
+      .focus-trigger,
+      .composer-mode,
+      .composer-voice,
+      .composer-source-trigger,
+      .effort-chip,
+      .effort-settings,
+      .composer-followup,
+      .chat-session-trigger,
+      .chat-session-edit,
+      .answer-action,
+      .think-toggle,
+      .compad-panel-header > button,
+      .reader-toolbar button,
+      .prefs-replay,
+      .practice-rail-tool,
+      .landing-nav-toggle,
+      .model-option,
+      .model-menu-footer,
+      .menu-item,
+      [role="menuitem"],
+      .practice-recent button,
+      .reader-mark-list button,
+      .prefs-index button,
+      :is(button, a, summary, [role="button"])[class*="hover:bg-"]
+    ):not(
+      :disabled,
+      [aria-disabled="true"],
+      [aria-pressed="true"],
+      [aria-selected="true"],
+      [aria-current="page"],
+      [class*="rust"],
+      [class*="grad"]
+    ):hover
+    > svg:not([class*="text-"], .focus-mini-ring) {
+    color: var(--brass);
+  }
+
+  /* ── Rows take the bookmark ───────────────────────────────────────── */
+  :is(
+      .model-option,
+      .model-menu-footer,
+      .menu-item,
+      [role="menuitem"],
+      [role="option"],
+      .practice-recent button,
+      .reader-mark-list button,
+      .prefs-index button,
+      .chat-starters button,
+      .landing-sample-prompts > button,
+      :is(button, a, [role="button"])[class*="hover:bg-"][class*="w-full"]
+    ):not(
+      :disabled,
+      [aria-disabled="true"],
+      [data-lamp="off"],
+      [aria-selected="true"],
+      [aria-checked="true"],
+      [aria-current="page"],
+      .rule-bookmark,
+      [class*="rust"]
+    ):hover {
+    box-shadow: inset 2px 0 0 var(--brass);
+  }
+
+  /* ── Destructive controls lift without the brass ──────────────────── */
+  :is(.btn-danger, .composer-stop, :is(button, [role="button"])[class*="bg-rust"]):not(:disabled, [aria-disabled="true"]):hover {
+    box-shadow: 0 2px 0 color-mix(in srgb, var(--leather) 22%, transparent);
+    transform: translateY(-1px);
+  }
+
+  /* ── The light blooms in rather than snapping on ──────────────────── */
+  :is(
+      .btn-secondary,
+      .btn-ghost,
+      .icon-btn-ghost,
+      .icon-btn-secondary,
+      .btn-primary,
+      .icon-btn-primary,
+      .composer-send,
+      .grad-lamp,
+      .chip,
+      .desk-control,
+      .desk-tool,
+      .focus-trigger,
+      .milestone-chip,
+      .model-chip,
+      .lamp-switch,
+      .composer-mode,
+      .composer-voice,
+      .composer-source-trigger,
+      .effort-chip,
+      .effort-settings,
+      .composer-followup,
+      .chat-session-trigger,
+      .chat-session-edit,
+      .answer-action,
+      .think-toggle,
+      .model-option,
+      .model-menu-footer,
+      .menu-item,
+      [role="menuitem"],
+      [role="option"],
+      [role="tab"],
+      .segmented-option,
+      :is(button, a, summary, [role="button"])[class*="hover:bg-"]
+    ):hover {
+    transition-property:
+      color, background-color, border-color, outline-color, text-decoration-color, box-shadow, transform,
+      translate, rotate, scale, opacity, filter, --lamp;
+    transition-duration:
+      var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast),
+      var(--dur-fast), var(--dur-fast), var(--dur-med), var(--dur-fast), var(--dur-fast), var(--dur-fast),
+      var(--dur-glow);
+    transition-timing-function: var(--ease-out);
+  }
+}
+
+/* ── The press: the stamp meets the page ────────────────────────────────
+   The lift and the ledge go, an inset takes their place, the light dims
+   and the label keeps its colour. Presses never change size. */
+:is(
+    .btn-secondary,
+    .btn-ghost,
+    .icon-btn-ghost,
+    .icon-btn-secondary,
+    .chip,
+    .desk-control,
+    .desk-tool,
+    .focus-trigger,
+    .milestone-chip,
+    .model-chip,
+    .lamp-switch,
+    .composer-mode,
+    .composer-voice,
+    .composer-source-trigger,
+    .effort-chip,
+    .effort-settings,
+    .composer-followup,
+    .chat-session-trigger,
+    .chat-session-edit,
+    .answer-action,
+    .think-toggle,
+    .compad-panel-header > button,
+    .reader-toolbar button,
+    .prefs-replay,
+    .fc-rate,
+    .study-motion-controls button,
+    .practice-rail-tool,
+    .landing-practice-options button,
+    .landing-setup-suggestions button,
+    .landing-nav-toggle,
+    .landing-citation,
+    .grad-lamp:is(button, a, [role="button"]),
+    :is(button, a, summary, [role="button"])[class*="hover:bg-"]:not([class*="w-full"])
+  ):not(:disabled, [aria-disabled="true"], [data-lamp="off"], :is([role="tablist"], [role="radiogroup"], .segmented, [data-track]) *):active {
+  --lamp: calc(var(--lamp-strength) * 0.4);
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--leather) 24%, transparent);
+  transform: translateY(1px);
+  transition-duration: 60ms;
+}
+:is(.btn-danger, .composer-stop, :is(button, [role="button"])[class*="bg-rust"]):not(:disabled, [aria-disabled="true"]):active {
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--leather) 30%, transparent);
+  transform: translateY(1px);
+}
+/* One-off presses that shrank the control sink a pixel instead. */
+[class*="active:scale"]:active {
+  scale: none;
+  transform: translateY(1px);
+}
+
+/* Reduced motion, from the system or from the app's own budget: the light
+   stays, the lift and the press go. */
+@media (prefers-reduced-motion: reduce) {
+  :is(
+      .btn-secondary, .btn-ghost, .icon-btn-ghost, .icon-btn-secondary, .chip, .desk-control, .desk-tool,
+      .focus-trigger, .milestone-chip, .model-chip, .lamp-switch, .composer-mode, .composer-voice,
+      .composer-source-trigger, .effort-chip, .effort-settings, .composer-followup, .chat-session-trigger,
+      .chat-session-edit, .answer-action, .think-toggle, .compad-panel-header > button, .reader-toolbar button,
+      .prefs-replay, .fc-rate, .study-motion-controls button, .practice-rail-tool, .landing-practice-options button,
+      .landing-setup-suggestions button, .landing-nav-toggle, .landing-citation, .grad-lamp, .btn-danger,
+      .composer-stop, [class*="bg-rust"], [class*="hover:bg-"], [class*="active:scale"]
+    ):is(:hover, :active, [aria-expanded="true"], .is-open) {
+    transform: none !important;
+  }
+}
+html[data-motion="none"]
+  :is(
+    .btn-secondary, .btn-ghost, .icon-btn-ghost, .icon-btn-secondary, .chip, .desk-control, .desk-tool,
+    .focus-trigger, .milestone-chip, .model-chip, .lamp-switch, .composer-mode, .composer-voice,
+    .composer-source-trigger, .effort-chip, .effort-settings, .composer-followup, .chat-session-trigger,
+    .chat-session-edit, .answer-action, .think-toggle, .compad-panel-header > button, .reader-toolbar button,
+    .prefs-replay, .fc-rate, .study-motion-controls button, .practice-rail-tool, .landing-practice-options button,
+    .landing-setup-suggestions button, .landing-nav-toggle, .landing-citation, .grad-lamp, .btn-danger,
+    .composer-stop, [class*="bg-rust"], [class*="hover:bg-"], [class*="active:scale"]
+  ):is(:hover, :active, [aria-expanded="true"], .is-open) {
+  transform: none !important;
+}

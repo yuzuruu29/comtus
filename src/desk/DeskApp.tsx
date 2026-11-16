@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { DeviceMobile, FileArrowDown, GearSix } from "@phosphor-icons/react";
+import { ChartLineUp, DeviceMobile, FileArrowDown, Gear, ShareNetwork } from "@phosphor-icons/react";
 import { createNotebook, db } from "../lib/db";
 import { exportNotebook } from "../lib/backup";
 import type { Notebook as NotebookRow } from "../lib/types";
@@ -28,6 +28,7 @@ import FirstRunSetup from "./FirstRunSetup";
 import { ICON } from "../ui/iconScale";
 import { LampSwitch } from "../ui";
 import "../studio/lamplight.css";
+import "./desk.css";
 
 /** Comtus for desktop — a standalone product surface. The library is a
     persistent rail, never a page; the desk at rest is a working home;
@@ -395,68 +396,51 @@ function AppHeader({
         </button>
         {notebook && (
           <>
-            <span className="h-4 w-px shrink-0 bg-white/[0.09]" />
+            <span className="h-4 w-px shrink-0 bg-hairline-strong" />
             <input
               ref={nameRef}
               key={notebook.name}
               defaultValue={notebook.name}
               onBlur={(e) => onRename(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-              className="no-drag w-[min(34ch,34vw)] truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-0.5 font-display text-body font-[450] text-ink hover:border-hairline focus:border-brass/40"
+              className="no-drag w-[min(34ch,34vw)] min-w-0 truncate rounded-[var(--radius-control)] border border-transparent bg-transparent px-1.5 py-0.5 font-display text-body font-[450] text-ink hover:border-hairline focus:border-brass/40"
               aria-label="Notebook name"
             />
           </>
         )}
-        <div className="no-drag ml-auto flex shrink-0 items-center gap-1.5 pr-1">
+        <div className="desk-tools no-drag ml-auto flex shrink-0 items-center gap-1 pr-1">
           <FocusTimer />
           <MilestonesButton className="hidden sm:inline-flex" />
           {notebook && (
             <>
-              <button
-                onClick={() => void openAnalytics()}
-                className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2.5 py-1.5 text-small text-muted hover:bg-ink/5 hover:text-ink sm:flex"
-              >
-                Analytics
+              {/* Below lg the labels fold away and the tools keep their glyphs,
+                  so the header never pushes Settings off the edge. */}
+              <button type="button" onClick={() => void openAnalytics()} className="desk-tool desk-tool-fold hidden sm:inline-flex" aria-label="Analytics" title="Analytics">
+                <ChartLineUp size={ICON.md} aria-hidden="true" />
+                <span className="hidden lg:inline">Analytics</span>
               </button>
-              <button
-                onClick={() => setSending(true)}
-                className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2.5 py-1.5 text-label text-muted hover:bg-ink/5 hover:text-ink sm:flex"
-              >
-                <DeviceMobile size={ICON.sm} aria-hidden="true" />
-                Send
+              <button type="button" onClick={() => setSending(true)} className="desk-tool desk-tool-fold hidden sm:inline-flex" aria-label="Send to a device" title="Send to a device">
+                <DeviceMobile size={ICON.md} aria-hidden="true" />
+                <span className="hidden lg:inline">Send</span>
               </button>
-              <button
-                onClick={() => void handleShare()}
-                className="hidden items-center gap-1.5 rounded-[var(--radius-control)] px-2.5 py-1.5 text-small text-muted hover:bg-ink/5 hover:text-ink sm:flex"
-              >
-                Share
+              <button type="button" onClick={() => void handleShare()} className="desk-tool desk-tool-fold hidden sm:inline-flex" aria-label="Share" title="Share">
+                <ShareNetwork size={ICON.md} aria-hidden="true" />
+                <span className="hidden lg:inline">Share</span>
               </button>
             </>
           )}
-
+          <span className="desk-tools-rule hidden sm:block" aria-hidden="true" />
           <div className="hidden sm:block">
             <ModelPickerMenu modelLabel={modelLabel} onOpenSettings={onSettings} placement="below" />
           </div>
-          <LampSwitch className="no-drag" />
-          <button
-            onClick={onSettings}
-            className="no-drag flex h-8 w-8 items-center justify-center rounded-[var(--radius-control)] text-muted hover:bg-ink/5 hover:text-ink"
-            aria-label="Settings"
-          >
-            <GearSix size={ICON.md} weight="light" />
+          <LampSwitch />
+          <button type="button" onClick={onSettings} className="desk-tool desk-tool-icon inline-flex" aria-label="Settings" title="Settings">
+            <Gear size={ICON.lg} className="desk-tool-gear" aria-hidden="true" />
           </button>
-
           {isPro ? (
-            <ProBadge
-              planTier="pro"
-              onClick={onSettings}
-              className="hidden sm:flex"
-            />
+            <ProBadge planTier="pro" onClick={onSettings} className="desk-badge hidden lg:flex" />
           ) : !isStock ? (
-            <ByokBadge
-              onClick={onSettings}
-              className="hidden sm:flex"
-            />
+            <ByokBadge onClick={onSettings} className="desk-badge hidden lg:flex" />
           ) : null}
         </div>
         <CaptionButtons />

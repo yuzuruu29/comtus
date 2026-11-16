@@ -232,7 +232,7 @@ export default function LibraryRail({
                   setDeletingNotebook(null);
                 }
               }}
-              className="rounded-[var(--radius-control)] bg-rust px-4 py-2 text-small font-medium text-white hover:brightness-110 active:scale-95 transition-all"
+              className="rounded-[var(--radius-control)] bg-rust px-4 py-2 text-small font-medium text-white hover:brightness-110 active:translate-y-px transition-all"
             >
               Delete permanently
             </button>
@@ -272,13 +272,13 @@ function RailItemWide({
         onClick={() => onSelect(notebook.id)}
         aria-current={active ? "page" : undefined}
         className={`relative flex w-full items-center gap-2.5 rounded-[var(--radius-control)] px-2 py-[7px] text-left transition-colors duration-med ${
-          active ? "bg-ink/[0.055]" : "hover:bg-ink/[0.03]"
+          active ? "bg-ink/[0.055]" : "rule-bookmark hover:bg-ink/[0.045]"
         }`}
         title={notebook.name}
       >
         <LetterTile name={notebook.name} />
         <span className="min-w-0 flex-1">
-          <span className={`block truncate text-small leading-tight ${active ? "text-ink" : "text-ink/80"}`}>
+          <span className={`block truncate text-small leading-tight ${active ? "text-ink" : "text-ink/80 group-hover:text-ink"}`}>
             {notebook.name}
           </span>
           <span className="block truncate text-label leading-tight text-muted">

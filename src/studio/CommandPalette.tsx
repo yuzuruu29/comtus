@@ -7,7 +7,7 @@ import {
   ChatsCircle,
   Cpu,
   FileText,
-  GearSix,
+  Gear,
   House,
   MagnifyingGlass,
   Medal,
@@ -42,11 +42,11 @@ type Item = {
   meta?: string;
   /** Text around a search match. */
   snippet?: LibraryHit["snippet"];
-  icon: typeof GearSix;
+  icon: typeof Gear;
   run: () => void;
 };
 
-const HIT_ICONS: Record<LibraryHit["group"], typeof GearSix> = {
+const HIT_ICONS: Record<LibraryHit["group"], typeof Gear> = {
   Sources: FileText,
   "Saved work": NotePencil,
   Conversations: ChatsCircle,
@@ -124,7 +124,7 @@ export default function CommandPalette({
       { id: "home", group: "Actions", label: "Home", hint: `${mod}+Shift+H`, icon: House, run: desk.goHome },
       { id: "new", group: "Actions", label: "New notebook", hint: `${mod}+N`, icon: Plus, run: desk.newNotebook },
       { id: "models", group: "Actions", label: "AI Models", icon: Cpu, run: () => desk.openSettings("models") },
-      { id: "settings", group: "Actions", label: "Settings", hint: `${mod}+,`, icon: GearSix, run: () => desk.openSettings("settings") },
+      { id: "settings", group: "Actions", label: "Settings", hint: `${mod}+,`, icon: Gear, run: () => desk.openSettings("settings") },
       { id: "milestones", group: "Actions", label: "Milestones", icon: Medal, run: desk.openMilestones },
       { id: "import", group: "Actions", label: "Add sources", icon: Notebook, run: desk.importFiles },
       { id: "sources", group: "Layout", label: "Toggle sources", hint: `${mod}+1`, icon: Notebook, run: desk.toggleSources },

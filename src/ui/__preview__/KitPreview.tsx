@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { GearSix, Sparkle, Star, Trash } from "@phosphor-icons/react";
+import { Gear, Sparkle, Star, Trash } from "@phosphor-icons/react";
 import { Button } from "../Button";
 import { IconButton } from "../IconButton";
 import { Chip } from "../Chip";
@@ -62,11 +62,11 @@ export default function KitPreview() {
 
         <Section title="IconButton">
           <Row>
-            <IconButton aria-label="Settings"><GearSix size={ICON.lg} /></IconButton>
+            <IconButton aria-label="Settings"><Gear size={ICON.lg} /></IconButton>
             <IconButton aria-label="Favorite" variant="secondary"><Star size={ICON.lg} /></IconButton>
             <IconButton aria-label="Delete" variant="danger"><Trash size={ICON.lg} /></IconButton>
-            <IconButton aria-label="Loading" loading><GearSix size={ICON.lg} /></IconButton>
-            <IconButton aria-label="Disabled" disabled><GearSix size={ICON.lg} /></IconButton>
+            <IconButton aria-label="Loading" loading><Gear size={ICON.lg} /></IconButton>
+            <IconButton aria-label="Disabled" disabled><Gear size={ICON.lg} /></IconButton>
           </Row>
         </Section>
 
