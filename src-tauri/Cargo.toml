@@ -1,6 +1,6 @@
 [package]
 name = "comtus"
-version = "0.3.1"
+version = "0.3.3"
 description = "Comtus — a thinking study companion"
 authors = ["Comtus"]
 edition = "2021"
