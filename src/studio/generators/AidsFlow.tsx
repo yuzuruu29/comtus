@@ -374,7 +374,7 @@ JSON shape:
         id: `${Date.now().toString(36)}-p`,
         notebookId,
         kind: "presentation",
-        title: `${payload.deckTitle || "Presentation Deck"} · ${payload.slides.length} slides`,
+        title: `${payload.deckTitle || "Presentation"} · ${payload.slides.length} slides`,
         payload,
         createdAt: Date.now(),
       };
@@ -539,7 +539,7 @@ export function SlideshowView({ gen }: { gen: Generation }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-hairline pb-3">
         <div>
           <h3 className="font-display text-[1.25rem] font-[430] text-ink">
-            {payload.deckTitle || "Presentation Deck"}
+            {payload.deckTitle || "Presentation"}
           </h3>
           {payload.deckSubtitle && (
             <p className="text-small text-muted">{payload.deckSubtitle}</p>
@@ -553,14 +553,14 @@ export function SlideshowView({ gen }: { gen: Generation }) {
               showNotes ? "border-brass/50 bg-brass/15 text-brass" : "border-hairline text-muted hover:text-ink"
             }`}
           >
-            Speaker Notes {showNotes ? "On" : "Off"}
+            Speaker notes {showNotes ? "on" : "off"}
           </button>
           <button
             onClick={exportMarkdown}
             className="flex items-center gap-1 rounded-[var(--radius-field)] border border-hairline bg-ink/5 px-2.5 py-1 text-label text-muted hover:text-ink"
           >
             {copied ? <Check size={ICON.xs} className="text-sage" /> : <Copy size={ICON.xs} />}
-            {copied ? "Copied" : "Copy Deck"}
+            {copied ? "Copied" : "Copy deck"}
           </button>
           <button
             onClick={() => setFullscreen((v) => !v)}
@@ -573,7 +573,7 @@ export function SlideshowView({ gen }: { gen: Generation }) {
       </div>
 
       {/* Active Slide Card */}
-      <div className="relative min-h-[340px] sm:min-h-[380px] rounded-[var(--radius-dialog)] border border-brass/30 bg-gradient-to-b from-surface/95 to-ground p-6 sm:p-8 flex flex-col justify-between shadow-[0_15px_40px_rgba(0,0,0,0.4)]">
+      <div className="relative min-h-[340px] sm:min-h-[380px] rounded-[var(--radius-dialog)] border border-brass/30 bg-gradient-to-b from-surface/95 to-ground p-6 sm:p-8 flex flex-col justify-between shadow-[var(--elev-card)]">
         <div>
           <div className="flex items-center justify-between">
             <span className="text-label font-medium tabular-nums text-brass bg-brass/10 border border-brass/25 px-2.5 py-0.5 rounded-[var(--radius-pill)]">
@@ -591,7 +591,7 @@ export function SlideshowView({ gen }: { gen: Generation }) {
           </h2>
 
           {slide.subtitle && (
-            <p className="mt-1 text-small text-muted italic">{slide.subtitle}</p>
+            <p className="mt-1.5 font-display text-body italic text-muted">{slide.subtitle}</p>
           )}
 
           <ul className="mt-6 space-y-2.5">
@@ -632,7 +632,7 @@ export function SlideshowView({ gen }: { gen: Generation }) {
               key={idx}
               onClick={() => setActiveIdx(idx)}
               className={`h-2 rounded-[var(--radius-pill)] transition-all ${
-                activeIdx === idx ? "w-6 bg-brass" : "w-2 bg-white/20 hover:bg-white/40"
+                activeIdx === idx ? "w-6 bg-brass" : "w-2 bg-ink/20 hover:bg-ink/40"
               }`}
               aria-label={`Go to slide ${idx + 1}`}
             />

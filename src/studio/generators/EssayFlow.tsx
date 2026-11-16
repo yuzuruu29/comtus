@@ -137,9 +137,9 @@ JSON shape:
             </span>
           </button>
           <div className="flex items-center gap-3">
-            <span className="h-px flex-1 bg-white/[0.08]" />
+            <span className="h-px flex-1 bg-hairline" />
             <span className="field-label">or bring your own</span>
-            <span className="h-px flex-1 bg-white/[0.08]" />
+            <span className="h-px flex-1 bg-hairline" />
           </div>
           <Field label="Your own prompt">
             <input
@@ -194,7 +194,7 @@ JSON shape:
             >
               <div className="font-display text-[1.05rem] font-[440] text-ink">{p.title}</div>
               <div className="mt-1.5 text-small leading-relaxed text-ink/80">{p.prompt}</div>
-              <div className="mt-2 text-small italic leading-relaxed text-muted">{p.guidance}</div>
+              <div className="mt-2 font-read text-small italic leading-relaxed text-muted">{p.guidance}</div>
             </button>
           ))}
           <div className="flex justify-end">
@@ -210,7 +210,7 @@ JSON shape:
               {chosen.title}
             </div>
             <p className="mt-1.5 text-body leading-relaxed text-ink/90">{chosen.prompt}</p>
-            <p className="mt-2 text-small italic leading-relaxed text-muted">{chosen.guidance}</p>
+            <p className="mt-2 font-read text-small italic leading-relaxed text-muted">{chosen.guidance}</p>
           </div>
           <Field label="Rubric">
             <select value={rubricId} onChange={(e) => setRubricId(e.target.value)} className={inputCls}>

@@ -179,7 +179,7 @@ export default function Composer({
                     </span>
                   )}
                   {voice.state === "listening" && (
-                    <span className="truncate italic text-muted">
+                    <span className="truncate font-read italic text-muted">
                       {voice.interim || "Listening…"}
                     </span>
                   )}

@@ -572,7 +572,7 @@ export default function SettingsModal({
                               className={`flex h-8 w-8 items-center justify-center rounded-[var(--radius-dialog)] border ${
                                 isSelected
                                   ? "border-brass/50 bg-brass/25 text-brass"
-                                  : "border-hairline bg-white/[0.04] text-muted group-hover:text-ink"
+                                  : "border-hairline bg-ink/[0.04] text-muted group-hover:text-ink"
                               }`}
                             >
                               <Icon size={ICON.md} weight={isSelected ? "fill" : "regular"} />

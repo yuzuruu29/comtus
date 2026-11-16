@@ -744,7 +744,7 @@ function ExamSitting({
                 i === idx
                   ? "bg-brass/25 text-brass ring-1 ring-brass/40"
                   : isWorked(i)
-                    ? "bg-white/[0.09] text-ink/80"
+                    ? "bg-ink/[0.09] text-ink/80"
                     : "bg-ink/[0.03] text-muted"
               }`}
             >

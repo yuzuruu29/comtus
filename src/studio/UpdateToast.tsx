@@ -56,7 +56,7 @@ export default function UpdateToast() {
             {state.phase === "downloading" && (
               <div className="p-4">
                 <div className="text-small font-medium text-ink">Downloading update…</div>
-                <div className="mt-2.5 h-1 overflow-hidden rounded-[var(--radius-pill)] bg-white/[0.08]">
+                <div className="mt-2.5 h-1 overflow-hidden rounded-[var(--radius-pill)] bg-ink/[0.08]">
                   <div
                     role="progressbar"
                     aria-label="Update download"
