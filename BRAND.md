@@ -112,12 +112,16 @@ that role by an explicit allow-list in `src/styles/palette.test.ts`.
 
 All families are self-hosted via `@fontsource`. No Google Fonts CDN.
 
-Literata Variable (`--font-read`) carries long reading and editorial headings.
-It ships with its optical-size axis (`opsz.css`, `opsz-italic.css`, opsz 7–72), so
-a 90px headline gets the display cut and a 17px answer the text cut without any
-setting. Display tracking is light (about −0.03em at hero size) because the
-display cut is already drawn tight.
-Instrument Sans Variable (`--font-ui`) carries navigation, forms, actions, and interface copy.
+The pairing is called Bookbinder (2026-11-16).
+Fraunces Variable (`--font-display`, the `font-display` utility) carries headings,
+titles and display figures. It ships with every axis (`full.css`, `full-italic.css`):
+optical size, weight, SOFT and WONK. `index.css` sets SOFT 100 at the root, keeps
+WONK off in roman and turns it on for `em`/`i`, so italics get the drawn forms.
+Big display lines are light (300–380) and tight (about −0.045em at hero size);
+small headings sit near 400–500.
+Literata Variable (`--font-read`) carries long reading: answers, sources, passages
+and quotes. It keeps its optical-size axis, so a 17px answer gets the text cut.
+Bricolage Grotesque Variable (`--font-ui`) carries navigation, forms, actions, and interface copy.
 JetBrains Mono is reserved for figures, keys, ids, timers and code. Pixelify is an optional accent.
 The landing uses the same families and tokens as the desk. Reading size adjusts source text
 and answers while interface controls keep their size. Never set a whole workspace to the
@@ -128,7 +132,8 @@ The interface ladder, smallest first: `text-label` 11px, `text-small` 13px,
 then `text-display`. Every desk size is one of these; `src/styles/scale.test.ts`
 holds arbitrary pixel sizes outside the landing at zero.
 
-Labels are sentence case in the UI face. A badge is `text-label font-semibold`
+Labels are sentence case in the UI face. Page kickers are brass, semibold, with a
+short brass rule before them. Numbered steps use large italic Fraunces figures. A badge is `text-label font-semibold`
 on its tone; a section label inside a card ("Why", "The grader's reasoning")
 is `text-small font-semibold`. Uppercase survives only where the thing itself
 is capitals, such as a transfer code. `src/styles/tells.test.ts` holds the count.

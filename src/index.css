@@ -15,7 +15,13 @@
    Literata line is a synthesized slant of the roman. The browser only
    fetches the subset an italic glyph actually needs. */
 @import "@fontsource-variable/literata/opsz-italic.css";
-@import "@fontsource-variable/instrument-sans";
+/* Fraunces with every axis: opsz for display vs. small headings, SOFT for the
+   rounded book-binding corners, WONK for the drawn italic. The weight-only cut
+   would drop all three, and they are the reason this face was chosen. */
+@import "@fontsource-variable/fraunces/full.css";
+@import "@fontsource-variable/fraunces/full-italic.css";
+/* standard = wght + wdth; the width axis narrows labels and chrome. */
+@import "@fontsource-variable/bricolage-grotesque/standard.css";
 
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/500.css";
@@ -47,18 +53,20 @@
   --color-parchment: #f2ede3;
   --color-faded: #a59a8a;
 
-  /* Faces are fixed (spec 5.1): Literata reads, Instrument Sans runs the UI,
-     JetBrains Mono carries code and figures, Pixelify is accent chrome only.
+  /* The Bookbinder pairing (decided 2026-11-16, replaces spec 5.1's faces):
+     Fraunces sets headings and display figures, Literata keeps long reading
+     (answers, sources, passages), Bricolage Grotesque runs the UI, JetBrains
+     Mono carries code and figures, Pixelify is accent chrome only.
      They live here rather than tokens.css because @theme both emits them to
-     :root AND generates the font-read / font-ui utilities; declaring them in
-     both places would be the drift this phase exists to remove. */
+     :root AND generates the font-display / font-read / font-ui utilities;
+     declaring them in both places would be drift. */
+  --font-display: "Fraunces Variable", "Literata Variable", Georgia, serif;
   --font-read: "Literata Variable", Literata, Georgia, serif;
-  --font-ui: "Instrument Sans Variable", "Instrument Sans", system-ui, -apple-system, sans-serif;
+  --font-ui: "Bricolage Grotesque Variable", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
   --font-pixel: "Pixelify Sans Variable", "Pixelify Sans", sans-serif;
 
-  /* Deprecated aliases — Task 2.5 retires the last consumer. */
-  --font-display: var(--font-read);
+  /* Deprecated alias. */
   --font-body: var(--font-ui);
 
   /* The Tailwind bridge reads the ladder in tokens.css; it does not
@@ -136,7 +144,9 @@ html[data-shell="desktop"] {
   --desk-header: 2.5rem;
   --desk-row: 2rem;
   --desk-pad: 0.85rem;
-  font-size: 14px;
+  /* 15px, not 14: at 14 the rem ladder put body text near 12px and labels
+     under 10px, which read thin and cramped in the desktop window. */
+  font-size: 15px;
 }
 
 *[data-tauri-drag-region] {
@@ -187,8 +197,18 @@ html[data-shell] body {
   :is(p, li, dd, figcaption, blockquote, summary) { text-wrap: pretty; }
 }
 
-/* The Tailwind utility owns the family. This rule only asks the variable
-   font for optical sizing; it must never set font-family here. */
+/* Fraunces' axes, set once at the root so every --font-display rule and the
+   font-display utility inherit them. SOFT rounds the corners at every size;
+   WONK stays off in roman (leaning n/m/h read as typos in a heading) and comes
+   on for italic, where the drawn forms are the point. Literata, Bricolage and
+   the mono lack these axes and ignore them, so the rule is safe everywhere.
+   A rule that sets its own font-variation-settings replaces this list. */
+html {
+  font-variation-settings: "SOFT" 100, "WONK" 0;
+}
+:is(em, i) {
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+}
 .font-display {
   font-optical-sizing: auto;
 }

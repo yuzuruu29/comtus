@@ -808,7 +808,7 @@ function StartHero({ onCreate, onOpenFile }: { onCreate: () => void; onOpenFile:
         <span className="text-small font-medium text-brass">
           A notebook of your own
         </span>
-        <h2 id="desk-start-title" className="mt-3 font-display text-[clamp(1.6rem,3vw,2.2rem)] font-[450] leading-tight text-ink">
+        <h2 id="desk-start-title" className="mt-3 font-display text-[clamp(1.6rem,3vw,2.2rem)] font-[400] leading-tight text-ink">
           What are you working on?
         </h2>
         <p className="mt-3 max-w-md text-body leading-relaxed text-muted">
@@ -834,25 +834,25 @@ function StartHero({ onCreate, onOpenFile }: { onCreate: () => void; onOpenFile:
         <p className="mt-4 text-label text-muted">Start with a name. Add the material as you go.</p>
       </div>
       <div className="rounded-[var(--radius-dialog)] border border-hairline bg-ground/60 p-5">
-        <div className="flex items-center gap-2 text-label text-muted">
-          <BookOpen size={ICON.lg} aria-hidden="true" />
+        <div className="flex items-center gap-2.5 border-b border-hairline-strong pb-3 font-display text-lead text-ink">
+          <BookOpen size={ICON.lg} className="text-brass" aria-hidden="true" />
           <span>Inside your notebook</span>
         </div>
-        <ol className="mt-4 grid gap-4">
+        <ol className="desk-start-steps mt-4 grid gap-4">
           <li>
-            <h3 className="text-body font-semibold text-ink">Add your sources</h3>
+            <h3 className="text-lead font-semibold tracking-[-0.01em] text-ink">Add your sources</h3>
             <p className="mt-1 text-body leading-relaxed text-muted">
               Documents, links, or your own notes. Drag them anywhere in the window.
             </p>
           </li>
           <li>
-            <h3 className="text-body font-semibold text-ink">Talk it through</h3>
+            <h3 className="text-lead font-semibold tracking-[-0.01em] text-ink">Talk it through</h3>
             <p className="mt-1 text-body leading-relaxed text-muted">
               Ask questions and follow answers back to the passage they came from.
             </p>
           </li>
           <li>
-            <h3 className="text-body font-semibold text-ink">Make it stick</h3>
+            <h3 className="text-lead font-semibold tracking-[-0.01em] text-ink">Make it stick</h3>
             <p className="mt-1 text-body leading-relaxed text-muted">
               Turn the material into quizzes, flashcards, and a study plan.
             </p>

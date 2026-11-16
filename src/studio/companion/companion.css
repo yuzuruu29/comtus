@@ -7,7 +7,7 @@ html[data-motion="full"] .compad-panel { animation: compad-panel-in var(--dur-me
 .compad-panel button { cursor: pointer; }
 .compad-panel button:focus-visible, .compad-panel summary:focus-visible, .compad-panel textarea:focus-visible, .compad-panel input:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
 .compad-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 15px 10px 19px; }
-.compad-panel-header h2 { margin: 0; font-family: var(--font-read); font-size: 24px; font-weight: 440; letter-spacing: -.02em; }
+.compad-panel-header h2 { margin: 0; font-family: var(--font-display); font-size: 24px; font-weight: 440; letter-spacing: -.02em; }
 .compad-panel-header p { margin: 2px 0 0; color: var(--sage); font-size: 11px; }
 .compad-panel-header > button { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--muted); }
 .compad-panel-header > button:hover { background: var(--raised); color: var(--ink); }
@@ -260,7 +260,7 @@ html[data-motion="full"] .milestone-meter::after {
 .milestone-toast-title {
   margin: 1px 0 0;
   color: var(--ink);
-  font-family: var(--font-read);
+  font-family: var(--font-display);
   font-size: 16px;
   font-weight: 450;
   letter-spacing: -0.01em;

@@ -252,7 +252,7 @@ html[data-motion="full"] .fc-rest > :nth-child(n + 4) { animation-delay: 180ms; 
 
 .fc-rest h3 {
   margin: 0;
-  font-family: var(--font-read);
+  font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 450;
   letter-spacing: -.01em;

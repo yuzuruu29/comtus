@@ -127,7 +127,7 @@ html[data-motion="minimal"] .focus-panel { animation: focus-panel-fade var(--dur
 .focus-dial-face { position: relative; display: grid; justify-items: center; gap: 2px; }
 .focus-dial-phase { color: var(--tone); font-size: var(--text-label); font-weight: 600; }
 .focus-dial-time {
-  font-family: var(--font-read);
+  font-family: var(--font-display);
   font-size: 40px;
   font-variant-numeric: tabular-nums;
   font-weight: 420;

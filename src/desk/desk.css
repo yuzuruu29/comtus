@@ -246,3 +246,22 @@
     transform: none !important;
   }
 }
+
+/* ── Start steps: the desk twin of the web shelf's numbered page ─────────
+   Large italic Fraunces figures, matching .shelf-start-steps in shelf.css. */
+.desk-start-steps { counter-reset: desk-step; }
+/* Grid, not flex: the h3 and p are direct children and must stack in column 2. */
+.desk-start-steps > li { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); column-gap: 0.875rem; counter-increment: desk-step; }
+.desk-start-steps > li > * { grid-column: 2; }
+.desk-start-steps > li::before {
+  content: "0" counter(desk-step);
+  grid-row: 1 / span 2;
+  color: var(--brass);
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+}

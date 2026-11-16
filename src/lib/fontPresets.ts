@@ -1,7 +1,8 @@
 /** Reading size, the one typography choice the student still makes.
  *
- *  Spec 5.1 fixes the faces: Literata to read, Instrument Sans for UI,
- *  JetBrains Mono for code and figures, Pixelify only as accent chrome. The
+ *  The faces are fixed (Bookbinder, BRAND.md 4): Fraunces for headings,
+ *  Literata to read, Bricolage Grotesque for UI, JetBrains Mono for code and
+ *  figures, Pixelify only as accent chrome. The
  *  four swappable font systems this replaces (instrument, pixel-signal,
  *  scholar, console) let any surface become any face, which is how the studio
  *  ended up with three competing type identities. */

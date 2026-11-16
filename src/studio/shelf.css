@@ -2,7 +2,7 @@
 .shelf-page { min-height: 100svh; color: var(--ink); font-family: var(--font-ui); }
 .shelf-content { width: min(100%, 1360px); margin-inline: auto; padding: 0 clamp(1.25rem, 4vw, 4rem) calc(2rem + var(--sab)); }
 .shelf-header { display: flex; align-items: center; gap: 3rem; min-height: calc(5.5rem + var(--sat)); padding-top: var(--sat); border-bottom: 1px solid var(--hairline-strong); }
-.shelf-brand { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink); font-family: var(--font-read); font-size: 1.75rem; font-weight: 650; line-height: 1.2; letter-spacing: -.03em; }
+.shelf-brand { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink); font-family: var(--font-display); font-size: 1.75rem; font-weight: 650; line-height: 1.2; letter-spacing: -.03em; }
 .shelf-brand > span, .shelf-intro h1 > span { color: var(--brass); }
 .shelf-nav { display: flex; align-self: stretch; gap: 1.75rem; }
 .shelf-nav a { display: flex; align-items: center; gap: 0.5rem; padding-block: 0.5rem; border-bottom: 2px solid transparent; color: var(--muted); font-size: 0.875rem; }
@@ -21,35 +21,36 @@
 .shelf-skip-link { position: fixed; top: 0.75rem; left: 1rem; z-index: var(--z-modal); padding: 0.75rem 1rem; background: var(--surface); transform: translateY(-200%); }
 .shelf-skip-link:focus { transform: none; }
 .shelf-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; padding-block: clamp(2rem, 4vw, 3.5rem) 2.5rem; }
-.shelf-kicker { display: flex; align-items: center; gap: 0.75rem; color: var(--muted); font-size: 0.75rem; font-weight: 500; letter-spacing: 0.07em; }
+.shelf-kicker { display: flex; align-items: center; gap: 0.75rem; color: var(--brass); font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.03em; }
+.shelf-kicker::before { content: ""; width: 1.5rem; height: 1px; background: currentColor; }
 .shelf-kicker > span { color: var(--brass); font-variant-numeric: tabular-nums; }
-.shelf-intro h1 { margin: 0.625rem 0 0; font-family: var(--font-read); font-size: var(--text-landing-section); font-weight: 450; line-height: 1.16; letter-spacing: -.03em; text-wrap: balance; }
+.shelf-intro h1 { margin: 0.625rem 0 0; font-family: var(--font-display); font-size: var(--text-landing-section); font-weight: 360; line-height: 1.16; letter-spacing: -.03em; text-wrap: balance; }
 .shelf-intro p { max-width: 52ch; margin-top: 0.875rem; color: var(--muted); font-size: 0.9375rem; line-height: 1.6; }
 .shelf-intro-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.625rem; }
 .shelf-new { flex-shrink: 0; }
 .shelf-start { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--hairline-strong); border-bottom: 1px solid var(--hairline-strong); }
 /* The copy and the page sit on the shelf's own column edges, the same lines as the title above. */
 .shelf-start-copy { padding: clamp(1.5rem, 4vw, 3rem) clamp(1.5rem, 4vw, 3rem) clamp(1.5rem, 4vw, 3rem) 0; }
-.shelf-start h2 { margin: 2rem 0 0; font-family: var(--font-read); font-size: var(--text-display); font-weight: 450; line-height: 1.3; letter-spacing: -.02em; }
+.shelf-start h2 { margin: 2rem 0 0; font-family: var(--font-display); font-size: var(--text-display); font-weight: 400; line-height: 1.3; letter-spacing: -.02em; }
 .shelf-start h2 em { font-weight: 450; }
 .shelf-start-copy p { max-width: 36ch; margin-block: 1rem 1.5rem; color: var(--muted); font-size: 0.9375rem; line-height: 1.75; }
 .shelf-start-note { display: block; margin-top: 0.875rem; }
 .shelf-start-page { position: relative; margin: 1.5rem 5px 1.5rem 0; padding: 1.75rem 2rem 1rem 2.5rem; border-left: 3px double var(--hairline-strong); background: var(--surface); box-shadow: 3px 3px 0 var(--raised), 5px 5px 0 var(--hairline); }
-.shelf-page-heading { display: flex; align-items: center; gap: 0.75rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--hairline-strong); font-family: var(--font-read); font-size: 1.125rem; }
+.shelf-page-heading { display: flex; align-items: center; gap: 0.75rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--hairline-strong); font-family: var(--font-display); font-size: 1.125rem; }
 .shelf-page-heading svg { color: var(--brass); }
 .shelf-start-steps { counter-reset: study-step; margin: 0; padding: 0; list-style: none; }
-.shelf-start-steps li { display: flex; gap: 1rem; padding-block: 1.25rem; border-bottom: 1px solid var(--hairline); counter-increment: study-step; }
-.shelf-start-steps li::before { content: "0" counter(study-step); flex: 0 0 1.5rem; color: var(--brass); font-size: 0.75rem; line-height: 1.8; font-variant-numeric: tabular-nums; }
-.shelf-start-steps h3 { margin: 0 0 0.3rem; font-size: 0.9375rem; font-weight: 600; }
+.shelf-start-steps li { display: flex; align-items: baseline; gap: 1rem; padding-block: 1.25rem; border-bottom: 1px solid var(--hairline); counter-increment: study-step; }
+.shelf-start-steps li::before { content: "0" counter(study-step); flex: 0 0 2.75rem; color: var(--brass); font-family: var(--font-display); font-size: 1.75rem; font-style: italic; font-weight: 400; line-height: 1; font-variant-numeric: lining-nums tabular-nums; font-variation-settings: "SOFT" 100, "WONK" 1; }
+.shelf-start-steps h3 { margin: 0 0 0.3rem; font-size: 1.0625rem; font-weight: 640; letter-spacing: -0.015em; }
 .shelf-start-steps p { max-width: 34ch; margin: 0; color: var(--muted); font-size: 0.8125rem; line-height: 1.6; }
-.shelf-page-foot { margin: 1rem 0 0; color: var(--muted); font-family: var(--font-read); font-size: 0.75rem; font-style: italic; }
+.shelf-page-foot { margin: 1rem 0 0; color: var(--muted); font-family: var(--font-display); font-size: 0.75rem; font-style: italic; }
 .shelf-start-open-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; padding: 0.75rem 0; border-top: 1px solid var(--hairline); color: var(--muted); font-size: 0.8125rem; line-height: 1.6; }
 .shelf-start-open { min-height: 44px; padding: 0; border: 0; background: none; color: var(--brass); font: inherit; text-decoration: underline; text-decoration-color: var(--hairline-strong); text-underline-offset: 0.25em; cursor: pointer; }
 .shelf-start-open:hover { text-decoration-color: currentColor; }
 .shelf-resume { display: flex; align-items: center; gap: 2rem; padding: 1.75rem 2rem; border: 1px solid var(--hairline-strong); border-left: 4px solid var(--brass); border-radius: 3px 10px 10px 3px; background: var(--surface); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--surface) 70%, var(--brass-pale)), 2px 3px 0 var(--raised), 3px 4px 0 var(--hairline-strong), var(--elev-card); }
 .shelf-resume-mark { display: flex; align-items: center; flex-shrink: 0; padding-right: 2rem; border-right: 1px solid var(--hairline-strong); color: var(--brass); }
 .shelf-resume-copy { flex: 1; min-width: 0; }
-.shelf-resume h2 { margin: 0.5rem 0 0; overflow-wrap: anywhere; font-family: var(--font-read); font-size: 1.625rem; font-weight: 450; line-height: 1.4; letter-spacing: -.013em; }
+.shelf-resume h2 { margin: 0.5rem 0 0; overflow-wrap: anywhere; font-family: var(--font-display); font-size: 1.625rem; font-weight: 450; line-height: 1.4; letter-spacing: -.013em; }
 .shelf-resume p { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; margin-top: 0.625rem; color: var(--muted); font-size: 0.875rem; }
 .shelf-resume .btn { flex-shrink: 0; }
 .shelf-collection { margin-top: 0; }
@@ -78,7 +79,7 @@
 .notebook-card::before { content: ""; position: absolute; inset-block: 0; inset-inline-start: 0; z-index: 1; width: 14px; border-start-start-radius: inherit; border-end-start-radius: inherit; border-right: 1px solid var(--hairline-strong); pointer-events: none; background: linear-gradient(var(--brass), var(--brass)) 0 18% / 14px 1.5px no-repeat, linear-gradient(var(--brass), var(--brass)) 0 82% / 14px 1.5px no-repeat, color-mix(in srgb, var(--leather) 18%, var(--raised)); }
 .notebook-card-open { display: flex; flex-direction: column; align-items: flex-start; width: 100%; height: 100%; min-height: 240px; padding: 1.5rem 1.5rem 1.25rem 2.125rem; border-radius: inherit; text-align: left; cursor: pointer; }
 .notebook-card-index { display: flex; align-items: center; gap: 0.625rem; color: var(--muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
-.notebook-card-title { display: -webkit-box; overflow: hidden; max-width: 100%; margin-top: 1.75rem; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; font-family: var(--font-read); font-size: 1.375rem; font-weight: 450; line-height: 1.4; letter-spacing: -.01em; transition: color var(--dur-fast) var(--ease-out); }
+.notebook-card-title { display: -webkit-box; overflow: hidden; max-width: 100%; margin-top: 1.75rem; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; font-family: var(--font-display); font-size: 1.375rem; font-weight: 450; line-height: 1.4; letter-spacing: -.01em; transition: color var(--dur-fast) var(--ease-out); }
 .notebook-card-open:hover .notebook-card-title { color: var(--brass); }
 .notebook-card-open-hint { display: flex; align-items: center; gap: 0.5rem; margin-block: 0.875rem 1.5rem; color: var(--brass); font-size: 0.8125rem; }
 .notebook-card-open-hint svg { transition: transform var(--dur-med) var(--ease-out); }
@@ -103,10 +104,10 @@
 .shelf-error { margin-bottom: 1.5rem; color: var(--rust); font-size: 0.9375rem; }
 .shelf-file-note { margin: 1rem 0; color: var(--muted); font-size: 0.875rem; }
 .shelf-load-error { padding: 2rem; border: 1px solid var(--hairline); background: var(--surface); }
-.shelf-load-error h2 { font-family: var(--font-read); font-size: 1.5rem; }
+.shelf-load-error h2 { font-family: var(--font-display); font-size: 1.5rem; }
 .shelf-load-error p { margin: 1rem 0; color: var(--muted); }
 .shelf-footer { display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 3.5rem; padding-top: 1.25rem; border-top: 1px solid var(--hairline-strong); color: var(--muted); font-size: 0.75rem; }
-.shelf-footer > span { font-family: var(--font-read); font-style: italic; }
+.shelf-footer > span { font-family: var(--font-display); font-style: italic; }
 .shelf-footer p { margin: 0; }
 .shelf-footer button { display: inline-flex; align-items: center; gap: 0.25rem; min-height: 44px; margin-left: 0.25rem; color: var(--brass); text-decoration: underline; text-underline-offset: 0.25em; }
 @media (hover: none) { .shelf-search-library kbd { display: none; } }

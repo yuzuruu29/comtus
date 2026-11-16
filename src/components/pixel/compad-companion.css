@@ -116,7 +116,7 @@ html[data-motion="minimal"] .compad-speech { animation-name: compad-speech-fade;
   max-height: calc(100dvh - 24px);
   overflow: auto;
   overscroll-behavior: contain;
-  font-family: "Instrument Sans", sans-serif;
+  font-family: var(--font-ui);
   user-select: text;
   touch-action: auto;
 }

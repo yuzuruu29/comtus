@@ -76,7 +76,7 @@
 
 .study-motion-source h3 {
   margin: 3.6cqi 0 2cqi;
-  font-family: var(--font-read);
+  font-family: var(--font-display);
   font-size: 3.9cqi;
   font-weight: 450;
   letter-spacing: -.02em;
@@ -138,7 +138,7 @@
 }
 
 .study-motion-notebook .study-motion-paper-meta { padding-right: 5.4cqi; font-size: 1.4cqi; }
-.study-motion-notebook h3 { margin: 2.6cqi 0 1.4cqi; font-family: var(--font-read); font-size: 5.2cqi; font-weight: 430; letter-spacing: -.028em; line-height: 1.12; }
+.study-motion-notebook h3 { margin: 2.6cqi 0 1.4cqi; font-family: var(--font-display); font-size: 5.2cqi; font-weight: 430; letter-spacing: -.028em; line-height: 1.12; }
 .study-motion-notebook h3 em { color: var(--brass); font-weight: 430; }
 .study-motion-notebook-deck { margin: 0; font-size: 1.6cqi; line-height: 1.45; }
 .study-motion-neuron { width: 100%; height: 14cqi; margin: .6cqi 0 0; overflow: visible; }
@@ -164,7 +164,7 @@
 }
 
 .study-motion-concept-pin { position: absolute; top: -.7cqi; left: 44%; width: 1.3cqi; height: 2.9cqi; border: 1.5px solid var(--brass); border-radius: 1cqi; transform: rotate(-8deg); }
-.study-motion-concept p { margin: 2cqi 0 0; font-family: var(--font-read); font-size: 3.35cqi; font-weight: 450; line-height: 1.25; letter-spacing: -.018em; }
+.study-motion-concept p { margin: 2cqi 0 0; font-family: var(--font-display); font-size: 3.35cqi; font-weight: 450; line-height: 1.25; letter-spacing: -.018em; }
 .study-motion-concept em { color: var(--brass); }
 .study-motion-concept svg { width: 100%; height: 3cqi; margin-top: -.3cqi; stroke: var(--rust); stroke-width: 1.5; stroke-linecap: round; }
 
@@ -236,7 +236,7 @@
 .study-motion-controls button:focus-visible { z-index: 1; outline: 2px solid var(--brass); outline-offset: 2px; }
 .study-motion-controls button:disabled { cursor: default; opacity: .4; }
 .study-motion-controls button[aria-pressed="true"] { color: var(--ink); }
-.study-motion-step-number { font-family: var(--font-read); font-size: .75rem; font-style: italic; color: var(--brass); }
+.study-motion-step-number { font-family: var(--font-display); font-size: .75rem; font-style: italic; color: var(--brass); }
 .study-motion-progress { position: absolute; top: -1px; right: .6rem; left: .6rem; height: 2px; background: var(--brass); transform-origin: left; }
 .study-motion[data-playing="true"] .study-motion-progress { animation: study-motion-time 4500ms linear; }
 .study-motion[data-playing="false"] *,

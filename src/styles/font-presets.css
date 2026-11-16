@@ -1,7 +1,7 @@
 /* ==========================================================================
    Reading size — html[data-reading], applied by useReadingEffect in
    lib/theme.ts. Three sizes of one face, not four type systems: spec 5.1
-   fixes the faces (Literata to read, Instrument Sans for UI) and leaves the
+   fixes the faces (Literata to read, Bricolage Grotesque for UI) and leaves the
    student only the choice that matters at 2am.
    ========================================================================== */
 
