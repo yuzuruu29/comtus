@@ -20,7 +20,7 @@ Then it quizzes you, turns your mistakes into flashcards, and plans every review
 
 <a href="docs/media/comtus-how-it-works.mp4"><img src="docs/media/comtus-how-it-works.gif" width="100%" alt="Animation: study files drop into a Comtus notebook, a question gets an answer that cites page 12 of a lecture PDF, a missed quiz question becomes a flashcard, and an exam plan fills the week."></a>
 
-<sub>How Comtus works, in 35 seconds. <a href="docs/media/comtus-how-it-works.mp4">Watch the full-quality version (MP4)</a>.</sub>
+<sub>How Comtus works, in 35 seconds. <a href="docs/media/comtus-how-it-works.mp4">Download the full-quality version (MP4, 4 MB)</a>.</sub>
 
 </div>
 
