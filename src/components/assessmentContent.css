@@ -30,3 +30,6 @@
 .assessment-legend { display: flex; flex-wrap: wrap; gap: .4rem 1rem; font-size: .85em; margin: .5rem 0; list-style: none; padding: 0; }
 .assessment-legend li { overflow-wrap: anywhere; }
 .assessment-graph summary { cursor: pointer; font-size: .85em; margin-block: .5rem; }
+/* A quiz or exam question is read, not scanned: Literata a step above the
+   reading size, the same voice as a flashcard's front. */
+.assessment-stem { font-family: var(--font-read); font-size: calc(var(--text-read) * 1.12); font-weight: 450; line-height: 1.5; color: var(--ink); }

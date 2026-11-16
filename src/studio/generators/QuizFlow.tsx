@@ -564,7 +564,7 @@ function QuizQuestionView({
           transition={SOFT}
           className="space-y-5"
         >
-          <AssessmentContent className="text-lead font-medium leading-relaxed text-ink">{q.stem}</AssessmentContent>
+          <AssessmentContent className="assessment-stem">{q.stem}</AssessmentContent>
           {q.graph && <AssessmentGraph graph={q.graph} />}
 
           {isSolution ? (
