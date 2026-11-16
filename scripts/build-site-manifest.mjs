@@ -95,9 +95,13 @@ for (const [target, spec] of Object.entries(TARGETS)) {
   const payload = payloads.find(spec.match);
   if (!payload) throw new Error(`No matching updater payload for ${target} among: ${payloads.join(", ")}`);
 
-  // The updater expects the signature field as base64 of the .sig file's
-  // full text (same encoding tauri-action uses when it aggregates).
-  const signature = Buffer.from((await readFile(join(dir, sigName), "utf8")).trim()).toString("base64");
+  // `tauri signer` already writes the .sig file as base64 of the minisign
+  // text, which is exactly what the updater's signature field holds.
+  // Encoding it again broke every update through v0.3.2.
+  const signature = (await readFile(join(dir, sigName), "utf8")).trim();
+  if (!Buffer.from(signature, "base64").toString().startsWith("untrusted comment:")) {
+    throw new Error(`${sigName} is not a base64 minisign signature; the updater would reject it`);
+  }
 
   for (const key of spec.keys) {
     platforms[key] = { signature, url: `${args["site-base"]}/${payload}` };
